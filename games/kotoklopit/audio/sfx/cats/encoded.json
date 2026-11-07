@@ -1,0 +1,374 @@
+{
+  "meow-1": {
+    "hash": "9ec3fdc50ae3c138",
+    "seconds": 1.72
+  },
+  "meow-2": {
+    "hash": "9405b3b3c0094af3",
+    "seconds": 1.152292
+  },
+  "meow-3": {
+    "hash": "b17f8cbbe667a8e9",
+    "seconds": 0.83
+  },
+  "meow-4": {
+    "hash": "e85a21c7fc606a94",
+    "seconds": 0.943
+  },
+  "meow-ask-1": {
+    "hash": "e62a88aa6af9e132",
+    "seconds": 1.4
+  },
+  "meow-ask-2": {
+    "hash": "6aeaa74d098c6674",
+    "seconds": 1.7
+  },
+  "meow-ask-3": {
+    "hash": "0c2f4d215493a50b",
+    "seconds": 1.77
+  },
+  "meow-ask-4": {
+    "hash": "6aebc793270856dd",
+    "seconds": 1.62
+  },
+  "meow-ask-5": {
+    "hash": "184de56672f07904",
+    "seconds": 1.12
+  },
+  "meow-happy-1": {
+    "hash": "017af38b93197d07",
+    "seconds": 0.509
+  },
+  "meow-happy-2": {
+    "hash": "70f93dc65b15bc3a",
+    "seconds": 0.506313
+  },
+  "meow-happy-3": {
+    "hash": "72df520403be6b4d",
+    "seconds": 0.428
+  },
+  "meow-sad-1": {
+    "hash": "48c1d523437c22a2",
+    "seconds": 1.273
+  },
+  "meow-sad-2": {
+    "hash": "9adb7a95888f462e",
+    "seconds": 1.889
+  },
+  "meow-old-1": {
+    "hash": "60d6af9eea6d9f28",
+    "seconds": 0.86
+  },
+  "meow-old-2": {
+    "hash": "c580950644f6196c",
+    "seconds": 2.012
+  },
+  "meow-kitten-1": {
+    "hash": "3780503974d0ca6d",
+    "seconds": 0.57
+  },
+  "meow-kitten-2": {
+    "hash": "0e35f3a33663ee83",
+    "seconds": 0.7
+  },
+  "meow-kitten-3": {
+    "hash": "d37375198020175c",
+    "seconds": 0.5
+  },
+  "meow-kitten-4": {
+    "hash": "c5acdc86dbe9b684",
+    "seconds": 0.62
+  },
+  "meow-kitten-5": {
+    "hash": "62b7d192a5ed2ecd",
+    "seconds": 0.7
+  },
+  "meow-kitten-6": {
+    "hash": "b1763b6590655672",
+    "seconds": 0.68
+  },
+  "meow-angry-1": {
+    "hash": "c907b18750532b99",
+    "seconds": 0.84
+  },
+  "meow-angry-2": {
+    "hash": "69c20f120383d3f2",
+    "seconds": 0.95
+  },
+  "meow-door-1": {
+    "hash": "c229d4a6355a48d8",
+    "seconds": 1.4
+  },
+  "meow-door-2": {
+    "hash": "f0a259b497e18c14",
+    "seconds": 1.62
+  },
+  "meow-door-3": {
+    "hash": "36d3061df32696f9",
+    "seconds": 1.12
+  },
+  "cry-1": {
+    "hash": "cd62e3145b0e177d",
+    "seconds": 1.12
+  },
+  "cry-2": {
+    "hash": "2fd86751803d9317",
+    "seconds": 1.619
+  },
+  "squeak-1": {
+    "hash": "f11184f194a437d9",
+    "seconds": 0.292
+  },
+  "squeak-2": {
+    "hash": "0eadd037ca31db33",
+    "seconds": 0.281
+  },
+  "chatter-1": {
+    "hash": "620ce61d24a0b7f1",
+    "seconds": 0.112
+  },
+  "chatter-2": {
+    "hash": "a85318972416e092",
+    "seconds": 0.112
+  },
+  "hiss-1": {
+    "hash": "48c07a8151ebb08a",
+    "seconds": 0.84
+  },
+  "hiss-2": {
+    "hash": "65e74b4ed737781a",
+    "seconds": 0.9
+  },
+  "hiss-3": {
+    "hash": "58cc3ac2a309a841",
+    "seconds": 0.833
+  },
+  "growl-1": {
+    "hash": "a94535a9d2b0a7f4",
+    "seconds": 1.45
+  },
+  "growl-2": {
+    "hash": "6d824e355f65d2f6",
+    "seconds": 1.55
+  },
+  "fight-1": {
+    "hash": "4cddb336db7190d4",
+    "seconds": 1.09
+  },
+  "fight-2": {
+    "hash": "fe19ebd79c2fb1e2",
+    "seconds": 1.03
+  },
+  "fight-loop": {
+    "hash": "3d3682ce5201d29a",
+    "seconds": 5.75,
+    "loop": {
+      "start": 0.1,
+      "end": 5.85
+    }
+  },
+  "bite-1": {
+    "hash": "0399d2b1a9b633af",
+    "seconds": 0.52
+  },
+  "purr-loop": {
+    "hash": "f2ba4d2d1998318a",
+    "seconds": 4,
+    "loop": {
+      "start": 0.1,
+      "end": 4.1
+    }
+  },
+  "purr-1": {
+    "hash": "4460028867fd09a0",
+    "seconds": 1.4
+  },
+  "purr-2": {
+    "hash": "fb02ee2f1cb5aef2",
+    "seconds": 1.4
+  },
+  "eat-loop": {
+    "hash": "d000995ed56b1384",
+    "seconds": 4.3,
+    "loop": {
+      "start": 0.1,
+      "end": 4.4
+    }
+  },
+  "lap-loop": {
+    "hash": "5d24429f26d83ba1",
+    "seconds": 5,
+    "loop": {
+      "start": 0.1,
+      "end": 5.1
+    }
+  },
+  "lick-1": {
+    "hash": "b023bfd4362b2565",
+    "seconds": 0.85
+  },
+  "yawn-1": {
+    "hash": "b83726ce12bb9cda",
+    "seconds": 1.5
+  },
+  "tail-1": {
+    "hash": "be9712626a37b342",
+    "seconds": 0.4
+  },
+  "scamper-1": {
+    "hash": "92bc5f7c239f3eb3",
+    "seconds": 1.5
+  },
+  "scamper-2": {
+    "hash": "3dc31397229c6fa4",
+    "seconds": 1.5
+  },
+  "zoom-loop": {
+    "hash": "e0595975c68b4551",
+    "seconds": 8.033333,
+    "loop": {
+      "start": 0.1,
+      "end": 8.133333
+    }
+  },
+  "land-1": {
+    "hash": "80fe5d32d323a4f4",
+    "seconds": 0.261
+  },
+  "land-2": {
+    "hash": "b59f222d2c7537e2",
+    "seconds": 0.5
+  },
+  "claw-1": {
+    "hash": "f26247d0824c5a47",
+    "seconds": 0.59
+  },
+  "sneeze-1": {
+    "hash": "7f2beef9af48dccb",
+    "seconds": 0.187
+  },
+  "sneeze-2": {
+    "hash": "969038e995b8465b",
+    "seconds": 0.237
+  },
+  "hack-1": {
+    "hash": "f03057e06466294f",
+    "seconds": 0.263
+  },
+  "retch-1": {
+    "hash": "a6b06f3953ceb7c9",
+    "seconds": 0.48
+  },
+  "spit-1": {
+    "hash": "b9288cae8d8bc3be",
+    "seconds": 0.292
+  },
+  "crunch-1": {
+    "hash": "11c420dd809fe8a0",
+    "seconds": 0.42
+  },
+  "crunch-2": {
+    "hash": "cca2935894b56dda",
+    "seconds": 0.43
+  },
+  "chew-wire-1": {
+    "hash": "85519ef0a9dc4ce0",
+    "seconds": 0.461
+  },
+  "chew-box-1": {
+    "hash": "5913d0601ec01371",
+    "seconds": 0.9
+  },
+  "chew-loop": {
+    "hash": "6499ee38065287b9",
+    "seconds": 3.4,
+    "loop": {
+      "start": 0.1,
+      "end": 3.5
+    }
+  },
+  "bag-rip-1": {
+    "hash": "01a835b35df33a76",
+    "seconds": 1.17
+  },
+  "paper-1": {
+    "hash": "70c00cf4973513ae",
+    "seconds": 0.52
+  },
+  "dig-1": {
+    "hash": "8167a9eee48a4661",
+    "seconds": 0.77
+  },
+  "dig-loop": {
+    "hash": "db0cf794faae9910",
+    "seconds": 3.01,
+    "loop": {
+      "start": 0.1,
+      "end": 3.11
+    }
+  },
+  "scratch-loop": {
+    "hash": "d75a10e47e313e44",
+    "seconds": 4,
+    "loop": {
+      "start": 0.1,
+      "end": 4.1
+    }
+  },
+  "smash-1": {
+    "hash": "92275762eb195a06",
+    "seconds": 0.91
+  },
+  "smash-2": {
+    "hash": "511c6826d6a0497a",
+    "seconds": 0.95
+  },
+  "mug-break-1": {
+    "hash": "5beaf129da99ec56",
+    "seconds": 0.92
+  },
+  "mug-drop-1": {
+    "hash": "8fd61bc3f146e576",
+    "seconds": 0.376
+  },
+  "phone-drop-1": {
+    "hash": "3a7828ebb59a4518",
+    "seconds": 0.78
+  },
+  "pen-drop-1": {
+    "hash": "bc44cd94de481881",
+    "seconds": 0.95
+  },
+  "toy-break-1": {
+    "hash": "50b6f1ef0f4489ad",
+    "seconds": 0.24
+  },
+  "bin-1": {
+    "hash": "2befd069625f2f0d",
+    "seconds": 1.34
+  },
+  "keys-1": {
+    "hash": "dc3355173070401b",
+    "seconds": 1.021438
+  },
+  "keys-2": {
+    "hash": "0d2d4b94c78874e3",
+    "seconds": 0.7
+  },
+  "spark-1": {
+    "hash": "7a6ecffb26811dad",
+    "seconds": 0.98
+  },
+  "cabinet-open-1": {
+    "hash": "42547a2759536c12",
+    "seconds": 0.59
+  },
+  "cabinet-lock-1": {
+    "hash": "6200f8a453f368c5",
+    "seconds": 0.52
+  },
+  "tap-1": {
+    "hash": "2d2b456fec572a70",
+    "seconds": 1.4
+  }
+}

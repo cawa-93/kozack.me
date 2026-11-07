@@ -1,0 +1,970 @@
+{
+  "originals": {
+    "meow-niaou": {
+      "file": "commons/2015-11-24.νιαούρισμα.Νιάου.noise_reduced.flac",
+      "url": "https://commons.wikimedia.org/wiki/File:2015-11-24.%CE%BD%CE%B9%CE%B1%CE%BF%CF%8D%CF%81%CE%B9%CF%83%CE%BC%CE%B1.%CE%9D%CE%B9%CE%AC%CE%BF%CF%85.noise_reduced.flac",
+      "title": "2015-11-24.νιαούρισμα.Νιάου.noise reduced",
+      "author": "Tsester",
+      "license": "CC0-1.0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sha256": "5672d956e6eee58e4d5c54f645ed38df480e77693a95cd537b5464145c68fae0"
+    },
+    "meow-young": {
+      "file": "commons/Maullido_de_gata_hembra_joven.ogg",
+      "url": "https://commons.wikimedia.org/wiki/File:Maullido_de_gata_hembra_joven.ogg",
+      "title": "Maullido de gata hembra joven",
+      "author": "George Miquilena",
+      "license": "CC0-1.0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sha256": "dfe040906e879e92ea0521717a304786e0694a47b436c8faf7e773aa46b5bbf2"
+    },
+    "meow-siamese": {
+      "file": "commons/Meow_of_a_Siamese_cat_-_freemaster2.wav",
+      "url": "https://commons.wikimedia.org/wiki/File:Meow_of_a_Siamese_cat_-_freemaster2.wav",
+      "title": "Meow of a Siamese cat - freemaster2",
+      "author": "freemaster2",
+      "license": "CC0-1.0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sha256": "c5ae80383913b599b697bdb03481807dce908b44497f68583183530c6490f9d4"
+    },
+    "meow-food": {
+      "file": "commons/Weibliche_Britisch_Kurzhaar_will_Futter_C1277_MIAUEN.wav",
+      "url": "https://commons.wikimedia.org/wiki/File:Weibliche_Britisch_Kurzhaar_will_Futter_C1277_MIAUEN.wav",
+      "title": "Weibliche Britisch Kurzhaar will Futter C1277 MIAUEN",
+      "author": "PantheraLeo1359531",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sha256": "368f2554a82ec58e03284387f378cfcb7b3cef7975bca4b22fec921d49e750cb"
+    },
+    "hiss-zabuhailo": {
+      "file": "commons/Cat_hissing_-_Zabuhailo.wav",
+      "url": "https://commons.wikimedia.org/wiki/File:Cat_hissing_-_Zabuhailo.wav",
+      "title": "Cat hissing - Zabuhailo",
+      "author": "Zabuhailo",
+      "license": "CC0-1.0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sha256": "ffbc639ecce3731c33f89da5b5fb6a829b7f8df916ce6ac7d628e79dd062d304"
+    },
+    "purr-kitty": {
+      "file": "archive/aporee_16612_19301/WeisigerFile06.ogg",
+      "url": "https://archive.org/details/aporee_16612_19301",
+      "title": "22nd & Canyon Blvd, Boulder, CO, USA - Kitty Purring — WeisigerFile06.ogg",
+      "author": "Emily Weisiger",
+      "license": "PD",
+      "licenseUrl": "http://creativecommons.org/publicdomain/mark/1.0/",
+      "sha256": "a9c31484c9a6610b217099a5e490cc3eca575d660ab5827c0dc44ae6037a3d8a"
+    },
+    "dc-hiss": {
+      "file": "archive/Designers-Choice-Collection-Animals/ANMLCat-Blue_Snowball_Microphone_CU_Hiss_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Animals",
+      "title": "The Designer's Choice UCS Collection - ANIMALS — ANIMALS/CAT DOMESTIC/ANMLCat-Blue Snowball Microphone, CU_Hiss_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "5695f3c3a569463362c81bbab70dc27908241c4773ba28b1ac7f2c97d80a922c"
+    },
+    "dc-meow3": {
+      "file": "archive/Designers-Choice-Collection-Animals/ANMLCat-Samsung_Galaxy_Smartphone_MCU_Meowing_X3_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Animals",
+      "title": "The Designer's Choice UCS Collection - ANIMALS — ANIMALS/CAT DOMESTIC/ANMLCat-Samsung Galaxy Smartphone, MCU_Meowing, X3_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "973f35fcdba11c06bab120c8300e27fa1c24d9a474de47b053f80888afe977d1"
+    },
+    "dc-yawn": {
+      "file": "archive/Designers-Choice-Collection-Animals/ANMLCat-Samsung_Galaxy_Smartphone_CU_Yawn_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Animals",
+      "title": "The Designer's Choice UCS Collection - ANIMALS — ANIMALS/CAT DOMESTIC/ANMLCat-Samsung Galaxy Smartphone, CU_Yawn_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "f5242b66d59a53fa703a10fc87800ea41c19e96ab62117715d6aeef3f01ab13e"
+    },
+    "dc-tail": {
+      "file": "archive/Designers-Choice-Collection-Animals/ANMLCat_Cat_Tail_Hits_on_Furniture_Light_Pat_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Animals",
+      "title": "The Designer's Choice UCS Collection - ANIMALS — ANIMALS/CAT DOMESTIC/ANMLCat_Cat Tail Hits on Furniture, Light Pat_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "db574ae13b1f34e36ebfe86c4bdce0500b6303d04fb2903eef5759261d5a8a2c"
+    },
+    "dc-kitten": {
+      "file": "archive/Designers-Choice-Collection-Animals/ANMLCat-Blue_Snowball_Microphone_CU_Kitten_Meow_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Animals",
+      "title": "The Designer's Choice UCS Collection - ANIMALS — ANIMALS/CAT DOMESTIC/ANMLCat-Blue Snowball Microphone, CU_Kitten, Meow_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "3fa6f8bff86c71789e3217705695f1e84e243bf3795ccd58e6643e2baf5914d1"
+    },
+    "dc-fight": {
+      "file": "archive/Designers-Choice-Collection-Animals/ANMLCat_Cats_Fighting_Loud_Screeching_Growling_Hissing_Old_Recording_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Animals",
+      "title": "The Designer's Choice UCS Collection - ANIMALS — ANIMALS/CAT DOMESTIC/ANMLCat_Cats Fighting, Loud Screeching, Growling, Hissing, Old Recording_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "8d935385c0c5537a19134fc2286f6c976c9c170a346ac06872abcd9ac88ef086"
+    },
+    "dc-purr": {
+      "file": "archive/Designers-Choice-Collection-Animals/ANMLCat_Cat_Purring_Looped_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Animals",
+      "title": "The Designer's Choice UCS Collection - ANIMALS — ANIMALS/CAT DOMESTIC/ANMLCat_Cat Purring, Looped_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "97cd62258ae84e51d14c06853bb7001eea1d3cdab8e255d38406d28d0e6439ae"
+    },
+    "drinking": {
+      "file": "archive/aporee_48494_55194/mix1m09saudiojoinercom.mp3",
+      "url": "https://archive.org/details/aporee_48494_55194",
+      "title": "Purkyňova 2728/1, 695 01 Hodonín, Česko - Cat drinks watter — mix1m09saudiojoinercom.mp3",
+      "author": "bauerovanatalie",
+      "license": "PD",
+      "licenseUrl": "http://creativecommons.org/publicdomain/mark/1.0/",
+      "sha256": "dda76a405a375e49153b45f9710a0444d67a2aac7ef640409617305dadc2a873"
+    },
+    "eating": {
+      "file": "archive/aporee_47968_54535/CatEating20200328131507.mp3",
+      "url": "https://archive.org/details/aporee_47968_54535",
+      "title": "1625 Marble Rock Way, Monroe, GA 30656, USA - Cat Eating Breakfast — CatEating20200328131507.mp3",
+      "author": "hannahc_3",
+      "license": "PD",
+      "licenseUrl": "http://creativecommons.org/publicdomain/mark/1.0/",
+      "sha256": "8de5bf9e98303d2fda6bc95a2d721655b81417de753927c4165c033e8de008b0"
+    },
+    "dc-mug-break": {
+      "file": "archive/Designers-Choice-Collection-Ceramics/CERMBrk-Samsung_Galaxy_Smartphone_CU_Mug_Ceramic_Small_Break_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Ceramics",
+      "title": "The Designer's Choice UCS Collection - CERAMICS — CERAMICS/BREAK/CERMBrk-Samsung Galaxy Smartphone, CU_Mug, Ceramic, Small, Break_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "b3be754cdc182dc4bd68d80105eeb4d986392bbc6ea1feb0b2f1f8aa42c86286"
+    },
+    "dc-bottle-smash": {
+      "file": "archive/Designers-Choice-Collection-Glass/GLASBrk_Coca_Cola_Bottle_Smash_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Glass",
+      "title": "The Designer's Choice UCS Collection - GLASS — GLASS/BREAK/GLASBrk_Coca Cola Bottle Smash_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "5527f928332b634c339c03f8c077c4e8b33d7a00de6f325c8af5794bad7f6feb"
+    },
+    "dc-shotglass": {
+      "file": "archive/Designers-Choice-Collection-Glass/GLASBrk-CU_Shotglass_Break_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Glass",
+      "title": "The Designer's Choice UCS Collection - GLASS — GLASS/BREAK/GLASBrk-CU_Shotglass Break_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "1d5cff19cfb1add7906d862032f02b8b0838898f5253f3ecff5f8bc70a425b12"
+    },
+    "dc-ink-cap": {
+      "file": "archive/Designers-Choice-Collection-Plastic/PLASImpt-Blue_Snowball_Microphone_MCU_Ink_Cap_Small_Drop_Spin_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Plastic",
+      "title": "The Designer's Choice UCS Collection - PLASTIC — PLASTIC/IMPACT/PLASImpt-Blue Snowball Microphone, MCU_Ink Cap, Small, Drop, Spin_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "4223ea85d33658bfd6c27389098d9eab5c68317251a4950f9c2fb06a365ae352"
+    },
+    "dc-brick": {
+      "file": "archive/Designers-Choice-Collection-Ceramics/CERMImpt-Samsung_Galaxy_Smartphone_CU_Brick_Drop_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Ceramics",
+      "title": "The Designer's Choice UCS Collection - CERAMICS — CERAMICS/IMPACT/CERMImpt-Samsung Galaxy Smartphone, CU_Brick, Drop_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "1aeaf9b81edd6c92e32be9329d7b1ab7c9b387a449781abc796b380898f97360"
+    },
+    "dc-plastic-drop": {
+      "file": "archive/Designers-Choice-Collection-Plastic/PLASImpt-Blue_Snowball_Microphone_CU_Item_Plastic_Drop_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Plastic",
+      "title": "The Designer's Choice UCS Collection - PLASTIC — PLASTIC/IMPACT/PLASImpt-Blue Snowball Microphone, CU_Item, Plastic, Drop_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "2ef34a94cb8f22b1b8a9d8ec0adecdee36ff5ab623e395da7b89362141f26402"
+    },
+    "dc-keys": {
+      "file": "archive/Designers-Choice-Collection-Computers/CMPTKey-Blue_Snowball_Microphone_CU_Buttons_Being_Pressed_Nicholas_Judy_DC01.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Computers",
+      "title": "The Designer's Choice UCS Collection - COMPUTERS — COMPUTERS/KEYBOARD & MOUSE/CMPTKey-Blue Snowball Microphone, CU_Buttons Being Pressed_Nicholas Judy_DC01.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "46561f5f6b09a869911e3f581b1e32ab5d7cb6490120bcb116aba3db4a102b99"
+    },
+    "dc-latch": {
+      "file": "archive/Designers-Choice-Collection-Objects/OBJCont-Samsung_Galaxy_Smartphone_CU_Bin_Plastic_Unlatch_Open_Close_Latch_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Objects",
+      "title": "The Designer's Choice UCS Collection - OBJECTS — OBJECTS/CONTAINER/OBJCont-Samsung Galaxy Smartphone, CU_Bin, Plastic, Unlatch, Open, Close, Latch_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "2068e9db7ac36b4b34a400706846beac0f9e9a3d86cb1743ce05f0090013fb64"
+    },
+    "dc-sink": {
+      "file": "archive/Designers-Choice-Collection-Water/WATRPlmb-Samsung_Galaxy_Smartphone_CU_Automatic_Sink_Running_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Water",
+      "title": "The Designer's Choice UCS Collection - WATER — WATER/PLUMBING/WATRPlmb-Samsung Galaxy Smartphone, CU_Automatic Sink, Running_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "b9aae427833eaebc2a27b5508a685cf9f30a17c9dd8bdc51333be510bdc82149"
+    },
+    "dc-stick": {
+      "file": "archive/Designers-Choice-Collection-Wood/WOODBrk-Blue_Snowball_Microphone_CU_Stick_Small_Breaks_X3_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Wood",
+      "title": "The Designer's Choice UCS Collection - WOOD — WOOD/BREAK/WOODBrk-Blue Snowball Microphone, CU_Stick, Small, Breaks, X3_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "c557f7a3a9b2b2cff7103d4dd5a5a955344b71a2e92a3ec7a0cc3010dfe0fb7c"
+    },
+    "dc-crunch": {
+      "file": "archive/Designers-Choice-Collection-Cartoon/TOONMisc-Blue_Snowball_Microphone_CU_Bite_Bone_Crunch_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Cartoon",
+      "title": "The Designer's Choice UCS Collection - CARTOON — CARTOON/MISC/TOONMisc-Blue Snowball Microphone, CU_Bite, Bone, Crunch_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "3847f5c05d829c8be77920bb5ec596af50ca43ddb7efd86e515bbbcf3da22111"
+    },
+    "dc-stones": {
+      "file": "archive/Designers-Choice-Collection-Rocks/ROCKCrsh-Samsung_Galaxy_Smartphone_CU_Small_Stones_Kicked_X4_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Rocks",
+      "title": "The Designer's Choice UCS Collection - ROCKS — ROCKS/CRASH & DEBRIS/ROCKCrsh-Samsung Galaxy Smartphone, CU_Small Stones, Kicked, X4_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "6c047600dfe57303d32fdc079c1cf374c6829a6c1e199a7685769daf505be92d"
+    },
+    "dc-chomp": {
+      "file": "archive/Designers-Choice-Collection-Cartoon/TOONVox-Blue_Snowball_Microphone_CU_Chomp_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Cartoon",
+      "title": "The Designer's Choice UCS Collection - CARTOON — CARTOON/VOCAL/TOONVox-Blue Snowball Microphone, CU_Chomp_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "ed756dc5d47ffc6f11588257d0e9d90c0b54dcc9b57e77f3702a777be0aba611"
+    },
+    "dc-sneeze": {
+      "file": "archive/Designers-Choice-Collection-Human/HMNSneez-Samsung_Galaxy_Smartphone_CU_Sneeze_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Human",
+      "title": "The Designer's Choice UCS Collection - HUMAN — HUMAN/SNEEZE/HMNSneez-Samsung Galaxy Smartphone, CU_Sneeze_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "ec19dca5ed843e34106f90c39899943474c5762793434ff77d16cd40dd94197f"
+    },
+    "dc-spit": {
+      "file": "archive/Designers-Choice-Collection-Human/HMNSpit_Hollow_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Human",
+      "title": "The Designer's Choice UCS Collection - HUMAN — HUMAN/SPIT/HMNSpit_Hollow_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "f470cf9de57b155a19e68e4d1fc4170d8e01db445266309656cdade05d4df896"
+    },
+    "dc-hawk": {
+      "file": "archive/Designers-Choice-Collection-Human/HMNSpit-Samsung_Galaxy_Smartphone_CU_Hawk_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Human",
+      "title": "The Designer's Choice UCS Collection - HUMAN — HUMAN/SPIT/HMNSpit-Samsung Galaxy Smartphone, CU_Hawk_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "aedbb49a66533ce6dc21139c2731f6457db5fb27f4daeecb53a8d66e4f4c5b9a"
+    },
+    "dc-velcro": {
+      "file": "archive/Designers-Choice-Collection-Cloth/CLOTHRip-Blue_Snowball_Microphone_CU_Baseball_Mitt_Velcro_Fast_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Cloth",
+      "title": "The Designer's Choice UCS Collection - CLOTH — CLOTH/RIP/CLOTHRip-Blue Snowball Microphone, CU_Baseball Mitt, Velcro, Fast_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "35b4db803d47688cc2570ca7885db961b6c2a9b341d2f8050274603d25cb1266"
+    },
+    "dc-bodyfall": {
+      "file": "archive/Designers-Choice-Collection-Fight/FGHTBf-Samsung_Galaxy_Smartphone_CU_Bodyfall_On_Grass_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Fight",
+      "title": "The Designer's Choice UCS Collection - FIGHT — FIGHT/BODYFALL/FGHTBf-Samsung Galaxy Smartphone, CU_Bodyfall, On Grass_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "2841db834a01cf3e3d01fac2710ae4c4cbf5f1a0c4e6a5de190ef9496a15f88a"
+    },
+    "dc-crumple": {
+      "file": "archive/Designers-Choice-Collection-Paper/PAPRHndl-Blue_Snowball_Microphone_CU_Paper_Crumple_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Paper",
+      "title": "The Designer's Choice UCS Collection - PAPER — PAPER/HANDLE/PAPRHndl-Blue Snowball Microphone, CU_Paper, Crumple_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "1681710c6f2d2a2b49cbbc6f2860273abc083d084d2c03a9db4962d11aee4926"
+    },
+    "dc-cardboard": {
+      "file": "archive/Designers-Choice-Collection-Paper/PAPRRip-Blue_Snowball_Microphone_CU_Cardboard_Assorted_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Paper",
+      "title": "The Designer's Choice UCS Collection - PAPER — PAPER/RIP/PAPRRip-Blue Snowball Microphone, CU_Cardboard, Assorted_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "701016952a4a12c3877a0b4bfd25f0442b076c1ed60c0df4f7780fbd285d9f6d"
+    },
+    "dc-tissue": {
+      "file": "archive/Designers-Choice-Collection-Paper/PAPRHndl-Blue_Snowball_Microphone_CU_Tissue_Pull_Out_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Paper",
+      "title": "The Designer's Choice UCS Collection - PAPER — PAPER/HANDLE/PAPRHndl-Blue Snowball Microphone, CU_Tissue Pull Out_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "b1fa50e1ec51397c98868593c7446e488adc0c2050d83a34665f3e626332f192"
+    },
+    "dc-styrofoam": {
+      "file": "archive/Designers-Choice-Collection-Plastic/PLASFric-Blue_Snowball_Microphone_CU_Styrofoam_Being_Sawed_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Plastic",
+      "title": "The Designer's Choice UCS Collection - PLASTIC — PLASTIC/FRICTION/PLASFric-Blue Snowball Microphone, CU_Styrofoam Being Sawed_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "4a8f2e9909d2d8e771900b8d7894906fb3f339eacfad7117c76dca81a95c58d4"
+    },
+    "dc-scurry": {
+      "file": "archive/Designers-Choice-Collection-Movement/MOVEInsc-Blue_Snowball_Microphone_MCU_Cricket_Scurrying_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Movement",
+      "title": "The Designer's Choice UCS Collection - MOVEMENT — MOVEMENT/INSECT/MOVEInsc-Blue Snowball Microphone, MCU_Cricket, Scurrying_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "e9315e951ae62dc549139dcb75dd7ac044abb3c49917ebcf03aae4f36e511e0a"
+    },
+    "dc-sparks": {
+      "file": "archive/Designers-Choice-Collection-Electricity/ELECMisc-MCU_Electrical_Arcs_Sparks_Zaps_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Electricity",
+      "title": "The Designer's Choice UCS Collection - ELECTRICITY — ELECTRICITY/MISC/ELECMisc-MCU_Electrical Arcs, Sparks, Zaps_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "5a64fef0ac166b58f79642c9e83049d911632c5da9194d949acaabdb6dec4d9b"
+    }
+  },
+  "files": {
+    "meow-1": {
+      "from": "meow-food",
+      "start": 4.83,
+      "end": 6.55,
+      "filter": "highpass=f=150",
+      "fadeOut": 0.08,
+      "note": "британка просить, третє нявкання"
+    },
+    "meow-2": {
+      "from": "meow-young",
+      "start": 0,
+      "end": 1.17,
+      "filter": "highpass=f=350",
+      "fadeIn": 0.02,
+      "fadeOut": 0.1,
+      "note": "молода кішка; гул нижче 350 Гц зрізано"
+    },
+    "meow-3": {
+      "from": "dc-meow3",
+      "start": 0.15,
+      "end": 0.98,
+      "filter": "highpass=f=250,lowpass=f=7000",
+      "fadeOut": 0.06,
+      "note": "перше нявкання з трьох; гул зрізано"
+    },
+    "meow-4": {
+      "from": "meow-food",
+      "start": 0.189,
+      "end": 1.132,
+      "filter": "highpass=f=150,asetrate=50880,aresample=48000",
+      "fadeOut": 0.12,
+      "note": "перше нявкання британки, трохи вище й коротше"
+    },
+    "meow-ask-1": {
+      "from": "meow-food",
+      "start": 0.2,
+      "end": 1.6,
+      "filter": "highpass=f=150",
+      "fadeOut": 0.08
+    },
+    "meow-ask-2": {
+      "from": "meow-food",
+      "start": 2.25,
+      "end": 3.95,
+      "filter": "highpass=f=150",
+      "fadeOut": 0.1
+    },
+    "meow-ask-3": {
+      "from": "meow-food",
+      "start": 7.43,
+      "end": 9.2,
+      "filter": "highpass=f=150",
+      "fadeOut": 0.1
+    },
+    "meow-ask-4": {
+      "from": "meow-food",
+      "start": 10.98,
+      "end": 12.6,
+      "filter": "highpass=f=150",
+      "fadeOut": 0.1
+    },
+    "meow-ask-5": {
+      "from": "meow-siamese",
+      "start": 0,
+      "end": 1.12,
+      "filter": "highpass=f=150",
+      "fadeOut": 0.06,
+      "note": "сіамська, вимогливо"
+    },
+    "meow-happy-1": {
+      "from": "meow-food",
+      "start": 0.2,
+      "end": 0.709,
+      "filter": "highpass=f=150,asetrate=52800,aresample=48000",
+      "fadeOut": 0.12
+    },
+    "meow-happy-2": {
+      "from": "meow-young",
+      "start": 0,
+      "end": 0.509,
+      "filter": "highpass=f=350,asetrate=47628,aresample=48000",
+      "fadeIn": 0.02,
+      "fadeOut": 0.12
+    },
+    "meow-happy-3": {
+      "from": "dc-meow3",
+      "start": 0.136,
+      "end": 0.564,
+      "filter": "highpass=f=250,asetrate=52800,aresample=48000",
+      "fadeOut": 0.1
+    },
+    "meow-sad-1": {
+      "from": "meow-siamese",
+      "start": 0,
+      "end": 1.273,
+      "filter": "highpass=f=150,asetrate=38808,aresample=48000",
+      "fadeOut": 0.12
+    },
+    "meow-sad-2": {
+      "from": "meow-food",
+      "start": 2.5,
+      "end": 4.389,
+      "filter": "highpass=f=150,asetrate=43200,aresample=48000",
+      "fadeOut": 0.15
+    },
+    "meow-old-1": {
+      "from": "meow-niaou",
+      "start": 0.12,
+      "end": 0.98,
+      "fadeOut": 0.08,
+      "note": "кішці 6–7 років"
+    },
+    "meow-old-2": {
+      "from": "meow-food",
+      "start": 8.443,
+      "end": 10.455,
+      "filter": "highpass=f=150,asetrate=42240,aresample=48000",
+      "fadeOut": 0.12
+    },
+    "meow-kitten-1": {
+      "from": "dc-kitten",
+      "start": 3.53,
+      "end": 4.1,
+      "fadeOut": 0.04
+    },
+    "meow-kitten-2": {
+      "from": "dc-kitten",
+      "start": 5.1,
+      "end": 5.8,
+      "fadeOut": 0.05
+    },
+    "meow-kitten-3": {
+      "from": "dc-kitten",
+      "start": 6.7,
+      "end": 7.2,
+      "fadeOut": 0.04
+    },
+    "meow-kitten-4": {
+      "from": "dc-kitten",
+      "start": 9.58,
+      "end": 10.2,
+      "fadeOut": 0.05
+    },
+    "meow-kitten-5": {
+      "from": "dc-kitten",
+      "start": 14.82,
+      "end": 15.52,
+      "fadeOut": 0.05
+    },
+    "meow-kitten-6": {
+      "from": "dc-kitten",
+      "start": 29.02,
+      "end": 29.7,
+      "fadeOut": 0.05
+    },
+    "meow-angry-1": {
+      "from": "dc-fight",
+      "start": 0.08,
+      "end": 0.92,
+      "filter": "highpass=f=250",
+      "fadeIn": 0.02,
+      "fadeOut": 0.1
+    },
+    "meow-angry-2": {
+      "from": "dc-fight",
+      "start": 15,
+      "end": 15.95,
+      "filter": "highpass=f=250",
+      "fadeIn": 0.03,
+      "fadeOut": 0.12
+    },
+    "meow-door-1": {
+      "from": "meow-food",
+      "start": 0.2,
+      "end": 1.6,
+      "filter": "highpass=f=150,lowpass=f=700",
+      "level": -6,
+      "fadeOut": 0.08,
+      "note": "кіт на сходах, за дверима"
+    },
+    "meow-door-2": {
+      "from": "meow-food",
+      "start": 10.98,
+      "end": 12.6,
+      "filter": "highpass=f=150,lowpass=f=700",
+      "level": -6,
+      "fadeOut": 0.1
+    },
+    "meow-door-3": {
+      "from": "meow-siamese",
+      "start": 0,
+      "end": 1.12,
+      "filter": "highpass=f=150,lowpass=f=700",
+      "level": -6,
+      "fadeOut": 0.06
+    },
+    "cry-1": {
+      "from": "meow-siamese",
+      "start": 0,
+      "end": 1.12,
+      "filter": "highpass=f=150",
+      "fadeOut": 0.06
+    },
+    "cry-2": {
+      "from": "meow-food",
+      "start": 2.143,
+      "end": 3.762,
+      "filter": "highpass=f=150,asetrate=50400,aresample=48000",
+      "fadeOut": 0.1
+    },
+    "squeak-1": {
+      "from": "dc-kitten",
+      "start": 15.862,
+      "end": 16.154,
+      "filter": "asetrate=57330,aresample=48000",
+      "fadeOut": 0.04
+    },
+    "squeak-2": {
+      "from": "dc-kitten",
+      "start": 15.926,
+      "end": 16.207,
+      "filter": "asetrate=59535,aresample=48000",
+      "fadeOut": 0.04
+    },
+    "chatter-1": {
+      "from": "dc-kitten",
+      "start": 18.344,
+      "end": 18.456,
+      "filter": "asetrate=55125,aresample=48000",
+      "fadeOut": 0.03
+    },
+    "chatter-2": {
+      "from": "dc-kitten",
+      "start": 19.4,
+      "end": 19.512,
+      "filter": "asetrate=55125,aresample=48000",
+      "fadeOut": 0.03
+    },
+    "hiss-1": {
+      "from": "hiss-zabuhailo",
+      "start": 1.28,
+      "end": 2.12,
+      "filter": "highpass=f=300",
+      "fadeIn": 0.01,
+      "fadeOut": 0.08
+    },
+    "hiss-2": {
+      "from": "dc-hiss",
+      "start": 0,
+      "end": 0.9,
+      "filter": "highpass=f=300",
+      "fadeOut": 0.08
+    },
+    "hiss-3": {
+      "from": "dc-hiss",
+      "start": 0,
+      "end": 0.833,
+      "filter": "highpass=f=300,asetrate=39690,aresample=48000",
+      "fadeOut": 0.08
+    },
+    "growl-1": {
+      "from": "dc-fight",
+      "start": 8.5,
+      "end": 9.95,
+      "filter": "highpass=f=250",
+      "fadeIn": 0.03,
+      "fadeOut": 0.12
+    },
+    "growl-2": {
+      "from": "dc-fight",
+      "start": 12.2,
+      "end": 13.75,
+      "filter": "highpass=f=250",
+      "fadeIn": 0.03,
+      "fadeOut": 0.15
+    },
+    "fight-1": {
+      "from": "dc-fight",
+      "start": 4.36,
+      "end": 5.45,
+      "filter": "highpass=f=250",
+      "fadeOut": 0.12
+    },
+    "fight-2": {
+      "from": "dc-fight",
+      "start": 13.97,
+      "end": 15,
+      "filter": "highpass=f=250",
+      "fadeOut": 0.12
+    },
+    "fight-loop": {
+      "from": "dc-fight",
+      "start": 22.25,
+      "end": 28.3,
+      "filter": "highpass=f=250",
+      "loop": true
+    },
+    "bite-1": {
+      "from": "dc-fight",
+      "start": 4.38,
+      "end": 4.9,
+      "filter": "highpass=f=250",
+      "fadeOut": 0.08,
+      "note": "різкий вереск-гарчання на укус"
+    },
+    "purr-loop": {
+      "from": "dc-purr",
+      "start": 1,
+      "end": 5.3,
+      "loop": true,
+      "filter": "highpass=f=20",
+      "note": "запис уже петлею з періодом 4 с; взято один період і запас на перехід"
+    },
+    "purr-1": {
+      "from": "purr-kitty",
+      "start": 40,
+      "end": 41.4,
+      "filter": "highpass=f=20",
+      "fadeIn": 0.15,
+      "fadeOut": 0.35
+    },
+    "purr-2": {
+      "from": "purr-kitty",
+      "start": 44,
+      "end": 45.4,
+      "filter": "highpass=f=20",
+      "fadeIn": 0.15,
+      "fadeOut": 0.35
+    },
+    "eat-loop": {
+      "from": "eating",
+      "start": 1.1,
+      "end": 5.7,
+      "filter": "highpass=f=250",
+      "loop": true
+    },
+    "lap-loop": {
+      "from": "drinking",
+      "start": 9,
+      "end": 14.3,
+      "filter": "highpass=f=1000",
+      "loop": true,
+      "note": "тихий запис: лишено лише хлюпання вище 1 кГц"
+    },
+    "lick-1": {
+      "from": "drinking",
+      "start": 10.55,
+      "end": 11.4,
+      "filter": "highpass=f=1000",
+      "fadeOut": 0.06
+    },
+    "yawn-1": {
+      "from": "dc-yawn",
+      "start": 0,
+      "end": 1.5,
+      "fadeOut": 0.1
+    },
+    "tail-1": {
+      "from": "dc-tail",
+      "start": 0,
+      "end": 0.4,
+      "fadeOut": 0.05
+    },
+    "scamper-1": {
+      "from": "dc-scurry",
+      "start": 1.3333333333333335,
+      "end": 2.8333333333333335,
+      "filter": "asetrate=26460,aresample=48000,lowpass=f=5000",
+      "fadeIn": 0.02,
+      "fadeOut": 0.1,
+      "note": "біг цвіркуна, сповільнений — дрібний тупіт лап"
+    },
+    "scamper-2": {
+      "from": "dc-scurry",
+      "start": 5.833333333333334,
+      "end": 7.333333333333334,
+      "filter": "asetrate=26460,aresample=48000,lowpass=f=5000",
+      "fadeIn": 0.02,
+      "fadeOut": 0.1
+    },
+    "zoom-loop": {
+      "from": "dc-scurry",
+      "start": 0,
+      "end": 8.333333333333334,
+      "filter": "asetrate=26460,aresample=48000,lowpass=f=5000",
+      "loop": true,
+      "note": "зумі: тупіт і шкряб лап"
+    },
+    "land-1": {
+      "from": "dc-bodyfall",
+      "start": 0.062,
+      "end": 0.323,
+      "filter": "asetrate=57330,aresample=48000",
+      "fadeOut": 0.08,
+      "note": "кота поставили на підлогу"
+    },
+    "land-2": {
+      "from": "dc-tail",
+      "start": 0,
+      "end": 0.5,
+      "filter": "asetrate=35280,aresample=48000",
+      "fadeOut": 0.05
+    },
+    "claw-1": {
+      "from": "dc-velcro",
+      "start": 0.03,
+      "end": 0.62,
+      "filter": "highpass=f=400",
+      "fadeOut": 0.06,
+      "note": "кігті — різкий шкряб"
+    },
+    "sneeze-1": {
+      "from": "dc-sneeze",
+      "start": 0.48,
+      "end": 0.667,
+      "filter": "asetrate=66150,aresample=48000",
+      "fadeOut": 0.04,
+      "note": "чхання вище й коротше — котяче «пчх»"
+    },
+    "sneeze-2": {
+      "from": "dc-sneeze",
+      "start": 0.625,
+      "end": 0.862,
+      "filter": "asetrate=70560,aresample=48000",
+      "fadeOut": 0.06
+    },
+    "hack-1": {
+      "from": "dc-hawk",
+      "start": 0.025,
+      "end": 0.288,
+      "filter": "asetrate=70560,aresample=48000",
+      "fadeOut": 0.04,
+      "note": "кахикання перед грудкою: звучить трійкою"
+    },
+    "retch-1": {
+      "from": "dc-hawk",
+      "start": 0,
+      "end": 0.48,
+      "filter": "asetrate=55125,aresample=48000",
+      "fadeOut": 0.08
+    },
+    "spit-1": {
+      "from": "dc-spit",
+      "start": 0,
+      "end": 0.292,
+      "filter": "asetrate=52920,aresample=48000",
+      "fadeOut": 0.06
+    },
+    "crunch-1": {
+      "from": "dc-crunch",
+      "start": 0,
+      "end": 0.42,
+      "level": -11,
+      "fadeOut": 0.05,
+      "note": "тихіше, як хрумкіт із запису їжі"
+    },
+    "crunch-2": {
+      "from": "eating",
+      "start": 15.42,
+      "end": 15.85,
+      "filter": "highpass=f=250",
+      "fadeOut": 0.05
+    },
+    "chew-wire-1": {
+      "from": "dc-chomp",
+      "start": 0.365,
+      "end": 0.826,
+      "filter": "highpass=f=300,asetrate=55200,aresample=48000",
+      "fadeOut": 0.06
+    },
+    "chew-box-1": {
+      "from": "dc-crumple",
+      "start": 1,
+      "end": 1.9,
+      "filter": "highpass=f=300",
+      "fadeOut": 0.08
+    },
+    "chew-loop": {
+      "from": "eating",
+      "start": 47.6,
+      "end": 51.3,
+      "filter": "highpass=f=250",
+      "loop": true
+    },
+    "bag-rip-1": {
+      "from": "dc-cardboard",
+      "start": 9.75,
+      "end": 10.92,
+      "fadeOut": 0.08
+    },
+    "paper-1": {
+      "from": "dc-tissue",
+      "start": 0,
+      "end": 0.52,
+      "fadeOut": 0.06
+    },
+    "dig-1": {
+      "from": "dc-stones",
+      "start": 2.69,
+      "end": 3.46,
+      "filter": "highpass=f=300",
+      "fadeOut": 0.08,
+      "note": "камінці — наповнювач лотка"
+    },
+    "dig-loop": {
+      "from": "dc-stones",
+      "start": 2.69,
+      "end": 6,
+      "filter": "highpass=f=300",
+      "loop": true
+    },
+    "scratch-loop": {
+      "from": "dc-styrofoam",
+      "start": 0,
+      "end": 4.3,
+      "filter": "highpass=f=300,lowpass=f=4000",
+      "loop": true,
+      "note": "пиляння пінопласту — шкряб кігтів, приглушено вгорі"
+    },
+    "smash-1": {
+      "from": "dc-bottle-smash",
+      "start": 0.05,
+      "end": 0.96,
+      "fadeOut": 0.08
+    },
+    "smash-2": {
+      "from": "dc-shotglass",
+      "start": 0,
+      "end": 0.95,
+      "fadeOut": 0.1
+    },
+    "mug-break-1": {
+      "from": "dc-mug-break",
+      "start": 0,
+      "end": 0.92,
+      "fadeOut": 0.08
+    },
+    "mug-drop-1": {
+      "from": "dc-brick",
+      "start": 0.024,
+      "end": 0.4,
+      "filter": "highpass=f=150,asetrate=60000,aresample=48000",
+      "fadeOut": 0.08,
+      "note": "цеглина, вище — глухий стук кухля, що вцілів"
+    },
+    "phone-drop-1": {
+      "from": "dc-plastic-drop",
+      "start": 4.72,
+      "end": 5.5,
+      "fadeOut": 0.08
+    },
+    "pen-drop-1": {
+      "from": "dc-ink-cap",
+      "start": 0,
+      "end": 0.95,
+      "fadeOut": 0.08
+    },
+    "toy-break-1": {
+      "from": "dc-stick",
+      "start": 0.08,
+      "end": 0.32,
+      "fadeOut": 0.04
+    },
+    "bin-1": {
+      "from": "dc-plastic-drop",
+      "start": 0.08,
+      "end": 1.42,
+      "fadeOut": 0.12,
+      "note": "пластиковий смітник падає й торохтить"
+    },
+    "keys-1": {
+      "from": "dc-keys",
+      "start": 6.407142857142858,
+      "end": 7.42857142857143,
+      "filter": "asetrate=61740,aresample=48000",
+      "fadeOut": 0.05,
+      "note": "клавіші частіше й вище — лапи на клавіатурі"
+    },
+    "keys-2": {
+      "from": "dc-keys",
+      "start": 7.800000000000001,
+      "end": 8.5,
+      "filter": "asetrate=61740,aresample=48000",
+      "fadeOut": 0.05
+    },
+    "spark-1": {
+      "from": "dc-sparks",
+      "start": 24.72,
+      "end": 25.7,
+      "filter": "highpass=f=200",
+      "fadeOut": 0.1
+    },
+    "cabinet-open-1": {
+      "from": "dc-latch",
+      "start": 0.03,
+      "end": 0.62,
+      "fadeOut": 0.06,
+      "note": "клямка й дверцята"
+    },
+    "cabinet-lock-1": {
+      "from": "dc-latch",
+      "start": 0.88,
+      "end": 1.4,
+      "fadeOut": 0.06
+    },
+    "tap-1": {
+      "from": "dc-sink",
+      "start": 0,
+      "end": 1.4,
+      "fadeIn": 0.05,
+      "fadeOut": 0.4,
+      "note": "кран відкрили — тече вода"
+    }
+  }
+}
