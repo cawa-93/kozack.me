@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { Bot } from "../balance/bot";
 import { EAT_MINUTES, MEAL_SATIETY, STORAGE_LIMITS } from "../src/sim/config";
-import { addSupply, canOrderProduct, order, stash, supplyCount, useSupply } from "../src/sim/economy";
+import { addSupply, canOrderProduct, landFlying, order, stash, supplyCount, useSupply } from "../src/sim/economy";
 import { advance, goToSleep, interact, newGame } from "../src/sim/game";
 import { tickModifiers } from "../src/sim/modifiers";
 import { GOODS } from "../src/sim/shop";
@@ -87,6 +87,7 @@ describe("мамині судочки в холодильнику (§6.4, ріш
     interact(save);
     stop();
     expect(events).toContainEqual({ type: "unpacked", moved: [{ product: "momMeal", amount: 2 }] });
+    landFlying(save.current);
     expect(meals(save)).toBe(2);
     expect(save.current.home.boxes?.momMeal).toBeUndefined();
     walkTo(save, "fridge");

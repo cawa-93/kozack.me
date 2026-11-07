@@ -203,6 +203,8 @@ export type GameEvent =
   | { type: "job-rejected"; vacancy: number }
   /** Ящики розпаковано (§6.4): що й скільки розлетілося по сховищах. */
   | { type: "unpacked"; moved: { product: Product; amount: number }[] }
+  /** Запас із ящиків долетів і ліг у сховище (§6.4). */
+  | { type: "supply-landed"; product: Product }
   /** Дзвонять у двері (§9.12 «Двері й гості»): кур'єр із пакунком (`delivery`), гості, ОСББ чи мама. */
   | { type: "doorbell"; delivery?: Delivery }
   | { type: "received"; deliveries: Delivery[] }

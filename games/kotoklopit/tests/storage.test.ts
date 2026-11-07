@@ -4,22 +4,22 @@
 import { describe, expect, it } from "vitest";
 
 import { onEvent, type GameEvent } from "../src/sim/events";
-import { interact, newGame } from "../src/sim/game";
+import { goToSleep, interact, newGame } from "../src/sim/game";
 import { isPresent, isSolid, objectById } from "../src/sim/home";
 import { targetById } from "../src/sim/targets";
-import { addSupply, boxCount, order, receivePackages, unpack } from "../src/sim/economy";
+import { addSupply, boxCount, canUnpack, landFlying, order, receivePackages, supplyCount, unpack, useSupply } from "../src/sim/economy";
 import { advance } from "../src/sim/game";
 import { hasBoxes } from "../src/sim/home";
 import { boxesIndicator, boxesShown } from "../src/sim/storage";
 import { buyAtShop } from "../src/sim/destinations";
-import { PRODUCTS, STORAGE_LIMITS, UNSOLD } from "../src/sim/config";
+import { MINUTES_PER_HOUR, PRODUCTS, REAL_SECONDS_PER_GAME_HOUR, STORAGE_LIMITS, SUPPLY_FLIGHT, UNSOLD } from "../src/sim/config";
 import { createCat } from "../src/sim/cat";
 import { giveStarterPack } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { STORAGES, storageIndicator } from "../src/sim/storage";
 import { targetOf } from "../src/sim/targets";
 import type { Product, Save } from "../src/sim/types";
-import { walkTo } from "./helpers";
+import { hours, recordEvents, walkTo } from "./helpers";
 
 const ALL: Product[] = ["food", "hygiene", "catFood", "sterileFood", "litter", "pills", "drops", "humanMeds", "treats", "collar", "shampoo", "detergent", "catnip", "momMeal"];
 
@@ -126,6 +126,7 @@ describe("упаковки й ліміти сховищ (рішення авто
       expect(Number.isInteger(packs), product).toBe(true);
       state.home.boxes = { [product]: { cheap: packs * PRODUCTS[product].units.cheap, premium: 0 } };
       unpack(state);
+      landFlying(state);
       expect(state.home.supplies[product].cheap, product).toBe(STORAGE_LIMITS[product]);
       expect(boxCount(state, product), product).toBe(0);
       expect(hasBoxes(state), product).toBe(false);
@@ -165,6 +166,7 @@ describe("ящики біля входу (§6.4, правка 2026-10-23)", () =
       { product: "food", amount: 34 },
       { product: "hygiene", amount: 15 },
     ]);
+    landFlying(state);
     expect(state.home.supplies.food.cheap).toBe(40);
     expect(boxCount(state, "food")).toBe(6);
     expect(boxCount(state, "hygiene")).toBe(0);
@@ -175,6 +177,77 @@ describe("ящики біля входу (§6.4, правка 2026-10-23)", () =
     unpack(state);
     expect(hasBoxes(state)).toBe(false);
     expect(isPresent(state, objectById("boxes"))).toBe(false);
+  });
+
+  describe("запас у польоті", () => {
+    /** Ігрових хвилин летить запас, що вилітає `order`-м. */
+    const flight = (order: number): number => ((SUPPLY_FLIGHT.ms + order * SUPPLY_FLIGHT.staggerMs) / 1000 / REAL_SECONDS_PER_GAME_HOUR) * MINUTES_PER_HOUR;
+    /** Гра, де в ящиках чекає лише запас `amount` їжі в порожній холодильник. */
+    const packed = (amount: number): Save => {
+      const save = game();
+      save.current.home.supplies.food = { cheap: 0, premium: 0 };
+      save.current.home.boxes = { food: { cheap: amount, premium: 0 } };
+      return save;
+    };
+
+    it("лягає у сховище, лише коли долетів: до того вже не в ящиках і ще не в холодильнику", () => {
+      const save = packed(10);
+      const { events, stop } = recordEvents();
+      unpack(save.current);
+      expect(boxCount(save.current, "food")).toBe(0);
+      expect(supplyCount(save.current, "food")).toBe(0);
+      advance(save, flight(0) * 0.9);
+      expect(supplyCount(save.current, "food")).toBe(0);
+      expect(events.some((e) => e.type === "supply-landed")).toBe(false);
+      advance(save, flight(0) * 0.2);
+      stop();
+      expect(supplyCount(save.current, "food")).toBe(10);
+      expect(events.filter((e) => e.type === "supply-landed")).toEqual([{ type: "supply-landed", product: "food" }]);
+      expect(save.current.home.flying).toBeUndefined();
+    });
+
+    it("кожен наступний запас долітає пізніше на свою затримку", () => {
+      const state = delivered();
+      unpack(state);
+      expect(state.home.flying?.map((f) => f.minutes)).toEqual([flight(0), flight(1)]);
+    });
+
+    it("у польоті його не взяти", () => {
+      const save = packed(10);
+      unpack(save.current);
+      expect(useSupply(save.current, "food")).toBeNull();
+    });
+
+    it("місце у сховищі вже зайняв: понад ліміт не вилетить і не покладеться", () => {
+      const limit = STORAGE_LIMITS.food;
+      const save = packed(limit + 5);
+      unpack(save.current);
+      expect(boxCount(save.current, "food")).toBe(5);
+      expect(canUnpack(save.current)).toBe(false);
+      expect(unpack(save.current)).toEqual([]);
+      addSupply(save.current, "food", "cheap", 1);
+      expect(boxCount(save.current, "food")).toBe(6);
+      landFlying(save.current);
+      expect(supplyCount(save.current, "food")).toBe(limit);
+    });
+
+    it("настала ніч — запас уже у сховищі", () => {
+      const save = packed(10);
+      save.current.minute = hours(23);
+      unpack(save.current);
+      goToSleep(save);
+      expect(save.current.home.flying).toBeUndefined();
+      expect(supplyCount(save.current, "food")).toBeGreaterThan(0);
+    });
+
+    it("кінець запасу, поки поповнення в польоті, — не привід підказувати телефоном", () => {
+      const save = packed(10);
+      save.current.home.supplies.food = { cheap: 1, premium: 0 };
+      unpack(save.current);
+      useSupply(save.current, "food");
+      expect(supplyCount(save.current, "food")).toBe(0);
+      expect(save.current.home.phoneHints ?? []).not.toContain("food");
+    });
   });
 
   it("запас, що лежить у ящиках, не замовити й не купити", () => {
@@ -214,6 +287,7 @@ describe("ящики біля входу (§6.4, правка 2026-10-23)", () =
     expect(boxesIndicator(state)).toEqual([{ product: "hygiene", count: 15 }]);
     interact(save);
     expect(boxCount(state, "hygiene")).toBe(0);
+    landFlying(state);
     expect(state.home.supplies.hygiene.cheap).toBe(3 + 15);
   });
 

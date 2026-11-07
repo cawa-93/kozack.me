@@ -4,7 +4,7 @@
 
 import { useProgress } from "../../sim/actions";
 import { catOnComputer } from "../../sim/catai";
-import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH } from "../../sim/config";
+import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH, SUPPLY_FLIGHT } from "../../sim/config";
 import { objectById, SURFACE_IDS, WIRE_TILE } from "../../sim/home";
 import { targetOf, type Target } from "../../sim/targets";
 import type { GameState } from "../../sim/types";
@@ -399,7 +399,7 @@ export function stageMark(value: number, stages: number, i: number, rejected: bo
 // --- Політ запасів (§6.4, §9.12) ---------------------------------------------------------------------------
 
 /** Політ іконки запасу: розмір іконки (одиниці арту), тривалість (мс) і найменша та найбільша висота дуги. */
-export const FLIGHT = { icon: 56, ms: 900, arcMin: 120, arcMax: 260, arcShare: 0.35 } as const;
+export const FLIGHT = { icon: 56, ms: SUPPLY_FLIGHT.ms, arcMin: 120, arcMax: 260, arcShare: 0.35 } as const;
 
 /**
  * Висота дуги між точками: пропорційна відстані (в ізометрії квартира вдвічі більша за старий вигляд, і стала дуга була б

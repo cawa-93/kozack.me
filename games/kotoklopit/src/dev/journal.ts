@@ -125,6 +125,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `Пошук роботи: вакансія ${event.vacancy} — відмова`;
     case "unpacked":
       return `Ящики розпаковано: ${event.moved.map((m) => `${m.product} ${m.amount}`).join(", ")}`;
+    case "supply-landed":
+      return `Запас у сховищі: ${event.product}`;
     case "doorbell":
       return event.delivery ? `Кур'єр під дверима: ${goods(event.delivery)} (${event.delivery.quality})` : "Дзвонять у двері";
     case "discarded":

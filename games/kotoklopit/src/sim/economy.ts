@@ -10,9 +10,11 @@ import {
   DELIVERED_TOY_AT,
   MINUTES_PER_HOUR,
   PRODUCTS,
+  REAL_SECONDS_PER_GAME_HOUR,
   START_CLOTHES,
   STORAGE_LIMITS,
   START_SUPPLIES,
+  SUPPLY_FLIGHT,
   THINGS,
   UNSOLD,
   UTILITIES_BASE,
@@ -88,7 +90,7 @@ const NO_HINT: readonly Product[] = ["collar", "catnip", ...UNSOLD];
  * пульсує з його іконкою, доки телефон не відкриють.
  */
 function noteEmpty(state: GameState, product: Product): void {
-  if (supplyCount(state, product) > 0 || NO_HINT.includes(product) || incoming(state, product) > 0 || boxCount(state, product) > 0) return;
+  if (supplyCount(state, product) > 0 || NO_HINT.includes(product) || incoming(state, product) > 0 || boxCount(state, product) > 0 || flyingCount(state, product) > 0) return;
   const home = state.home;
   const ranOut = (home.ranOut ??= []);
   if (ranOut.includes(product)) return;
@@ -148,7 +150,7 @@ function acquire(state: GameState, product: Product): void {
 
 /** Поклати запас просто в сховище (стартовий пакет кошеняти); що не влазить, чекає в ящиках біля входу (§6.4). */
 export function addSupply(state: GameState, product: Product, quality: Quality, amount: number): void {
-  const fits = Math.max(0, Math.min(amount, STORAGE_LIMITS[product] - supplyCount(state, product)));
+  const fits = Math.min(amount, storageRoom(state, product));
   state.home.supplies[product][quality] += fits;
   acquire(state, product);
   stash(state, product, quality, amount - fits);
@@ -157,6 +159,16 @@ export function addSupply(state: GameState, product: Product, quality: Quality, 
 /** Повернути взяте назад у сховище; переповнене — у ящики, нічого не пропадає. */
 export function returnSupply(state: GameState, product: Product, quality: Quality): void {
   addSupply(state, product, quality, 1);
+}
+
+/** Скільки запасу летить із ящиків у сховище (§6.4). */
+function flyingCount(state: GameState, product: Product): number {
+  return (state.home.flying ?? []).reduce((sum, f) => (f.product === product ? sum + f.amounts.cheap + f.amounts.premium : sum), 0);
+}
+
+/** Вільне місце у сховищі: запас, що вже летить сюди, своє місце зайняв (§6.4). */
+function storageRoom(state: GameState, product: Product): number {
+  return Math.max(0, STORAGE_LIMITS[product] - supplyCount(state, product) - flyingCount(state, product));
 }
 
 /** Скільки запасу лежить у ящиках біля входу (§6.4). */
@@ -175,12 +187,12 @@ export function stash(state: GameState, product: Product, quality: Quality, amou
 
 /** У ящиках є запас, для якого є місце у сховищі: розпакувати є що. */
 export function canUnpack(state: GameState): boolean {
-  return (Object.keys(state.home.boxes ?? {}) as Product[]).some((p) => boxCount(state, p) > 0 && supplyCount(state, p) < STORAGE_LIMITS[p]);
+  return (Object.keys(state.home.boxes ?? {}) as Product[]).some((p) => boxCount(state, p) > 0 && storageRoom(state, p) > 0);
 }
 
 /**
- * Розпакувати ящики (§6.4): кожен запас розлітається у своє сховище, скільки влазить, — спершу
- * дорожчий; що не влізло, лишається в ящиках. Повертає, що й скільки розкладено.
+ * Розпакувати ящики (§6.4): кожен запас вилітає до свого сховища, скільки влазить, — спершу дорожчий; що не влізло, лишається
+ * в ящиках. У сховище запас ляже, коли долетить (`tickFlying`). Повертає, що й скільки вилетіло.
  */
 export function unpack(state: GameState): { product: Product; amount: number }[] {
   const boxes = state.home.boxes ?? {};
@@ -188,15 +200,17 @@ export function unpack(state: GameState): { product: Product; amount: number }[]
   for (const product of Object.keys(boxes) as Product[]) {
     const box = boxes[product];
     if (!box) continue;
+    const room = storageRoom(state, product);
+    const amounts: Record<Quality, number> = { cheap: 0, premium: 0 };
     let amount = 0;
     for (const quality of TAKE_ORDER) {
-      const fits = Math.max(0, Math.min(box[quality], STORAGE_LIMITS[product] - supplyCount(state, product)));
-      state.home.supplies[product][quality] += fits;
+      const fits = Math.min(box[quality], room - amount);
+      amounts[quality] = fits;
       box[quality] -= fits;
       amount += fits;
     }
     if (amount > 0) {
-      acquire(state, product);
+      (state.home.flying ??= []).push({ product, amounts, minutes: flightMinutes(moved.length) });
       moved.push({ product, amount });
     }
     if (box.cheap + box.premium <= 0) delete boxes[product];
@@ -205,6 +219,33 @@ export function unpack(state: GameState): { product: Product; amount: number }[]
   tidyBoxTraces(state);
   if (moved.length > 0) emit(state, { type: "unpacked", moved });
   return moved;
+}
+
+/** Скільки ігрових хвилин летить запас, що вилітає `order`-м по черзі (`SUPPLY_FLIGHT`). */
+function flightMinutes(order: number): number {
+  return ((SUPPLY_FLIGHT.ms + order * SUPPLY_FLIGHT.staggerMs) / 1000 / REAL_SECONDS_PER_GAME_HOUR) * MINUTES_PER_HOUR;
+}
+
+/** Минуло `minutes` хвилин: запас, що долетів, лягає у сховище (§6.4). */
+export function tickFlying(state: GameState, minutes: number): void {
+  const flying = state.home.flying;
+  if (!flying) return;
+  for (const flight of flying) flight.minutes -= minutes;
+  const landed = flying.filter((flight) => flight.minutes <= 0);
+  if (landed.length === 0) return;
+  const left = flying.filter((flight) => flight.minutes > 0);
+  if (left.length > 0) state.home.flying = left;
+  else delete state.home.flying;
+  for (const { product, amounts } of landed) {
+    for (const quality of TAKE_ORDER) state.home.supplies[product][quality] += amounts[quality];
+    acquire(state, product);
+    emit(state, { type: "supply-landed", product });
+  }
+}
+
+/** Настала ніч: запас, що ще летів, уже в сховищі (§6.4). */
+export function landFlying(state: GameState): void {
+  tickFlying(state, Infinity);
 }
 
 /** Запас можна замовити чи купити, поки його немає в ящиках біля входу (§6.4); мамині судочки не продаються. */

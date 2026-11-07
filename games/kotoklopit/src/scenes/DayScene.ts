@@ -5,7 +5,7 @@ import { canDash, dash, isMoving } from "../sim/body";
 import { changeLook } from "../sim/character";
 import { meetCat, nextNewcomer } from "../sim/cat";
 import { inStandoff, isDirty } from "../sim/catai";
-import { LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
+import { LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES, SUPPLY_FLIGHT } from "../sim/config";
 import { carrierRoom, discardCarrier } from "../sim/carriers";
 import { discard, discardAppliance, discardLock, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
@@ -888,7 +888,7 @@ export class DayScene extends Phaser.Scene {
    * Іконка летить дугою від однієї точки до іншої: запаси з ящиків і корм із годівниці — у сховища (§6.4, §9.12). Політ у
    * манері арту — `src/view/iso/marksflight.ts` (крок 16, T4).
    */
-  private flyIcon(icon: IconName, from: { x: number; y: number }, to: { x: number; y: number }, delay: number, onArrive: () => void): void {
+  private flyIcon(icon: IconName, from: { x: number; y: number }, to: { x: number; y: number }, delay: number, onArrive?: () => void): void {
     flyIsoIcon(this, this.viewport.world, icon, from, to, delay, onArrive);
   }
 
@@ -925,15 +925,20 @@ export class DayScene extends Phaser.Scene {
     };
     switch (event.type) {
       case "unpacked": {
-        // Запаси розлітаються з ящиків по своїх сховищах (§6.4).
+        // Запаси розлітаються з ящиків по своїх сховищах (§6.4); скільки в сховищі тепер, скаже `supply-landed`.
         const from = this.world.objectAnchor("boxes");
         if (!from) break;
         event.moved.forEach((moved, i) => {
           const storage = STORAGES.find((s) => s.products.includes(moved.product));
           const to = storage ? this.world.anchor(storage.object) : null;
-          if (!storage || !to) return;
-          this.flyIcon(PRODUCT_ICONS[moved.product], from, to, i * 140, () => landed(storage.object, moved.product));
+          if (!to) return;
+          this.flyIcon(PRODUCT_ICONS[moved.product], from, to, i * SUPPLY_FLIGHT.staggerMs);
         });
+        break;
+      }
+      case "supply-landed": {
+        const storage = STORAGES.find((s) => s.products.includes(event.product));
+        if (storage) landed(storage.object, event.product);
         break;
       }
       case "feeder-emptied": {
@@ -944,7 +949,7 @@ export class DayScene extends Phaser.Scene {
           const storage = STORAGES.find((s) => s.products.includes(product));
           const to = storage ? this.world.anchor(storage.object) : null;
           if (!storage || !to) return;
-          this.flyIcon(PRODUCT_ICONS[product], from, to, i * 140, () => landed(storage.object, product));
+          this.flyIcon(PRODUCT_ICONS[product], from, to, i * SUPPLY_FLIGHT.staggerMs, () => landed(storage.object, product));
         });
         break;
       }

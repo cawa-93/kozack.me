@@ -201,6 +201,11 @@ export const START_SUPPLIES: Record<Product, Record<Quality, number>> = {
   catnip: { cheap: 0, premium: 0 },
   momMeal: { cheap: 0, premium: 0 },
 };
+/**
+ * Запас летить із ящиків у сховище (§6.4): `ms` — політ, `staggerMs` — наскільки пізніше вилітає кожен наступний. Реальний час,
+ * а не ігровий: той самий політ малює вигляд (`marksflight.ts`), і запас лягає у сховище тоді, коли іконка долетіла.
+ */
+export const SUPPLY_FLIGHT = { ms: 900, staggerMs: 140 } as const;
 /** Межі часток станів сховища: «мало», «половина», «багато». */
 export const FILL_STAGES = [0.45, 0.75, 1] as const;
 /** Місткість сховища: кратна десяти, щонайменше 10, ділиться на упаковку (`PRODUCTS`). */

@@ -6,7 +6,7 @@ import { isMoving, moveBody, newBody } from "./body";
 import { greetAtDoor, tickCats } from "./catai";
 import { passAwakeTime } from "./character";
 import { BODY_PACE, FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, MODIFIERS, START_MONEY, START_STATS } from "./config";
-import { newHome, tickDeliveries } from "./economy";
+import { landFlying, newHome, tickDeliveries, tickFlying } from "./economy";
 import { openDoor, ringBell } from "./door";
 import { emit, endGame } from "./events";
 import { runNight } from "./night";
@@ -157,6 +157,7 @@ function tick(state: GameState, minutes: number, input: Input): void {
   tickWork(state, from, minutes);
   tickModifiers(state, from, minutes, isWorking(state));
   tickStove(state, minutes);
+  tickFlying(state, minutes);
   tickHousehold(state, from, minutes);
   tickCats(state, minutes, { present: !away, pace: BODY_PACE });
   if (!away) annoyingMesses(state, minutes);
@@ -268,6 +269,7 @@ function sleep(save: Save, collapsed: boolean): NightReport | null {
   const state = save.current;
   // Ніч, що настала через аварію (кінець перемотування, §8.5), — з поїздки, яка ще в аварії: її треба розпізнати до `endTrip`.
   const afterAccident = state.trip?.phase === "accident";
+  landFlying(state);
   // Персонаж засинає вдома, навіть якщо ніч застала його в поїздці.
   endTrip(state);
   // Гостинці мами, що чекали під дверима чи щойно приїхали з нею, — пакет судочків у ящиках біля входу (§4.1, §6.4).

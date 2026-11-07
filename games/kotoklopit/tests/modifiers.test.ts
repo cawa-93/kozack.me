@@ -6,7 +6,7 @@ import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { pickUpCat } from "../src/sim/actions";
 import { createCat } from "../src/sim/cat";
 import { GUESTS, MODIFIERS, PRODUCTS, STORAGE_LIMITS } from "../src/sim/config";
-import { unpack } from "../src/sim/economy";
+import { landFlying, unpack } from "../src/sim/economy";
 import { advance, carryFoundling, deserialize, goToSleep, interact, newGame, serialize } from "../src/sim/game";
 import { active, answerCall, chooseDayModifier, chooseWeekModifier, decideFoundling, ignoreCall, patienceDecayFactor, startModifiers, tickModifiers } from "../src/sim/modifiers";
 import { coughWakes } from "../src/sim/night";
@@ -728,6 +728,7 @@ describe("ефекти (§4.1)", () => {
     expect(events.some((e) => e.type === "doorbell")).toBe(false);
     expect(events.some((e) => e.type === "modifier" && e.kind === "mom-food" && e.value === 0)).toBe(true);
     unpack(late.current);
+    landFlying(late.current);
     expect(inFridge(late)).toBe(2);
     expect(inBoxes(late)).toBe(0);
   });
@@ -790,6 +791,7 @@ describe("ефекти (§4.1)", () => {
     save.current.cats = [];
     walkTo(save, "boxes");
     interact(save);
+    landFlying(save.current);
     expect(inFridge(save)).toBe(2);
     expect(inBoxes(save)).toBe(0);
   });
