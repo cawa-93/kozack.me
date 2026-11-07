@@ -96,8 +96,8 @@
     "seconds": 0.505042
   },
   "burnt": {
-    "hash": "000ba8f82736addc",
-    "seconds": 1.2
+    "hash": "a75553286ca5d75f",
+    "seconds": 1.413396
   },
   "stove-loop": {
     "hash": "82434f361cb4ed9d",
@@ -120,7 +120,7 @@
     "seconds": 1.7
   },
   "wash-loop": {
-    "hash": "f544c01a67a46a5d",
+    "hash": "7ddeb74eb56988fb",
     "seconds": 5.7,
     "loop": {
       "start": 0.1,
@@ -132,11 +132,11 @@
     "seconds": 1.04
   },
   "spin-loop": {
-    "hash": "19c12ca53fad602d",
-    "seconds": 2.98,
+    "hash": "529a829dae8d5076",
+    "seconds": 5,
     "loop": {
       "start": 0.1,
-      "end": 3.08
+      "end": 5.1
     }
   },
   "hung": {

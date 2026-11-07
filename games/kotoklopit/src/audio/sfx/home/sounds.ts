@@ -37,7 +37,8 @@ export const HOME_SOUNDS = {
   carrier: { files: ["carrier"], gain: 0.55 },
   // Плита.
   timer: { files: ["timer"], gain: 0.65 },
-  burnt: { files: ["burnt"], gain: 0.45 },
+  // Шипіння тихіше за сплеск на початку, а пік вирівняно саме за ним — тож на повну.
+  burnt: { files: ["burnt"], gain: 1 },
   "stove-loop": { files: ["stove-loop"], gain: 0.3, loop: true },
   // Прання.
   "washer-close": { files: ["washer-close"], gain: 0.5 },
@@ -45,7 +46,7 @@ export const HOME_SOUNDS = {
   "spin-start": { files: ["spin-start"], gain: 0.6 },
   "washer-done": { files: ["washer-done"], gain: 0.45 },
   hung: { files: ["hung"], gain: 0.45, pitch: 0.04 },
-  "wash-loop": { files: ["wash-loop"], gain: 0.3, loop: true },
+  "wash-loop": { files: ["wash-loop"], gain: 0.33, loop: true },
   "spin-loop": { files: ["spin-loop"], gain: 0.6, loop: true },
   // Пилосос у руках і робот.
   "vacuum-on": { files: ["vacuum-on"], gain: 0.85 },

@@ -243,15 +243,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "cd34ede371ba92ffe837606be4c6ab22f227817d0b5059447b2a36c726aab2e5"
     },
-    "fizz": {
-      "file": "archive/Designers-Choice-Collection-Water/WATRFizz-Samsung_Galaxy_Smartphone_CU_Antacid_Looped_The_Designer_s_Choice_GNRL2.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Water",
-      "title": "The Designer's Choice UCS Collection - WATER — WATER/FIZZ/WATRFizz-Samsung Galaxy Smartphone, CU_Antacid, Looped_The Designer's Choice_GNRL2.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "f9833f955079b09bd1c9b5131b74edffe0c83f0362b9ed74759a8cde1902e204"
-    },
     "fireworks": {
       "file": "archive/Designers-Choice-Collection-Fireworks/FRWKComr-Samsung_Galaxy_Smartphone_CU_Firework_Explosions_X4_Nicholas_Judy_TDC.flac",
       "url": "https://archive.org/details/Designers-Choice-Collection-Fireworks",
@@ -306,14 +297,32 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "13fb6eadce8ff713c92af45046fae2cbd400c2ef49200846653369404d3ca153"
     },
-    "swirl": {
-      "file": "archive/Designers-Choice-Collection-Water/WATRMvmt-Blue_Snowball_Microphone_MCU_Water_Swirling_Closed_Lid_Nicholas_Judy_TDC.mp3",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Water",
-      "title": "The Designer's Choice UCS Collection - WATER — WATER/MOVEMENT/WATRMvmt-Blue Snowball Microphone, MCU_Water Swirling, Closed Lid_Nicholas Judy_TDC.mp3",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "1e30d75b5106b897f307bd1d456fe76b725fa13552e3f4bb100f6aede73650cb"
+    "washer-mid": {
+      "file": "commons/Washing_machine_mid_program.ogg",
+      "url": "https://commons.wikimedia.org/wiki/File:Washing_machine_mid_program.ogg",
+      "title": "Washing machine mid program",
+      "author": "ezwa (PDSounds)",
+      "license": "PD",
+      "licenseUrl": "https://commons.wikimedia.org/wiki/File:Washing_machine_mid_program.ogg",
+      "sha256": "62e3ebf15099a5dd30399cfa897003a026b319417a63e5c4529d0fc88ff55aa6"
+    },
+    "washer-spin": {
+      "file": "commons/Washing_machine_last_spin.ogg",
+      "url": "https://commons.wikimedia.org/wiki/File:Washing_machine_last_spin.ogg",
+      "title": "Washing machine last spin",
+      "author": "ezwa (PDSounds)",
+      "license": "PD",
+      "licenseUrl": "https://commons.wikimedia.org/wiki/File:Washing_machine_last_spin.ogg",
+      "sha256": "f8076157448f2542eb97027840487e51ac100f5e9e66b99aa4a4932f08a76888"
+    },
+    "frying": {
+      "file": "commons/Frying_fries_going_in_and_out_of_oil.ogg",
+      "url": "https://commons.wikimedia.org/wiki/File:Frying_fries_going_in_and_out_of_oil.ogg",
+      "title": "Frying fries going in and out of oil",
+      "author": "ezwa (PDSounds)",
+      "license": "PD",
+      "licenseUrl": "https://commons.wikimedia.org/wiki/File:Frying_fries_going_in_and_out_of_oil.ogg",
+      "sha256": "7f933637d2e180cee3ac286e311a9de7e83ff2436950e5b03106bc5438a4ed6b"
     }
   },
   "files": {
@@ -473,12 +482,12 @@
       "note": "Страва готова: дзвіночок кухонного таймера"
     },
     "burnt": {
-      "from": "fizz",
-      "start": 5.3,
-      "end": 6.5,
-      "fadeIn": 0.05,
+      "from": "frying",
+      "start": 2.38,
+      "end": 3.8,
+      "filter": "highpass=f=300",
       "fadeOut": 0.4,
-      "note": "Страва підгоріла: шипіння"
+      "note": "Страва підгоріла: шипіння олії (картопля пірнає у фритюр), удар кошика нижче 300 Гц зрізано"
     },
     "stove-loop": {
       "from": "cauldron",
@@ -510,12 +519,12 @@
       "note": "Прання скінчилося: два сигнали (гул мікрохвильовки зрізано)"
     },
     "wash-loop": {
-      "from": "swirl",
-      "start": 40,
-      "end": 46,
+      "from": "washer-mid",
+      "start": 16.2,
+      "end": 22.2,
       "loop": true,
-      "filter": "highpass=f=100",
-      "note": "Пральна пере: вода плюскоче в закритому барабані"
+      "filter": "highpass=f=100,lowpass=f=5000",
+      "note": "Пральна пере: барабан посеред прання; тихий запис, шум нижче 100 Гц і вище 5 кГц зрізано"
     },
     "spin-start": {
       "from": "dryer",
@@ -525,12 +534,12 @@
       "note": "Віджим починається: барабан розганяється (той самий пришвидшений барабан, 0–1,3 с оригіналу)"
     },
     "spin-loop": {
-      "from": "dryer",
-      "start": 0.8,
-      "end": 4.9,
+      "from": "washer-spin",
+      "start": 11.6,
+      "end": 16.9,
       "loop": true,
-      "filter": "asetrate=55125,highpass=f=90",
-      "note": "Віджим: барабан сушарки, пришвидшений ×1,25 (asetrate; -ss/-to діють після фільтра, тож це 0,8–4,9 с оригіналу, без перевантажень)"
+      "filter": "highpass=f=180,highpass=f=180",
+      "note": "Віджим пральної: гул і свист мотора; бас нижче 180 Гц зрізано, щоб віджим було чути й на динаміку телефона"
     },
     "hung": {
       "from": "pillow",
