@@ -16,7 +16,9 @@ import {
   BATH_FACE,
   FIX_AT_WIRE,
   GLIDE_JUMP,
+  GLIDE_RATE,
   glideOffset,
+  glideRate,
   personSpot,
   shotFace,
   shotPlace,
@@ -106,6 +108,13 @@ describe("personSpot: де видно персонажа", () => {
     // Душ — у тому боці, куди персонаж не дивиться: збоку.
     const shower = isoObjectLook("shower").use?.facing ?? { x: 0, y: 0 };
     expect(shower.x * BATH_FACE.x + shower.y * BATH_FACE.y).toBe(0);
+  });
+
+  it("засинаючи, до ліжка рушає плавно: темп росте з поступом, а до розвороту — повний", () => {
+    expect(glideRate(null)).toBe(GLIDE_RATE);
+    expect(glideRate(0)).toBe(0);
+    expect(glideRate(0.1)).toBeLessThan(glideRate(0.3));
+    expect(glideRate(SLEEP_TURN)).toBe(GLIDE_RATE);
   });
 
   it("засинаючи (§8.8), заплющені очі видно: лицем до кімнати, поки не обернеться до ліжка, падаючи без сил — теж", () => {

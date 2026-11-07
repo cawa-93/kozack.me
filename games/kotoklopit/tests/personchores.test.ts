@@ -16,6 +16,7 @@ import type { ArtView } from "../src/view/art/types";
 import { PERSON_ANIMS } from "../src/view/rig/anims";
 import { PERSON_CHORES, PERSON_SEAT } from "../src/view/rig/anims/person/chores";
 import { levelHand, personArmsPose } from "../src/view/rig/anims/person/move";
+import { SLEEP_TURN } from "../src/view/iso/personspot";
 import { PERSON_RIG } from "../src/view/rig/defs/person";
 import { Rig } from "../src/view/rig/rigcore";
 import type { RigAnim } from "../src/view/rig/types";
@@ -31,6 +32,8 @@ const NAMES = Object.keys(PERSON_CHORES) as Name[];
 const VIEWS: readonly ArtView[] = ["front", "back"];
 const BUILDS: readonly string[][] = [[], ["slim"], ["stocky"]];
 const DEG = Math.PI / 180;
+/** Найбільший крок голови за 10 мс анімації до розвороту до ліжка, одиниці арту: швидше читається як смикання. */
+const HEAD_STEP_MAX = 3.5;
 
 function rigFor(view: ArtView, proportions: string[] = []): LooseRig {
   return new Rig(PERSON_RIG, { facing: { view, flip: false }, proportions }) as unknown as LooseRig;
@@ -360,6 +363,34 @@ describe("справи персонажа: засинає", () => {
     const reach = head.x / Math.cos(slope * DEG);
     expect(reach).toBeGreaterThan(edge);
     expect(reach).toBeLessThan(far + 10);
+  });
+
+  it("обертається до ліжка у вихідній позі, а голова не смикається", () => {
+    const anim = ANIMS.fallAsleep;
+    const turn = SLEEP_TURN * anim.duration;
+    // Ракурс міняється одним кадром і дзеркалить персонажа: нахил у цю мить перекинув би голову на другий бік.
+    for (const view of VIEWS) {
+      const rest = snapshot(poseAt(view, null, 0));
+      for (const t of [turn - 20, turn, turn + 20]) expect(gap(snapshot(poseAt(view, anim, t)), rest), `${view} ${t}`).toBeLessThan(1e-3);
+    }
+    const headAt = (rig: LooseRig, t: number): { x: number; y: number } => {
+      rig.evaluate(t);
+      const head = rig.anchor("head");
+      if (!head) throw new Error("немає якоря head");
+      return { x: head.x, y: head.y };
+    };
+    // Лицем до кімнати голова рухається сонно: без різкого кроку.
+    const front = rigFor("front");
+    front.play(anim, 0, { blend: 0 });
+    for (let t = 10; t <= turn; t += 10) {
+      const was = headAt(front, t - 10);
+      const now = headAt(front, t);
+      expect(Math.hypot(now.x - was.x, now.y - was.y), `${t}`).toBeLessThan(HEAD_STEP_MAX);
+    }
+    // Падаючи, голова йде лише до ліжка: рух назад посеред падіння читався б як ривок.
+    const back = rigFor("back");
+    back.play(anim, 0, { blend: 0 });
+    for (let t = turn + 10; t <= anim.duration; t += 10) expect(headAt(back, t).x, `${t}`).toBeGreaterThanOrEqual(headAt(back, t - 10).x);
   });
 });
 

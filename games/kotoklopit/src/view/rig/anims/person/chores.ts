@@ -986,10 +986,13 @@ const BED = (() => {
 const TILE_SLOPE = ISO_TILE.height / ISO_TILE.width;
 
 /**
- * Засинає в ліжку (§8.8; поступ — плавний, ≈ 1,3 с): позіхає (голова назад, плечі вгору), голова клює раз, персонаж
- * схоплюється, клює вдруге — і, зламавшись у стегнах, падає вперед на ліжко: таз на краю матраца, тулуб лежить уздовж ліжка
+ * Засинає в ліжку (§8.8, поступ — `FALL_ASLEEP.eyes` у `DayScene`): позіхає (голова назад, плечі вгору), голова повільно
+ * хилиться й підводиться, — і, зламавшись у стегнах, падає вперед на ліжко: таз на краю матраца, тулуб лежить уздовж ліжка
  * (по осі плитки: у ¾ ззаду — угору праворуч), руки — уздовж тіла, ступні на підлозі. Кінцева поза тримається, поки екран
  * темніє.
+ *
+ * Обертається до ліжка (`SLEEP_TURN`) у вихідній позі, між двома ключами `REST`: ракурс міняється одним кадром і дзеркалить
+ * персонажа, тож будь-який нахил у цю мить перекинув би голову на другий бік ривком.
  */
 function fallAsleep(s: Space): readonly Beat[] {
   const back = s.view === "back";
@@ -999,26 +1002,17 @@ function fallAsleep(s: Space): readonly Beat[] {
   const hip = { x: lie.x, y: lie.y - PELVIS_Y };
   // Тулуб уздовж ліжка: кут у світі — кут осі плитки, вихідний — −90.
   const along = Math.atan2(dir.y, dir.x) / RAD + 90;
-  // Падіння від «клюнув» (u = 0) до «лежить» (u = 1): таз іде до краю ліжка, тулуб лягає, ступні стоять (`through`).
-  const from = { x: hip.x * 0.45 + 1, y: hip.y * 0.4 + 1 };
-  const mix = (a: number, b: number, u: number): number => a + (b - a) * u;
+  // Падіння від вихідної пози (u = 0) до «лежить» (u = 1): таз іде до краю ліжка, тулуб лягає, ступні стоять (`through`).
   const falling = (u: number): Pose =>
-    add(
-      stance({ x: mix(from.x, hip.x, u), y: mix(from.y, hip.y, u) }),
-      { torso: { rot: mix(12 + (along - 12) * 0.5, along, u) } },
-      nod(mix(18, -6, u)),
-      { "arm-near": { rot: mix(-8, -10, u) }, "arm-far": { rot: -6 } },
-    );
+    add(stance({ x: hip.x * u, y: hip.y * u }), { torso: { rot: along * u } }, nod(-6 * u), { "arm-near": { rot: -10 * u }, "arm-far": { rot: -6 * u } });
   return [
     [0, REST],
-    [170, add(body(lean(-5, 1)), nod(-16), { "arm-near": { rot: 7 }, "arm-far": { rot: 5 } }, { "hand-near": { rot: 10 }, "hand-far": { rot: 10 } })],
-    [320, add(body(lean(2)), nod(8))],
-    [450, add(body(lean(6, 0, 1)), nod(30), { "arm-near": { rot: -4 }, "arm-far": { rot: -3 } })],
-    [530, add(body(lean(1)), nod(4)), "out"],
-    [660, add(body(lean(12, 2, 1)), nod(34), { "arm-near": { rot: -6 }, "arm-far": { rot: -5 } }), "in"],
+    [180, add(body(lean(-5, 1)), nod(-16), { "arm-near": { rot: 7 }, "arm-far": { rot: 5 } }, { "hand-near": { rot: 10 }, "hand-far": { rot: 10 } })],
+    [450, add(body(lean(4, 0, 1)), nod(22), { "arm-near": { rot: -4 }, "arm-far": { rot: -3 } })],
+    [570, REST],
     ...through(
       [
-        [850, [0], "out"],
+        [630, [0], "in"],
         [1000, [1]],
       ],
       ([u = 1]) => falling(u),

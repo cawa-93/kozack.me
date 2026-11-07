@@ -71,7 +71,7 @@ import {
 } from "./personlook";
 import { mixAnims } from "./personmix";
 import { cropPixels, featherAt, featherRect, lineEnd, palmAt, reachArm, reachedPose, ROD_PLAY, type PartPose, type UnitRect } from "./personreach";
-import { glideOffset, personSpot, shotFace, shotPlace, showFace, touchFacing, type ShotPlace } from "./personspot";
+import { glideOffset, glideRate, personSpot, shotFace, shotPlace, showFace, touchFacing, type ShotPlace } from "./personspot";
 
 type PersonAnim = AnimOf<typeof PERSON_RIG>;
 
@@ -257,7 +257,7 @@ export class IsoPersonView implements PersonPart {
     const body = character.body;
     this.tmpTarget.x = spot.at.x - body.x;
     this.tmpTarget.y = spot.at.y - body.y;
-    glideOffset(this.offset, this.tmpTarget, dt / 1000, this.offset);
+    glideOffset(this.offset, this.tmpTarget, dt / 1000, this.offset, glideRate(params.progress));
     this.at.x = body.x + this.offset.x;
     this.at.y = body.y + this.offset.y;
     const feet = this.ctx.projection.toScreen(this.at);
