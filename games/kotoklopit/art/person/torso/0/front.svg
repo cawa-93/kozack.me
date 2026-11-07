@@ -31,9 +31,9 @@ size 54×75; pivot (27, 54) — центр таза; points: neck (28.4, 8.5), n
 <path d="M32.5 10.6C32.4 10.1 31.9 7.9 31.8 7.4" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M32.5 10.6C30.9 10.9 30.6 13.6 29.7 14.4C28.7 15.2 27.5 15.4 26.5 15.4C25.4 15.4 24.3 15.1 23.3 14.4C22.3 13.7 22.2 11.4 20.7 11.2" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M9.4 49.6C10.5 51.7 13.5 51.3 16 51.8C18.5 52.3 21.7 52.3 24.5 52.4C27.3 52.5 30.4 52.5 32.9 52.4C35.5 52.3 37.9 52.1 39.7 51.6C41.4 51.1 42.8 51.5 43.4 49.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M43.4 49.4C43.6 50.8 44.5 55.2 44.4 58C44.3 60.8 43.2 64.3 42.8 66C42.4 67.7 42.1 68 42 68.4" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M9.4 49.6C9.2 51 8.2 55.3 8.6 58C8.9 60.7 11 64.3 11.7 66C12.4 67.7 12.4 68 12.6 68.4" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M37 68.4C35.5 68.1 31.1 66.6 28 66.6C24.9 66.6 19.9 68.1 18.2 68.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M43.4 49.4C43.6 50.8 44.5 55.2 44.4 58C44.3 60.8 43.2 64.3 42.8 66" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M9.4 49.6C9.2 51 8.2 55.3 8.6 58C8.9 60.7 11 64.3 11.7 66" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M42.8 66C41.4 67.8 38.1 68.7 35.6 68.8C33.1 68.9 30.7 66.6 28 66.6C25.4 66.6 22.4 68.9 19.6 68.8C16.9 68.7 13.6 67.8 11.7 66" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M38.8 41.4Q40.8 43.5 41.2 46.6Q39.7 44.1 38.8 41.4Z" fill="#2e1f29"/>
 <path d="M25.8 53.6Q27 57.2 26.7 61Q26 57.3 25.8 53.6Z" fill="#2e1f29"/>
 </g>

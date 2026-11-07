@@ -31,9 +31,9 @@ size 72×75; pivot (36, 54) — центр таза; points: neck (37.7, 8.5), n
 <path d="M42.7 10.6C42.6 10.1 41.9 7.9 41.8 7.4" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M42.7 10.6C40.8 10.9 40.7 13.6 39.4 14.4C38.2 15.2 36.7 15.4 35.3 15.4C33.9 15.4 32.5 15.1 31.2 14.4C30 13.7 30 11.4 28.1 11.2" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M10.2 49.6C12 51.7 16.3 51.3 20 51.8C23.7 52.3 28.3 52.3 32.3 52.4C36.4 52.5 40.9 52.5 44.6 52.4C48.4 52.3 52.1 52.1 54.8 51.6C57.5 51.1 59.5 51.5 60.9 49.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M60.9 49.4C60.8 50.8 61.3 55.2 60.7 58C60.3 60.8 58.7 64.3 58.1 66C57.5 67.7 57.1 68 56.9 68.4" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M10.2 49.6C10.1 51 9.1 55.3 9.9 58C10.7 60.7 13.7 64.3 14.6 66C15.6 67.7 15.6 68 15.8 68.4" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M49.9 68.4C47.9 68.1 41.8 66.6 37.4 66.6C33.1 66.6 26 68.1 23.8 68.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M60.9 49.4C60.8 50.8 61.3 55.2 60.7 58C60.3 60.8 58.7 64.3 58.1 66" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M10.2 49.6C10.1 51 9.1 55.3 9.9 58C10.7 60.7 13.7 64.3 14.6 66" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M58.1 66C56 67.8 51.5 68.7 48 68.8C44.5 68.9 41.2 66.6 37.4 66.6C33.7 66.6 29.5 68.9 25.7 68.8C21.8 68.7 17.3 67.8 14.6 66" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M55.6 41.4Q58.7 43.5 58.5 46.6Q56.8 44.1 55.6 41.4Z" fill="#2e1f29"/>
 <path d="M34.3 53.6Q36 57.2 35.5 61Q34.5 57.3 34.3 53.6Z" fill="#2e1f29"/>
 </g>

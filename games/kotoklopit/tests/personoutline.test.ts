@@ -1,5 +1,5 @@
-// Заливка рукава не виходить на тло без контуру (art/STYLE.md, «Суглоб»): край без контуру дозволено лише там, де він лежить
-// на сорочці. Перевіряє геометрію SVG у вихідній позі, без браузера.
+// Заливка одягу не виходить на тло без контуру (art/STYLE.md, «Суглоб»): край рукава без контуру дозволено лише там, де він
+// лежить на сорочці, а край штанів на тазі обведений увесь — нога в кроці його відкриває. Геометрія SVG, без браузера.
 
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -17,8 +17,9 @@ const VIEWS = ["front", "back"] as const;
 type View = (typeof VIEWS)[number];
 type Pt = readonly [number, number];
 
-/** Товщина контуру рукава (`LINE_RIG`): заливка лягає по середині лінії. */
-const INK_HALF = 1.8;
+/** Товщина контуру частин (`LINE_RIG`), зовнішнього й внутрішнього: заливка лягає по середині лінії. */
+const OUTER = 3.6;
+const INNER = 2.2;
 /** Рукав нижче цього — манжета, її веде своя лінія. */
 const CUFF_Y = 52;
 /** Товщина рук за статурою: `proportions` скелета (`slim`, звичайна, `stocky`). */
@@ -53,9 +54,9 @@ const shape = (svg: string, name: string): Pt[] => {
   return flatten(d);
 };
 
-/** Точки ліній контуру товщини `LINE_RIG`, крім долоні (вона — через `<use>`). */
-const inkLines = (svg: string): Pt[] =>
-  [...svg.matchAll(/<path d="([^"]+)" fill="none" stroke="#2e1f29" stroke-width="3\.6"/g)].flatMap((m) => flatten(m[1]!));
+/** Точки ліній контуру цієї товщини, крім долоні (вона — через `<use>`). */
+const inkLines = (svg: string, width: number): Pt[] =>
+  [...svg.matchAll(new RegExp(`<path d="([^"]+)" fill="none" stroke="#2e1f29" stroke-width="${width}"`, "g"))].flatMap((m) => flatten(m[1]!));
 
 function inside(p: Pt, polygon: readonly Pt[]): boolean {
   let hit = false;
@@ -67,7 +68,7 @@ function inside(p: Pt, polygon: readonly Pt[]): boolean {
   return hit;
 }
 
-const inked = (p: Pt, ink: readonly Pt[]): boolean => ink.some((q) => Math.hypot(q[0] - p[0], q[1] - p[1]) <= INK_HALF);
+const inked = (p: Pt, ink: readonly Pt[], width = OUTER): boolean => ink.some((q) => Math.hypot(q[0] - p[0], q[1] - p[1]) <= width / 2);
 
 function shoulder(entry: ArtEntry, view: View): ArtPoint {
   const points = entry.points as Record<string, ArtPoint>;
@@ -79,7 +80,7 @@ function shoulder(entry: ArtEntry, view: View): ArtPoint {
 describe("контур рукава персонажа", () => {
   it.each(VIEWS)("дальня рука (%s): контур замкнений по всьому рукаву", (view) => {
     const svg = svgOf("person/arm-far", view);
-    const ink = inkLines(svg);
+    const ink = inkLines(svg, OUTER);
     const open = shape(svg, "sleeve").filter((p) => p[1] < CUFF_Y && !inked(p, ink));
     expect(open).toEqual([]);
   });
@@ -87,7 +88,7 @@ describe("контур рукава персонажа", () => {
   it.each(VIEWS)("ближня рука (%s): край рукава поза сорочкою в кожній статурі — під контуром", (view) => {
     const arm = svgOf("person/arm", view);
     const pivot = artEntry("person/arm" as ArtId)!.pivot;
-    const ink = inkLines(arm);
+    const ink = inkLines(arm, OUTER);
     for (const [build] of BUILDS.entries()) {
       const id = `person/torso/${build}`;
       const torso = svgOf(id, view);
@@ -98,6 +99,16 @@ describe("контур рукава персонажа", () => {
         const onTorso: Pt = [at.x + k * (p[0] - pivot.x), at.y + (p[1] - pivot.y)];
         return p[1] < CUFF_Y && !inside(onTorso, shirt) && !inked(p, ink);
       });
+      expect(open, `статура ${build}`).toEqual([]);
+    }
+  });
+
+  it.each(VIEWS)("штани на тазі (%s): увесь край заливки під контуром у кожній статурі", (view) => {
+    for (const [build] of BUILDS.entries()) {
+      const torso = svgOf(`person/torso/${build}`, view);
+      const outer = inkLines(torso, OUTER);
+      const inner = inkLines(torso, INNER);
+      const open = shape(torso, "hips").filter((p) => !inked(p, outer) && !inked(p, inner, INNER));
       expect(open, `статура ${build}`).toEqual([]);
     }
   });
