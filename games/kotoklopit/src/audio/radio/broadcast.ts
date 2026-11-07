@@ -1,5 +1,5 @@
 // Ланцюг відтворення станції (§8.10). Шматки стають у чергу `AudioBufferSourceNode` точно до семпла, тож вони стикуються без
-// шва, а годинник завжди правий: шматок не встиг — грає шум ефіру, втрачене пропадає, і звук повертається туди, де трансляція.
+// шва, а годинник завжди правий: шматка немає — чути шум, втрачене пропадає, і звук повертається туди, де трансляція.
 //
 // Реальний час дробовий і великий (точність ~2·10⁻⁷ с), тож ним користуємось лише в мить настроювання. Далі ланцюг рахує цілі
 // семпли: інакше округлення на межі шматка давало б мікровідрізки, а це клац щовісім секунд.
@@ -11,10 +11,17 @@ import { chunkKey, chunkOf, chunkSamples, chunkStart, nextSlot, slotAt, trackSam
 
 const PRE_SAMPLES = RADIO.preFrames * RADIO.frameSamples;
 const GAP_SAMPLES = Math.round(RADIO.gapSeconds * SAMPLE_RATE);
+/** Згасання до шуму починається на чотири сталі раніше за кінець черги: обрив звучить уже на ~2% гучності. */
+const FADE_SAMPLES = Math.round(((RADIO.crossfadeSeconds * 4) / 3) * SAMPLE_RATE);
+/** Перевірка йде раз на `tickMs`: вихід у шум починаємо із запасом, щоб він встиг до кінця черги. */
+const WARNING_SAMPLES = FADE_SAMPLES + Math.round((RADIO.tickMs / 1000) * SAMPLE_RATE);
+/** `setTargetAtTime` наближається до мети плавно: за три такі сталі гучність проходить ~95% шляху. */
+const FADE_CONSTANT = RADIO.crossfadeSeconds / 3;
+const RELEASE_CONSTANT = RADIO.fadeSeconds / 3;
 
 export class Broadcast {
   private station: Station | null = null;
-  /** Гучність поточної станції: щоб обірвати її без клацання. */
+  /** Гучність поточної станції: нею йдуть переходи. */
   private chain: GainNode | null = null;
   private noise: GainNode | null = null;
   private readonly sources = new Set<AudioBufferSourceNode>();
@@ -25,7 +32,8 @@ export class Broadcast {
   /** Що стане в чергу наступним: трек і семпл у ньому. */
   private slot: Slot | null = null;
   private sample = 0;
-  private noisy = false;
+  /** Чути музику, а не шум. */
+  private audible = false;
 
   constructor(
     private readonly engine: AudioEngine,
@@ -35,15 +43,21 @@ export class Broadcast {
 
   /** Настроїтися на станцію, чи вимкнути (null). Те саме після паузи контексту: годинник контексту стояв. */
   tune(station: Station | null): void {
-    this.silence();
+    this.release();
     this.station = station;
     const context = this.engine.context;
-    if (!context || context.state !== "running" || !station || !this.engine.music) return;
+    if (!context || context.state !== "running" || !station || !this.engine.music) {
+      this.quietNoise(context);
+      return;
+    }
     const chain = context.createGain();
+    chain.gain.value = 0;
     chain.connect(this.engine.music);
     this.chain = chain;
+    this.audible = false;
     this.seek(station, Math.ceil(context.currentTime * SAMPLE_RATE) + Math.round(RADIO.tuneSeconds * SAMPLE_RATE));
-    this.setNoise(true);
+    // Готовий шматок встигне скасувати цей шум, і станція ввімкнеться без нього.
+    this.fade(context, this.noiseGain(context), RADIO.staticLevel, context.currentTime + RADIO.noiseDelaySeconds);
     this.tick();
   }
 
@@ -53,8 +67,12 @@ export class Broadcast {
     const station = this.station;
     if (!context || context.state !== "running" || !station || !this.chain) return;
     const now = Math.ceil(context.currentTime * SAMPLE_RATE);
-    if (this.cursor < now) this.seek(station, now);
+    if (this.cursor < now) {
+      if (this.audible) this.toNoise(context, context.currentTime);
+      this.seek(station, now);
+    }
     const horizon = now + RADIO.queueSeconds * SAMPLE_RATE;
+    let starved = false;
     while (this.cursor < horizon && this.slot) {
       const { track } = this.slot;
       if (this.sample >= trackSamples(track)) {
@@ -65,10 +83,14 @@ export class Broadcast {
       }
       const chunk = chunkOf(this.sample);
       const buffer = this.buffer({ track, chunk });
-      if (!buffer) break;
+      if (!buffer) {
+        starved = true;
+        break;
+      }
       this.play(context, buffer, chunk);
     }
-    this.setNoise(this.cursor <= now);
+    // Черга скоро скінчиться, а далі нічого: у шум ідемо заздалегідь, бо обірваний звук уже не згасити.
+    if (starved && this.audible && this.cursor - now <= WARNING_SAMPLES) this.toNoise(context, Math.max(now, this.cursor - FADE_SAMPLES) / SAMPLE_RATE);
   }
 
   /** Перейти туди, де трансляція буде на цьому семплі контексту; у паузі між треками — лишити її тишею. */
@@ -109,6 +131,7 @@ export class Broadcast {
     const inChunk = this.sample - chunkStart(chunk);
     const samples = chunkSamples(track, chunk) - inChunk;
     const skip = chunk === 0 ? 0 : PRE_SAMPLES;
+    if (!this.audible) this.toMusic(context, this.cursor / SAMPLE_RATE);
     const source = context.createBufferSource();
     source.buffer = buffer;
     source.connect(this.chain!);
@@ -120,45 +143,55 @@ export class Broadcast {
     this.sample += samples;
   }
 
-  private silence(): void {
+  private toMusic(context: AudioContext, at: number): void {
+    this.audible = true;
+    this.fade(context, this.chain!, 1, at);
+    this.fade(context, this.noiseGain(context), 0, at);
+  }
+
+  private toNoise(context: AudioContext, at: number): void {
+    this.audible = false;
+    this.fade(context, this.chain!, 0, at);
+    this.fade(context, this.noiseGain(context), RADIO.staticLevel, at);
+  }
+
+  /** Плавно змінити гучність від миті `at`, скасувавши незавершений перехід. */
+  private fade(context: AudioContext, node: GainNode, level: number, at: number): void {
+    node.gain.cancelScheduledValues(context.currentTime);
+    node.gain.setTargetAtTime(level, at, FADE_CONSTANT);
+  }
+
+  /** Обірвати поточну станцію: вона згасає, а не клацає. */
+  private release(): void {
     const context = this.engine.context;
     const chain = this.chain;
     if (context && chain) {
-      const end = context.currentTime + RADIO.fadeSeconds;
-      chain.gain.setValueAtTime(chain.gain.value, context.currentTime);
-      chain.gain.linearRampToValueAtTime(0, end);
-      for (const source of this.sources) source.stop(end);
+      const now = context.currentTime;
+      chain.gain.cancelScheduledValues(now);
+      chain.gain.setTargetAtTime(0, now, RELEASE_CONSTANT);
+      for (const source of this.sources) source.stop(now + RADIO.fadeSeconds * 2);
     }
     this.sources.clear();
     this.decoded.clear();
     this.chain = null;
     this.slot = null;
-    this.setNoise(false);
   }
 
-  private setNoise(on: boolean): void {
-    if (on === this.noisy) return;
-    const context = this.engine.context;
-    const music = this.engine.music;
-    if (!context || !music) return;
-    this.noisy = on;
-    this.noise ??= startNoise(context, music);
-    this.noise.gain.setTargetAtTime(on ? RADIO.staticLevel : 0, context.currentTime, 0.02);
+  private quietNoise(context: AudioContext | null): void {
+    if (context && this.noise) this.fade(context, this.noise, 0, context.currentTime);
+  }
+
+  private noiseGain(context: AudioContext): GainNode {
+    this.noise ??= startNoise(context, this.engine.music!);
+    return this.noise;
   }
 }
 
-/**
- * ТИМЧАСОВО (§8.10): шум ефіру створюється один раз під час гри, бо звук ще не обрано. До релізу замінити файлом.
- * Це 2 секунди приглушеного шуму по колу.
- */
+/** ТИМЧАСОВО (§8.10): білий шум створюється один раз під час гри, бо звук ще не обрано. До релізу замінити файлом. */
 function startNoise(context: AudioContext, output: AudioNode): GainNode {
   const buffer = context.createBuffer(1, 2 * SAMPLE_RATE, SAMPLE_RATE);
   const data = buffer.getChannelData(0);
-  let last = 0;
-  for (let i = 0; i < data.length; i++) {
-    last = last * 0.82 + (Math.random() * 2 - 1) * 0.18;
-    data[i] = last * 3;
-  }
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
   const source = context.createBufferSource();
   source.buffer = buffer;
   source.loop = true;

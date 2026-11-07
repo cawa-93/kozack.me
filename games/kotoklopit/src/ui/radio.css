@@ -4,12 +4,12 @@
   --teal: #5f9089;
   --teal-hi: #8bb3aa;
   --dark: #4b4146;
-  --dark-hi: #6d6266;
   --wood: #9a6a47;
   --wood-hi: #b98b60;
   --red: #c4524b;
   --lit: #f3d27a;
   --dial-off: #bfb093;
+  position: relative;
   width: min(600px, 100%);
   padding: 12px 14px 14px;
   border: 5px solid var(--ink);
@@ -20,10 +20,6 @@
 }
 
 /* Плаваючий хрестик звузив би всю сітку радіо, тож він стоїть поверх, над вільним місцем біля шкали. */
-.card.card-radio {
-  position: relative;
-}
-
 .card-radio .card-close {
   position: absolute;
   top: 8px;
@@ -45,11 +41,52 @@
   margin-right: 40px;
 }
 
-/* Решітка гучномовця. */
-.radio-grille {
+/* Екран із хвилями: той самий, що на приймачі в квартирі (`env/radio`). */
+.radio-screen {
+  position: relative;
+  overflow: hidden;
   border: 3px solid var(--ink);
   border-radius: 10px;
-  background: repeating-linear-gradient(0deg, var(--dark) 0 6px, var(--dark-hi) 6px 9px);
+  background: var(--dark);
+}
+
+.radio.on .radio-screen {
+  background: var(--ink);
+}
+
+/* Кожна хвиля — плитка 120 × 52 по колу: рух лише `transform`, тож перемальовувати нічого. */
+.radio-wave {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: none;
+  width: calc(100% + 120px);
+  background: 0 50% / 120px 100% repeat-x;
+  animation: radio-wave 2.4s linear infinite;
+}
+
+.radio.on .radio-wave {
+  display: block;
+}
+
+.radio-wave.a {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 52'%3E%3Cpath d='M0 26Q15 6 30 26T60 26T90 26T120 26' fill='none' stroke='%23f3d27a' stroke-width='3'/%3E%3C/svg%3E");
+}
+
+.radio-wave.b {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 52'%3E%3Cpath d='M0 26Q30 46 60 26T120 26' fill='none' stroke='%238bb3aa' stroke-width='3'/%3E%3C/svg%3E");
+  animation-duration: 3.2s;
+  animation-direction: reverse;
+}
+
+.radio-wave.c {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 52'%3E%3Cpath d='M0 26Q10 14 20 26T40 26T60 26T80 26T100 26T120 26' fill='none' stroke='%23ecbcb2' stroke-width='3'/%3E%3C/svg%3E");
+  animation-duration: 1.7s;
+}
+
+@keyframes radio-wave {
+  to {
+    transform: translateX(-120px);
+  }
 }
 
 /* Шкала частот зі стрілкою: на вимкненому радіо темна. */
@@ -85,22 +122,11 @@
   transform: translateX(-50%);
 }
 
-.radio-tagline,
-.radio-now {
+.radio-tagline {
   margin: 0;
   color: var(--paper);
+  font-size: 16px;
   text-align: center;
-}
-
-.radio-tagline {
-  font-size: 15px;
-}
-
-.radio-now {
-  overflow: hidden;
-  font-size: 17px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .radio-stations {
@@ -170,30 +196,14 @@
     gap: 5px;
   }
 
-  .radio-face {
-    grid-template-columns: 1fr;
-  }
-
-  .radio-grille {
-    display: none;
-  }
-
   .radio-dial {
-    height: 40px;
-  }
-
-  .radio-tagline {
-    display: none;
+    height: 42px;
   }
 }
 
 @media (max-width: 520px) {
   .radio-face {
-    grid-template-columns: 1fr;
-  }
-
-  .radio-grille {
-    display: none;
+    grid-template-columns: 84px 1fr;
   }
 
   .radio-stations {
@@ -205,5 +215,9 @@
   .radio-needle,
   .radio-dial {
     transition: none;
+  }
+
+  .radio-wave {
+    animation: none;
   }
 }

@@ -23,6 +23,7 @@ import { CARRIER_TARGET, targetOf } from "../sim/targets";
 import { clockFrame, weekOf } from "../sim/time";
 import type { Address, Chronotype, Difficulty, GameState, HomeItem, Look, Quality, Save, ThingKind } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel, standupToday, workGoesOn } from "../sim/work";
+import { RADIO } from "../audio/config";
 import type { Radio } from "../audio/radio/radio";
 import type { Session } from "../session";
 import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, addressCard, startName, wardrobeCard, type EnteredName, type PhoneTab } from "../ui/cards";
@@ -36,7 +37,7 @@ import { giveMedicine, medicineCat } from "../sim/diseases";
 import { stateRng } from "../sim/rng";
 import { Overlay, type Card } from "../ui/overlay";
 import { CAREER_MESSAGES, carrierDeathNews, CLEANER_TITLE, cleanerText, DIFFICULTY_TITLES, fill, GIVE_AWAY_LATER, GIVE_AWAY_RECENT, guestsText, homeVetText, IMPORT_SAVE, MOM_FOOD_TEXTS, POSITION_TITLES, UNREADABLE_SAVE } from "../texts";
-import { canUse } from "../sim/actions";
+import { canUse, setRadioOn } from "../sim/actions";
 import { moveThing } from "../sim/moving";
 import { type Anchor, Bubbles, THOUGHT_HOLD_MS } from "../view/bubbles";
 import { StorageIndicators } from "../view/storage";
@@ -62,6 +63,9 @@ import type { WorldFrame } from "../view/world/part";
 import type { World } from "../view/world/world";
 import { markDeparture, takeDeparture } from "../view/departing";
 import type { RaceScene, RoadEnd, RoadStart } from "./RaceScene";
+
+/** Звідки міряти, чи персонаж поруч із радіо (§8.10). */
+const RADIO_CENTER = { x: objectById("radio").x + 0.5, y: objectById("radio").y + 0.5 };
 
 /** Довгий кадр (вкладка у фоні) не перемотує день: найбільше 0,1 секунди за кадр. */
 const MAX_FRAME_SECONDS = 0.1;
@@ -679,6 +683,9 @@ export class DayScene extends Phaser.Scene {
   }
 
   override update(time: number, delta: number): void {
+    const { body } = this.state.character;
+    this.radio.setNear(Math.hypot(body.x - RADIO_CENTER.x, body.y - RADIO_CENTER.y) <= RADIO.nearTiles);
+    setRadioOn(this.state, this.radio.on);
     this.showParking();
     const next = this.overlay.isOpen ? undefined : this.queued.shift();
     if (next) this.overlay.show(next);
@@ -836,7 +843,6 @@ export class DayScene extends Phaser.Scene {
     set("door", state.cats.some((c) => c.away === "stairs") ? STATE_ICONS.door.stairs : state.home.porch.length > 0 ? STATE_ICONS.door.porch : null);
     const table = objectById("table");
     const target = targetOf(state);
-    this.radio.setNear(target?.id === "radio");
     // Страва на столі — її іконкою: мамин судочок — своєю (§6.4).
     const onTable = state.home.surfaces["table"] ?? null;
     set("table", onTable !== null && state.character.activity === null && canUse(state, { type: "object", id: "table", object: table }) && target?.id !== "table" ? itemIcon(onTable) : null);
@@ -1302,6 +1308,7 @@ export class DayScene extends Phaser.Scene {
 
   /** Картка радіо (§8.10): поки вона відкрита, решта станцій лишається напоготові. */
   private openRadio(): void {
+    this.radio.standby();
     this.overlay.show(radioCard(this.radio, () => this.overlay.close()));
   }
 

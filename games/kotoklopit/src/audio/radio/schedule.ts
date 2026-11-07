@@ -31,12 +31,6 @@ export interface Slot {
   start: number;
 }
 
-/** Що звучить: `track` — null у паузі між треками; `offset` — секунда треку. */
-export interface OnAir {
-  track: RadioTrack | null;
-  offset: number;
-}
-
 const CHUNK_SAMPLES = RADIO.chunkFrames * RADIO.frameSamples;
 
 export const chunkKey = (ref: ChunkRef): string => `${ref.track.id}/${ref.chunk}`;
@@ -119,11 +113,6 @@ export function slotAt(station: Station, now: number): Slot {
   let current = slot(station, cycle, 0, cycle * cycleSeconds(station));
   while (now >= current.start + trackSeconds(current.track)) current = nextSlot(station, current);
   return current;
-}
-
-export function onAir(station: Station, now: number): OnAir {
-  const current = slotAt(station, now);
-  return now < current.start ? { track: null, offset: 0 } : { track: current.track, offset: now - current.start };
 }
 
 /** Шматки ефіру на `seconds` наперед, за порядком. */

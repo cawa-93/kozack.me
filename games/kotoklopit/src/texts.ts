@@ -41,8 +41,6 @@ export const UTILITIES_MESSAGES: Record<Exclude<UtilitiesReport["outcome"], "evi
 
 /** Картка радіо (§8.10). */
 export const RADIO_TEXTS = {
-  nowPlaying: "Зараз грає",
-  silence: "Радіо мовчить",
   turnOn: "Увімкнути",
   turnOff: "Вимкнути",
   volume: "Гучність",

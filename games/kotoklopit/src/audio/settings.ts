@@ -9,7 +9,7 @@ export interface AudioSettings {
   volume: number;
 }
 
-export const DEFAULT_AUDIO: AudioSettings = { radioOn: true, station: "retro", volume: 0.6 };
+export const DEFAULT_AUDIO: AudioSettings = { radioOn: false, station: "retro", volume: 0.6 };
 
 type Storage = Pick<globalThis.Storage, "getItem" | "setItem">;
 

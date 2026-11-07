@@ -1,4 +1,4 @@
-// Картка радіо (§8.10): вигляд приймача зі шкалою, станціями, вимикачем і гучністю. Стан читає й змінює лише через `Radio`.
+// Картка радіо (§8.10): вигляд приймача зі шкалою, екраном, станціями, вимикачем і гучністю. Стан читає й змінює лише через `Radio`.
 
 import type { Radio } from "../audio/radio/radio";
 import type { Station } from "../audio/radio/schedule";
@@ -17,7 +17,8 @@ const dialPercent = (station: Station): number => {
 export function radioCard(radio: Radio, onClose: () => void): Card {
   const root = element("div", "radio");
   const face = element("div", "radio-face");
-  const grille = element("div", "radio-grille");
+  const screen = element("div", "radio-screen");
+  screen.append(element("span", "radio-wave a"), element("span", "radio-wave b"), element("span", "radio-wave c"));
   const dial = element("div", "radio-dial");
   const needle = element("div", "radio-needle");
   dial.append(needle);
@@ -26,10 +27,9 @@ export function radioCard(radio: Radio, onClose: () => void): Card {
     mark.style.left = `${dialPercent(station)}%`;
     dial.append(mark);
   }
-  face.append(grille, dial);
+  face.append(screen, dial);
 
   const tagline = element("p", "radio-tagline");
-  const now = element("p", "radio-now");
 
   const stations = element("div", "radio-stations");
   const buttons = new Map<Station, HTMLButtonElement>();
@@ -62,7 +62,7 @@ export function radioCard(radio: Radio, onClose: () => void): Card {
   const controls = element("div", "radio-controls");
   controls.append(power, label);
 
-  root.append(face, tagline, now, stations, controls);
+  root.append(face, tagline, stations, controls);
 
   function refresh(): void {
     const chosen = radio.station;
@@ -75,15 +75,8 @@ export function radioCard(radio: Radio, onClose: () => void): Card {
       button.setAttribute("aria-pressed", String(active));
     }
     power.textContent = radio.on ? RADIO_TEXTS.turnOff : RADIO_TEXTS.turnOn;
-    const track = radio.nowPlaying();
-    now.textContent = radio.on && track ? `${RADIO_TEXTS.nowPlaying}: ${track.artist} — ${track.title}` : RADIO_TEXTS.silence;
   }
   refresh();
-  // Ефір іде й поки картка відкрита: рядок оновлюється сам і зупиняється, щойно картку закрили.
-  const timer = window.setInterval(() => {
-    if (root.isConnected) refresh();
-    else window.clearInterval(timer);
-  }, 1000);
 
   return { title: "", skin: "radio", body: [root], actions: [], closable: true, onDismiss: onClose };
 }

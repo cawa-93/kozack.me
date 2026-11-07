@@ -8,7 +8,7 @@ import { ChunkStore } from "./chunks";
 import { setRadioLit } from "./lamp";
 import { STATIONS, chunkUrl } from "./playlist";
 import { wantedChunks } from "./prefetch";
-import { onAir, type RadioTrack, type Station } from "./schedule";
+import type { Station } from "./schedule";
 
 /** Реальний час, с: той самий годинник і для ефіру, і для завантажень. */
 const clock = (): number => Date.now() / 1000;
@@ -25,10 +25,8 @@ export class Radio {
   private readonly store = new ChunkStore(chunkUrl, fetchBytes);
   private readonly broadcast = new Broadcast(this.engine, this.store, clock);
   private settings: AudioSettings;
-  /** Коли радіо стало ціллю дії; null — персонаж не біля нього. */
+  /** Відколи решта станцій напоготові; null — персонаж далеко. */
   private nearSince: number | null = null;
-  /** Останній трек, що звучав: у паузі між треками рядок «Зараз грає» не блимає. */
-  private lastTrack: RadioTrack | null = null;
 
   constructor() {
     this.settings = loadAudioSettings(storage(), this.stations.map((station) => station.id));
@@ -58,13 +56,6 @@ export class Radio {
     return this.settings.volume;
   }
 
-  /** Що звучить на обраній станції; показуємо це й на вимкненому радіо: ефір іде завжди. */
-  nowPlaying(): RadioTrack | null {
-    const track = onAir(this.station, clock()).track;
-    if (track) this.lastTrack = track;
-    return this.lastTrack;
-  }
-
   choose(station: Station): void {
     this.update({ station: station.id, radioOn: true });
     this.broadcast.tune(this.playing());
@@ -80,11 +71,17 @@ export class Radio {
     this.applyVolume();
   }
 
-  /** Радіо стало ціллю дії чи відкрита його картка: решта станцій стає напоготові. */
+  /** Персонаж поруч із радіо: решта станцій стає напоготові. */
   setNear(near: boolean): void {
     if (near === (this.nearSince !== null)) return;
     this.nearSince = near ? clock() : null;
     if (near) this.tick();
+  }
+
+  /** Відкрито картку: станцію от-от змінять, тож поновити готовність, навіть якщо вона вже вичерпалась. */
+  standby(): void {
+    this.nearSince = clock();
+    this.tick();
   }
 
   private playing(): Station | null {

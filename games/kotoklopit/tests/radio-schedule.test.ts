@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vitest";
 
 import { CHUNK_SECONDS, RADIO, SAMPLE_RATE } from "../src/audio/config";
-import { chunkOf, chunkSamples, chunkStart, chunksAhead, nextSlot, onAir, slotAt, trackSamples, trackSeconds, type RadioTrack, type Station } from "../src/audio/radio/schedule";
+import { chunkOf, chunkSamples, chunkStart, chunksAhead, nextSlot, slotAt, trackSamples, trackSeconds, type RadioTrack, type Station } from "../src/audio/radio/schedule";
 
 /** Трек із кількістю секунд, округленою до кадрів. */
 const track = (id: string, seconds: number): RadioTrack => ({ id, artist: "a", title: id, frames: Math.round((seconds * SAMPLE_RATE) / RADIO.frameSamples) });
 const station = (id: string, ...seconds: number[]): Station => ({ id, frequency: "90,0", tracks: seconds.map((s, i) => track(`${id}-${i}`, s)) });
+
+/** Що звучить у цю мить; у паузі між треками — нічого. */
+function onAir(on: Station, now: number): { track: RadioTrack | null; offset: number } {
+  const slot = slotAt(on, now);
+  return now < slot.start ? { track: null, offset: 0 } : { track: slot.track, offset: now - slot.start };
+}
 
 const FIVE = station("five", 130, 200, 95, 170, 240);
 /** Великий реальний час: на ньому й трапляються похибки округлення. */
