@@ -4,3 +4,4 @@
 /games/*/node_modules/
 /public/games/
 /games/*/audio-library/
+/games/*/audio-out/
