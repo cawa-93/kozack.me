@@ -4,4 +4,5 @@
 /games/*/node_modules/
 /public/games/
 /games/*/audio-library/
-/games/*/audio-out/
+/games/*/cloudflare-music/public/music/
+/games/*/cloudflare-music/playlist.json

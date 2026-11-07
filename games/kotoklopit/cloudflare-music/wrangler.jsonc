@@ -1,0 +1,11 @@
+// Музика радіо на статичному хостингу Cloudflare (§8.10, SOUND_PLAN.md, блок 3): лише файли, без коду Worker, тож запити до них
+// безкоштовні й без ліміту. Шматки кладе в public/music/ `npm run audio:encode -w games/kotoklopit`, вивантажує й підключає до гри
+// `npm run audio:deploy -w games/kotoklopit`. Заголовки — public/_headers.
+{
+  "name": "kotoklopit-music",
+  "compatibility_date": "2026-10-13",
+  "assets": {
+    "directory": "./public",
+    "not_found_handling": "none"
+  }
+}

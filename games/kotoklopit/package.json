@@ -15,8 +15,7 @@
     "art": "node scripts/art/cli.ts",
     "audio:catalog": "node scripts/audio/catalog.ts",
     "audio:encode": "node scripts/audio/encode.ts",
-    "audio:deploy": "npx --yes wrangler@4.152.0 deploy --config cloudflare/wrangler.jsonc",
-    "audio:publish": "node scripts/audio/publish.ts"
+    "audio:deploy": "node scripts/audio/deploy.ts"
   },
   "license": "UNLICENSED",
   "dependencies": {

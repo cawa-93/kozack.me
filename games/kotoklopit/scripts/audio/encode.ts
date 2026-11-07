@@ -1,7 +1,7 @@
 // Готує музику радіо (§8.10): треки станцій із `audio/catalog.json` обрізає від тиші по краях, вирівнює за гучністю, кодує й ріже
 // на файли-шматки. Чому формат саме такий — `SOUND_PLAN.md`, «Як працює радіо».
 //
-//   npm run audio:encode -w games/kotoklopit -- --out audio-out      усе для хостингу: audio-out/radio/ і audio-out/playlist.json
+//   npm run audio:encode -w games/kotoklopit                         усе для хостингу: cloudflare-music/public/music/ і cloudflare-music/playlist.json
 //   npm run audio:encode -w games/kotoklopit -- --sample             два найкоротші треки станції в public/radio/ (перевірка в грі)
 //   --bitrate 48 --channels 1                                        профіль кодування (типово — моно, 48 кбіт/с)
 //
@@ -49,8 +49,7 @@ interface Playlist {
   stations: { id: string; frequency: string; tracks: string[] }[];
 }
 
-const { values } = parseArgs({ options: { sample: { type: "boolean" }, out: { type: "string" }, bitrate: { type: "string" }, channels: { type: "string" } } });
-if (!values.sample && !values.out) throw new Error("Вкажіть --out <тека> чи --sample");
+const { values } = parseArgs({ options: { sample: { type: "boolean" }, bitrate: { type: "string" }, channels: { type: "string" } } });
 const bitrate = Number(values.bitrate ?? 48);
 const channels = Number(values.channels ?? 1);
 if (channels !== 1 && channels !== 2) throw new Error("--channels: 1 чи 2");
@@ -59,9 +58,10 @@ const frameBytes = (144 * bitrate * 1000) / SAMPLE_RATE;
 if (!Number.isInteger(frameBytes)) throw new Error(`Бітрейт ${bitrate} не дає рівної сітки кадрів`);
 const profile = `${channels === 1 ? "m" : "s"}${bitrate}`;
 
-const out = values.out ? path.resolve(values.out) : null;
-const assets = out ? path.join(out, "radio") : path.join(ROOT, "public/radio");
-const playlistFile = out ? path.join(out, "playlist.json") : GAME_PLAYLIST;
+/** Повний набір — для хостингу (`cloudflare-music/`, поза git, крім конфігу й заголовків); зразки — у власну теку гри. */
+const full = !values.sample;
+const assets = full ? path.join(ROOT, "cloudflare-music/public/music") : path.join(ROOT, "public/radio");
+const playlistFile = full ? path.join(ROOT, "cloudflare-music/playlist.json") : GAME_PLAYLIST;
 
 const filters = (): string => `${SILENCE},areverse,${SILENCE},areverse,aformat=channel_layouts=${channels === 1 ? "mono" : "stereo"}`;
 
@@ -131,9 +131,7 @@ const playlist: Playlist = {
 };
 writeFileSync(playlistFile, `${JSON.stringify(playlist, null, 2)}\n`);
 
-if (out) {
-  // Шматки незмінні (у назві теки — хеш і профіль), а гра бере їх з іншого домену.
-  writeFileSync(path.join(assets, "_headers"), "/*\n  Access-Control-Allow-Origin: *\n  Cache-Control: public, max-age=31536000, immutable\n");
+if (full) {
   const files = [...chosen.keys()].reduce((sum, id) => sum + readdirSync(path.join(assets, id)).length, 0);
   const bytes = [...chosen.keys()].reduce((sum, id) => sum + readdirSync(path.join(assets, id)).reduce((s, f) => s + statSync(path.join(assets, id, f)).size, 0), 0);
   const hours = [...frames.values()].reduce((sum, f) => sum + f, 0) * (RADIO.frameSamples / SAMPLE_RATE) / 3600;

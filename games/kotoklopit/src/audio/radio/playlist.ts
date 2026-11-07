@@ -4,7 +4,7 @@ import data from "./playlist.json";
 import type { ChunkRef, RadioTrack, Station } from "./schedule";
 
 interface Playlist {
-  /** Адреса хостингу шматків (`scripts/audio/publish.ts`); null — тека `radio/` самої гри. */
+  /** Адреса хостингу шматків (`scripts/audio/deploy.ts`); null — тека `radio/` самої гри. */
   base?: string | null;
   tracks: Record<string, Omit<RadioTrack, "id">>;
   stations: { id: string; frequency: string; tracks: string[] }[];
