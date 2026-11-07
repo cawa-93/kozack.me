@@ -13,7 +13,7 @@ import { powerOut } from "../../sim/modifiers";
 import { fountainWorks, waterCapacity } from "../../sim/resources";
 import { boxesShown, STORAGES, storageStages, type FillStage } from "../../sim/storage";
 import { CAT_TRACES, hasTrace } from "../../sim/traces";
-import type { BowlItem, CatTrace, Dish, Feeder, GameState, HomeItem, LitterItem, MessKind, PlacedItem, Quality, TrinketKind, Vec, WaterItem } from "../../sim/types";
+import type { BowlItem, CatTrace, Dish, Feeder, GameState, HomeItem, LitterItem, Mess, PlacedItem, Quality, TrinketKind, Vec, WaterItem } from "../../sim/types";
 import { isWorking } from "../../sim/work";
 import { cobwebState, type CobwebState } from "../art/manifest/a20-dust";
 import { wallKind } from "../art/manifest/lib/geometry";
@@ -478,8 +478,8 @@ export function carrierShakes(state: GameState, index: number): boolean {
 }
 
 /** Безлад (§9.12): `mess/<вид>`. */
-export function messFrame(kind: MessKind): IsoFrame {
-  return frame(`mess/${kind}`);
+export function messFrame(mess: Pick<Mess, "kind" | "carrier">): IsoFrame {
+  return frame(mess.carrier ? `mess/carrier/${mess.carrier}` : `mess/${mess.kind}`);
 }
 
 // --- Пил і павутина (§8.7) ---------------------------------------------------------------------------

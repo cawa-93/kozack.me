@@ -257,10 +257,10 @@ export class IsoFloorView implements WorldPart {
     for (const mess of home.messes) {
       let spot = this.messes.get(mess.id);
       if (!spot) {
-        spot = this.spot(messFrame(mess.kind), { id: `mess:${mess.id}`, flat: true, half: 40 });
+        spot = this.spot(messFrame(mess), { id: `mess:${mess.id}`, flat: true, half: 40 });
         this.messes.set(mess.id, spot);
       }
-      this.place(spot, messFrame(mess.kind), mess, MESS_HEIGHT);
+      this.place(spot, messFrame(mess), mess, MESS_HEIGHT);
     }
 
     // Жмути шерсті (§8.7, рішення автора 2026-11-02): лежать на своїх місцях, доки їх не прибере пилосос чи робот, — прибирають

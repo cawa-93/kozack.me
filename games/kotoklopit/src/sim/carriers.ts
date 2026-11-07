@@ -132,10 +132,11 @@ export function discardCarrier(state: GameState, index: number): boolean {
   return true;
 }
 
-/** Кіт догриз переноску (§8.7): вона зламана, уламки поруч, тріск, коти на волі. */
+/** Кіт догриз переноску (§8.7): вона зламана, уламки її кольору поруч, тріск, коти на волі. */
 function breakCarrier(state: GameState, index: number, rng: Rng): void {
+  const quality = state.home.carriers[index]?.quality;
   removeCarrier(state, index, rng);
-  addMess(state, "broken", { x: CARRIER_SPOT.x, y: CARRIER_SPOT.y - 0.4 }, null);
+  addMess(state, "broken", { x: CARRIER_SPOT.x, y: CARRIER_SPOT.y - 0.4 }, null, quality);
   emit(state, { type: "broke", what: "carrier" });
   loudNoise(state, "broken", CARRIER_SPOT);
 }

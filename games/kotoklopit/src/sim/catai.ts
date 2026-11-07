@@ -130,7 +130,7 @@ import { enoughFor, fountainWorks, inQuietHouse, isDirty, itemsOf, litterCapacit
 import { stateRng, type Rng } from "./rng";
 import { absoluteMinute } from "./time";
 import { addTrace, SCRATCH_TRACES, tidyBoxTraces } from "./traces";
-import type { BowlItem, Cat, CatAct, CatActKind, Dish, ForbiddenZone, GameState, HomeItem, LitterItem, MessKind, PlayPhase, Product, Quality, ToyItem, TrinketKind, Vec, WaterItem } from "./types";
+import type { BowlItem, Cat, CatAct, CatActKind, Dish, ForbiddenZone, GameState, HomeItem, LitterItem, Mess, MessKind, PlayPhase, Product, Quality, ToyItem, TrinketKind, Vec, WaterItem } from "./types";
 import { exercise, gainWeight, settleWeight, weightSeen } from "./weight";
 import { isWorking, stopWork } from "./work";
 
@@ -2068,8 +2068,8 @@ export function peeSpot(state: GameState, box: LitterItem): Vec {
 }
 
 /** Безлад на підлозі. */
-export function addMess(state: GameState, kind: MessKind, at: Vec, cat: number | null): void {
-  const mess = { id: state.nextId++, kind, x: at.x, y: at.y, cat };
+export function addMess(state: GameState, kind: MessKind, at: Vec, cat: number | null, carrier?: Quality): void {
+  const mess: Mess = { id: state.nextId++, kind, x: at.x, y: at.y, cat, ...(carrier ? { carrier } : {}) };
   state.home.messes.push(mess);
   emit(state, { type: "mess", mess });
 }

@@ -92,7 +92,7 @@ function framesOf(state: GameState): IsoFrame[] {
   for (const item of state.home.items) frames.push(itemFrame(state, item));
   for (const feeder of state.home.feeders ?? []) frames.push(feederFrame(feeder));
   if (state.home.appliances.robot) frames.push(robotFrame(state, state.home.appliances.robot));
-  for (const mess of state.home.messes) frames.push(messFrame(mess.kind));
+  for (const mess of state.home.messes) frames.push(messFrame(mess));
   for (const t of TRINKETS) frames.push(trinketFrame(t.kind, state.home.trinkets?.[t.kind] !== undefined));
   for (const overlay of TRACE_OVERLAYS) {
     const trace = traceFrame(state, overlay);
@@ -537,7 +537,13 @@ describe("кадри квартири й підлоги (iso/looks.ts)", () => {
     for (const dish of dishes) expectFrame(dishFrame(dish));
     expect(dishFrame(dishes[3]!)).toEqual({ id: "item/dish/mom", state: null });
     const messes: MessKind[] = ["surprise", "vomit", "hairball", "litter", "broken", "fur", "mark", "pee", "puddle", "paper", "garbage"];
-    for (const kind of messes) expectFrame(messFrame(kind));
+    for (const kind of messes) expectFrame(messFrame({ kind }));
+    // Уламки переноски — її кольору, а не білі скалки кухля.
+    for (const carrier of ["cheap", "premium"] as const) {
+      const frame = messFrame({ kind: "broken", carrier });
+      expectFrame(frame);
+      expect(frame.id).toBe(`mess/carrier/${carrier}`);
+    }
     for (const t of TRINKETS) for (const fallen of [false, true]) expectFrame(trinketFrame(t.kind, fallen));
     expect(basketState(5)).toBe("load-0");
     expect(basketState(9)).toBe("load-0");

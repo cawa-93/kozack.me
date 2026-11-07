@@ -421,6 +421,17 @@ describe("зламана переноска (§8.7)", () => {
     expect(who.act.kind).toBe("hide");
   });
 
+  it("уламки — тієї переноски, яку зламали", () => {
+    for (const quality of ["cheap", "premium"] as const) {
+      const save = game(quality);
+      const state = save.current;
+      const who = cat(save);
+      seat(state, who);
+      breakout(state, [who]);
+      expect(state.home.messes.find((m) => m.kind === "broken")?.carrier).toBe(quality);
+    }
+  });
+
   it("випустили — міцність знову повна", () => {
     const save = game("cheap");
     const state = save.current;
