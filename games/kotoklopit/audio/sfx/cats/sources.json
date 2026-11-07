@@ -234,15 +234,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "3847f5c05d829c8be77920bb5ec596af50ca43ddb7efd86e515bbbcf3da22111"
     },
-    "dc-stones": {
-      "file": "archive/Designers-Choice-Collection-Rocks/ROCKCrsh-Samsung_Galaxy_Smartphone_CU_Small_Stones_Kicked_X4_Nicholas_Judy_TDC.mp3",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Rocks",
-      "title": "The Designer's Choice UCS Collection - ROCKS — ROCKS/CRASH & DEBRIS/ROCKCrsh-Samsung Galaxy Smartphone, CU_Small Stones, Kicked, X4_Nicholas Judy_TDC.mp3",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "6c047600dfe57303d32fdc079c1cf374c6829a6c1e199a7685769daf505be92d"
-    },
     "dc-chomp": {
       "file": "archive/Designers-Choice-Collection-Cartoon/TOONVox-Blue_Snowball_Microphone_CU_Chomp_Nicholas_Judy_TDC.flac",
       "url": "https://archive.org/details/Designers-Choice-Collection-Cartoon",
@@ -315,24 +306,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "b1fa50e1ec51397c98868593c7446e488adc0c2050d83a34665f3e626332f192"
     },
-    "dc-styrofoam": {
-      "file": "archive/Designers-Choice-Collection-Plastic/PLASFric-Blue_Snowball_Microphone_CU_Styrofoam_Being_Sawed_Nicholas_Judy_TDC.mp3",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Plastic",
-      "title": "The Designer's Choice UCS Collection - PLASTIC — PLASTIC/FRICTION/PLASFric-Blue Snowball Microphone, CU_Styrofoam Being Sawed_Nicholas Judy_TDC.mp3",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "4a8f2e9909d2d8e771900b8d7894906fb3f339eacfad7117c76dca81a95c58d4"
-    },
-    "dc-scurry": {
-      "file": "archive/Designers-Choice-Collection-Movement/MOVEInsc-Blue_Snowball_Microphone_MCU_Cricket_Scurrying_Nicholas_Judy_TDC.mp3",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Movement",
-      "title": "The Designer's Choice UCS Collection - MOVEMENT — MOVEMENT/INSECT/MOVEInsc-Blue Snowball Microphone, MCU_Cricket, Scurrying_Nicholas Judy_TDC.mp3",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "e9315e951ae62dc549139dcb75dd7ac044abb3c49917ebcf03aae4f36e511e0a"
-    },
     "dc-sparks": {
       "file": "archive/Designers-Choice-Collection-Electricity/ELECMisc-MCU_Electrical_Arcs_Sparks_Zaps_Nicholas_Judy_TDC.mp3",
       "url": "https://archive.org/details/Designers-Choice-Collection-Electricity",
@@ -350,6 +323,96 @@
       "license": "PD",
       "licenseUrl": "https://commons.wikimedia.org/wiki/File:Baby_sneeze.ogg",
       "sha256": "fde5adb8a4c72214cd4bda8a1d189c1d01bf6435d0020ccc2eeeba369f82c263"
+    },
+    "fs-chatter-trill": {
+      "file": "freesound/850103__catphony__chatter-and-trill.mp3",
+      "url": "https://freesound.org/people/CatPhony/sounds/850103/",
+      "title": "Chatter and Trill",
+      "author": "CatPhony",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "59e43a3231f9a58c8a337bccb3247e857695aa46bcf61122f393a15e8e55c87b"
+    },
+    "fs-chatter-excited": {
+      "file": "freesound/850108__catphony__excited-and-desperate-chatter.mp3",
+      "url": "https://freesound.org/people/CatPhony/sounds/850108/",
+      "title": "Excited and desperate chatter",
+      "author": "CatPhony",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "6aa94ac6cfe1acd1bfbee48e20e1cdc0b18bc68a82a4f088d82a6226bec7d1ce"
+    },
+    "fs-trill-short": {
+      "file": "freesound/850104__catphony__cat-trills-shortly-calmquiet.mp3",
+      "url": "https://freesound.org/people/CatPhony/sounds/850104/",
+      "title": "Cat trills shortly (calm/quiet)",
+      "author": "CatPhony",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "40ae20cbae3d074d63bc5540412abe86d093f31f826db6252770a5572de401b6"
+    },
+    "fs-trill-4": {
+      "file": "freesound/668825__mbpl__cat-trill-4.wav",
+      "url": "https://freesound.org/people/MBPL/sounds/668825/",
+      "title": "Cat trill 4",
+      "author": "MBPL",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "c9ddc018d82d96c1440f2added039f5f990ca6f30e8f4d45ce3994811a7c7f9d"
+    },
+    "fs-litter": {
+      "file": "freesound/498835__16fpanskarollerova_adriena__cat_litter_box.wav",
+      "url": "https://freesound.org/people/16FPanskaRollerova_Adriena/sounds/498835/",
+      "title": "cat_litter_box.wav",
+      "author": "16FPanskaRollerova_Adriena",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "8b140a57ab4e11d166b8dcf4d115091bfe13b53c582fed9fc82808fca69edb5b"
+    },
+    "fs-zoomies": {
+      "file": "freesound/855106__qubodup__cat-zoomies.flac",
+      "url": "https://freesound.org/people/qubodup/sounds/855106/",
+      "title": "Cat Zoomies",
+      "author": "qubodup",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "cb8120794f7775f9b7adea29798fadd1320c7a14676279d4e022e16d3ae05332"
+    },
+    "fs-scratch-post": {
+      "file": "freesound/490730__samantha_dolman__cat-scratching-a-post.wav",
+      "url": "https://freesound.org/people/Samantha_Dolman/sounds/490730/",
+      "title": "Cat Scratching A Post",
+      "author": "Samantha_Dolman",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "e73d5315e6c445b47f45ac60468d890b807f7df487344787e5bf27a2fa89357b"
+    },
+    "fs-drinking": {
+      "file": "freesound/791359__lake_constance__01-cat-drinking.aiff",
+      "url": "https://freesound.org/people/lake_constance/sounds/791359/",
+      "title": "01 cat drinking",
+      "author": "lake_constance",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "20d914efc601add7293dffe2e0d2849ad95474491616558c2e994d247b9b831a"
+    },
+    "fs-growl": {
+      "file": "freesound/679954__dinoroki__cat-growling-and-hissing.mp3",
+      "url": "https://freesound.org/people/dinoroki/sounds/679954/",
+      "title": "Cat Growling and Hissing",
+      "author": "dinoroki",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "b4f6963724170d8ea7be9d3d5dad47f5b01e7ffb95f2e96cff563b11bbe2464c"
+    },
+    "fs-fight": {
+      "file": "freesound/675401__craigsmith__s30-13-vicious-alley-cat-fight.wav",
+      "url": "https://freesound.org/people/craigsmith/sounds/675401/",
+      "title": "S30-13 Vicious alley cat fight",
+      "author": "craigsmith",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "0c2576f9231ed3dcb2c1a5c381e82b6842b7f582bcb0503fdcf4ee1454ef0834"
     }
   },
   "files": {
@@ -423,19 +486,17 @@
       "note": "сіамська, вимогливо"
     },
     "meow-happy-1": {
-      "from": "meow-food",
-      "start": 0.22,
-      "end": 0.7799,
-      "filter": "highpass=f=150,asetrate=52800,aresample=48000",
-      "fadeOut": 0.12
+      "from": "fs-trill-4",
+      "fadeOut": 0.05,
+      "note": "радісне «мррп»"
     },
     "meow-happy-2": {
-      "from": "meow-young",
-      "start": 0,
-      "end": 0.5497,
-      "filter": "highpass=f=350,asetrate=47628,aresample=48000",
-      "fadeIn": 0.02,
-      "fadeOut": 0.12
+      "from": "fs-trill-short",
+      "start": 0.15,
+      "end": 0.85,
+      "fadeIn": 0.01,
+      "fadeOut": 0.06,
+      "note": "тихе «мррп»"
     },
     "meow-happy-3": {
       "from": "dc-meow3",
@@ -578,18 +639,20 @@
       "fadeOut": 0.04
     },
     "chatter-1": {
-      "from": "dc-kitten",
-      "start": 22.93,
-      "end": 23.07,
-      "filter": "asetrate=55125,aresample=48000",
-      "fadeOut": 0.03
+      "from": "fs-chatter-trill",
+      "start": 0.1,
+      "end": 2.35,
+      "fadeIn": 0.01,
+      "fadeOut": 0.08,
+      "note": "«ек-ек-ек» на птаха — ціла фраза"
     },
     "chatter-2": {
-      "from": "dc-kitten",
-      "start": 24.25,
-      "end": 24.39,
-      "filter": "asetrate=55125,aresample=48000",
-      "fadeOut": 0.03
+      "from": "fs-chatter-excited",
+      "start": 1.25,
+      "end": 3,
+      "fadeIn": 0.01,
+      "fadeOut": 0.08,
+      "note": "збуджене «ек-ек-ек»"
     },
     "hiss-1": {
       "from": "hiss-zabuhailo",
@@ -614,41 +677,41 @@
       "fadeOut": 0.08
     },
     "growl-1": {
-      "from": "dc-fight",
-      "start": 8.5,
-      "end": 9.95,
-      "filter": "highpass=f=250",
+      "from": "fs-growl",
+      "start": 0.03,
+      "end": 1.65,
       "fadeIn": 0.03,
-      "fadeOut": 0.12
+      "fadeOut": 0.12,
+      "note": "гарчання з шипінням"
     },
     "growl-2": {
-      "from": "dc-fight",
-      "start": 12.2,
-      "end": 13.75,
-      "filter": "highpass=f=250",
+      "from": "fs-growl",
+      "start": 1.8,
+      "end": 3.6,
       "fadeIn": 0.03,
       "fadeOut": 0.15
     },
     "fight-1": {
-      "from": "dc-fight",
-      "start": 4.36,
-      "end": 5.45,
-      "filter": "highpass=f=250",
-      "fadeOut": 0.12
+      "from": "fs-fight",
+      "start": 11.2,
+      "end": 12.6,
+      "fadeIn": 0.02,
+      "fadeOut": 0.12,
+      "note": "вереск бійки"
     },
     "fight-2": {
-      "from": "dc-fight",
-      "start": 13.97,
-      "end": 15,
-      "filter": "highpass=f=250",
-      "fadeOut": 0.12
+      "from": "fs-fight",
+      "start": 4.4,
+      "end": 6.4,
+      "fadeIn": 0.02,
+      "fadeOut": 0.15
     },
     "fight-loop": {
-      "from": "dc-fight",
-      "start": 22.25,
-      "end": 28.3,
-      "filter": "highpass=f=250",
-      "loop": true
+      "from": "fs-fight",
+      "start": 7.4,
+      "end": 11.2,
+      "loop": true,
+      "note": "гарчання й завивання, поки б'ються"
     },
     "bite-1": {
       "from": "dc-fight",
@@ -690,12 +753,11 @@
       "loop": true
     },
     "lap-loop": {
-      "from": "drinking",
-      "start": 9,
-      "end": 14.3,
-      "filter": "highpass=f=1000",
+      "from": "fs-drinking",
+      "start": 2,
+      "end": 8,
       "loop": true,
-      "note": "тихий запис: лишено лише хлюпання вище 1 кГц"
+      "note": "хлебтання води"
     },
     "lick-1": {
       "from": "drinking",
@@ -717,29 +779,25 @@
       "fadeOut": 0.05
     },
     "scamper-1": {
-      "from": "dc-scurry",
-      "start": 0.8,
-      "end": 1.7,
-      "filter": "asetrate=26460,aresample=48000,lowpass=f=5000",
-      "fadeIn": 0.02,
-      "fadeOut": 0.1,
-      "note": "біг цвіркуна, сповільнений — дрібний тупіт лап"
+      "from": "fs-zoomies",
+      "start": 0.03,
+      "end": 1,
+      "fadeIn": 0.01,
+      "fadeOut": 0.08
     },
     "scamper-2": {
-      "from": "dc-scurry",
-      "start": 3.5,
-      "end": 4.4,
-      "filter": "asetrate=26460,aresample=48000,lowpass=f=5000",
-      "fadeIn": 0.02,
-      "fadeOut": 0.1
+      "from": "fs-zoomies",
+      "start": 0.95,
+      "end": 1.8,
+      "fadeIn": 0.01,
+      "fadeOut": 0.08
     },
     "zoom-loop": {
-      "from": "dc-scurry",
-      "start": 0,
-      "end": 5,
-      "filter": "asetrate=26460,aresample=48000,lowpass=f=5000",
+      "from": "fs-zoomies",
+      "start": 0.03,
+      "end": 4.35,
       "loop": true,
-      "note": "зумі: тупіт і шкряб лап"
+      "note": "зумі: справжній тупіт лап"
     },
     "land-1": {
       "from": "dc-bodyfall",
@@ -850,27 +908,25 @@
       "fadeOut": 0.06
     },
     "dig-1": {
-      "from": "dc-stones",
-      "start": 2.69,
-      "end": 3.46,
-      "filter": "highpass=f=300",
-      "fadeOut": 0.08,
-      "note": "камінці — наповнювач лотка"
+      "from": "fs-litter",
+      "start": 8.4,
+      "end": 9.9,
+      "fadeIn": 0.02,
+      "fadeOut": 0.1,
+      "note": "копирсання в лотку"
     },
     "dig-loop": {
-      "from": "dc-stones",
-      "start": 2.69,
-      "end": 6,
-      "filter": "highpass=f=300",
+      "from": "fs-litter",
+      "start": 2,
+      "end": 5.5,
       "loop": true
     },
     "scratch-loop": {
-      "from": "dc-styrofoam",
-      "start": 0,
-      "end": 4.3,
-      "filter": "highpass=f=300,lowpass=f=4000",
+      "from": "fs-scratch-post",
+      "start": 12.5,
+      "end": 15.6,
       "loop": true,
-      "note": "пиляння пінопласту — шкряб кігтів, приглушено вгорі"
+      "note": "кігті по кігтеточці"
     },
     "smash-1": {
       "from": "dc-bottle-smash",

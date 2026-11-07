@@ -36,12 +36,12 @@
     "seconds": 1.12
   },
   "meow-happy-1": {
-    "hash": "001e4c4594092226",
-    "seconds": 0.509
+    "hash": "5d9a07213f64b113",
+    "seconds": 0.859938
   },
   "meow-happy-2": {
-    "hash": "5235e83cff7f4683",
-    "seconds": 0.506313
+    "hash": "98f8296f8be474e4",
+    "seconds": 0.7
   },
   "meow-happy-3": {
     "hash": "35030e00ca21accc",
@@ -124,12 +124,12 @@
     "seconds": 0.281063
   },
   "chatter-1": {
-    "hash": "81c82c76653439a5",
-    "seconds": 0.112
+    "hash": "66f6a223127c7134",
+    "seconds": 2.25
   },
   "chatter-2": {
-    "hash": "c80fed51448ceb41",
-    "seconds": 0.112
+    "hash": "a32832c4e0917b9b",
+    "seconds": 1.75
   },
   "hiss-1": {
     "hash": "48c07a8151ebb08a",
@@ -144,27 +144,27 @@
     "seconds": 0.833021
   },
   "growl-1": {
-    "hash": "a94535a9d2b0a7f4",
-    "seconds": 1.45
+    "hash": "fea6a1b478d7d98b",
+    "seconds": 1.62
   },
   "growl-2": {
-    "hash": "6d824e355f65d2f6",
-    "seconds": 1.55
+    "hash": "fbf50fb7bf1776c0",
+    "seconds": 1.8
   },
   "fight-1": {
-    "hash": "4cddb336db7190d4",
-    "seconds": 1.09
+    "hash": "29e848ea9034f8e9",
+    "seconds": 1.4
   },
   "fight-2": {
-    "hash": "fe19ebd79c2fb1e2",
-    "seconds": 1.03
+    "hash": "e60a691154848531",
+    "seconds": 2
   },
   "fight-loop": {
-    "hash": "3d3682ce5201d29a",
-    "seconds": 5.75,
+    "hash": "ddd3133012d2fb60",
+    "seconds": 3.5,
     "loop": {
       "start": 0.1,
-      "end": 5.85
+      "end": 3.6
     }
   },
   "bite-1": {
@@ -196,11 +196,11 @@
     }
   },
   "lap-loop": {
-    "hash": "5d24429f26d83ba1",
-    "seconds": 5,
+    "hash": "6001abe11eaa4217",
+    "seconds": 5.7,
     "loop": {
       "start": 0.1,
-      "end": 5.1
+      "end": 5.8
     }
   },
   "lick-1": {
@@ -216,19 +216,19 @@
     "seconds": 0.4
   },
   "scamper-1": {
-    "hash": "c610c90447b32b87",
-    "seconds": 1.5
+    "hash": "d83c110112b75ba5",
+    "seconds": 0.97
   },
   "scamper-2": {
-    "hash": "da1d59463959aa54",
-    "seconds": 1.5
+    "hash": "fff2dfb4bf3b832c",
+    "seconds": 0.85
   },
   "zoom-loop": {
-    "hash": "7ac2d4d24cf66b31",
-    "seconds": 8.033333,
+    "hash": "554b8836edd2372e",
+    "seconds": 4.02,
     "loop": {
       "start": 0.1,
-      "end": 8.133333
+      "end": 4.12
     }
   },
   "land-1": {
@@ -296,23 +296,23 @@
     "seconds": 0.52
   },
   "dig-1": {
-    "hash": "8167a9eee48a4661",
-    "seconds": 0.77
+    "hash": "68750fbc3f403cc3",
+    "seconds": 1.5
   },
   "dig-loop": {
-    "hash": "db0cf794faae9910",
-    "seconds": 3.01,
+    "hash": "e30fc010508fe801",
+    "seconds": 3.2,
     "loop": {
       "start": 0.1,
-      "end": 3.11
+      "end": 3.3
     }
   },
   "scratch-loop": {
-    "hash": "d75a10e47e313e44",
-    "seconds": 4,
+    "hash": "410ed2bf6629a75a",
+    "seconds": 2.8,
     "loop": {
       "start": 0.1,
-      "end": 4.1
+      "end": 2.9
     }
   },
   "smash-1": {

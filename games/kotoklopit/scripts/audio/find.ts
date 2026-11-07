@@ -8,6 +8,8 @@
 //   node scripts/audio/find.ts ia-search "cat meow"                  предмети Internet Archive з ліцензіями CC0/PD/CC-BY
 //   node scripts/audio/find.ts ia-files <identifier>                 ліцензія й аудіофайли предмета
 //   node scripts/audio/find.ts ia <identifier> <файл> cats meow      завантажити й записати оригінал
+//   node scripts/audio/find.ts freesound cats chatter freesound/<номер>__<автор>__<назва>.wav <автор> "<назва>" [CC0-1.0]
+//                                                                    записати оригінал, завантажений із Freesound вручну
 //
 // Записує лише `originals` у `audio/sfx/<група>/sources.json`; рецепти (`files`) — руками.
 
@@ -203,6 +205,18 @@ switch (command) {
     remember(group, key, { file: saved.file, url: `https://archive.org/details/${id}`, title: `${first(metadata["title"])} — ${name}`, author: first(metadata["creator"]) || "невідомо — перевірити", license, licenseUrl, sha256: saved.sha256 });
     break;
   }
+  case "freesound": {
+    // Freesound закритий для ботів: автор завантажує файл у своєму акаунті (чи Claude через його браузер), а тут лише запис.
+    const [group, key, file, user, title, license = "CC0-1.0"] = args;
+    if (!group || !key || !file || !user || !title) throw new Error("freesound <група> <ключ> <файл у sfx-library/<група>/> <автор> <назва> [ліцензія]");
+    if (!(LICENSES as readonly string[]).includes(license)) throw new Error(`Ліцензія не з дозволених: ${license}`);
+    const id = /^(\d+)__/.exec(path.basename(file))?.[1];
+    if (!id) throw new Error("Назва файлу Freesound починається з номера звуку: <номер>__<автор>__…");
+    const bytes = readFileSync(path.join(ROOT, "sfx-library", group, file));
+    const licenseUrl = license === "CC0-1.0" ? "https://creativecommons.org/publicdomain/zero/1.0/" : `https://creativecommons.org/licenses/by/${license.slice(6)}/`;
+    remember(group, key, { file, url: `https://freesound.org/people/${user}/sounds/${id}/`, title, author: user, license: license as License, licenseUrl, sha256: sha256(bytes) });
+    break;
+  }
   default:
-    console.log("Команди: commons-cat, commons-info, commons, ia-search, ia-files, ia (див. початок файлу)");
+    console.log("Команди: commons-cat, commons-info, commons, ia-search, ia-files, ia, freesound (див. початок файлу)");
 }

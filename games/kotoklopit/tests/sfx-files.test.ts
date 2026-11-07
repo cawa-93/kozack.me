@@ -53,7 +53,7 @@ describe("звуки: групи, файли й ліцензії (§2.1, §11.4�
         expect(LICENSES, where).toContain(original.license);
         expect(original.author.trim(), where).not.toBe("");
         expect(original.author, where).not.toMatch(/невідомо/);
-        expect(original.url, where).toMatch(/^https:\/\/(commons\.wikimedia\.org|archive\.org)\//);
+        expect(original.url, where).toMatch(/^https:\/\/(commons\.wikimedia\.org|archive\.org|freesound\.org)\//);
         expect(original.licenseUrl, where).toMatch(/creativecommons\.org|wikimedia|archive\.org/);
         expect(original.sha256, where).toMatch(/^[0-9a-f]{64}$/);
         expect(used.has(key), `${where} ніде не вжито`).toBe(true);

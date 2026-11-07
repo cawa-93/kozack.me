@@ -252,15 +252,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "3d6d3dad01bf3c5b5a3e2a0bb11ae71f385095f66875458138611b34f2ca2c35"
     },
-    "bees": {
-      "file": "archive/Designers-Choice-Collection-Animals/ANMLInsc-CU_Bee_Buzzing_Some_Others_Fly_By_The_Designer_s_Choice_GNRL1.mp3",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Animals",
-      "title": "The Designer's Choice UCS Collection - ANIMALS — ANIMALS/INSECT/ANMLInsc-CU_Bee Buzzing, Some Others Fly By_The Designer's Choice_GNRL1.mp3",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "60a51cea4eff95a388f4cf9bdf2bb64b1e1141361ab7041bc96b775d9df086e6"
-    },
     "walla": {
       "file": "archive/Designers-Choice-Collection-Ambiences/AMBRest-Samsung_Galaxy_Smartphone_CU_Restaurant_Or_Bar_Walla_The_Designer_s_Choice_GNRL1.mp3",
       "url": "https://archive.org/details/Designers-Choice-Collection-Ambiences",
@@ -323,6 +314,15 @@
       "license": "PD",
       "licenseUrl": "https://commons.wikimedia.org/wiki/File:Frying_fries_going_in_and_out_of_oil.ogg",
       "sha256": "7f933637d2e180cee3ac286e311a9de7e83ff2436950e5b03106bc5438a4ed6b"
+    },
+    "fs-fly": {
+      "file": "freesound/571077__trp__180724-house-fly-close-buzzing-event.flac",
+      "url": "https://freesound.org/people/TRP/sounds/571077/",
+      "title": "180724 House fly, close buzzing event",
+      "author": "TRP",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "c4fd7c9eb16247caf21ea63f3dd77b5a317ead77e18021a249b30429c110ad28"
     }
   },
   "files": {
@@ -634,12 +634,12 @@
       "note": "Дріт замотали: тріск стрічки (липучка)"
     },
     "flies-loop": {
-      "from": "bees",
-      "start": 5.0025,
-      "end": 9.499,
+      "from": "fs-fly",
+      "start": 3.9,
+      "end": 6.9,
       "loop": true,
-      "filter": "asetrate=50715,highpass=f=150",
-      "note": "Мухи над брудним лотком: бджоли, вище ×1,15 (asetrate; це 5,0–9,5 с оригіналу)"
+      "filter": "highpass=f=120",
+      "note": "муха дзижчить"
     },
     "guests": {
       "from": "walla",

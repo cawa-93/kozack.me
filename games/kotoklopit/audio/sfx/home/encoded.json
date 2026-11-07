@@ -204,11 +204,11 @@
     "seconds": 0.66
   },
   "flies-loop": {
-    "hash": "0bb9180b50f6703b",
-    "seconds": 3.610021,
+    "hash": "b918345cdcc9c647",
+    "seconds": 2.7,
     "loop": {
       "start": 0.1,
-      "end": 3.710021
+      "end": 2.8
     }
   },
   "guests": {

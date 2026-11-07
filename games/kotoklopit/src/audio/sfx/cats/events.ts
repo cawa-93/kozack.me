@@ -106,7 +106,8 @@ export function catEvent(event: GameEvent, state: GameState): readonly Cue[] {
       if (event.reaction === "frenzy") return voiced(state, "meow-angry", event.cat);
       return event.reaction === "roll" ? [{ sound: "purr", at: catAt(event.cat) }] : NONE;
     case "chatter":
-      return triple("chatter", catAt(event.cat), 140);
+      // Запис — уже ціла фраза «ек-ек-ек».
+      return [{ sound: "chatter", at: catAt(event.cat) }];
     case "window-angry":
     case "sulked":
     case "cat-left":
