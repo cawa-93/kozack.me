@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { RADIO, SAMPLE_RATE } from "../src/audio/config";
 import { STATIONS } from "../src/audio/radio/playlist";
+import playlist from "../src/audio/radio/playlist.json";
 import { DEFAULT_AUDIO, loadAudioSettings, saveAudioSettings } from "../src/audio/settings";
 import { setRadioOn, tap } from "../src/sim/actions";
 import { createCat } from "../src/sim/cat";
@@ -143,11 +144,19 @@ describe("файли радіо (§8.10)", () => {
     expect(STATIONS.some((station) => station.id === DEFAULT_AUDIO.station)).toBe(true);
   });
 
-  it("шматки кожного треку лежать на місці й мають кадри на сітці", () => {
+  /** Поки хостингу немає, гра бере кілька тимчасових треків із власної теки `public/radio/`. */
+  const base = (playlist as { base?: string | null }).base ?? null;
+
+  it.runIf(base !== null)("адреса хостингу — https зі скісною рискою в кінці", () => {
+    expect(base).toMatch(/^https:\/\/.+\/$/);
+  });
+
+  it.runIf(base === null)("шматки кожного треку лежать на місці й мають кадри на сітці", () => {
     for (const station of STATIONS) {
       for (const track of station.tracks) {
         const chunks = Math.ceil(track.frames / RADIO.chunkFrames);
-        const bitrate = Number(track.id.split("-")[1]);
+        // Профіль у назві теки: «96» (стерео, старі зразки), «m48», «s64».
+        const bitrate = Number(/(\d+)$/.exec(track.id)?.[1]);
         const frameBytes = (144 * bitrate * 1000) / SAMPLE_RATE;
         for (let chunk = 0; chunk < chunks; chunk++) {
           const file = `public/radio/${track.id}/${chunk}.mp3`;

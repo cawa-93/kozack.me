@@ -4,17 +4,16 @@ import data from "./playlist.json";
 import type { ChunkRef, RadioTrack, Station } from "./schedule";
 
 interface Playlist {
+  /** Адреса хостингу шматків (`scripts/audio/publish.ts`); null — тека `radio/` самої гри. */
+  base?: string | null;
   tracks: Record<string, Omit<RadioTrack, "id">>;
   stations: { id: string; frequency: string; tracks: string[] }[];
 }
 
 const playlist: Playlist = data;
 
-/**
- * ТИМЧАСОВО (`SOUND_PLAN.md`, блок 2): кілька треків лежать у `public/radio/` самої гри. Блок 3 перенесе їх на Cloudflare, і
- * тут стане адреса того хостингу. Запит шматка більше ніде не залежить від місця.
- */
-const CHUNKS_URL = `${import.meta.env.BASE_URL}radio/`;
+/** Звідки брати шматки: хостинг зі списку чи, поки його немає, кілька тимчасових треків у `public/radio/` самої гри. */
+const CHUNKS_URL = playlist.base ?? `${import.meta.env.BASE_URL}radio/`;
 
 export const STATIONS: readonly Station[] = playlist.stations.map((station) => ({
   id: station.id,
