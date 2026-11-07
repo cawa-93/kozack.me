@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p scripts",
     "shots": "node scripts/shots.ts",
     "art": "node scripts/art/cli.ts",
-    "audio:catalog": "node scripts/audio/catalog.ts"
+    "audio:catalog": "node scripts/audio/catalog.ts",
+    "audio:encode": "node scripts/audio/encode.ts"
   },
   "license": "UNLICENSED",
   "dependencies": {

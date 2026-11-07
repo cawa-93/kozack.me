@@ -1,0 +1,91 @@
+{
+  "tracks": {
+    "981c0021cebc-96": {
+      "artist": "Frank Nora",
+      "title": "Ambient O Sub Plucker",
+      "frames": 5004
+    },
+    "23088e9f914d-96": {
+      "artist": "Frank Nora",
+      "title": "New Age F Bender",
+      "frames": 5015
+    },
+    "3074ee347d48-96": {
+      "artist": "Frank Nora",
+      "title": "Rap Deep Groove",
+      "frames": 5041
+    },
+    "a892b6be1df2-96": {
+      "artist": "Frank Nora",
+      "title": "Ragga L Cool Island",
+      "frames": 5046
+    },
+    "de261ef809e9-96": {
+      "artist": "Bryan Teoh",
+      "title": "Wakka Wakka",
+      "frames": 5068
+    },
+    "9d28e086298c-96": {
+      "artist": "Frank Nora",
+      "title": "Jungle A",
+      "frames": 5664
+    },
+    "64398f86034f-96": {
+      "artist": "Frank Nora",
+      "title": "Jungle B",
+      "frames": 6704
+    },
+    "1fb2586c5a82-96": {
+      "artist": "Hussalonia",
+      "title": "TTYL",
+      "frames": 5001
+    },
+    "554c5e98c2a6-96": {
+      "artist": "*imp*",
+      "title": "Native Dream",
+      "frames": 5047
+    }
+  },
+  "stations": [
+    {
+      "id": "mur",
+      "frequency": "88,2",
+      "tracks": [
+        "981c0021cebc-96",
+        "23088e9f914d-96"
+      ]
+    },
+    {
+      "id": "khvostobit",
+      "frequency": "93,5",
+      "tracks": [
+        "3074ee347d48-96",
+        "a892b6be1df2-96"
+      ]
+    },
+    {
+      "id": "retro",
+      "frequency": "97,1",
+      "tracks": [
+        "a892b6be1df2-96",
+        "de261ef809e9-96"
+      ]
+    },
+    {
+      "id": "zumi",
+      "frequency": "101,8",
+      "tracks": [
+        "9d28e086298c-96",
+        "64398f86034f-96"
+      ]
+    },
+    {
+      "id": "berezen",
+      "frequency": "105,4",
+      "tracks": [
+        "1fb2586c5a82-96",
+        "554c5e98c2a6-96"
+      ]
+    }
+  ]
+}
