@@ -6,3 +6,4 @@
 /games/*/audio-library/
 /games/*/cloudflare-music/public/music/
 /games/*/cloudflare-music/playlist.json
+.wrangler/
