@@ -164,11 +164,11 @@
     "seconds": 0.5
   },
   "robot-loop": {
-    "hash": "a9e489ce869eaff4",
-    "seconds": 5.7,
+    "hash": "7fbc4b0e4a9397ad",
+    "seconds": 5.45,
     "loop": {
       "start": 0.1,
-      "end": 5.8
+      "end": 5.55
     }
   },
   "beep-high": {
@@ -180,12 +180,12 @@
     "seconds": 0.4
   },
   "broke-1": {
-    "hash": "6c493429efb11062",
-    "seconds": 0.47
+    "hash": "e20ebc009447ff03",
+    "seconds": 0.33
   },
   "broke-2": {
-    "hash": "13a9cc9393870a34",
-    "seconds": 0.49
+    "hash": "cfc5b96026b87c77",
+    "seconds": 0.292
   },
   "feeder-1": {
     "hash": "eba99e8f68b8509b",
@@ -200,8 +200,8 @@
     "seconds": 1.12
   },
   "wire": {
-    "hash": "f2bf23bdde60dfa0",
-    "seconds": 0.66
+    "hash": "cd9af73fc615a118",
+    "seconds": 0.83
   },
   "flies-loop": {
     "hash": "b918345cdcc9c647",
@@ -212,7 +212,7 @@
     }
   },
   "guests": {
-    "hash": "80ae9e10063d564e",
+    "hash": "47e6629b732ffd18",
     "seconds": 2.6
   },
   "papers": {

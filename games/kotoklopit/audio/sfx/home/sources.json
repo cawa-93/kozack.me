@@ -81,15 +81,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "a937f2413fc2f5f7242a906c454d8251b07feb1f04fb78df52384030028a31f4"
     },
-    "robot": {
-      "file": "archive/Designers-Choice-Collection-Machines/MACHAppl-Blue_Snowball_Microphone_CU_Mini_Vacuum_Cleaner_Turn_On_Run_Turn_Off_Nicholas_Judy_TDC.mp3",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Machines",
-      "title": "The Designer's Choice UCS Collection - MACHINES — MACHINES/APPLIANCE/MACHAppl-Blue Snowball Microphone, CU_Mini Vacuum Cleaner, Turn On, Run, Turn Off_Nicholas Judy_TDC.mp3",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "4bcd8196304c808d144413f01cb677d759d08032781da3d0480a4bf00e83f4cb"
-    },
     "feeder": {
       "file": "archive/Designers-Choice-Collection-Machines/MACHMisc-Samsung_Galaxy_Smartphone_CU_Cat_Food_Dispenser_Dispensing_Dry_Cat_Food_Nicholas_Judy_TDC.flac",
       "url": "https://archive.org/details/Designers-Choice-Collection-Machines",
@@ -252,33 +243,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "3d6d3dad01bf3c5b5a3e2a0bb11ae71f385095f66875458138611b34f2ca2c35"
     },
-    "walla": {
-      "file": "archive/Designers-Choice-Collection-Ambiences/AMBRest-Samsung_Galaxy_Smartphone_CU_Restaurant_Or_Bar_Walla_The_Designer_s_Choice_GNRL1.mp3",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Ambiences",
-      "title": "The Designer's Choice UCS Collection - AMBIENCES — AMBIENCES/RESTAURANT & BAR/AMBRest-Samsung Galaxy Smartphone, CU_Restaurant Or Bar Walla_The Designer's Choice_GNRL1.mp3",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "8b20d907acb73b141f1a1937c48d43bae1d37bfcffe6678332890154fb0eae08"
-    },
-    "sticks-break": {
-      "file": "archive/Designers-Choice-Collection-Wood/WOODBrk-Blue_Snowball_Microphone_CU_Stick_Small_Breaks_X3_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Wood",
-      "title": "The Designer's Choice UCS Collection - WOOD — WOOD/BREAK/WOODBrk-Blue Snowball Microphone, CU_Stick, Small, Breaks, X3_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "d03a98ba08fc980385915b351efe96592c034a3ac72da2bc78569c8830206e7f"
-    },
-    "velcro": {
-      "file": "archive/Designers-Choice-Collection-Cloth/CLOTHRip-CU_Single_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Cloth",
-      "title": "The Designer's Choice UCS Collection - CLOTH — CLOTH/RIP/CLOTHRip-CU_Single_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "01c27fbd0e7905f2e588cdbf4a6a56e983095e615b268004335a8585ef8dde40"
-    },
     "debris": {
       "file": "archive/Designers-Choice-Collection-Wood/WOODImpt-CU_Sticks_Small_Dropping_Nicholas_Judy_TDC.flac",
       "url": "https://archive.org/details/Designers-Choice-Collection-Wood",
@@ -323,6 +287,42 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "c4fd7c9eb16247caf21ea63f3dd77b5a317ead77e18021a249b30429c110ad28"
+    },
+    "fs-roomba": {
+      "file": "freesound/495547__ilsehimschoot__sound-of-roomba-robot-vacuum-cleaner-cleaning-and-entering-the-battery-station.wav",
+      "url": "https://freesound.org/people/IlseHimschoot/sounds/495547/",
+      "title": "Sound of Roomba robot vacuum cleaner cleaning and entering the battery station",
+      "author": "IlseHimschoot",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "be8762ce1389787ee60d99bcd5a22fce5f5fcb21bd6ec04938ed02d23e06c0d8"
+    },
+    "fs-party": {
+      "file": "freesound/480724__craigsmith__r08-14-dinner-party-or-restaurant.wav",
+      "url": "https://freesound.org/people/craigsmith/sounds/480724/",
+      "title": "R08-14-Dinner Party or Restaurant",
+      "author": "craigsmith",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "c9a90349d47f1c9caa65f303b7040995e3f016090804ef744b5ddd898ab6ba14"
+    },
+    "fs-tape": {
+      "file": "freesound/267712__weejee_vdh__ripping-off-tape.wav",
+      "url": "https://freesound.org/people/WeeJee_vdH/sounds/267712/",
+      "title": "Ripping Off Tape",
+      "author": "WeeJee_vdH",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "a4b33c156b83df9689d2e9a775bef5906a9626f1c611165b8e34b5b1414c711c"
+    },
+    "fs-crack": {
+      "file": "freesound/665085__sunflora__cracking.mp3",
+      "url": "https://freesound.org/people/sunflora/sounds/665085/",
+      "title": "cracking.mp3",
+      "author": "sunflora",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "741539648172dc1ea718fe3da7595441610381fc501936a886f7027edb1fb6a6"
     }
   },
   "files": {
@@ -575,12 +575,12 @@
       "note": "Пилосос утягнув сміття"
     },
     "robot-loop": {
-      "from": "robot",
-      "start": 15,
-      "end": 21,
+      "from": "fs-roomba",
+      "start": 8.75,
+      "end": 14.5,
       "loop": true,
-      "filter": "lowpass=f=3500",
-      "note": "Робот-пилосос їде: маленький пилосос, приглушений"
+      "filter": "lowpass=f=6000",
+      "note": "Робот-пилосос їде: рівний відрізок без ударів об меблі"
     },
     "beep-high": {
       "from": "beep-high",
@@ -595,17 +595,17 @@
       "note": "Робот повернувся на базу: другий сигнал"
     },
     "broke-1": {
-      "from": "sticks-break",
-      "start": 0.08,
-      "end": 0.55,
-      "fadeOut": 0.1,
+      "from": "fs-crack",
+      "start": 0.03,
+      "end": 0.36,
+      "fadeOut": 0.08,
       "note": "Річ зламалась: тріск"
     },
     "broke-2": {
-      "from": "sticks-break",
-      "start": 1.06,
-      "end": 1.55,
-      "fadeOut": 0.1
+      "from": "fs-crack",
+      "start": 0.36,
+      "end": 0.652,
+      "fadeOut": 0.06
     },
     "feeder-1": {
       "from": "feeder",
@@ -628,10 +628,11 @@
       "note": "Корм з автогодівниці висипали назад"
     },
     "wire": {
-      "from": "velcro",
-      "end": 0.66,
+      "from": "fs-tape",
+      "start": 0.72,
+      "end": 1.55,
       "fadeOut": 0.05,
-      "note": "Дріт замотали: тріск стрічки (липучка)"
+      "note": "Дріт замотали: стрічку відривають від рулону"
     },
     "flies-loop": {
       "from": "fs-fly",
@@ -642,9 +643,9 @@
       "note": "муха дзижчить"
     },
     "guests": {
-      "from": "walla",
-      "start": 40,
-      "end": 42.6,
+      "from": "fs-party",
+      "start": 1,
+      "end": 3.6,
       "filter": "lowpass=f=1800",
       "fadeIn": 0.3,
       "fadeOut": 0.6,

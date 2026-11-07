@@ -20,32 +20,32 @@
     "seconds": 0.246
   },
   "step-wood-1": {
-    "hash": "6e982d52cdd66055",
-    "seconds": 0.240333
+    "hash": "e9c0f41f1887063a",
+    "seconds": 0.28
   },
   "step-wood-2": {
-    "hash": "e400e66de64fe028",
-    "seconds": 0.246667
+    "hash": "3250d54c0a4d7cd7",
+    "seconds": 0.28
   },
   "step-wood-3": {
-    "hash": "00214227845b3eff",
-    "seconds": 0.24
+    "hash": "e851e43d6cbd0e5b",
+    "seconds": 0.28
   },
   "step-wood-4": {
-    "hash": "6f65930b6727775d",
-    "seconds": 0.240667
+    "hash": "ba92ec47414c821b",
+    "seconds": 0.28
   },
   "step-rug-1": {
-    "hash": "bca6c93d07993ea1",
-    "seconds": 0.243667
+    "hash": "d60de0ad7104be08",
+    "seconds": 0.26
   },
   "step-rug-2": {
-    "hash": "89e7dce24a38f606",
-    "seconds": 0.24
+    "hash": "cd28b2128d5a44c3",
+    "seconds": 0.26
   },
   "step-rug-3": {
-    "hash": "1062748a48699a16",
-    "seconds": 0.24
+    "hash": "0dea7550916c1a21",
+    "seconds": 0.26
   },
   "dash-1": {
     "hash": "e4960a002c11baf8",
@@ -264,16 +264,8 @@
     "seconds": 2.85
   },
   "yawn-he-1": {
-    "hash": "727e278d8621da36",
-    "seconds": 3
-  },
-  "yawn-he-2": {
-    "hash": "3a2e813591014af2",
-    "seconds": 2.435917
-  },
-  "yawn-he-3": {
-    "hash": "2dbb439679788930",
-    "seconds": 3.653854
+    "hash": "3e2006ab484dd0c8",
+    "seconds": 1.78
   },
   "sigh-he": {
     "hash": "a86482e0dd06d282",

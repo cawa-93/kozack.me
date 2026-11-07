@@ -269,6 +269,33 @@
       "license": "PD",
       "licenseUrl": "https://commons.wikimedia.org/wiki/File:Eating_snacks.ogg",
       "sha256": "f801e98415e51c9a13393df11700a53f762d682ca678fd20441a5452b388ec46"
+    },
+    "fs-steps-wood": {
+      "file": "freesound/164315__rickmk2__footsteps-on-wooden-flooring.wav",
+      "url": "https://freesound.org/people/Rickmk2/sounds/164315/",
+      "title": "Footsteps on wooden flooring",
+      "author": "Rickmk2",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "9f51e4c8f4e8c2bff3682ae8f5c34a1ae8425844baa7e1cde2b265b2aebe54e6"
+    },
+    "fs-steps-carpet": {
+      "file": "freesound/638509__tgerginov__steps-on-a-carpet-over-wood-floor.wav",
+      "url": "https://freesound.org/people/tgerginov/sounds/638509/",
+      "title": "Steps on a carpet over wood floor",
+      "author": "tgerginov",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "4992c5ad7cd4571f6436a0ce394a2f03668230f3e94dac3862b222894cc3cba9"
+    },
+    "fs-yawn-man": {
+      "file": "freesound/447460__florianreichelt__yawning-sound-by-a-man.wav",
+      "url": "https://freesound.org/people/florianreichelt/sounds/447460/",
+      "title": "yawning sound by a man",
+      "author": "florianreichelt",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "7e27fd77c00d3eaa54a2a936bc2dc7a49b129051db12711f5d2fe2993954ab29"
     }
   },
   "files": {
@@ -318,67 +345,68 @@
       "note": "крок по плитці (ванна)"
     },
     "step-wood-1": {
-      "from": "steps-stone",
-      "start": 57.265,
-      "end": 57.505,
-      "filter": "highpass=f=90,lowpass=f=2200,lowpass=f=2200",
+      "from": "fs-steps-wood",
+      "start": 1.07,
+      "end": 1.35,
+      "filter": "highpass=f=80,lowpass=f=5000",
       "fadeIn": 0.002,
-      "fadeOut": 0.08,
-      "note": "крок по дошках, паркету й лінолеуму — той самий запис, глухіший"
+      "fadeOut": 0.1,
+      "note": "крок по дошках, паркету й лінолеуму"
     },
     "step-wood-2": {
-      "from": "steps-stone",
-      "start": 44.84,
-      "end": 45.08,
-      "filter": "highpass=f=90,lowpass=f=2200,lowpass=f=2200",
+      "from": "fs-steps-wood",
+      "start": 2.45,
+      "end": 2.73,
+      "filter": "highpass=f=80,lowpass=f=5000",
       "fadeIn": 0.002,
-      "fadeOut": 0.08,
-      "note": "крок по дошках, паркету й лінолеуму — той самий запис, глухіший"
+      "fadeOut": 0.1,
+      "level": -6
     },
     "step-wood-3": {
-      "from": "steps-stone",
-      "start": 40.6,
-      "end": 40.84,
-      "filter": "highpass=f=90,lowpass=f=2200,lowpass=f=2200",
+      "from": "fs-steps-wood",
+      "start": 7.14,
+      "end": 7.42,
+      "filter": "highpass=f=80,lowpass=f=5000",
       "fadeIn": 0.002,
-      "fadeOut": 0.08,
-      "note": "крок по дошках, паркету й лінолеуму — той самий запис, глухіший"
+      "fadeOut": 0.1,
+      "level": -3
     },
     "step-wood-4": {
-      "from": "steps-stone",
-      "start": 47.19,
-      "end": 47.43,
-      "filter": "highpass=f=90,lowpass=f=2200,lowpass=f=2200",
+      "from": "fs-steps-wood",
+      "start": 9.85,
+      "end": 10.13,
+      "filter": "highpass=f=80,lowpass=f=5000",
       "fadeIn": 0.002,
-      "fadeOut": 0.08,
-      "note": "крок по дошках, паркету й лінолеуму — той самий запис, глухіший"
+      "fadeOut": 0.1,
+      "level": -3
     },
     "step-rug-1": {
-      "from": "steps-stone",
-      "start": 22.035,
-      "end": 22.275,
-      "filter": "lowpass=f=650,lowpass=f=650",
+      "from": "fs-steps-carpet",
+      "start": 15.25,
+      "end": 15.51,
+      "filter": "highpass=f=60,lowpass=f=1800",
       "fadeIn": 0.002,
-      "fadeOut": 0.08,
-      "note": "крок по килиму — той самий запис, ще глухіший"
+      "fadeOut": 0.1,
+      "note": "крок по килиму: глухий шурхіт, тихіший за дерево (запис шумний — пік нижче)",
+      "level": -18
     },
     "step-rug-2": {
-      "from": "steps-stone",
-      "start": 27.49,
-      "end": 27.73,
-      "filter": "lowpass=f=650,lowpass=f=650",
+      "from": "fs-steps-carpet",
+      "start": 9.01,
+      "end": 9.27,
+      "filter": "highpass=f=60,lowpass=f=1800",
       "fadeIn": 0.002,
-      "fadeOut": 0.08,
-      "note": "крок по килиму — той самий запис, ще глухіший"
+      "fadeOut": 0.1,
+      "level": -19
     },
     "step-rug-3": {
-      "from": "steps-stone",
-      "start": 24.86,
-      "end": 25.1,
-      "filter": "lowpass=f=650,lowpass=f=650",
+      "from": "fs-steps-carpet",
+      "start": 2.65,
+      "end": 2.91,
+      "filter": "highpass=f=60,lowpass=f=1800",
       "fadeIn": 0.002,
-      "fadeOut": 0.08,
-      "note": "крок по килиму — той самий запис, ще глухіший"
+      "fadeOut": 0.1,
+      "level": -20
     },
     "dash-1": {
       "from": "swoosh",
@@ -761,31 +789,12 @@
       "note": "позіх: «Сонливість» і засинання (вона)"
     },
     "yawn-he-1": {
-      "from": "yawn-2",
-      "start": 0.78,
-      "end": 3.12,
-      "filter": "asetrate=34398,aresample=48000",
-      "fadeIn": 0.05,
-      "fadeOut": 0.15,
-      "note": "позіх (він): той самий жіночий голос нижче ×0,78"
-    },
-    "yawn-he-2": {
-      "from": "yawn-twice",
-      "start": 2.85,
-      "end": 4.75,
-      "filter": "asetrate=34398,aresample=48000",
-      "fadeIn": 0.05,
-      "fadeOut": 0.15,
-      "note": "позіх (він): той самий жіночий голос нижче ×0,78"
-    },
-    "yawn-he-3": {
-      "from": "yawn-1",
-      "start": 1.5,
-      "end": 4.35,
-      "filter": "asetrate=34398,aresample=48000",
+      "from": "fs-yawn-man",
+      "start": 2.72,
+      "end": 4.5,
       "fadeIn": 0.05,
       "fadeOut": 0.2,
-      "note": "позіх (він): той самий жіночий голос нижче ×0,78"
+      "note": "позіх (він): «Сонливість» і засинання"
     },
     "sigh-he": {
       "from": "sigh",

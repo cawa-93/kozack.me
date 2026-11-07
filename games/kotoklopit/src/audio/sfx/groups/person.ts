@@ -50,8 +50,7 @@ const sounds: Record<string, SoundDef> = {
   "pant-she": voice("pant-she", 0.4),
   "relief-he": voice("relief-he", 0.4),
   "relief-she": voice("relief-she", 0.4),
-  // Позіх записано жіночим голосом; «він» — той самий запис нижче (`sources.json`).
-  "yawn-he": voice("yawn-he", 0.28, range("yawn-he", 3)),
+  "yawn-he": voice("yawn-he", 0.28, range("yawn-he", 1)),
   "yawn-she": voice("yawn-she", 0.28, range("yawn-she", 3)),
   "sigh-he": voice("sigh-he", 0.4),
   "sigh-she": voice("sigh-she", 0.4),

@@ -72,15 +72,6 @@
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
       "sha256": "6db20fd55cc948b1c5d18deebc1701d2ec073a968ff801cf375ae607a8a4cddf"
     },
-    "gs-coins-2": {
-      "file": "commons/Coins_2_(Gravity_Sound).mp3",
-      "url": "https://commons.wikimedia.org/wiki/File:Coins_2_(Gravity_Sound).mp3",
-      "title": "Coins 2 (Gravity Sound)",
-      "author": "Gravity Sound",
-      "license": "CC-BY-4.0",
-      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
-      "sha256": "9d161bf27524611fea403613d25635e850c3f36654b3b4802bbe16242b74081a"
-    },
     "gs-complete": {
       "file": "commons/Complete_(Gravity_Sound).mp3",
       "url": "https://commons.wikimedia.org/wiki/File:Complete_(Gravity_Sound).mp3",
@@ -107,6 +98,15 @@
       "license": "CC0-1.0",
       "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
       "sha256": "660682ebcef9b9a4c0464c1ec3208c6f10b7c7b7e7411f0c03341e1e36056a96"
+    },
+    "fs-register": {
+      "file": "freesound/475915__tompalompa__vintage-cash-register.m4a",
+      "url": "https://freesound.org/people/Tompalompa/sounds/475915/",
+      "title": "Vintage cash register.m4a",
+      "author": "Tompalompa",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "5fbf0ea694be91a637c7af6e7c757a3bb1266279b2c483a7daffc3a4d8e0fc1e"
     }
   },
   "files": {
@@ -193,11 +193,11 @@
       "note": "Замовлення оплачено: «дінь-дон»"
     },
     "bought": {
-      "from": "gs-coins-2",
-      "start": 0.06,
-      "end": 0.4,
-      "fadeOut": 0.05,
-      "note": "Купівля на місці: монети"
+      "from": "fs-register",
+      "start": 3.66,
+      "end": 4.56,
+      "fadeOut": 0.2,
+      "note": "Купівля на місці: клацання каси й дзвіночок"
     },
     "morning": {
       "from": "koshi",

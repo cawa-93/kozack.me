@@ -140,7 +140,7 @@
 
 Ще без групи: `bathed` (кінець купання) — `person`; бабл порожньої поїлки — `home`, коли буде подія; `cat-retreated`, `heat` (нічне завивання — ніч і так мовчить), `groom-refused`, `trinket-sniffed`, `cat-remembered`, `fur-tuft`, `weather-felt`, `cat-ill` — думки чи приховане, без звуку.
 
-**Слабкі місця** (тимчасове, замінити кращим): коти — кахикання й плювок (людські, підняті вгору), «кекання», лоток, зумі, дряпання, хлебтання, гарчання й бійка (один старий запис); дім — мухи (бджоли), робот-пилосос, гамір гостей, поломка, ізострічка, старт віджиму (сушарка); персонаж — кроки по дереву й килиму (фільтрований камінь), позіх «він» (жіночий запис нижче); робота — кар'єра (ретро-біпи); інтерфейс — клаци з шумом, купівля (монети замість каси). Що шукати на Freesound — «cat chattering birds», «cat litter box digging», «cat running wood floor», «cat scratching post», «cat lapping water», «cat growl», «house fly buzzing loop», «robot vacuum», «party walla indoor», «footsteps wooden floor indoor», «footsteps carpet», «cash register».
+**Слабкі місця** (тимчасове, замінити кращим): коти — кахикання й плювок (людські, підняті вгору); дім — старт віджиму (сушарка); персонаж — кроки по килиму (запис шумний, рівень знижено); робота — кар'єра (ретро-біпи); інтерфейс — клаци з шумом. Що шукати на Freesound — «cat hairball cough», «washing machine spin start», «footsteps carpet indoor», «achievement chime», «ui click soft».
 
 ## Блоки
 

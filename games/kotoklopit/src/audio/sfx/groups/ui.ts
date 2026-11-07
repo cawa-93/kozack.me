@@ -43,7 +43,7 @@ export const group: SoundGroup = {
     glitch: { files: ["glitch"], gain: 0.28, pitch: 0.05, cooldownMs: 1500, voices: 1, ui: true },
     notify: { files: ["notify"], gain: 0.35, cooldownMs: 600, voices: 1, ui: true },
     ordered: { files: ["ordered"], gain: 0.5, voices: 1, ui: true },
-    bought: { files: ["bought"], gain: 0.8, pitch: 0.03, ui: true },
+    bought: { files: ["bought"], gain: 0.6, pitch: 0.03, ui: true },
     morning: { files: ["morning"], gain: 0.5, voices: 1, ui: true },
     end: { files: ["end"], gain: 0.55, voices: 1, ui: true },
     retired: { files: ["retired"], gain: 0.7, voices: 1, ui: true },
