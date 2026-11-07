@@ -1,0 +1,230 @@
+{
+  "originals": {
+    "gs-open-menu": {
+      "file": "commons/Open_menu_1_(Gravity_Sound).wav",
+      "url": "https://commons.wikimedia.org/wiki/File:Open_menu_1_(Gravity_Sound).wav",
+      "title": "Open menu 1 (Gravity Sound)",
+      "author": "Gravity Sound",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sha256": "2af2945c19252c82bd9dbb38b3b386583f9c0db3c03f8717c8e65e55f269f844"
+    },
+    "gs-close-menu": {
+      "file": "commons/Close_menu_1_(Gravity_Sound).wav",
+      "url": "https://commons.wikimedia.org/wiki/File:Close_menu_1_(Gravity_Sound).wav",
+      "title": "Close menu 1 (Gravity Sound)",
+      "author": "Gravity Sound",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sha256": "a455c8d8d4551aaaf7ad5dd235ccadc52ba2f7b170e6639adadfc1db9bc0164b"
+    },
+    "gs-clicking": {
+      "file": "commons/Clicking_(Gravity_Sound).wav",
+      "url": "https://commons.wikimedia.org/wiki/File:Clicking_(Gravity_Sound).wav",
+      "title": "Clicking (Gravity Sound)",
+      "author": "Gravity Sound",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sha256": "b842d3fa69ae25ebaf685a292ee331ea76a2ab7525a78bec06928e84ed3fd71d"
+    },
+    "gs-bump-2": {
+      "file": "commons/Bump_2_(Gravity_Sound).wav",
+      "url": "https://commons.wikimedia.org/wiki/File:Bump_2_(Gravity_Sound).wav",
+      "title": "Bump 2 (Gravity Sound)",
+      "author": "Gravity Sound",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sha256": "3cd5983e315b98b1f932b360b0792953f5998068a1c53636630bfe8046310356"
+    },
+    "gs-bump-3": {
+      "file": "commons/Bump_3_(Gravity_Sound).wav",
+      "url": "https://commons.wikimedia.org/wiki/File:Bump_3_(Gravity_Sound).wav",
+      "title": "Bump 3 (Gravity Sound)",
+      "author": "Gravity Sound",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sha256": "573023feca1186aab24f642fb57065b892057fed79b6c7c60e78cf3f9dd5eedf"
+    },
+    "gs-can-hits-1": {
+      "file": "commons/Can_hits_1_(Gravity_Sound).mp3",
+      "url": "https://commons.wikimedia.org/wiki/File:Can_hits_1_(Gravity_Sound).mp3",
+      "title": "Can hits 1 (Gravity Sound)",
+      "author": "Gravity Sound",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sha256": "63554e13069dede872ea606ea3b7a5649f7a1ff786847069c81298f89986863d"
+    },
+    "gs-notification": {
+      "file": "commons/Notification_(Gravity_Sound).wav",
+      "url": "https://commons.wikimedia.org/wiki/File:Notification_(Gravity_Sound).wav",
+      "title": "Notification (Gravity Sound)",
+      "author": "Gravity Sound",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sha256": "7bfb252ded55c2d1986f9f6b0d50b94f728400bd51d3b61da4e6e69f15419bbc"
+    },
+    "gs-computer-sounds-2": {
+      "file": "commons/Computer_sounds_2_(Gravity_Sound).wav",
+      "url": "https://commons.wikimedia.org/wiki/File:Computer_sounds_2_(Gravity_Sound).wav",
+      "title": "Computer sounds 2 (Gravity Sound)",
+      "author": "Gravity Sound",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sha256": "6db20fd55cc948b1c5d18deebc1701d2ec073a968ff801cf375ae607a8a4cddf"
+    },
+    "gs-coins-2": {
+      "file": "commons/Coins_2_(Gravity_Sound).mp3",
+      "url": "https://commons.wikimedia.org/wiki/File:Coins_2_(Gravity_Sound).mp3",
+      "title": "Coins 2 (Gravity Sound)",
+      "author": "Gravity Sound",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sha256": "9d161bf27524611fea403613d25635e850c3f36654b3b4802bbe16242b74081a"
+    },
+    "gs-complete": {
+      "file": "commons/Complete_(Gravity_Sound).mp3",
+      "url": "https://commons.wikimedia.org/wiki/File:Complete_(Gravity_Sound).mp3",
+      "title": "Complete (Gravity Sound)",
+      "author": "Gravity Sound",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sha256": "242350ceea37a5cf8048a8fdffc27d5594e19c6991e9963f693d6fb3d7b397c8"
+    },
+    "koshi": {
+      "file": "commons/Windglockenspiel.Koshi.ogg",
+      "url": "https://commons.wikimedia.org/wiki/File:Windglockenspiel.Koshi.ogg",
+      "title": "Windglockenspiel.Koshi",
+      "author": "Membeth",
+      "license": "CC0-1.0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sha256": "1f8b33ad604ef9ff5ba1ad901401b6d182f9db94e28f62a5ed930ff2f281b741"
+    },
+    "piano-error": {
+      "file": "commons/Som_de_Erro.ogg",
+      "url": "https://commons.wikimedia.org/wiki/File:Som_de_Erro.ogg",
+      "title": "Som de Erro",
+      "author": "Rafael Tavares Juliani",
+      "license": "CC0-1.0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sha256": "660682ebcef9b9a4c0464c1ec3208c6f10b7c7b7e7411f0c03341e1e36056a96"
+    }
+  },
+  "files": {
+    "open": {
+      "from": "gs-open-menu",
+      "fadeOut": 0.04,
+      "note": "Картка відкрилась: короткий шурхіт угору"
+    },
+    "close": {
+      "from": "gs-close-menu",
+      "start": 0,
+      "end": 0.16,
+      "fadeOut": 0.06,
+      "note": "Картка закрилась"
+    },
+    "click-1": {
+      "from": "gs-clicking",
+      "start": 0.112,
+      "end": 0.172,
+      "fadeOut": 0.025,
+      "note": "Кнопка: один клац"
+    },
+    "click-2": {
+      "from": "gs-clicking",
+      "start": 0.243,
+      "end": 0.303,
+      "fadeOut": 0.025,
+      "note": "Кнопка: інший клац"
+    },
+    "click-3": {
+      "from": "gs-clicking",
+      "start": 1.495,
+      "end": 1.555,
+      "fadeOut": 0.025,
+      "note": "Кнопка: ще один клац"
+    },
+    "tab": {
+      "from": "gs-clicking",
+      "filter": "aresample=48000,atrim=0.365:0.425,asetpts=PTS-STARTPTS,asetrate=60000,aresample=48000",
+      "fadeOut": 0.02,
+      "note": "Вкладка: той самий клац, на велику терцію вище. Обрізка — у фільтрі: зі зміною частоти -ss/-to дають порожнечу"
+    },
+    "refused-1": {
+      "from": "gs-bump-2",
+      "start": 0.115,
+      "end": 0.32,
+      "fadeOut": 0.06,
+      "note": "Відмова: тихий глухий «бум»"
+    },
+    "refused-2": {
+      "from": "gs-bump-3",
+      "start": 0.14,
+      "end": 0.33,
+      "fadeOut": 0.06,
+      "note": "Відмова: інший «бум»"
+    },
+    "empty-1": {
+      "from": "gs-can-hits-1",
+      "start": 4.315,
+      "end": 4.47,
+      "fadeOut": 0.05,
+      "note": "Порожньо: стук по порожній банці"
+    },
+    "empty-2": {
+      "from": "gs-can-hits-1",
+      "start": 4.69,
+      "end": 4.84,
+      "fadeOut": 0.05,
+      "note": "Порожньо: інший стук"
+    },
+    "glitch": {
+      "from": "gs-computer-sounds-2",
+      "fadeOut": 0.03,
+      "note": "Збій керування: цифровий тріск"
+    },
+    "notify": {
+      "from": "gs-notification",
+      "fadeOut": 0.05,
+      "note": "Телефон: сповіщення про рису кота, два високі сигнали"
+    },
+    "ordered": {
+      "from": "gs-complete",
+      "fadeOut": 0.2,
+      "note": "Замовлення оплачено: «дінь-дон»"
+    },
+    "bought": {
+      "from": "gs-coins-2",
+      "start": 0.06,
+      "end": 0.4,
+      "fadeOut": 0.05,
+      "note": "Купівля на місці: монети"
+    },
+    "morning": {
+      "from": "koshi",
+      "start": 0.42,
+      "end": 2.3,
+      "fadeIn": 0.01,
+      "fadeOut": 0.7,
+      "note": "Титулка ранку: кілька ударів вітрових дзвіночків"
+    },
+    "retired": {
+      "from": "koshi",
+      "start": 39.66,
+      "end": 42.4,
+      "fadeIn": 0.01,
+      "fadeOut": 1,
+      "note": "Кінець гри — пенсія: дзвіночки, яскравіше й довше"
+    },
+    "low-stat": {
+      "from": "piano-error",
+      "fadeOut": 0.1,
+      "note": "Шкала впала нижче LOW_STAT: дві ноти піаніно вниз"
+    },
+    "end": {
+      "from": "piano-error",
+      "filter": "aresample=48000,asetrate=36000,aresample=48000",
+      "fadeOut": 0.15,
+      "note": "Кінець гри (показник, виселення): ті самі ноти, нижче й повільніше"
+    }
+  }
+}

@@ -1,6 +1,7 @@
 // Картки поверх гри: титулка й ранкові повідомлення (§4), кінець гри (§6.1), телефон (§6.4).
 // Це DOM, а не полотно: текст лишається чітким на будь-якому екрані. Поки картка відкрита, гра на паузі.
 
+import { uiSound } from "../audio/sfx/sounds";
 import { drawGlyphs } from "./glyphs";
 import { drawIcons } from "./icons";
 import "./overlay.css";
@@ -81,6 +82,13 @@ export class Overlay {
     this.root.hidden = true;
     document.body.append(this.root);
     window.addEventListener("keydown", (event) => this.key(event));
+    // Звук кнопок і вкладок (§11.4а) — одним слухачем на всі картки. Перехоплення: кнопка, що закриває картку, прибирає себе з
+    // DOM, і клац має прозвучати до звуку закриття.
+    this.root.addEventListener("click", (event) => pressSound(event.target), true);
+    // Повзунок «Звуки»: пробний клац, коли його відпустили, — не на кожен рух.
+    this.root.addEventListener("change", (event) => {
+      if ((event.target as Element | null)?.classList?.contains("sound-volume")) uiSound("ui", "click");
+    });
   }
 
   get isOpen(): boolean {
@@ -212,6 +220,8 @@ export class Overlay {
   }
 
   show(card: Card): void {
+    // Звук відкриття — лише коли картки не було: перемальовування тієї самої (покупка, вкладка) і заміна іншою мовчать.
+    if (this.card === null) uiSound("ui", "open");
     this.card = card;
     this.root.classList.remove("cinematic", "dawn");
     this.root.classList.toggle("solid", card.solid ?? false);
@@ -277,6 +287,8 @@ export class Overlay {
   }
 
   close(): void {
+    // Титулка й кінець гри мають свої звуки (`Sounds.moment`), тож їхнє закриття мовчить.
+    if (this.card !== null && !this.root.classList.contains("cinematic")) uiSound("ui", "close");
     this.card = null;
     this.root.classList.remove("cinematic", "dawn", "aside", "away");
     this.root.hidden = true;
@@ -309,10 +321,19 @@ export class Overlay {
       if (primary) {
         event.preventDefault();
         event.stopImmediatePropagation();
+        // Клавіша замість кнопки звучить, як кнопка; титулку й кінець гри гортають без клацу, як і дотиком.
+        if (!this.root.classList.contains("cinematic")) uiSound("ui", "click");
         primary.onSelect();
       }
     }
   }
+}
+
+/** Звук натискання: вкладка — свій, будь-яка інша кнопка — клац; поле, повзунок і текст мовчать. */
+function pressSound(target: EventTarget | null): void {
+  const button = (target as Element | null)?.closest?.("button");
+  if (!button || button.disabled) return;
+  uiSound("ui", button.classList.contains("card-tab") ? "tab" : "click");
 }
 
 /**
