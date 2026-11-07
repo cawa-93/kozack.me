@@ -35,7 +35,7 @@ const SOUNDS: Record<string, SoundDef> = {
   tail: { files: ["tail-1"], gain: 0.5, pitch: 0.08, spread: 0.15, cooldownMs: 400 },
   land: { files: files("land", 2), gain: 0.5, pitch: 0.08, cooldownMs: 200 },
   scamper: { files: files("scamper", 2), gain: 0.6, pitch: 0.06, spread: 0.1, cooldownMs: 300 },
-  sneeze: { files: files("sneeze", 2), gain: 0.7, pitch: 0.06, cooldownMs: 500 },
+  sneeze: { files: files("sneeze", 2), gain: 0.45, pitch: 0.06, cooldownMs: 500 },
   hack: { files: ["hack-1"], gain: 0.6, pitch: 0.05, cooldownMs: 0, voices: 3 },
   retch: { files: ["retch-1"], gain: 0.7, pitch: 0.05, cooldownMs: 1500 },
   spit: { files: ["spit-1"], gain: 0.6, pitch: 0.05, cooldownMs: 500 },

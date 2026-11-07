@@ -252,15 +252,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "ed756dc5d47ffc6f11588257d0e9d90c0b54dcc9b57e77f3702a777be0aba611"
     },
-    "dc-sneeze": {
-      "file": "archive/Designers-Choice-Collection-Human/HMNSneez-Samsung_Galaxy_Smartphone_CU_Sneeze_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Human",
-      "title": "The Designer's Choice UCS Collection - HUMAN — HUMAN/SNEEZE/HMNSneez-Samsung Galaxy Smartphone, CU_Sneeze_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "ec19dca5ed843e34106f90c39899943474c5762793434ff77d16cd40dd94197f"
-    },
     "dc-spit": {
       "file": "archive/Designers-Choice-Collection-Human/HMNSpit_Hollow_Nicholas_Judy_TDC.flac",
       "url": "https://archive.org/details/Designers-Choice-Collection-Human",
@@ -350,6 +341,15 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "5a64fef0ac166b58f79642c9e83049d911632c5da9194d949acaabdb6dec4d9b"
+    },
+    "baby-sneeze": {
+      "file": "commons/Baby_sneeze.ogg",
+      "url": "https://commons.wikimedia.org/wiki/File:Baby_sneeze.ogg",
+      "title": "Baby sneeze",
+      "author": "stephan (PDSounds)",
+      "license": "PD",
+      "licenseUrl": "https://commons.wikimedia.org/wiki/File:Baby_sneeze.ogg",
+      "sha256": "fde5adb8a4c72214cd4bda8a1d189c1d01bf6435d0020ccc2eeeba369f82c263"
     }
   },
   "files": {
@@ -765,19 +765,19 @@
       "note": "кігті — різкий шкряб"
     },
     "sneeze-1": {
-      "from": "dc-sneeze",
-      "start": 0.72,
-      "end": 1.0005,
-      "filter": "asetrate=66150,aresample=48000",
-      "fadeOut": 0.04,
-      "note": "чхання вище й коротше — котяче «пчх»"
+      "from": "baby-sneeze",
+      "start": 1.86,
+      "end": 2.22,
+      "filter": "highpass=f=300",
+      "fadeOut": 0.05,
+      "note": "котяче «пчх»: чхання двомісячного немовляти, поштовхи мікрофона нижче 300 Гц зрізано"
     },
     "sneeze-2": {
-      "from": "dc-sneeze",
-      "start": 1,
-      "end": 1.3792,
-      "filter": "asetrate=70560,aresample=48000",
-      "fadeOut": 0.06
+      "from": "baby-sneeze",
+      "start": 3.72,
+      "end": 4.06,
+      "filter": "highpass=f=300",
+      "fadeOut": 0.05
     },
     "hack-1": {
       "from": "dc-hawk",
