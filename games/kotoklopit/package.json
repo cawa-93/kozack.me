@@ -12,7 +12,8 @@
     "balance": "vitest run --config vitest.balance.config.ts",
     "typecheck": "tsc --noEmit && tsc --noEmit -p scripts",
     "shots": "node scripts/shots.ts",
-    "art": "node scripts/art/cli.ts"
+    "art": "node scripts/art/cli.ts",
+    "audio:catalog": "node scripts/audio/catalog.ts"
   },
   "license": "UNLICENSED",
   "dependencies": {

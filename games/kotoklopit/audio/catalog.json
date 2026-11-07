@@ -1,0 +1,4125 @@
+{
+  "about": "Кандидати для станцій радіо (GAME_DESIGN.md §2.1, §8.10). tracks — надійні й завантажені в audio-library/ (поза git; оновлює npm run audio:catalog -w games/kotoklopit). pending — надійні, але їх завантажує автор вручну. rejected — ненадійні, не завантажені. bpm і key — автоматична оцінка дзеркала FreePD: bpm буває вдвічі більшим чи меншим за справжній. contentIdCheck — результат перевірки на YouTube приватним відео.",
+  "sources": {
+    "freepd": {
+      "name": "FreePD",
+      "license": "CC0-1.0",
+      "page": "https://en.freepd.cn/music",
+      "proof": "https://a.ocv.me/pub/stuff/music/freepd/README.md",
+      "downloadedFrom": "https://a.ocv.me/pub/stuff/music/freepd/",
+      "original": "freepd.com (закрито)",
+      "note": "Усі треки є в оригінальному списку файлів freepd.com (original-listing.html на дзеркалі). Автор — з тегів файлу."
+    },
+    "tallbeard": {
+      "name": "Tallbeard Studios / Abstraction",
+      "license": "CC0-1.0",
+      "page": "https://tallbeard.itch.io/music-loop-bundle",
+      "proof": "https://tallbeard.itch.io/music-loop-bundle",
+      "note": "Автор відмовився від усіх прав і в коментарях дозволив стріми. Заявок Content ID не знайдено. Безшовні петлі: на станції можуть звучати двічі поспіль."
+    }
+  },
+  "tracks": [
+    {
+      "id": "freepd/anonymous-for-good-reasons-and-here-we-go",
+      "title": "And Here We Go",
+      "artist": "Anonymous for Good Reasons",
+      "source": "freepd",
+      "file": "freepd/Anonymous for Good Reasons - And Here We Go.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "unsorted"
+      ],
+      "bpm": 135,
+      "key": "9B",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 73.1,
+      "album": "Out of Tune and Loving It",
+      "genre": "Comedy",
+      "year": "2017",
+      "comment": "This was recorded live on a piano with issues.",
+      "bitrateKbps": 265,
+      "sampleRate": 44100,
+      "channels": 2,
+      "loudnessLufs": -18.7,
+      "loudnessRange": 3,
+      "truePeakDb": -1.3,
+      "sizeBytes": 2421047,
+      "sha256": "3b1f648392f95596a2434058fef34a875c22cac30aeb619c10f1136ae7cf7997"
+    },
+    {
+      "id": "freepd/anonymous-for-good-reasons-cha-cha-ender",
+      "title": "Cha-Cha Ender",
+      "artist": "Anonymous for Good Reasons",
+      "source": "freepd",
+      "file": "freepd/Anonymous for Good Reasons - Cha-Cha Ender.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "comedy"
+      ],
+      "bpm": 182,
+      "key": "8B",
+      "contentIdCheck": "не перевірено",
+      "kind": "стінгер",
+      "durationSec": 4.9,
+      "album": "Out of Tune and Loving It",
+      "genre": "Comedy",
+      "year": "2017",
+      "comment": "This was recorded live on a piano with issues.",
+      "bitrateKbps": 391,
+      "sampleRate": 44100,
+      "channels": 2,
+      "loudnessLufs": -13.5,
+      "loudnessRange": 4.4,
+      "truePeakDb": -0.4,
+      "sizeBytes": 240136,
+      "sha256": "8c16beddbdece6f013a52316e3d8fd9f81d7230b067ff3d1527ea680b19ad2e3"
+    },
+    {
+      "id": "freepd/anonymous-for-good-reasons-hello-ma-baby",
+      "title": "Hello! Ma Baby",
+      "artist": "Anonymous for Good Reasons",
+      "source": "freepd",
+      "file": "freepd/Anonymous for Good Reasons - Hello! Ma Baby.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "comedy"
+      ],
+      "bpm": 118,
+      "key": "10B",
+      "contentIdCheck": "не перевірено",
+      "note": "Виконання старої пісні: вищий ризик хибного збігу на YouTube.",
+      "kind": "трек",
+      "durationSec": 49.5,
+      "album": "Out of Tune and Loving It",
+      "genre": "Comedy",
+      "year": "2017",
+      "comment": "This was recorded live on a piano with issues.",
+      "bitrateKbps": 269,
+      "sampleRate": 44100,
+      "channels": 2,
+      "loudnessLufs": -13.1,
+      "loudnessRange": 3.6,
+      "truePeakDb": -0.2,
+      "sizeBytes": 1667885,
+      "sha256": "9afdd870bdde43dfccb3105f63b5a0cbbd82dee1d9bc5d7853999e59060a570f"
+    },
+    {
+      "id": "freepd/arthur-fordsworthy-footsteps-in-the-attic",
+      "title": "Footsteps in the Attic",
+      "artist": "Arthur Fordsworthy",
+      "source": "freepd",
+      "file": "freepd/Arthur Fordsworthy - Footsteps in the Attic.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "horror"
+      ],
+      "bpm": 115,
+      "key": "11A",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 55,
+      "album": "A.F.P.D.",
+      "genre": "Experimental",
+      "year": "2013",
+      "comment": "This piece originally found on givelifebacktomusic.com",
+      "bitrateKbps": 216,
+      "sampleRate": 44100,
+      "channels": 2,
+      "loudnessLufs": -25.1,
+      "loudnessRange": 12.8,
+      "truePeakDb": -9.3,
+      "sizeBytes": 1483139,
+      "sha256": "686bed81a911e502a2a9f87b87ec087d5073b6753977ecb4fd9ffbb3b73c6db4"
+    },
+    {
+      "id": "freepd/brett-vandonsel-quick-metal-riff-1",
+      "title": "Quick Metal Riff 1",
+      "artist": "Brett VanDonsel",
+      "source": "freepd",
+      "file": "freepd/Brett VanDonsel - Quick Metal Riff 1.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "miscellaneous",
+        "rock"
+      ],
+      "bpm": 147,
+      "key": "6A",
+      "contentIdCheck": "не перевірено",
+      "kind": "стінгер",
+      "durationSec": 6.7,
+      "album": "Various Work by Brett Van Donsel",
+      "genre": "Rock",
+      "comment": "Seven seconds of orgasmic metal glory! To hear more of the diverse musical catalog of Brett Van Donsel, visit www.brettvandonselmusic.com",
+      "bitrateKbps": 165,
+      "sampleRate": 44100,
+      "channels": 2,
+      "loudnessLufs": -9.6,
+      "loudnessRange": 3.2,
+      "truePeakDb": 0,
+      "sizeBytes": 137320,
+      "sha256": "c730dcfa9b010397b362e59226927044e7dff918e93ae390ecef2589599869a8"
+    },
+    {
+      "id": "freepd/brian-boyko-ambush-in-rattlesnake-gulch",
+      "title": "Ambush in Rattlesnake Gulch",
+      "artist": "Brian Boyko",
+      "source": "freepd",
+      "file": "freepd/Brian Boyko - Ambush in Rattlesnake Gulch.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "miscellaneous"
+      ],
+      "bpm": 103,
+      "key": "6A",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 614.1,
+      "genre": "Cinematic",
+      "comment": "http://online-audio-converter.com",
+      "bitrateKbps": 128,
+      "sampleRate": 44100,
+      "channels": 2,
+      "loudnessLufs": -13.7,
+      "loudnessRange": 5.7,
+      "truePeakDb": 0.6,
+      "sizeBytes": 9828980,
+      "sha256": "91d6243c7e53eac2a50a7da1f6f5fe1994d808255bb2cd21a3903516e166bb94"
+    },
+    {
+      "id": "freepd/brian-boyko-groovin",
+      "title": "Groovin",
+      "artist": "Brian Boyko",
+      "source": "freepd",
+      "file": "freepd/Brian Boyko - Groovin.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "jazz",
+        "miscellaneous"
+      ],
+      "bpm": 120,
+      "key": "9A",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 240.1,
+      "album": "Free PD",
+      "genre": "Jazz",
+      "comment": "A funky, blend of jazz piano and 70's cop show theme music. Source: Brian.Boyko@netqos.com",
+      "bitrateKbps": 160,
+      "sampleRate": 44100,
+      "channels": 2,
+      "loudnessLufs": -15.7,
+      "loudnessRange": 3,
+      "truePeakDb": 0.4,
+      "sizeBytes": 4803592,
+      "sha256": "d96d17e3646175c6f2be0ffdbf57b928f8c020660f4e4e861ffdfcd919eb9a11"
+    },
+    {
+      "id": "freepd/brian-boyko-improv-for-evil",
+      "title": "Improv for Evil",
+      "artist": "Brian Boyko",
+      "source": "freepd",
+      "file": "freepd/Brian Boyko - Improv for Evil.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "miscellaneous"
+      ],
+      "bpm": 119,
+      "key": "8A",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 58,
+      "genre": "Experimental",
+      "comment": "http://online-audio-converter.com",
+      "bitrateKbps": 129,
+      "sampleRate": 44100,
+      "channels": 2,
+      "loudnessLufs": -11.9,
+      "loudnessRange": 3.8,
+      "truePeakDb": 0.7,
+      "sizeBytes": 932782,
+      "sha256": "51bd98a4b7d96bfa6674e90306ab979323b6d5e7667a93c5ed4af71868b1c6ed"
+    },
+    {
+      "id": "freepd/bryan-teoh-alls-fair-in-love",
+      "title": "Alls Fair In Love",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Alls Fair In Love.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "comedy"
+      ],
+      "bpm": 145,
+      "key": "8A",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 239.4,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -9.8,
+      "loudnessRange": 8.4,
+      "truePeakDb": 0.5,
+      "sizeBytes": 4791235,
+      "sha256": "8f8ff32f7b52535ae90336c410f0cd26c8190869cb6ef4382b5fddc9b29eff53"
+    },
+    {
+      "id": "freepd/bryan-teoh-and-just-like-that",
+      "title": "And Just Like That",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - And Just Like That.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "upbeat"
+      ],
+      "bpm": 124,
+      "key": "8B",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 114.3,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -14.6,
+      "loudnessRange": 4.7,
+      "truePeakDb": 0.4,
+      "sizeBytes": 2287556,
+      "sha256": "75e6438a8d6d1dcb54dd42cc02f4944b484e73dac48502eb78514c438cada914"
+    },
+    {
+      "id": "freepd/bryan-teoh-bar-brawl",
+      "title": "Bar Brawl",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Bar Brawl.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "upbeat"
+      ],
+      "bpm": 189,
+      "key": "3A",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 122.6,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -10.2,
+      "loudnessRange": 2.9,
+      "truePeakDb": 0.3,
+      "sizeBytes": 2454107,
+      "sha256": "5da633e89e8dfd9d2b3ed58794050925dd56fd372354307e3de3ad5d0e5ed86c"
+    },
+    {
+      "id": "freepd/bryan-teoh-busybody",
+      "title": "Busybody",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Busybody.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "comedy"
+      ],
+      "bpm": 135,
+      "key": "8B",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 86.4,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -16.4,
+      "loudnessRange": 2.6,
+      "truePeakDb": -0.1,
+      "sizeBytes": 1730266,
+      "sha256": "5170e23bc9a24f870b896965832c268e87db18418bd1ca9aa361ef5f52d67f98"
+    },
+    {
+      "id": "freepd/bryan-teoh-downtown-boogie",
+      "title": "Downtown Boogie",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Downtown Boogie.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "chill",
+        "miscellaneous"
+      ],
+      "bpm": 105,
+      "key": "9A",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 147.4,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -10.3,
+      "loudnessRange": 2.3,
+      "truePeakDb": 0.6,
+      "sizeBytes": 2949473,
+      "sha256": "fac095f68050e9f9325269b06f261f85441209e2f5742e3fc2234115bb9fdc00"
+    },
+    {
+      "id": "freepd/bryan-teoh-drop-point",
+      "title": "Drop Point",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Drop Point.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "miscellaneous"
+      ],
+      "bpm": 114,
+      "key": "4A",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 184.2,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -10.3,
+      "loudnessRange": 4.5,
+      "truePeakDb": 0.5,
+      "sizeBytes": 3685788,
+      "sha256": "00082677a2ca637d3b415a2afee1a2bad145adaf6b37c44fbf323605c8d84482"
+    },
+    {
+      "id": "freepd/bryan-teoh-elevate-inspirate",
+      "title": "Elevate Inspirate",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Elevate Inspirate.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "unsorted"
+      ],
+      "bpm": 103,
+      "key": "8B",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 64.5,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 44100,
+      "channels": 2,
+      "loudnessLufs": -17.6,
+      "loudnessRange": 11.7,
+      "truePeakDb": -3.2,
+      "sizeBytes": 1291679,
+      "sha256": "f387e8016c00a131f9996a88f29580d7a2e609a0b43022706ef1b3c557d77fde"
+    },
+    {
+      "id": "freepd/bryan-teoh-finally-see-the-light",
+      "title": "Finally See The Light",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Finally See The Light.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "miscellaneous"
+      ],
+      "bpm": 186,
+      "key": "5A",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 200.6,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -10.1,
+      "loudnessRange": 1.4,
+      "truePeakDb": 0.6,
+      "sizeBytes": 4014599,
+      "sha256": "3e9faa496e470d449869fc934e3b4332c197f09bcee28577241aade42a0f15a4"
+    },
+    {
+      "id": "freepd/bryan-teoh-fright-night-twist",
+      "title": "Fright Night Twist",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Fright Night Twist.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "comedy"
+      ],
+      "bpm": 171,
+      "key": "10A",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 176,
+      "album": "Free PD",
+      "year": "2020",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -11.8,
+      "loudnessRange": 3.5,
+      "truePeakDb": 0.4,
+      "sizeBytes": 3522929,
+      "sha256": "4031356b83cb5043f2614d39892acd8a14023f7e6694ba2cff5395fd9a298806"
+    },
+    {
+      "id": "freepd/bryan-teoh-from-page-to-practice",
+      "title": "From Page to Practice",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - From Page to Practice.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "upbeat"
+      ],
+      "bpm": 80,
+      "key": "11B",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 136.6,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -12.1,
+      "loudnessRange": 9.8,
+      "truePeakDb": 0.3,
+      "sizeBytes": 2733479,
+      "sha256": "dd20cb51c948a14e45d71b9a03b9d6afc48a4b7fd7b5020da623fbd86390b519"
+    },
+    {
+      "id": "freepd/bryan-teoh-go-on-without-me",
+      "title": "Go On Without Me",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Go On Without Me.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "epic"
+      ],
+      "bpm": 140,
+      "key": "12A",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 195,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -15.8,
+      "loudnessRange": 13.2,
+      "truePeakDb": -0.1,
+      "sizeBytes": 3903234,
+      "sha256": "5101fa0a410cff668fc036f021b12c2175f3bc695c61dd04088a340b9f62373f"
+    },
+    {
+      "id": "freepd/bryan-teoh-going-bananas",
+      "title": "Going Bananas",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Going Bananas.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "comedy"
+      ],
+      "bpm": 130,
+      "key": "9B",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 140.6,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 44100,
+      "channels": 2,
+      "loudnessLufs": -9.2,
+      "loudnessRange": 4.1,
+      "truePeakDb": 1,
+      "sizeBytes": 2814091,
+      "sha256": "7bc328be13de6d0c275f5344529c14aff6f5bde3d1fb1e9f64503343e1fdaeb0"
+    },
+    {
+      "id": "freepd/bryan-teoh-gotta-keep-on-movin",
+      "title": "Gotta Keep On Movin",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Gotta Keep On Movin.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "miscellaneous"
+      ],
+      "bpm": 110,
+      "key": "9A",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 144,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -13.3,
+      "loudnessRange": 9.5,
+      "truePeakDb": -1.4,
+      "sizeBytes": 2883238,
+      "sha256": "0844e8cb7f10adcff4258eca87dd1aa7a1069617ff8397f0b3980a9d40e71e25"
+    },
+    {
+      "id": "freepd/bryan-teoh-hold-me-love-me",
+      "title": "Hold Me, Love Me",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Hold Me, Love Me.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "unsorted"
+      ],
+      "bpm": 200,
+      "key": "7A",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 273.7,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 44100,
+      "channels": 2,
+      "loudnessLufs": -9.6,
+      "loudnessRange": 3.6,
+      "truePeakDb": 0.5,
+      "sizeBytes": 5475449,
+      "sha256": "65feca79ec320d72972217be364bc885ade2860443ba8625d6050b8b89729164"
+    },
+    {
+      "id": "freepd/bryan-teoh-hold-on-a-sec",
+      "title": "Hold on a Sec",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Hold on a Sec.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "miscellaneous"
+      ],
+      "bpm": 190,
+      "key": "6B",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 125.5,
+      "album": "Free PD",
+      "genre": "Funk",
+      "year": "2020",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -12.3,
+      "loudnessRange": 1.9,
+      "truePeakDb": 0,
+      "sizeBytes": 2512598,
+      "sha256": "c87d50579aa12c8c2f44f0129bf8ec9cb4b5cc856a8afdf2620ef57bf96fc53c"
+    },
+    {
+      "id": "freepd/bryan-teoh-honor-bound",
+      "title": "Honor Bound",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Honor Bound.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "epic"
+      ],
+      "bpm": 125,
+      "key": "5A",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 170.6,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -8.7,
+      "loudnessRange": 10.3,
+      "truePeakDb": 0.7,
+      "sizeBytes": 3413629,
+      "sha256": "d9d592d5bc2b1bb7e69aededa2364b7f5cf108daa58099bd320755bcc1861ebc"
+    },
+    {
+      "id": "freepd/bryan-teoh-i-guess-what-i-m-trying-to-say",
+      "title": "I Guess What I'm Trying to Say",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - I Guess What I'm Trying to Say.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "chill",
+        "miscellaneous"
+      ],
+      "bpm": 180,
+      "key": "1B",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 152.8,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -11.8,
+      "loudnessRange": 3,
+      "truePeakDb": 0.3,
+      "sizeBytes": 3058448,
+      "sha256": "f836a65f9d0c4a207faf9fb936e1fe5b85b2e58eecb9f55544bcdb473e7efec1"
+    },
+    {
+      "id": "freepd/bryan-teoh-inventing-flight",
+      "title": "Inventing Flight",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Inventing Flight.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "upbeat"
+      ],
+      "bpm": 145,
+      "key": "8B",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 141.9,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -11.3,
+      "loudnessRange": 12.5,
+      "truePeakDb": 0.2,
+      "sizeBytes": 2840034,
+      "sha256": "916e736efa3caed4ea8534e727670dbac41af0fb44f00fa667aebaab9b2b6407"
+    },
+    {
+      "id": "freepd/bryan-teoh-isolation-waltz",
+      "title": "Isolation Waltz",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Isolation Waltz.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "romance"
+      ],
+      "bpm": 125,
+      "key": "7B",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 205.3,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -13.3,
+      "loudnessRange": 4,
+      "truePeakDb": -0.1,
+      "sizeBytes": 4108673,
+      "sha256": "4fb04327dfa8d98c142c4427a05516b525d38740a815f9230d07e9daf8211369"
+    },
+    {
+      "id": "freepd/bryan-teoh-lucky-break",
+      "title": "Lucky Break",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Lucky Break.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "romance"
+      ],
+      "bpm": 130,
+      "key": "11B",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 286.1,
+      "album": "FreePD Music",
+      "genre": "Jazz",
+      "year": "2020",
+      "comment": "Composed, recorded, and dedicated to the Public Domain 2020.  Nicklas Waroff on sax.",
+      "bitrateKbps": 320,
+      "sampleRate": 44100,
+      "channels": 2,
+      "loudnessLufs": -10.9,
+      "loudnessRange": 3.5,
+      "truePeakDb": 0.4,
+      "sizeBytes": 11446774,
+      "sha256": "ff0ffc4c4c55974804b6a4ca0b3e2dfa63b7c94e61a8532162c82bef23ab1bf8"
+    },
+    {
+      "id": "freepd/bryan-teoh-managing-mischief",
+      "title": "Managing Mischief",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Managing Mischief.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "comedy"
+      ],
+      "bpm": 120,
+      "key": "9B",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 164.1,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -16,
+      "loudnessRange": 5.4,
+      "truePeakDb": 0,
+      "sizeBytes": 3283555,
+      "sha256": "bd4edf542d4875e79de7aa70a2d64aaab84624b22c4bb60b311a2a8590a4fb0b"
+    },
+    {
+      "id": "freepd/bryan-teoh-murder-on-the-bayou",
+      "title": "Murder On The Bayou",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Murder On The Bayou.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "miscellaneous"
+      ],
+      "bpm": 148,
+      "key": "10B",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 128.2,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -9.9,
+      "loudnessRange": 2.5,
+      "truePeakDb": 0.4,
+      "sizeBytes": 2566917,
+      "sha256": "dd29c3fb3160cbab3b4da661a9ecb84194bb8b231bed453bc319b95178eaa6fd"
+    },
+    {
+      "id": "freepd/bryan-teoh-my-giant-bunny-friend",
+      "title": "My Giant Bunny Friend",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - My Giant Bunny Friend.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "comedy"
+      ],
+      "bpm": 102,
+      "key": "7A",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 165.1,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -13.2,
+      "loudnessRange": 2,
+      "truePeakDb": 0.6,
+      "sizeBytes": 3303719,
+      "sha256": "696d1e335debd934813e8f4e8703d98ec456d1b87ded7ed630787e60c06c2a5e"
+    },
+    {
+      "id": "freepd/bryan-teoh-mysterious-lights",
+      "title": "Mysterious Lights",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Mysterious Lights.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "horror"
+      ],
+      "bpm": 142,
+      "key": "5A",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 178.9,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -14.1,
+      "loudnessRange": 2.7,
+      "truePeakDb": -0.1,
+      "sizeBytes": 3579715,
+      "sha256": "1f0fb7f9ba9611bcdb9eef077cb0662d17e50d213e1f14ddfd1f6e6c90d1125f"
+    },
+    {
+      "id": "freepd/bryan-teoh-neptunian-princess",
+      "title": "Neptunian Princess",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Neptunian Princess.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "chill",
+        "miscellaneous"
+      ],
+      "bpm": 100,
+      "key": "8B",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 125.4,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -15.4,
+      "loudnessRange": 5,
+      "truePeakDb": -0.2,
+      "sizeBytes": 2511236,
+      "sha256": "f81ff8af1417ce13b5d06db0b1440c50b65a88b9f14d61fdf9012ec96ff423ce"
+    },
+    {
+      "id": "freepd/bryan-teoh-patron-saint-of-heists",
+      "title": "Patron Saint of Heists",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Patron Saint of Heists.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "scoring"
+      ],
+      "bpm": 170,
+      "key": "5A",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 186.9,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -12.9,
+      "loudnessRange": 7.1,
+      "truePeakDb": 0.1,
+      "sizeBytes": 3740520,
+      "sha256": "b82e8b44ce3dbd44c05d70d87130cef0eb323ee3a0d29ea3f92ad45f2c72fd9d"
+    },
+    {
+      "id": "freepd/bryan-teoh-planeteer-reaction",
+      "title": "Planeteer Reaction",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Planeteer Reaction.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "chill",
+        "miscellaneous"
+      ],
+      "bpm": 174,
+      "key": "10B",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 248.3,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -9.3,
+      "loudnessRange": 4.3,
+      "truePeakDb": 0.4,
+      "sizeBytes": 4968836,
+      "sha256": "48ea5f463fea19eaa478ba12b88c41bca8a6fe22b3e2eb814a06e3f3a912cdbc"
+    },
+    {
+      "id": "freepd/bryan-teoh-slice-of-life",
+      "title": "Slice of Life",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Slice of Life.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "scoring"
+      ],
+      "bpm": 145,
+      "key": "10A",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 140.8,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -10.3,
+      "loudnessRange": 2.9,
+      "truePeakDb": -0.1,
+      "sizeBytes": 2817471,
+      "sha256": "39e0543fbeb06ced8a5f023daf7375385235238ea9063677f3ff71ab15bc04dc"
+    },
+    {
+      "id": "freepd/bryan-teoh-soundtrack-from-the-starcourt-mall",
+      "title": "Soundtrack From the Starcourt Mall",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Soundtrack From the Starcourt Mall.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "chill",
+        "miscellaneous"
+      ],
+      "bpm": 103,
+      "key": "8B",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 217.5,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -11.2,
+      "loudnessRange": 2,
+      "truePeakDb": 0.3,
+      "sizeBytes": 4352052,
+      "sha256": "9199da36aefbe7974a75ad22084768ec77c1a98e14ac14ce36f193ece668b867"
+    },
+    {
+      "id": "freepd/bryan-teoh-spring-chicken",
+      "title": "Spring Chicken",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Spring Chicken.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "comedy"
+      ],
+      "bpm": 175,
+      "key": "7B",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 167,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -15.3,
+      "loudnessRange": 4,
+      "truePeakDb": -0.5,
+      "sizeBytes": 3341632,
+      "sha256": "cb6e536674d7cade8631977cd7edc3c56940e3646f542502d3648756b65340e9"
+    },
+    {
+      "id": "freepd/bryan-teoh-stunted-adventure",
+      "title": "Stunted Adventure",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Stunted Adventure.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "scoring"
+      ],
+      "bpm": 136,
+      "key": "7B",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 70.1,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -11.3,
+      "loudnessRange": 7.3,
+      "truePeakDb": 0.3,
+      "sizeBytes": 1404835,
+      "sha256": "d49752e0c86a2e7aa4a770fec41209f28f562180101647fe9fcd936036435593"
+    },
+    {
+      "id": "freepd/bryan-teoh-sun-up-gunned-down",
+      "title": "Sun Up Gunned Down",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Sun Up Gunned Down.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "miscellaneous"
+      ],
+      "bpm": 197,
+      "key": "6A",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 86.8,
+      "album": "Free PD",
+      "year": "2020",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -12.6,
+      "loudnessRange": 4.7,
+      "truePeakDb": 0.1,
+      "sizeBytes": 1737329,
+      "sha256": "a6004c040c378182e14f4eefbf2f8d3e4f553cb6e91ccd6e94fab725582e6c23"
+    },
+    {
+      "id": "freepd/bryan-teoh-take-the-ride",
+      "title": "Take the Ride",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Take the Ride.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "comedy"
+      ],
+      "bpm": 121,
+      "key": "1A",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 262,
+      "album": "Free PD",
+      "year": "2020",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -11.5,
+      "loudnessRange": 6.8,
+      "truePeakDb": 0.7,
+      "sizeBytes": 5242764,
+      "sha256": "f33874ce6030f2b92f462c0072b029dd2a9509bb0c836d05bb52068202322740"
+    },
+    {
+      "id": "freepd/bryan-teoh-trip-up-north",
+      "title": "Trip Up North",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Trip Up North.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "country",
+        "miscellaneous"
+      ],
+      "bpm": 190,
+      "key": "9B",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 167.8,
+      "album": "Free PD",
+      "year": "2020",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -7.8,
+      "loudnessRange": 4,
+      "truePeakDb": 1.6,
+      "sizeBytes": 3358764,
+      "sha256": "63236bb0ea47287aca97c98aeeeb8a0364fc83d341a50f375831a5fe31be89b1"
+    },
+    {
+      "id": "freepd/bryan-teoh-wakka-wakka",
+      "title": "Wakka Wakka",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "file": "freepd/Bryan Teoh - Wakka Wakka.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "comedy"
+      ],
+      "bpm": 125,
+      "key": "9A",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 121.6,
+      "album": "FreePD Music",
+      "year": "2020",
+      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
+      "bitrateKbps": 160,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -11.1,
+      "loudnessRange": 3.4,
+      "truePeakDb": 0.5,
+      "sizeBytes": 2434429,
+      "sha256": "de261ef809e92732806ebd51534da59b1dda8aee9c9f8bd062c4234aa30eb10c"
+    },
+    {
+      "id": "freepd/dogsounds-a-waltz-for-naseem",
+      "title": "A Waltz For Naseem",
+      "artist": "dogsounds",
+      "source": "freepd",
+      "file": "freepd/dogsounds - A Waltz For Naseem.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "miscellaneous"
+      ],
+      "bpm": 155,
+      "key": "2B",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 216.8,
+      "genre": "Electronic",
+      "comment": "http://online-audio-converter.com",
+      "bitrateKbps": 128,
+      "sampleRate": 44100,
+      "channels": 2,
+      "loudnessLufs": -16.4,
+      "loudnessRange": 10,
+      "truePeakDb": -3,
+      "sizeBytes": 3472611,
+      "sha256": "989363a9d03c6ac5a511cb6c5df6e64ae12e20c8917c6a4d2c02c74b93de23f2"
+    },
+    {
+      "id": "freepd/dogsounds-brandenburg-concerto-iii-allegro-i",
+      "title": "Brandenburg Concerto III, Allegro I",
+      "artist": "dogsounds",
+      "source": "freepd",
+      "file": "freepd/dogsounds - Brandenburg Concerto III, Allegro I.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "classical",
+        "miscellaneous"
+      ],
+      "bpm": 156,
+      "key": "10A",
+      "contentIdCheck": "не перевірено",
+      "note": "Виконання відомого твору Баха: вищий ризик хибного збігу на YouTube.",
+      "kind": "трек",
+      "durationSec": 299.9,
+      "album": "dogsounds extras",
+      "genre": "Electronic",
+      "comment": "Dedicated to the Public Domain in 2017. Source: https://blog.dogsounds.com/music/",
+      "bitrateKbps": 129,
+      "sampleRate": 44100,
+      "channels": 2,
+      "loudnessLufs": -15.3,
+      "loudnessRange": 2.6,
+      "truePeakDb": -2.9,
+      "sizeBytes": 4829184,
+      "sha256": "7ce583b4240a65b8ae41e48da9ca5c24694e70ef818a52477fb67fa12d3c5143"
+    },
+    {
+      "id": "freepd/james-anderson-goldcrest",
+      "title": "Goldcrest",
+      "artist": "James Anderson",
+      "source": "freepd",
+      "file": "freepd/James Anderson - Goldcrest.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "classical",
+        "miscellaneous"
+      ],
+      "bpm": 133,
+      "key": "6B",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 142.3,
+      "album": "Public Domain",
+      "genre": "March",
+      "comment": "Oldham Music Centre Youth Brass Band. Source: musopen.org",
+      "bitrateKbps": 193,
+      "sampleRate": 48000,
+      "channels": 2,
+      "loudnessLufs": -18.1,
+      "loudnessRange": 10.2,
+      "truePeakDb": -1.4,
+      "sizeBytes": 3424810,
+      "sha256": "349390689b28bd82b3a66d985af2c99f4fbdda6d03c8e1a8582ec43d8f9bd391"
+    },
+    {
+      "id": "freepd/jason-shaw-landra-s-dream",
+      "title": "Landra's Dream",
+      "artist": "Jason Shaw",
+      "source": "freepd",
+      "file": "freepd/Jason Shaw - Landra's Dream.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "romance"
+      ],
+      "bpm": 150,
+      "key": "3B",
+      "contentIdCheck": "не перевірено",
+      "note": "Автор має ще й каталог під CC-BY (Audionautix); заявок не знайдено, але перевірити на YouTube особливо уважно.",
+      "kind": "трек",
+      "durationSec": 88.9,
+      "album": "Empathy",
+      "genre": "Ballad",
+      "year": "2013",
+      "comment": "This piece originally found on givelifebacktomusic.com",
+      "bitrateKbps": 327,
+      "sampleRate": 44100,
+      "channels": 2,
+      "loudnessLufs": -9,
+      "loudnessRange": 1.9,
+      "truePeakDb": -0.1,
+      "sizeBytes": 3636231,
+      "sha256": "fc55b6cbadaef9c2bff8645c43bf04882cc5f41fe0f1af257d11ff15c1d9aba9"
+    },
+    {
+      "id": "freepd/jason-shaw-river-meditation",
+      "title": "River Meditation",
+      "artist": "Jason Shaw",
+      "source": "freepd",
+      "file": "freepd/Jason Shaw - River Meditation.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "miscellaneous"
+      ],
+      "bpm": 180,
+      "key": "10A",
+      "contentIdCheck": "не перевірено",
+      "note": "Автор має ще й каталог під CC-BY (Audionautix); заявок не знайдено, але перевірити на YouTube особливо уважно.",
+      "kind": "трек",
+      "durationSec": 167.1,
+      "genre": "Jazz",
+      "comment": "http://online-audio-converter.com",
+      "bitrateKbps": 128,
+      "sampleRate": 44100,
+      "channels": 2,
+      "loudnessLufs": -14.5,
+      "loudnessRange": 5,
+      "truePeakDb": 0.2,
+      "sizeBytes": 2677213,
+      "sha256": "de0dc7fc73e83312bc5d3ef13f197f0900cedd904ed46b50cc2ee74b4db3dc3f"
+    },
+    {
+      "id": "freepd/phase-shift-forest-night",
+      "title": "Forest Night",
+      "artist": "Phase Shift",
+      "source": "freepd",
+      "file": "freepd/Phase Shift - Forest Night.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "fantasy",
+        "miscellaneous"
+      ],
+      "bpm": 122,
+      "key": "7A",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 141.8,
+      "album": "Night Sky",
+      "genre": "Cinematic",
+      "year": "2000",
+      "comment": "This piece originally found on givelifebacktomusic.com",
+      "bitrateKbps": 169,
+      "sampleRate": 44100,
+      "channels": 2,
+      "loudnessLufs": -16.3,
+      "loudnessRange": 8,
+      "truePeakDb": -0.3,
+      "sizeBytes": 2989749,
+      "sha256": "f087318d48e22ca27e4ef570e2625b7079cd092424d9b205abc77ad51aa1454c"
+    },
+    {
+      "id": "freepd/severed-personality-abstract-anxiety",
+      "title": "Abstract Anxiety",
+      "artist": "Severed Personality",
+      "source": "freepd",
+      "file": "freepd/Severed Personality - Abstract Anxiety.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "miscellaneous"
+      ],
+      "bpm": 150,
+      "key": "11B",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 268.8,
+      "genre": "Rock and Pop",
+      "comment": "http://online-audio-converter.com",
+      "bitrateKbps": 128,
+      "sampleRate": 44100,
+      "channels": 2,
+      "loudnessLufs": -11.2,
+      "loudnessRange": 2.9,
+      "truePeakDb": 0.6,
+      "sizeBytes": 4305649,
+      "sha256": "0796da6d0061bd6e0b9cb95c09a997868e448a457bb975bf66c5fd6915969bec"
+    },
+    {
+      "id": "freepd/statusq-3-am-west-end",
+      "title": "3 am West End",
+      "artist": "statusq",
+      "source": "freepd",
+      "file": "freepd/statusq - 3 am West End.mp3",
+      "license": "CC0-1.0",
+      "categories": [
+        "electronic",
+        "miscellaneous"
+      ],
+      "bpm": 182,
+      "key": "4B",
+      "contentIdCheck": "не перевірено",
+      "kind": "трек",
+      "durationSec": 291.1,
+      "genre": "Unclassifiable",
+      "comment": "Urban chill out song, with bass, electronic piano and a  reverbed out horn.",
+      "bitrateKbps": 160,
+      "sampleRate": 44100,
+      "channels": 2,
+      "loudnessLufs": -19.6,
+      "loudnessRange": 4.2,
+      "truePeakDb": -2.8,
+      "sizeBytes": 5826013,
+      "sha256": "590bb9833cfb0d6610a6ac00093f9b3d062d604863d6e44bdac61d526d33cab8"
+    }
+  ],
+  "pending": [
+    {
+      "source": "tallbeard",
+      "what": "Music Loop Bundle: понад 200 треків, ambient, chiptune, upbeat; 12 архівів, близько 743 МБ",
+      "url": "https://tallbeard.itch.io/music-loop-bundle",
+      "how": "Ціну обирає покупець, можна 0. Покласти архіви в audio-library/tallbeard/.",
+      "why": "itch.io забороняє ботам /game/download/."
+    },
+    {
+      "source": "holizna",
+      "what": "HoliznaCC0: лоу-фай, чіптюн, ігрові саундтреки",
+      "url": "https://freemusicarchive.org/music/holiznacc0/",
+      "how": "Увійти на Free Music Archive. Лише сторінка holiznacc0 і лише треки з CC0 на сторінці треку; holiznapatreon для комерції закрита.",
+      "why": "Завантаження вимагає входу. Заявок Content ID не знайдено, але й підтвердження автора немає."
+    },
+    {
+      "source": "junkala",
+      "what": "Juhani Junkala (SubspaceAudio): JRPG Pack 4 Calm, JRPG Pack 5 Action, 4 Chiptunes (Adventure), 5 Chiptunes (Action)",
+      "url": "https://opengameart.org/content/jrpg-pack-4-calm",
+      "how": "Перевіряти CC0 на сторінці кожного пакета: на itch.io той самий автор вказує CC-BY 4.0, а G&T RPG soundtrack — не CC0.",
+      "why": "OpenGameArt закриває доступ ботам Anthropic."
+    }
+  ],
+  "rejected": [
+    {
+      "group": "FreePD, категорія Zoned на en.freepd.cn",
+      "count": 719,
+      "reason": "Немає ні в оригінальному списку файлів, ні в дзеркалі; авторів не названо."
+    },
+    {
+      "title": "Action Strike",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "scoring"
+      ],
+      "durationSec": 134,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Advertime",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "upbeat"
+      ],
+      "durationSec": 134,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Alien Invasion",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "horror"
+      ],
+      "durationSec": 185,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Aquatic City Vanished",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 149,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Awkward Apocalyptic Pickup",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 44,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Battle Ready",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 78,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Bavarian Seascape",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 231,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "BeBop for Joey",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 139,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Behind Enemy Lines",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 115,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Big Eyes",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 149,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Brewing Potions",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "fantasy",
+        "miscellaneous"
+      ],
+      "durationSec": 94,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Burning Trapezoid of Fire",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 241,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Circuit",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 180,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "City Run",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "scoring"
+      ],
+      "durationSec": 37,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Cornfield Chase",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 138,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Coy Koi",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 48,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Deck the Halls",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 107,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Desert Conflict",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 160,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Desert Fox Underscore",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "scoring"
+      ],
+      "durationSec": 133,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Desert Fox",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "scoring"
+      ],
+      "durationSec": 133,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Epic Boss Battle",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 170,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Fresh Focus",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "upbeat"
+      ],
+      "durationSec": 124,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Guerilla Tactics",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "scoring"
+      ],
+      "durationSec": 109,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Happy Whistling Ukulele",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "upbeat"
+      ],
+      "durationSec": 123,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Heroic Adventure",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 143,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Hit n Smash",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 133,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Horror Mytery",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "horror"
+      ],
+      "durationSec": 124,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Horror Suspense",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "horror"
+      ],
+      "durationSec": 140,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Ice and Snow",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "scoring"
+      ],
+      "durationSec": 142,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Inspiration",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "upbeat"
+      ],
+      "durationSec": 138,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Jethro on the Run",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "country",
+        "miscellaneous"
+      ],
+      "durationSec": 231,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Jungle Mission",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 186,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Kings Trailer",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 163,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Lonely Mountain",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 190,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Lovely Piano Song",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "romance"
+      ],
+      "durationSec": 96,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Martini Sunset",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "jazz",
+        "miscellaneous"
+      ],
+      "durationSec": 174,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Modern Island Jam",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 188,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Monsters in Hotel",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 126,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Mothership",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 126,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Natural Vibes",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "upbeat"
+      ],
+      "durationSec": 129,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Night Attack",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 153,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Nomadic Sunset MMXIX",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 201,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Nostalgic Piano",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "romance"
+      ],
+      "durationSec": 196,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Overture",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 99,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Palm and Soul",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 240,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Pond",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "romance"
+      ],
+      "durationSec": 152,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Release the Hybrids",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 124,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Romantic Inspiration",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "romance"
+      ],
+      "durationSec": 150,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Rush",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 134,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Shining Stars",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "romance"
+      ],
+      "durationSec": 140,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Spec Ops",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 137,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Stompin at Midnight - Vinyl Recording",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "jazz"
+      ],
+      "durationSec": 117,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Stompin at Midnight",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "jazz"
+      ],
+      "durationSec": 117,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Swing Maching",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "jazz"
+      ],
+      "durationSec": 135,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "The Vikings",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 160,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Think About It",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 120,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Travelers Notebook",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "scoring"
+      ],
+      "durationSec": 123,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Ukulele Song",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "upbeat"
+      ],
+      "durationSec": 139,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Video Game Blockbuster",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 143,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Vintage Party",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 75,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Vivace Momentum",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "classical"
+      ],
+      "durationSec": 109,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "We Wish You a Merry Christmas",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 87,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Wizard Circus",
+      "artist": null,
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 155,
+      "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
+    },
+    {
+      "title": "Adventures of Flying Jack",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 73,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Ambient Bongos",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 88,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Apex",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 317,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Be Chillin",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "upbeat"
+      ],
+      "durationSec": 203,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Be Jammin",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 167,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Beat Thee",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "electronic"
+      ],
+      "durationSec": 192,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Behind the Sword",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 179,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Beyond - part 2",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 285,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Blacksmith",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 161,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Blood Eagle",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 228,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Bonfire",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 99,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Bouchedag",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 77,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Brothers Unite",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "romance"
+      ],
+      "durationSec": 184,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Burt's Requiem",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "romance"
+      ],
+      "durationSec": 389,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Celebration",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 143,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Chronos",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "electronic"
+      ],
+      "durationSec": 129,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Cockroaches",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "horror"
+      ],
+      "durationSec": 209,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Cold Journey",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 291,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Consecrated Ground",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "horror"
+      ],
+      "durationSec": 112,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Construction",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 195,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Creepy Hallow",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "horror"
+      ],
+      "durationSec": 120,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Fanfare X",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 40,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Favorite",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "electronic"
+      ],
+      "durationSec": 175,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Find Them",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "scoring"
+      ],
+      "durationSec": 142,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Fireworks",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "electronic"
+      ],
+      "durationSec": 191,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Foam Rubber",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 153,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Halloween Theme 1",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "horror"
+      ],
+      "durationSec": 120,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Hippety Hop",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "electronic"
+      ],
+      "durationSec": 117,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Hor Hor",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "horror"
+      ],
+      "durationSec": 332,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Horizon Flare",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "romance"
+      ],
+      "durationSec": 102,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Jack The Lumberer",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 170,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Jokull",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 245,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Journey of Hope",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 349,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Land of Pirates",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 114,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Le Baguette",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 54,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Lurking Sloth",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 158,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Marked",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 153,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Nightmare",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "horror"
+      ],
+      "durationSec": 55,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Nomadic Sunset",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 191,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Northur",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 224,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Novus Initium",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "scoring"
+      ],
+      "durationSec": 163,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "One Destination - Two Journeys",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 257,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Pantscrapper",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "horror"
+      ],
+      "durationSec": 129,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Parhelion",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "romance"
+      ],
+      "durationSec": 162,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Pina Colada",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "romance"
+      ],
+      "durationSec": 164,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Putin's Lullaby",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 127,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Relaxing Ballad",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "upbeat"
+      ],
+      "durationSec": 209,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Silent Night (Unholy Night)",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 165,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Silly Intro",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 25,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Space Ambience",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "electronic"
+      ],
+      "durationSec": 276,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Sunny Rasta",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 140,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "The Abyss",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "horror"
+      ],
+      "durationSec": 171,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "The Crown",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 233,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "The Desert",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 130,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "The Enemy",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 103,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "The Lagoon",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "scoring"
+      ],
+      "durationSec": 154,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "The Story",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 147,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Uberpunch",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 94,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "USSR",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 106,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "Winter",
+      "artist": "Alexander Nakarada",
+      "source": "freepd",
+      "categories": [
+        "romance"
+      ],
+      "durationSec": 313,
+      "reason": "Є повідомлення про заявки на його треки від We Are Era Music BV"
+    },
+    {
+      "title": "A Surprising Encounter",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "unsorted"
+      ],
+      "durationSec": 84,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "A Very Brady Special",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "romance"
+      ],
+      "durationSec": 388,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Adding the Sun",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "chill",
+        "miscellaneous"
+      ],
+      "durationSec": 176,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Alien Spaceship Atmosphere",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "horror"
+      ],
+      "durationSec": 124,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Alternative Clock Dimension",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "unsorted"
+      ],
+      "durationSec": 144,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Amazing Grace",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "romance"
+      ],
+      "durationSec": 114,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Ancient Rite",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 113,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Ancient Winds",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "chill"
+      ],
+      "durationSec": 3534,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Aquarium",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "classical",
+        "miscellaneous"
+      ],
+      "durationSec": 144,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Arpent",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "electronic"
+      ],
+      "durationSec": 162,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Backbeat",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "electronic"
+      ],
+      "durationSec": 46,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Baltic Levity",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 48,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Barroom Ballet",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 57,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Bass Meant Jazz",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 280,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Beat One",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "electronic"
+      ],
+      "durationSec": 180,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Bit Bit Loop",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "electronic"
+      ],
+      "durationSec": 77,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Blippy Trance",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "chill",
+        "miscellaneous"
+      ],
+      "durationSec": 120,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Bollywood Groove",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 150,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Breaking Bollywood",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 225,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Circus of Freaks",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 57,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "City Sunshine",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "upbeat"
+      ],
+      "durationSec": 185,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Comic Game Loop - Mischief",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 43,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Compy Jazz",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 247,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Connecting Rainbows",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 116,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Cumbish",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 192,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Dance of the Tuba Plum Fairy",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 29,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Dancing at the Inn",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "fantasy",
+        "miscellaneous"
+      ],
+      "durationSec": 158,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Dark Hallway",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "classical",
+        "miscellaneous"
+      ],
+      "durationSec": 47,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Deep Relaxation",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "chill"
+      ],
+      "durationSec": 3068,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Deep Tones",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "unsorted"
+      ],
+      "durationSec": 124,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Del Rio Bravo",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 204,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Driving Concern",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "scoring"
+      ],
+      "durationSec": 200,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Drunken Party",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 121,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Ebbs and Flows",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "chill"
+      ],
+      "durationSec": 3534,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Elf Meditation",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "chill"
+      ],
+      "durationSec": 3534,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Energizing",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "chill",
+        "miscellaneous"
+      ],
+      "durationSec": 133,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Evil Incoming",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 175,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Experimental Test Subject",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 164,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Fake It Til You Fake It",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "jazz",
+        "miscellaneous"
+      ],
+      "durationSec": 174,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Fenster's Explanation",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 169,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Flutey Jazz",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "jazz",
+        "miscellaneous"
+      ],
+      "durationSec": 247,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Forest Frolic Loop",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 37,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Frogs Legs Rag",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 170,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Funkeriffic",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "jazz",
+        "miscellaneous"
+      ],
+      "durationSec": 210,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Funky Energy Loop",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "scoring"
+      ],
+      "durationSec": 203,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Funshine",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "upbeat"
+      ],
+      "durationSec": 165,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Goodnightmare",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "electronic"
+      ],
+      "durationSec": 240,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Gothamlicious",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 48,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Hear What They Say",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "electronic"
+      ],
+      "durationSec": 138,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Hillbilly Swing",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 167,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Holiday Weasel",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 85,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Horns",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 204,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Horroriffic",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "horror"
+      ],
+      "durationSec": 168,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Icicles Melting",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "classical",
+        "miscellaneous"
+      ],
+      "durationSec": 178,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Improved Ice Cream Truck",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 51,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Infinite Peace",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "chill",
+        "miscellaneous"
+      ],
+      "durationSec": 76,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Infinite Wonder",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "chill",
+        "miscellaneous"
+      ],
+      "durationSec": 190,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Joey's Song",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 207,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Kalimba Relaxation Music",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "chill",
+        "miscellaneous"
+      ],
+      "durationSec": 428,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Krampus's Workshop",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 91,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Limit 70",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "upbeat"
+      ],
+      "durationSec": 302,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Lukewarm Banjo",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "country",
+        "miscellaneous"
+      ],
+      "durationSec": 32,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Magical Transition",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "fantasy",
+        "miscellaneous"
+      ],
+      "durationSec": 31,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Mana Two - Part 1",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "chill",
+        "miscellaneous"
+      ],
+      "durationSec": 234,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Mana Two - Part 2",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "chill",
+        "miscellaneous"
+      ],
+      "durationSec": 362,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Mana Two - Part 3",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "chill",
+        "miscellaneous"
+      ],
+      "durationSec": 192,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Maple 100",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "unsorted"
+      ],
+      "durationSec": 179,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Maple Leaf Rag",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 179,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Meditating Beat",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "electronic"
+      ],
+      "durationSec": 157,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Midnight in the Green House",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 212,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Mind Chaos",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "horror"
+      ],
+      "durationSec": 184,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "New Hero in Town",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 57,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Night in the Castle",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 189,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Night in Venice",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "romance"
+      ],
+      "durationSec": 218,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Night Vigil",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 288,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Nordic Wist",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "fantasy",
+        "miscellaneous"
+      ],
+      "durationSec": 149,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Opener Comedy",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "unsorted"
+      ],
+      "durationSec": 13,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Organ Filler",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 90,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Painful Disorientation",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "classical",
+        "miscellaneous"
+      ],
+      "durationSec": 91,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Painting Room",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "fantasy",
+        "miscellaneous"
+      ],
+      "durationSec": 106,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Patience Party",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "romance"
+      ],
+      "durationSec": 243,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Piano Magic Motive",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "romance"
+      ],
+      "durationSec": 78,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Pickled Pink",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "upbeat"
+      ],
+      "durationSec": 175,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Pump up your Graduation",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "unsorted"
+      ],
+      "durationSec": 290,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Royal Coupling",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "fantasy",
+        "miscellaneous"
+      ],
+      "durationSec": 134,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Rural Industry",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "unsorted"
+      ],
+      "durationSec": 109,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Sad Drunken Party",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 283,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Satin Danger",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "horror"
+      ],
+      "durationSec": 164,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Sciencenet Theme",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 44,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Screen Saver",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "upbeat"
+      ],
+      "durationSec": 182,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Shenzhen Nightlife",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 263,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Still Pickin",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "upbeat"
+      ],
+      "durationSec": 298,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Strength of the Titans",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 62,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Study and Relax",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "chill",
+        "miscellaneous"
+      ],
+      "durationSec": 223,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Sunday Dub",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 209,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Take the Sting Out - Jazz Fi",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "unsorted"
+      ],
+      "durationSec": 223,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "The Britons",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "fantasy",
+        "miscellaneous"
+      ],
+      "durationSec": 307,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "The Entertainer",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 193,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "The Ice Giants",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 44,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Village Tarantella",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 53,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Wind of the Rainforest",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "chill"
+      ],
+      "durationSec": 3534,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Windy Old Weather - thin",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "unsorted"
+      ],
+      "durationSec": 91,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Windy Old Weather",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 91,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Wisdom in the Sun",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "chill",
+        "miscellaneous"
+      ],
+      "durationSec": 155,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "Witch Waltz",
+      "artist": "Kevin MacLeod",
+      "source": "freepd",
+      "categories": [
+        "fantasy",
+        "miscellaneous"
+      ],
+      "durationSec": 186,
+      "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
+    },
+    {
+      "title": "A Good Bass for Gambling",
+      "artist": "Komiku",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 156,
+      "reason": "Є повідомлення про заявки YouTube на його треки (The Sound Project)"
+    },
+    {
+      "title": "Bleu",
+      "artist": "Komiku",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 211,
+      "reason": "Є повідомлення про заявки YouTube на його треки (The Sound Project)"
+    },
+    {
+      "title": "Champ de tournesol",
+      "artist": "Komiku",
+      "source": "freepd",
+      "categories": [
+        "romance"
+      ],
+      "durationSec": 118,
+      "reason": "Є повідомлення про заявки YouTube на його треки (The Sound Project)"
+    },
+    {
+      "title": "La Citadelle",
+      "artist": "Komiku",
+      "source": "freepd",
+      "categories": [
+        "romance"
+      ],
+      "durationSec": 162,
+      "reason": "Є повідомлення про заявки YouTube на його треки (The Sound Project)"
+    },
+    {
+      "title": "Motions",
+      "artist": "Orchestralis",
+      "source": "freepd",
+      "categories": [
+        "upbeat"
+      ],
+      "durationSec": 117,
+      "reason": "Сайт автора попереджає про заявки Content ID"
+    },
+    {
+      "title": "After the End",
+      "artist": "Rafael Krux",
+      "source": "freepd",
+      "categories": [
+        "scoring"
+      ],
+      "durationSec": 98,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Asking Questions",
+      "artist": "Rafael Krux",
+      "source": "freepd",
+      "categories": [
+        "horror"
+      ],
+      "durationSec": 104,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Barnville",
+      "artist": "Rafael Krux",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 102,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Beginning of Conflict",
+      "artist": "Rafael Krux",
+      "source": "freepd",
+      "categories": [
+        "scoring"
+      ],
+      "durationSec": 99,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Dreams of Vain",
+      "artist": "Rafael Krux",
+      "source": "freepd",
+      "categories": [
+        "scoring"
+      ],
+      "durationSec": 97,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Eye of Forgiveness",
+      "artist": "Rafael Krux",
+      "source": "freepd",
+      "categories": [
+        "world"
+      ],
+      "durationSec": 99,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Final Step",
+      "artist": "Rafael Krux",
+      "source": "freepd",
+      "categories": [
+        "scoring"
+      ],
+      "durationSec": 95,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Ghost Town",
+      "artist": "Rafael Krux",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 139,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Hidden Truth",
+      "artist": "Rafael Krux",
+      "source": "freepd",
+      "categories": [
+        "horror"
+      ],
+      "durationSec": 99,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Hopeful",
+      "artist": "Rafael Krux",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 114,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Llama in Pajama",
+      "artist": "Rafael Krux",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 97,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Madness of Linda",
+      "artist": "Rafael Krux",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 138,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Magic in the Garden",
+      "artist": "Rafael Krux",
+      "source": "freepd",
+      "categories": [
+        "scoring"
+      ],
+      "durationSec": 140,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "One Step Closer",
+      "artist": "Rafael Krux",
+      "source": "freepd",
+      "categories": [
+        "fantasy",
+        "miscellaneous"
+      ],
+      "durationSec": 93,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Silly Boy",
+      "artist": "Rafael Krux",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 96,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Stereotype News",
+      "artist": "Rafael Krux",
+      "source": "freepd",
+      "categories": [
+        "upbeat"
+      ],
+      "durationSec": 66,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "The Celebrated Minuet for Piano",
+      "artist": "Rafael Krux",
+      "source": "freepd",
+      "categories": [
+        "classical",
+        "miscellaneous"
+      ],
+      "durationSec": 216,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "The Celebrated Minuet",
+      "artist": "Rafael Krux",
+      "source": "freepd",
+      "categories": [
+        "classical",
+        "miscellaneous"
+      ],
+      "durationSec": 216,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "The Drama",
+      "artist": "Rafael Krux",
+      "source": "freepd",
+      "categories": [
+        "scoring"
+      ],
+      "durationSec": 97,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "The Land of the Dead",
+      "artist": "Rafael Krux",
+      "source": "freepd",
+      "categories": [
+        "horror"
+      ],
+      "durationSec": 107,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "The Range",
+      "artist": "Rafael Krux",
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 85,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Adventure",
+      "artist": "Rafael Krux, CinematicWaves.com",
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 85,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Assassin",
+      "artist": "Rafael Krux, CinematicWaves.com",
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 186,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Attic Secrets",
+      "artist": "Rafael Krux, CinematicWaves.com",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 66,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Black Knight",
+      "artist": "Rafael Krux, CinematicWaves.com",
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 142,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Creepy Comedy",
+      "artist": "Rafael Krux, CinematicWaves.com",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 138,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Cursed Intro",
+      "artist": "Rafael Krux, CinematicWaves.com",
+      "source": "freepd",
+      "categories": [
+        "horror"
+      ],
+      "durationSec": 76,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Dawn of the Apocalypse",
+      "artist": "Rafael Krux, CinematicWaves.com",
+      "source": "freepd",
+      "categories": [
+        "horror"
+      ],
+      "durationSec": 144,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Emotional Blockbuster 2",
+      "artist": "Rafael Krux, CinematicWaves.com",
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 132,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Epic Blockbuster 2",
+      "artist": "Rafael Krux, CinematicWaves.com",
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 159,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Fancy Family",
+      "artist": "Rafael Krux, CinematicWaves.com",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 67,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    },
+    {
+      "title": "Rulers of Our Lands",
+      "artist": "Rafael Krux, CinematicWaves.com",
+      "source": "freepd",
+      "categories": [
+        "epic"
+      ],
+      "durationSec": 139,
+      "reason": "Сайт автора (Orchestralis) попереджає про заявки Content ID; є скарги на заявки"
+    }
+  ]
+}
