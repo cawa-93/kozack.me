@@ -20,7 +20,7 @@ import { createRng } from "../src/sim/rng";
 import { targetOf } from "../src/sim/targets";
 import type { Save, StatName } from "../src/sim/types";
 import { isWorking, patienceLevel, standupToday, startWork, tickWork } from "../src/sim/work";
-import { inMeeting } from "../src/view/anim/personanim";
+import { inMeeting } from "../src/sim/work";
 import { DAY_MODIFIER_TEXTS } from "../src/texts";
 import { scheduleOf } from "../src/view/schedule";
 import { showerIcon } from "../src/view/symbols";

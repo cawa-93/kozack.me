@@ -14,7 +14,8 @@ import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { collapseMinute } from "../src/sim/sleep";
 import type { Save } from "../src/sim/types";
-import { heldThing, inMeeting, personAnim, personEventAnim, type PersonLocal } from "../src/view/anim/personanim";
+import { inMeeting } from "../src/sim/work";
+import { heldThing, personAnim, personEventAnim, type PersonLocal } from "../src/view/anim/personanim";
 import { PERSON_ANIM_GROUPS, PERSON_ANIM_IDS, PERSON_BY_PROGRESS, PERSON_ONE_SHOT_MS, PERSON_OVERLAYS } from "../src/view/anim/ids";
 import { hours, recordEvents, standAt, withCatCorner } from "./helpers";
 

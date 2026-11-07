@@ -4,7 +4,7 @@
 import type { GameState } from "../../../sim/types";
 import { isWorking } from "../../../sim/work";
 // «Зараз дзвінок» — те саме правило, що й поза персонажа та екран комп'ютера: звук не розходиться з картинкою.
-import { inMeeting } from "../../../view/anim/personanim";
+import { inMeeting } from "../../../sim/work";
 import type { LoopCue } from "../types";
 
 const KEYBOARD: LoopCue = { key: "keyboard", sound: "keyboard", at: "computer" };

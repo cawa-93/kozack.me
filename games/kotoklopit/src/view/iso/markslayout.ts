@@ -9,7 +9,7 @@ import { objectById, SURFACE_IDS, WIRE_TILE } from "../../sim/home";
 import { targetOf, type Target } from "../../sim/targets";
 import type { GameState } from "../../sim/types";
 import { isWorking, searchProgress } from "../../sim/work";
-import { inMeeting } from "../anim/personanim";
+import { inMeeting } from "../../sim/work";
 import type { BubbleKind } from "../iconnames";
 import { isoObjectLook } from "../world/objects";
 import type { Point } from "../world/part";

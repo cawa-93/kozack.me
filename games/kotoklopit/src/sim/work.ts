@@ -25,6 +25,8 @@ import {
   WORK_END_MINUTE,
   WORK_START_MINUTE,
   JOB_SEARCH,
+  MINUTES_PER_DAY,
+  MODIFIERS,
   TRIP_REPUTATION_DIVIDER,
   WORKDAYS_PER_WEEK,
 } from "./config";
@@ -220,6 +222,15 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
  */
 export function standupToday(state: GameState): boolean {
   return isWorkday(state) && !powerOut(state);
+}
+
+/** Летучка о 10:00 (§8.6) чи важлива нарада дня (§4.1) саме зараз: за комп'ютером персонаж говорить у камеру. Читають вигляд і звук. */
+export function inMeeting(state: GameState): boolean {
+  if (!isWorkday(state)) return false;
+  const minute = ((state.minute % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
+  if (standupToday(state) && minute >= STANDUP_MINUTE && minute < STANDUP_MINUTE + STANDUP_MINUTES) return true;
+  const meeting = MODIFIERS.meeting;
+  return state.modifiers.day === "meeting" && minute >= meeting.from && minute < meeting.from + meeting.minutes;
 }
 
 /** Щоденна летучка о 10:00 на 15 хвилин (§8.6). */

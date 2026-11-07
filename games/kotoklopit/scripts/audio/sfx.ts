@@ -49,10 +49,11 @@ function run(command: string, args: string[], input?: Buffer): Promise<Buffer> {
 const sha256 = (data: Buffer | string): string => createHash("sha256").update(data).digest("hex");
 
 async function decode(file: string, recipe: Recipe): Promise<Float32Array> {
+  // Відрізок вирізаємо першим у ланцюгу: `-ss`/`-to` діють на вихід, і фільтр, що змінює темп чи висоту, лишав би їх поза звуком.
+  const trim = recipe.start !== undefined || recipe.end !== undefined ? `atrim=${recipe.start !== undefined ? `start=${recipe.start}` : ""}${recipe.start !== undefined && recipe.end !== undefined ? ":" : ""}${recipe.end !== undefined ? `end=${recipe.end}` : ""},asetpts=PTS-STARTPTS` : "";
+  const filters = [trim, recipe.filter ?? ""].filter((f) => f !== "").join(",");
   const args = ["-v", "error", "-i", file];
-  if (recipe.start !== undefined) args.push("-ss", String(recipe.start));
-  if (recipe.end !== undefined) args.push("-to", String(recipe.end));
-  if (recipe.filter) args.push("-af", recipe.filter);
+  if (filters) args.push("-af", filters);
   args.push("-ac", "1", "-ar", String(SAMPLE_RATE), "-f", "f32le", "pipe:1");
   const bytes = await run("ffmpeg", args);
   return new Float32Array(bytes.buffer, bytes.byteOffset, Math.floor(bytes.length / 4)).slice();

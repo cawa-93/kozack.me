@@ -4,13 +4,12 @@
 // спіткнувся… Плита готує сама (§8.7), тож готування — лише «поклав» і «взяв». Без Phaser.
 
 import { petOver } from "../../sim/actions";
-import { MINUTES_PER_DAY, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../../sim/config";
 import type { GameEvent } from "../../sim/events";
 import { cleaningTool } from "../../sim/household";
 import { isIll } from "../../sim/illness";
 import { collapseMinute, isDrowsy } from "../../sim/sleep";
 import type { GameState, Item } from "../../sim/types";
-import { isWorkday, standupToday } from "../../sim/work";
+import { inMeeting } from "../../sim/work";
 import type { ArtView } from "../art/types";
 import type { RigFacing } from "../rig/types";
 import { personFacing } from "./catfacing";
@@ -89,17 +88,6 @@ const EXHAUSTED_EYES = 0.25;
 const COLLAPSE_NEAR = 0.05;
 
 /** Хвилина доби (`state.minute` після півночі буває понад добу). */
-const minuteOfDay = (state: GameState): number => ((state.minute % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
-
-/** Летучка о 10:00 (§8.6) чи важлива нарада дня (§4.1): за комп'ютером персонаж говорить у камеру. */
-export function inMeeting(state: GameState): boolean {
-  if (!isWorkday(state)) return false;
-  const minute = minuteOfDay(state);
-  // У день без світла летучки немає (`standupToday`; §4.1, рішення автора 2026-11-02).
-  if (standupToday(state) && minute >= STANDUP_MINUTE && minute < STANDUP_MINUTE + STANDUP_MINUTES) return true;
-  const meeting = MODIFIERS.meeting;
-  return state.modifiers.day === "meeting" && minute >= meeting.from && minute < meeting.from + meeting.minutes;
-}
 
 /**
  * Тривала дія утриманням (§10) — яка анімація: їсть за столом, лоток, безлад, лагодить дріт, купає кота. Пилосос — не справа

@@ -10,7 +10,7 @@ import { objectById, WIRE_TILE } from "../src/sim/home";
 import { targetOf } from "../src/sim/targets";
 import type { GameState, Look } from "../src/sim/types";
 import { searchProgress } from "../src/sim/work";
-import { inMeeting } from "../src/view/anim/personanim";
+import { inMeeting } from "../src/sim/work";
 import { artEntry } from "../src/view/art/manifest";
 import { BUBBLE_BELOW } from "../src/view/iso/bubblelook";
 import { ANCHOR_GAP, artOffset, objectAnchorAt, objectScreen } from "../src/view/iso/geometry";
