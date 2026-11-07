@@ -1,5 +1,5 @@
 {
-  "about": "Кандидати для станцій радіо (GAME_DESIGN.md §2.1, §8.10). tracks — надійні, лежать в audio-library/ (поза git; заміри оновлює npm run audio:catalog -w games/kotoklopit). evidence — чому трек вільний; confidence — висока, якщо це заявив сам автор чи стоїть у файлі, середня — якщо лише кураторська примітка FreePD. pending — надійні, але їх завантажує автор вручну. rejected — ненадійні, у бібліотеку не потрапляють. bpm — автоматична оцінка, буває вдвічі більшою чи меншою за справжню; є не в усіх. contentIdCheck — результат перевірки на YouTube приватним відео.",
+  "about": "Кандидати для станцій радіо (GAME_DESIGN.md §2.1, §8.10). tracks — надійні, лежать в audio-library/ (поза git; заміри оновлює npm run audio:catalog -w games/kotoklopit). evidence — чому трек вільний; confidence — висока, якщо це заявив сам автор чи стоїть у файлі, середня — якщо лише кураторська примітка FreePD. pending — надійні, але їх завантажує автор вручну. rejected — не підходять, причина в reason; у бібліотеку не потрапляють. bpm — автоматична оцінка, буває вдвічі більшою чи меншою за справжню; є не в усіх. contentIdCheck — результат перевірки на YouTube приватним відео.",
   "sources": {
     "freepd": {
       "name": "FreePD",
@@ -250,64 +250,6 @@
       "sha256": "070be8edc624138ef9bf2fe0496a261354f9930b069944866ded468edaa303da"
     },
     {
-      "id": "freepd/arthur-fordsworthy-footsteps-in-the-attic",
-      "title": "Footsteps in the Attic",
-      "artist": "Arthur Fordsworthy",
-      "source": "freepd",
-      "file": "freepd/Arthur Fordsworthy - Footsteps in the Attic.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "horror"
-      ],
-      "bpm": 115,
-      "key": "11A",
-      "contentIdCheck": "не перевірено",
-      "kind": "трек",
-      "durationSec": 55,
-      "album": "A.F.P.D.",
-      "genre": "Experimental",
-      "year": "2013",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 216,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -25.1,
-      "loudnessRange": 12.8,
-      "truePeakDb": -9.3,
-      "sizeBytes": 1483139,
-      "sha256": "686bed81a911e502a2a9f87b87ec087d5073b6753977ecb4fd9ffbb3b73c6db4",
-      "evidence": "Є в оригінальному списку файлів FreePD",
-      "confidence": "середня"
-    },
-    {
-      "id": "freepd/arthur-fordsworthy-here-we-go",
-      "title": "Here We Go",
-      "artist": "Arthur Fordsworthy",
-      "source": "freepd",
-      "file": "freepd/Arthur Fordsworthy - Here We Go.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 57.6,
-      "album": "A.F.P.D.",
-      "genre": "Acoustic",
-      "year": "2013",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 151,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -21.8,
-      "loudnessRange": 1.5,
-      "truePeakDb": -7.4,
-      "sizeBytes": 1083475,
-      "sha256": "2e3f6938635660bd8f27b64797fe2187af49ca5882c1e5da1a484f6b1266ba75"
-    },
-    {
       "id": "freepd/arthur-fordsworthy-last-call",
       "title": "Last Call",
       "artist": "Arthur Fordsworthy",
@@ -336,34 +278,6 @@
       "sha256": "99c569b76ab312cf7c119e07227c1622cf8a82bf84eb9806cee8e66fd92ae917"
     },
     {
-      "id": "freepd/arthur-fordsworthy-mary-had-a-little-wolf",
-      "title": "Mary Had a Little Wolf",
-      "artist": "Arthur Fordsworthy",
-      "source": "freepd",
-      "file": "freepd/Arthur Fordsworthy - Mary Had a Little Wolf.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "короткий",
-      "durationSec": 27.6,
-      "album": "A.F.P.D.",
-      "genre": "Experimental",
-      "year": "2013",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 102,
-      "sampleRate": 22050,
-      "channels": 2,
-      "loudnessLufs": -13.7,
-      "loudnessRange": 5.2,
-      "truePeakDb": 0.3,
-      "sizeBytes": 352734,
-      "sha256": "bfc6a5da4601806a8aa3ef23cb5e7929db6645fd054a55638477ee69826cdaa2"
-    },
-    {
       "id": "freepd/arthur-fordsworthy-right-around-the-corner",
       "title": "Right Around the Corner",
       "artist": "Arthur Fordsworthy",
@@ -390,35 +304,6 @@
       "truePeakDb": 0.1,
       "sizeBytes": 2906835,
       "sha256": "b64ca2b842ca8662552fab2191f8aeaea36edab007c5a01d484b28b4f76ae1c9"
-    },
-    {
-      "id": "freepd/boringxtreme-battle-with-the-circus-freaks",
-      "title": "Battle with the Circus Freaks",
-      "artist": "boringXtreme",
-      "source": "freepd",
-      "file": "freepd/boringXtreme - Battle with the Circus Freaks.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "bpm": 155,
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 74.4,
-      "album": "Gravity Engine",
-      "genre": "Experimental",
-      "year": "2013",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 171,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -8,
-      "loudnessRange": 1,
-      "truePeakDb": 0.8,
-      "sizeBytes": 1587478,
-      "sha256": "a9e469bd7206c334dbcd51f14b76780e1a330094a42160e98ad7a89cbe7da8ce"
     },
     {
       "id": "freepd/boringxtreme-electroscat-trippityglitchhop",
@@ -477,35 +362,6 @@
       "truePeakDb": -11.8,
       "sizeBytes": 5861638,
       "sha256": "b4acfe87f58f201680aa67c3b282dbfef25d230d04cca61fd325858dfb63bce4"
-    },
-    {
-      "id": "freepd/boringxtreme-intro",
-      "title": "Intro",
-      "artist": "boringXtreme",
-      "source": "freepd",
-      "file": "freepd/boringXtreme - Intro.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "bpm": 155,
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 49.6,
-      "album": "Gravity Engine",
-      "genre": "Electronic",
-      "year": "2013",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 336,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -13.7,
-      "loudnessRange": 2.3,
-      "truePeakDb": -5.5,
-      "sizeBytes": 2084316,
-      "sha256": "9655bde0b1f7ab2eba95930d1925a8cceab2c173d80ee21c29ae0ab84d0e5d59"
     },
     {
       "id": "freepd/boringxtreme-outro",
@@ -650,36 +506,6 @@
       "truePeakDb": -0.4,
       "sizeBytes": 5016852,
       "sha256": "966d82e65b5e17972175a513e1d43f5d06d800717f5c62e269445397b5151da4"
-    },
-    {
-      "id": "freepd/brett-vandonsel-quick-metal-riff-1",
-      "title": "Quick Metal Riff 1",
-      "artist": "Brett VanDonsel",
-      "source": "freepd",
-      "file": "freepd/Brett VanDonsel - Quick Metal Riff 1.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "miscellaneous",
-        "rock"
-      ],
-      "bpm": 147,
-      "key": "6A",
-      "contentIdCheck": "не перевірено",
-      "kind": "стінгер",
-      "durationSec": 6.7,
-      "album": "Various Work by Brett Van Donsel",
-      "genre": "Rock",
-      "comment": "Seven seconds of orgasmic metal glory! To hear more of the diverse musical catalog of Brett Van Donsel, visit www.brettvandonselmusic.com",
-      "bitrateKbps": 165,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -9.6,
-      "loudnessRange": 3.2,
-      "truePeakDb": 0,
-      "sizeBytes": 137320,
-      "sha256": "c730dcfa9b010397b362e59226927044e7dff918e93ae390ecef2589599869a8",
-      "evidence": "Є в оригінальному списку файлів FreePD",
-      "confidence": "середня"
     },
     {
       "id": "freepd/brian-boyko-ambush-in-rattlesnake-gulch",
@@ -885,34 +711,6 @@
       "confidence": "середня"
     },
     {
-      "id": "freepd/brian-boyko-improv-for-evil",
-      "title": "Improv for Evil",
-      "artist": "Brian Boyko",
-      "source": "freepd",
-      "file": "freepd/Brian Boyko - Improv for Evil.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "miscellaneous"
-      ],
-      "bpm": 119,
-      "key": "8A",
-      "contentIdCheck": "не перевірено",
-      "kind": "трек",
-      "durationSec": 58,
-      "genre": "Experimental",
-      "comment": "http://online-audio-converter.com",
-      "bitrateKbps": 129,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -11.9,
-      "loudnessRange": 3.8,
-      "truePeakDb": 0.7,
-      "sizeBytes": 932782,
-      "sha256": "51bd98a4b7d96bfa6674e90306ab979323b6d5e7667a93c5ed4af71868b1c6ed",
-      "evidence": "Є в оригінальному списку файлів FreePD",
-      "confidence": "середня"
-    },
-    {
       "id": "freepd/brian-boyko-long-trail",
       "title": "Long Trail",
       "artist": "Brian Boyko",
@@ -940,33 +738,6 @@
       "truePeakDb": -2.4,
       "sizeBytes": 5489267,
       "sha256": "74a867379ea38c35e027fc480eca3288a13c366955cf387cc74028cd81fa740d"
-    },
-    {
-      "id": "freepd/brian-boyko-maestro",
-      "title": "Maestro",
-      "artist": "Brian Boyko",
-      "source": "freepd",
-      "file": "freepd/Brian Boyko - Maestro.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Альбом FreePD у тегах",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 64.1,
-      "album": "Free PD",
-      "genre": "Rock and Pop",
-      "comment": "A short, edgy, electric guitar flavored theme. Source: Brian.Boyko@netqos.com",
-      "bitrateKbps": 256,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -14.7,
-      "loudnessRange": 4.7,
-      "truePeakDb": -0.6,
-      "sizeBytes": 2050824,
-      "sha256": "b7eaee70bf7f575648022e13e361ba4ea581f1d4621f671e4aab8b6382b20655"
     },
     {
       "id": "freepd/brian-boyko-miranda",
@@ -1052,33 +823,6 @@
       "truePeakDb": 1,
       "sizeBytes": 5812069,
       "sha256": "bfcf2818721209e1dab4dc6432310b40f44a4b62c355576138bfa0b68ac1ee0a"
-    },
-    {
-      "id": "freepd/brian-boyko-punchline",
-      "title": "Punchline",
-      "artist": "Brian Boyko",
-      "source": "freepd",
-      "file": "freepd/Brian Boyko - Punchline.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Альбом FreePD у тегах",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 60.1,
-      "album": "Free PD",
-      "genre": "Acoustic",
-      "comment": "A short, Latin flavored guitar piece. Source: Brian.Boyko@netqos.com",
-      "bitrateKbps": 256,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -20,
-      "loudnessRange": 8.8,
-      "truePeakDb": -2.4,
-      "sizeBytes": 1922928,
-      "sha256": "78074e1a3245403d865d0901b16a8ae5f60864318a6fe4f6e2d14781a866b52f"
     },
     {
       "id": "freepd/brian-boyko-the-terror-below",
@@ -1195,35 +939,6 @@
       "confidence": "висока"
     },
     {
-      "id": "freepd/bryan-teoh-busybody",
-      "title": "Busybody",
-      "artist": "Bryan Teoh",
-      "source": "freepd",
-      "file": "freepd/Bryan Teoh - Busybody.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "comedy"
-      ],
-      "bpm": 135,
-      "key": "8B",
-      "contentIdCheck": "не перевірено",
-      "kind": "трек",
-      "durationSec": 86.4,
-      "album": "FreePD Music",
-      "year": "2020",
-      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
-      "bitrateKbps": 160,
-      "sampleRate": 48000,
-      "channels": 2,
-      "loudnessLufs": -16.4,
-      "loudnessRange": 2.6,
-      "truePeakDb": -0.1,
-      "sizeBytes": 1730266,
-      "sha256": "5170e23bc9a24f870b896965832c268e87db18418bd1ca9aa361ef5f52d67f98",
-      "evidence": "Присвята в тегах файлу",
-      "confidence": "висока"
-    },
-    {
       "id": "freepd/bryan-teoh-downtown-boogie",
       "title": "Downtown Boogie",
       "artist": "Bryan Teoh",
@@ -1279,35 +994,6 @@
       "truePeakDb": 0.5,
       "sizeBytes": 3685788,
       "sha256": "00082677a2ca637d3b415a2afee1a2bad145adaf6b37c44fbf323605c8d84482",
-      "evidence": "Присвята в тегах файлу",
-      "confidence": "висока"
-    },
-    {
-      "id": "freepd/bryan-teoh-elevate-inspirate",
-      "title": "Elevate Inspirate",
-      "artist": "Bryan Teoh",
-      "source": "freepd",
-      "file": "freepd/Bryan Teoh - Elevate Inspirate.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "unsorted"
-      ],
-      "bpm": 103,
-      "key": "8B",
-      "contentIdCheck": "не перевірено",
-      "kind": "трек",
-      "durationSec": 64.5,
-      "album": "FreePD Music",
-      "year": "2020",
-      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
-      "bitrateKbps": 160,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -17.6,
-      "loudnessRange": 11.7,
-      "truePeakDb": -3.2,
-      "sizeBytes": 1291679,
-      "sha256": "f387e8016c00a131f9996a88f29580d7a2e609a0b43022706ef1b3c557d77fde",
       "evidence": "Присвята в тегах файлу",
       "confidence": "висока"
     },
@@ -1983,63 +1669,6 @@
       "confidence": "висока"
     },
     {
-      "id": "freepd/bryan-teoh-stunted-adventure",
-      "title": "Stunted Adventure",
-      "artist": "Bryan Teoh",
-      "source": "freepd",
-      "file": "freepd/Bryan Teoh - Stunted Adventure.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "scoring"
-      ],
-      "bpm": 136,
-      "key": "7B",
-      "contentIdCheck": "не перевірено",
-      "kind": "трек",
-      "durationSec": 70.1,
-      "album": "FreePD Music",
-      "year": "2020",
-      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
-      "bitrateKbps": 160,
-      "sampleRate": 48000,
-      "channels": 2,
-      "loudnessLufs": -11.3,
-      "loudnessRange": 7.3,
-      "truePeakDb": 0.3,
-      "sizeBytes": 1404835,
-      "sha256": "d49752e0c86a2e7aa4a770fec41209f28f562180101647fe9fcd936036435593",
-      "evidence": "Присвята в тегах файлу",
-      "confidence": "висока"
-    },
-    {
-      "id": "freepd/bryan-teoh-sun-up-gunned-down",
-      "title": "Sun Up Gunned Down",
-      "artist": "Bryan Teoh",
-      "source": "freepd",
-      "file": "freepd/Bryan Teoh - Sun Up Gunned Down.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "miscellaneous"
-      ],
-      "bpm": 197,
-      "key": "6A",
-      "contentIdCheck": "не перевірено",
-      "kind": "трек",
-      "durationSec": 86.8,
-      "album": "Free PD",
-      "year": "2020",
-      "bitrateKbps": 160,
-      "sampleRate": 48000,
-      "channels": 2,
-      "loudnessLufs": -12.6,
-      "loudnessRange": 4.7,
-      "truePeakDb": 0.1,
-      "sizeBytes": 1737329,
-      "sha256": "a6004c040c378182e14f4eefbf2f8d3e4f553cb6e91ccd6e94fab725582e6c23",
-      "evidence": "Є в оригінальному списку файлів FreePD",
-      "confidence": "середня"
-    },
-    {
       "id": "freepd/bryan-teoh-take-the-ride",
       "title": "Take the Ride",
       "artist": "Bryan Teoh",
@@ -2126,286 +1755,6 @@
       "confidence": "висока"
     },
     {
-      "id": "freepd/dimensionbucket-beautiful-soup",
-      "title": "Beautiful Soup",
-      "artist": "DimensionBucket",
-      "source": "freepd",
-      "file": "freepd/DimensionBucket - Beautiful Soup.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 45.7,
-      "album": "Adventures in Wonderland EP",
-      "genre": "Simple",
-      "year": "2014",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 291,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -13.4,
-      "loudnessRange": 2.2,
-      "truePeakDb": -1.1,
-      "sizeBytes": 1661629,
-      "sha256": "94d0a62fca044a9f2c8196c4bcc3744a5d454de3717dffdcfc8f63c5099321ea"
-    },
-    {
-      "id": "freepd/dimensionbucket-how-doth-the-little-crocodile",
-      "title": "How Doth The Little Crocodile",
-      "artist": "DimensionBucket",
-      "source": "freepd",
-      "file": "freepd/DimensionBucket - How Doth The Little Crocodile.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "короткий",
-      "durationSec": 19.3,
-      "album": "Adventures in Wonderland EP",
-      "genre": "Simple",
-      "year": "2014",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 382,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -12.8,
-      "loudnessRange": 2,
-      "truePeakDb": -1.1,
-      "sizeBytes": 924358,
-      "sha256": "213453440e7fa05ec47a58393f9a4318fc1bd07862a5b1533a49618b2e9c9b9f"
-    },
-    {
-      "id": "freepd/dimensionbucket-humpty-dumpty",
-      "title": "Humpty Dumpty",
-      "artist": "DimensionBucket",
-      "source": "freepd",
-      "file": "freepd/DimensionBucket - Humpty Dumpty.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "короткий",
-      "durationSec": 19.9,
-      "album": "Looking-Glass EP",
-      "genre": "Simple",
-      "year": "2014",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 363,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -13.5,
-      "loudnessRange": 3.7,
-      "truePeakDb": -0.6,
-      "sizeBytes": 901084,
-      "sha256": "c28107a6547b6c429641875353fb400b381292870ff7f0bec394a9af5f1a07ce"
-    },
-    {
-      "id": "freepd/dimensionbucket-hush-a-by-lady",
-      "title": "Hush-a-by, Lady",
-      "artist": "DimensionBucket",
-      "source": "freepd",
-      "file": "freepd/DimensionBucket - Hush-a-by, Lady.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "короткий",
-      "durationSec": 31,
-      "album": "Looking-Glass EP",
-      "genre": "Simple",
-      "year": "2014",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 227,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -14.1,
-      "loudnessRange": 13.1,
-      "truePeakDb": -0.1,
-      "sizeBytes": 878448,
-      "sha256": "6f7caf0337d947e74debea331d9e391b40a513aa4392223303cd0c08e5223b12"
-    },
-    {
-      "id": "freepd/dimensionbucket-jabberwocky",
-      "title": "Jabberwocky",
-      "artist": "DimensionBucket",
-      "source": "freepd",
-      "file": "freepd/DimensionBucket - Jabberwocky.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 86.1,
-      "album": "Looking-Glass EP",
-      "genre": "Simple",
-      "year": "2014",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 265,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -17.5,
-      "loudnessRange": 14.5,
-      "truePeakDb": -0.1,
-      "sizeBytes": 2847832,
-      "sha256": "15a1115df3451c3c305e4a28056f212c12fa8210d494566b9acec33e93335a83"
-    },
-    {
-      "id": "freepd/dimensionbucket-pig-and-pepper",
-      "title": "Pig And Pepper",
-      "artist": "DimensionBucket",
-      "source": "freepd",
-      "file": "freepd/DimensionBucket - Pig And Pepper.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "стінгер",
-      "durationSec": 14.7,
-      "album": "Adventures in Wonderland EP",
-      "genre": "Simple",
-      "year": "2014",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 397,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -13.7,
-      "loudnessRange": 2.3,
-      "truePeakDb": -0.7,
-      "sizeBytes": 727343,
-      "sha256": "84914882dbd370a82fc44298c357445457a0cba8c16deec0ff270cdbd7919909"
-    },
-    {
-      "id": "freepd/dimensionbucket-queen-alice",
-      "title": "Queen Alice",
-      "artist": "DimensionBucket",
-      "source": "freepd",
-      "file": "freepd/DimensionBucket - Queen Alice.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 54.3,
-      "album": "Looking-Glass EP",
-      "genre": "Simple",
-      "year": "2014",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 288,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -15.1,
-      "loudnessRange": 14.1,
-      "truePeakDb": 0,
-      "sizeBytes": 1951404,
-      "sha256": "32e575d8e422e429ba45e2d1231666e07cb9b3ef0409a250cac8702dfe9be17f"
-    },
-    {
-      "id": "freepd/dimensionbucket-the-aged-aged-man",
-      "title": "The Aged, Aged Man",
-      "artist": "DimensionBucket",
-      "source": "freepd",
-      "file": "freepd/DimensionBucket - The Aged, Aged Man.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 86.6,
-      "album": "Looking-Glass EP",
-      "genre": "Simple",
-      "year": "2014",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 271,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -15.8,
-      "loudnessRange": 6.7,
-      "truePeakDb": -0.5,
-      "sizeBytes": 2933394,
-      "sha256": "8102bdbd2b816bdbd35a612a2d9ad14c73951f519b7dbfa24631c929ff4f40a3"
-    },
-    {
-      "id": "freepd/dimensionbucket-the-fish-riddle",
-      "title": "The Fish Riddle",
-      "artist": "DimensionBucket",
-      "source": "freepd",
-      "file": "freepd/DimensionBucket - The Fish Riddle.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "короткий",
-      "durationSec": 26,
-      "album": "Looking-Glass EP",
-      "genre": "Simple",
-      "year": "2014",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 338,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -14.9,
-      "loudnessRange": 4,
-      "truePeakDb": -0.8,
-      "sizeBytes": 1098031,
-      "sha256": "85b92d9e31ae8c432df1e7c219839cbf12abebecd8ac5d0d8ad5cad8ba7daa13"
-    },
-    {
-      "id": "freepd/dimensionbucket-the-lion-and-the-unicorn",
-      "title": "The Lion And The Unicorn",
-      "artist": "DimensionBucket",
-      "source": "freepd",
-      "file": "freepd/DimensionBucket - The Lion And The Unicorn.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "короткий",
-      "durationSec": 20.9,
-      "album": "Looking-Glass EP",
-      "genre": "Simple",
-      "year": "2014",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 340,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -17.8,
-      "loudnessRange": 2.5,
-      "truePeakDb": -1.9,
-      "sizeBytes": 887662,
-      "sha256": "9fcff7a7b60787cfb3fd98e95447355a384bf25d600025ea396fca2e8e1a0ccc"
-    },
-    {
       "id": "freepd/dimensionbucket-the-lobster-quadrille",
       "title": "The Lobster Quadrille",
       "artist": "DimensionBucket",
@@ -2432,62 +1781,6 @@
       "truePeakDb": -0.8,
       "sizeBytes": 3632832,
       "sha256": "093b0f64f48671f0d82f99723239ec5f17135d8ddb9d78e74cb1703cdff21535"
-    },
-    {
-      "id": "freepd/dimensionbucket-the-message-to-the-fish",
-      "title": "The Message to the Fish",
-      "artist": "DimensionBucket",
-      "source": "freepd",
-      "file": "freepd/DimensionBucket - The Message to the Fish.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 86.8,
-      "album": "Looking-Glass EP",
-      "genre": "Simple",
-      "year": "2014",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 247,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -19,
-      "loudnessRange": 12.1,
-      "truePeakDb": 0,
-      "sizeBytes": 2682722,
-      "sha256": "56604f65529ccddbf8c6b0474d532fce58e02282e7c47edf45e67c47734b33f5"
-    },
-    {
-      "id": "freepd/dimensionbucket-the-queen-of-hearts",
-      "title": "The Queen Of Hearts",
-      "artist": "DimensionBucket",
-      "source": "freepd",
-      "file": "freepd/DimensionBucket - The Queen Of Hearts.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "короткий",
-      "durationSec": 29.2,
-      "album": "Adventures in Wonderland EP",
-      "genre": "Simple",
-      "year": "2014",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 325,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -16.5,
-      "loudnessRange": 2.8,
-      "truePeakDb": -1.4,
-      "sizeBytes": 1185823,
-      "sha256": "ad29ba557d6da8abf351a394e876ad188dc4e6675f06ccc0a920fbe92a87ee5a"
     },
     {
       "id": "freepd/dimensionbucket-the-walrus-and-the-carpenter",
@@ -2518,90 +1811,6 @@
       "sha256": "7f60746f882ac7acc958c9a91280bb7ca85cc434cafe2b2a4a5191603d52a805"
     },
     {
-      "id": "freepd/dimensionbucket-tis-the-voice-of-the-lobster",
-      "title": "'Tis The Voice Of The Lobster",
-      "artist": "DimensionBucket",
-      "source": "freepd",
-      "file": "freepd/DimensionBucket - Tis The Voice Of The Lobster.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "короткий",
-      "durationSec": 20.2,
-      "album": "Adventures in Wonderland EP",
-      "genre": "Simple",
-      "year": "2014",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 363,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -13.4,
-      "loudnessRange": 1.9,
-      "truePeakDb": -0.9,
-      "sizeBytes": 916460,
-      "sha256": "d677cfc3b76cbef783b49c1ff98ba703c02e316b79191cd3d7bdf7954c4c5f9d"
-    },
-    {
-      "id": "freepd/dimensionbucket-tweedledum-and-tweedledee",
-      "title": "Tweedledum and Tweedledee",
-      "artist": "DimensionBucket",
-      "source": "freepd",
-      "file": "freepd/DimensionBucket - Tweedledum and Tweedledee.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "короткий",
-      "durationSec": 30.7,
-      "album": "Looking-Glass EP",
-      "genre": "Simple",
-      "year": "2014",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 308,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -14.7,
-      "loudnessRange": 5.7,
-      "truePeakDb": 0,
-      "sizeBytes": 1183668,
-      "sha256": "bd5dee0f05baccd3d05506515d97d25d668efa5e2db5d3a10cd1aecf9b2e68e5"
-    },
-    {
-      "id": "freepd/dimensionbucket-twinkle-twinkle-little-bat",
-      "title": "Twinkle, Twinkle, Little Bat!",
-      "artist": "DimensionBucket",
-      "source": "freepd",
-      "file": "freepd/DimensionBucket - Twinkle, Twinkle, Little Bat!.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "стінгер",
-      "durationSec": 12.8,
-      "album": "Adventures in Wonderland EP",
-      "genre": "Simple",
-      "year": "2014",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 441,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -13.5,
-      "loudnessRange": 3.7,
-      "truePeakDb": -1.2,
-      "sizeBytes": 707053,
-      "sha256": "482b8d16b5061661e74eb5e6dc9b76ee571c1f3b64d787f7e323f6b7c941dbb7"
-    },
-    {
       "id": "freepd/dimensionbucket-who-stole-the-tarts",
       "title": "Who Stole The Tarts?",
       "artist": "DimensionBucket",
@@ -2628,34 +1837,6 @@
       "truePeakDb": -0.5,
       "sizeBytes": 3809843,
       "sha256": "4bf890472ada16ca35ff2017e6178ec296a15edffeaa557ab7f4695e96c43873"
-    },
-    {
-      "id": "freepd/dimensionbucket-you-are-old-father-william",
-      "title": "You Are Old, Father William",
-      "artist": "DimensionBucket",
-      "source": "freepd",
-      "file": "freepd/DimensionBucket - You Are Old, Father William.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 85.2,
-      "album": "Adventures in Wonderland EP",
-      "genre": "Simple",
-      "year": "2014",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 293,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -13.8,
-      "loudnessRange": 5.2,
-      "truePeakDb": 0.3,
-      "sizeBytes": 3124476,
-      "sha256": "a723473f9a4cf1bf6ddaab716d4a1bef6f036105e708cfeeaa6b82e333059406"
     },
     {
       "id": "freepd/dogsounds-a-waltz-for-naseem",
@@ -9838,35 +9019,6 @@
       "sha256": "bb7d56dfc05bde3029d7ca013b40b43fd12b30b33fc3370b68cf061618aeecd4"
     },
     {
-      "id": "freepd/hussalonia-abt2",
-      "title": "ABT2",
-      "artist": "Hussalonia",
-      "source": "freepd",
-      "file": "freepd/Hussalonia - ABT2.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "note": "Сам проєкт свої релізи явно суспільним надбанням не називає: доказ лише примітка в тегах.",
-      "kind": "трек",
-      "durationSec": 60.4,
-      "album": "OMG LOL WTF",
-      "genre": "Experimental",
-      "year": "2008",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 219,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -11.8,
-      "loudnessRange": 11.5,
-      "truePeakDb": 1.5,
-      "sizeBytes": 1649897,
-      "sha256": "d256bd592f8a64bc4b3cf000f2be2b777206378fb12c2bd45e0aeee5ec6caad3"
-    },
-    {
       "id": "freepd/hussalonia-foaf",
       "title": "FOAF",
       "artist": "Hussalonia",
@@ -10803,37 +9955,6 @@
       "truePeakDb": 0.3,
       "sizeBytes": 6023822,
       "sha256": "afc2546a4e9d18fac837245cd87f29ca7bb054daeea048d154c11dc5348b3cbb"
-    },
-    {
-      "id": "freepd/jason-shaw-landra-s-dream",
-      "title": "Landra's Dream",
-      "artist": "Jason Shaw",
-      "source": "freepd",
-      "file": "freepd/Jason Shaw - Landra's Dream.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "romance"
-      ],
-      "bpm": 150,
-      "key": "3B",
-      "contentIdCheck": "не перевірено",
-      "note": "Автор має ще й каталог під CC-BY (Audionautix); заявок не знайдено, але перевірити на YouTube особливо уважно.",
-      "kind": "трек",
-      "durationSec": 88.9,
-      "album": "Empathy",
-      "genre": "Ballad",
-      "year": "2013",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 327,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -9,
-      "loudnessRange": 1.9,
-      "truePeakDb": -0.1,
-      "sizeBytes": 3636231,
-      "sha256": "fc55b6cbadaef9c2bff8645c43bf04882cc5f41fe0f1af257d11ff15c1d9aba9",
-      "evidence": "Є в оригінальному списку файлів FreePD",
-      "confidence": "середня"
     },
     {
       "id": "freepd/jason-shaw-river-meditation",
@@ -11962,90 +11083,6 @@
       "truePeakDb": -2.7,
       "sizeBytes": 4377427,
       "sha256": "4fb1ec2e03b82d52d9dcdd344d20b0229016b806b28f160a9ec3667a85716d8d"
-    },
-    {
-      "id": "freepd/mustard-seed-faith-media-edgar-s-bells-movement-1-silver",
-      "title": "Edgar's Bells - Movement 1 Silver",
-      "artist": "Mustard Seed Faith Media",
-      "source": "freepd",
-      "file": "freepd/Mustard Seed Faith Media - Edgar's Bells - Movement 1 Silver.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "короткий",
-      "durationSec": 36.9,
-      "album": "The Music of Poe",
-      "genre": "Bizarre",
-      "year": "2014",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 131,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -23.4,
-      "loudnessRange": 1.9,
-      "truePeakDb": -6.1,
-      "sizeBytes": 606002,
-      "sha256": "87de1551638415fdf1ee9a9634fc4b210eed7fd8ad6b7b4ec1168c0a04757909"
-    },
-    {
-      "id": "freepd/mustard-seed-faith-media-edgar-s-bells-movement-2-golden",
-      "title": "Edgar's Bells - Movement 2 Golden",
-      "artist": "Mustard Seed Faith Media",
-      "source": "freepd",
-      "file": "freepd/Mustard Seed Faith Media - Edgar's Bells - Movement 2 Golden.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 47.3,
-      "album": "The Music of Poe",
-      "genre": "Bizarre",
-      "year": "2014",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 215,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -21.5,
-      "loudnessRange": 3.5,
-      "truePeakDb": -3.5,
-      "sizeBytes": 1273436,
-      "sha256": "7dc0369d57e2c7264eb736c229be1b1124ed1c031f6287a5d52b8c5d52a2b76d"
-    },
-    {
-      "id": "freepd/mustard-seed-faith-media-edgar-s-bells-movement-3-brazen",
-      "title": "Edgar's Bells - Movement 3 Brazen",
-      "artist": "Mustard Seed Faith Media",
-      "source": "freepd",
-      "file": "freepd/Mustard Seed Faith Media - Edgar's Bells - Movement 3 Brazen.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 62.7,
-      "album": "The Music of Poe",
-      "genre": "Bizarre",
-      "year": "2014",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 130,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -18.2,
-      "loudnessRange": 2.7,
-      "truePeakDb": -3,
-      "sizeBytes": 1018945,
-      "sha256": "d151c60eb36597d955299b7cd6e8f1ff6b7d83be595ab050096bd4a3e5dcd180"
     },
     {
       "id": "freepd/mustard-seed-faith-media-edgar-s-bells-movement-4-iron",
@@ -14651,6 +13688,36 @@
       "reason": "Автора не встановлено: у тегах порожньо чи псевдонім без імені"
     },
     {
+      "title": "Footsteps in the Attic",
+      "artist": "Arthur Fordsworthy",
+      "source": "freepd",
+      "categories": [
+        "horror"
+      ],
+      "durationSec": 55,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "Here We Go",
+      "artist": "Arthur Fordsworthy",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 58,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "Mary Had a Little Wolf",
+      "artist": "Arthur Fordsworthy",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 28,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
       "title": "Smooth it Out",
       "artist": "Barney Peterson",
       "source": "freepd",
@@ -14661,6 +13728,37 @@
       "reason": "У файлі немає ознак вільної ліцензії, а в оригінальному списку FreePD його теж немає"
     },
     {
+      "title": "Battle with the Circus Freaks",
+      "artist": "boringXtreme",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 74,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "Intro",
+      "artist": "boringXtreme",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 50,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "Quick Metal Riff 1",
+      "artist": "Brett VanDonsel",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous",
+        "rock"
+      ],
+      "durationSec": 7,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
       "title": "Quick Metal Riff 2",
       "artist": "Brett VanDonsel",
       "source": "freepd",
@@ -14669,6 +13767,76 @@
       ],
       "durationSec": 13,
       "reason": "У файлі немає ознак вільної ліцензії, а в оригінальному списку FreePD його теж немає"
+    },
+    {
+      "title": "Improv for Evil",
+      "artist": "Brian Boyko",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 58,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "Maestro",
+      "artist": "Brian Boyko",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 64,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "Punchline",
+      "artist": "Brian Boyko",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 60,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "Busybody",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "categories": [
+        "comedy"
+      ],
+      "durationSec": 86,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "Elevate Inspirate",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "categories": [
+        "unsorted"
+      ],
+      "durationSec": 65,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "Stunted Adventure",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "categories": [
+        "scoring"
+      ],
+      "durationSec": 70,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "Sun Up Gunned Down",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 87,
+      "reason": "Коротший за півтори хвилини"
     },
     {
       "title": "qui fait pousser mes ongles par la force de sa marée",
@@ -14699,6 +13867,166 @@
       ],
       "durationSec": 76,
       "reason": "У файлі немає ознак вільної ліцензії, а в оригінальному списку FreePD його теж немає"
+    },
+    {
+      "title": "'Tis The Voice Of The Lobster",
+      "artist": "DimensionBucket",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 20,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "Beautiful Soup",
+      "artist": "DimensionBucket",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 46,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "How Doth The Little Crocodile",
+      "artist": "DimensionBucket",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 19,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "Humpty Dumpty",
+      "artist": "DimensionBucket",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 20,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "Hush-a-by, Lady",
+      "artist": "DimensionBucket",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 31,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "Jabberwocky",
+      "artist": "DimensionBucket",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 86,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "Pig And Pepper",
+      "artist": "DimensionBucket",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 15,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "Queen Alice",
+      "artist": "DimensionBucket",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 54,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "The Aged, Aged Man",
+      "artist": "DimensionBucket",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 87,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "The Fish Riddle",
+      "artist": "DimensionBucket",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 26,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "The Lion And The Unicorn",
+      "artist": "DimensionBucket",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 21,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "The Message to the Fish",
+      "artist": "DimensionBucket",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 87,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "The Queen Of Hearts",
+      "artist": "DimensionBucket",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 29,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "Tweedledum and Tweedledee",
+      "artist": "DimensionBucket",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 31,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "Twinkle, Twinkle, Little Bat!",
+      "artist": "DimensionBucket",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 13,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "You Are Old, Father William",
+      "artist": "DimensionBucket",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 85,
+      "reason": "Коротший за півтори хвилини"
     },
     {
       "title": "Kleine Bar",
@@ -14739,6 +14067,26 @@
       ],
       "durationSec": 296,
       "reason": "У файлі немає ознак вільної ліцензії, а в оригінальному списку FreePD його теж немає"
+    },
+    {
+      "title": "ABT2",
+      "artist": "Hussalonia",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 60,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "Landra's Dream",
+      "artist": "Jason Shaw",
+      "source": "freepd",
+      "categories": [
+        "romance"
+      ],
+      "durationSec": 89,
+      "reason": "Коротший за півтори хвилини"
     },
     {
       "title": "Hexxit DRAVE Symphonie",
@@ -18469,6 +17817,36 @@
       ],
       "durationSec": 213,
       "reason": "Той самий автор, що й Komiku: є повідомлення про заявки YouTube"
+    },
+    {
+      "title": "Edgar's Bells - Movement 1 Silver",
+      "artist": "Mustard Seed Faith Media",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 37,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "Edgar's Bells - Movement 2 Golden",
+      "artist": "Mustard Seed Faith Media",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 47,
+      "reason": "Коротший за півтори хвилини"
+    },
+    {
+      "title": "Edgar's Bells - Movement 3 Brazen",
+      "artist": "Mustard Seed Faith Media",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 63,
+      "reason": "Коротший за півтори хвилини"
     },
     {
       "title": "The Ginger Girl",
