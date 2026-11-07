@@ -194,34 +194,6 @@
       "sha256": "d6ceeaf68cee9e840f53feb5b21de276496be6fc21fba2ce44bcf6ac22ae8768"
     },
     {
-      "id": "freepd/arthur-fordsworthy-arafura-treasure",
-      "title": "Arafura Treasure",
-      "artist": "Arthur Fordsworthy",
-      "source": "freepd",
-      "file": "freepd/Arthur Fordsworthy - Arafura Treasure.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 103,
-      "album": "A.F.P.D.",
-      "genre": "Experimental",
-      "year": "2013",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 205,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -21.7,
-      "loudnessRange": 6.6,
-      "truePeakDb": -2.6,
-      "sizeBytes": 2634135,
-      "sha256": "e45275bd596df4e983d993a0a0f47930feacdc6ede9f6b37c6189e12de1f6f31"
-    },
-    {
       "id": "freepd/arthur-fordsworthy-downy-feathers",
       "title": "Downy Feathers",
       "artist": "Arthur Fordsworthy",
@@ -276,34 +248,6 @@
       "truePeakDb": 0.9,
       "sizeBytes": 2475264,
       "sha256": "99c569b76ab312cf7c119e07227c1622cf8a82bf84eb9806cee8e66fd92ae917"
-    },
-    {
-      "id": "freepd/arthur-fordsworthy-right-around-the-corner",
-      "title": "Right Around the Corner",
-      "artist": "Arthur Fordsworthy",
-      "source": "freepd",
-      "file": "freepd/Arthur Fordsworthy - Right Around the Corner.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 114.3,
-      "album": "A.F.P.D.",
-      "genre": "Cinematic",
-      "year": "2013",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 203,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -13.5,
-      "loudnessRange": 3,
-      "truePeakDb": 0.1,
-      "sizeBytes": 2906835,
-      "sha256": "b64ca2b842ca8662552fab2191f8aeaea36edab007c5a01d484b28b4f76ae1c9"
     },
     {
       "id": "freepd/boringxtreme-electroscat-trippityglitchhop",
@@ -362,64 +306,6 @@
       "truePeakDb": -11.8,
       "sizeBytes": 5861638,
       "sha256": "b4acfe87f58f201680aa67c3b282dbfef25d230d04cca61fd325858dfb63bce4"
-    },
-    {
-      "id": "freepd/boringxtreme-outro",
-      "title": "Outro",
-      "artist": "boringXtreme",
-      "source": "freepd",
-      "file": "freepd/boringXtreme - Outro.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "bpm": 97,
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 99,
-      "album": "Gravity Engine",
-      "genre": "Electronic",
-      "year": "2013",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 328,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -20.6,
-      "loudnessRange": 4.6,
-      "truePeakDb": -5.6,
-      "sizeBytes": 4060250,
-      "sha256": "427c3d159553d21406d564798b1fc08d30df9e0722577586aa1be5be54240028"
-    },
-    {
-      "id": "freepd/boringxtreme-pursuit-and-thought",
-      "title": "Pursuit and Thought",
-      "artist": "boringXtreme",
-      "source": "freepd",
-      "file": "freepd/boringXtreme - Pursuit and Thought.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "bpm": 148,
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 110.9,
-      "album": "Gravity Engine",
-      "genre": "Electronic",
-      "year": "2013",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 167,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -11,
-      "loudnessRange": 5.6,
-      "truePeakDb": 0.6,
-      "sizeBytes": 2317842,
-      "sha256": "86982891ae3ac616dae77e6eba5e1fc06e5986def2104cbd4da82bfbdc1b0f0f"
     },
     {
       "id": "freepd/boringxtreme-solace-in-imaginary-places",
@@ -825,33 +711,6 @@
       "sha256": "bfcf2818721209e1dab4dc6432310b40f44a4b62c355576138bfa0b68ac1ee0a"
     },
     {
-      "id": "freepd/brian-boyko-the-terror-below",
-      "title": "The Terror Below",
-      "artist": "Brian Boyko",
-      "source": "freepd",
-      "file": "freepd/Brian Boyko - The Terror Below.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Альбом FreePD у тегах",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 116.9,
-      "album": "Free PD",
-      "genre": "Bizarre",
-      "comment": "A dark, driving, exploration of tribal rhythm and evil. Source: Brian.Boyko@netqos.com",
-      "bitrateKbps": 128,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -17.2,
-      "loudnessRange": 5.2,
-      "truePeakDb": -1.6,
-      "sizeBytes": 1873083,
-      "sha256": "288172cb7dda8d474d58c684ff019e30b6e3c3b763f0eb4ea4d0f18ee7c01d82"
-    },
-    {
       "id": "freepd/bryan-teoh-alls-fair-in-love",
       "title": "Alls Fair In Love",
       "artist": "Bryan Teoh",
@@ -877,35 +736,6 @@
       "truePeakDb": 0.5,
       "sizeBytes": 4791235,
       "sha256": "8f8ff32f7b52535ae90336c410f0cd26c8190869cb6ef4382b5fddc9b29eff53",
-      "evidence": "Присвята в тегах файлу",
-      "confidence": "висока"
-    },
-    {
-      "id": "freepd/bryan-teoh-and-just-like-that",
-      "title": "And Just Like That",
-      "artist": "Bryan Teoh",
-      "source": "freepd",
-      "file": "freepd/Bryan Teoh - And Just Like That.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "upbeat"
-      ],
-      "bpm": 124,
-      "key": "8B",
-      "contentIdCheck": "не перевірено",
-      "kind": "трек",
-      "durationSec": 114.3,
-      "album": "FreePD Music",
-      "year": "2020",
-      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
-      "bitrateKbps": 160,
-      "sampleRate": 48000,
-      "channels": 2,
-      "loudnessLufs": -14.6,
-      "loudnessRange": 4.7,
-      "truePeakDb": 0.4,
-      "sizeBytes": 2287556,
-      "sha256": "75e6438a8d6d1dcb54dd42cc02f4944b484e73dac48502eb78514c438cada914",
       "evidence": "Присвята в тегах файлу",
       "confidence": "висока"
     },
@@ -1755,34 +1585,6 @@
       "confidence": "висока"
     },
     {
-      "id": "freepd/dimensionbucket-the-lobster-quadrille",
-      "title": "The Lobster Quadrille",
-      "artist": "DimensionBucket",
-      "source": "freepd",
-      "file": "freepd/DimensionBucket - The Lobster Quadrille.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 111.9,
-      "album": "Adventures in Wonderland EP",
-      "genre": "Simple",
-      "year": "2014",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 260,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -14.3,
-      "loudnessRange": 4.6,
-      "truePeakDb": -0.8,
-      "sizeBytes": 3632832,
-      "sha256": "093b0f64f48671f0d82f99723239ec5f17135d8ddb9d78e74cb1703cdff21535"
-    },
-    {
       "id": "freepd/dimensionbucket-the-walrus-and-the-carpenter",
       "title": "The Walrus and the Carpenter",
       "artist": "DimensionBucket",
@@ -1809,34 +1611,6 @@
       "truePeakDb": 0,
       "sizeBytes": 4007019,
       "sha256": "7f60746f882ac7acc958c9a91280bb7ca85cc434cafe2b2a4a5191603d52a805"
-    },
-    {
-      "id": "freepd/dimensionbucket-who-stole-the-tarts",
-      "title": "Who Stole The Tarts?",
-      "artist": "DimensionBucket",
-      "source": "freepd",
-      "file": "freepd/DimensionBucket - Who Stole The Tarts_.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 102.7,
-      "album": "Adventures in Wonderland EP",
-      "genre": "Simple",
-      "year": "2014",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 297,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -15.5,
-      "loudnessRange": 2.2,
-      "truePeakDb": -0.5,
-      "sizeBytes": 3809843,
-      "sha256": "4bf890472ada16ca35ff2017e6178ec296a15edffeaa557ab7f4695e96c43873"
     },
     {
       "id": "freepd/dogsounds-a-waltz-for-naseem",
@@ -2250,33 +2024,6 @@
       "sha256": "0e7275e8f9d71b7ca0a832b41368b2600a99c279f1b189ba3ca52d7bf494a5ec"
     },
     {
-      "id": "freepd/frank-nora-ambient-a-zyow",
-      "title": "Ambient A Zyow",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Ambient A Zyow.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 119.1,
-      "album": "Public Domain",
-      "genre": "Atmosphere",
-      "comment": "Source: Midnight Casette System",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -16.4,
-      "loudnessRange": 13.4,
-      "truePeakDb": -0.7,
-      "sizeBytes": 4766741,
-      "sha256": "4a641694d0d43b8c6091be2e4091764f0bfce6a44ce26392bb0c560be9b16476"
-    },
-    {
       "id": "freepd/frank-nora-ambient-b-eastern-thought",
       "title": "Ambient B Eastern Thought",
       "artist": "Frank Nora",
@@ -2464,33 +2211,6 @@
       "truePeakDb": -1.2,
       "sizeBytes": 6326774,
       "sha256": "49e186f02151de41ec609ac3ff8e6dab31fa414a42f54687dc8b288dcd3a090c"
-    },
-    {
-      "id": "freepd/frank-nora-ambient-h-spaced-out",
-      "title": "Ambient H Spaced Out",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Ambient H Spaced Out.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 114.1,
-      "album": "Public Domain",
-      "genre": "Atmosphere",
-      "comment": "Source: Midnight Casette System",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -20.9,
-      "loudnessRange": 12.3,
-      "truePeakDb": -2,
-      "sizeBytes": 4567166,
-      "sha256": "28200297a090bf2f95253e07536c41a33d7433f9dd70823c8603c8454c975f8c"
     },
     {
       "id": "freepd/frank-nora-ambient-i-tibet-groove",
@@ -2682,33 +2402,6 @@
       "sha256": "981c0021cebc1351478e331fa7db4f088000a112dea56cfba605661d9e052874"
     },
     {
-      "id": "freepd/frank-nora-ambient-p-desertland",
-      "title": "Ambient P Desertland",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Ambient P Desertland.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 104.1,
-      "album": "Public Domain",
-      "genre": "Atmosphere",
-      "comment": "Source: Midnight Casette System",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -19.1,
-      "loudnessRange": 14.8,
-      "truePeakDb": -1.1,
-      "sizeBytes": 4166970,
-      "sha256": "2f15b8be0d422d6b89704b6016866c077ed019cee23c5621555f7237960ff801"
-    },
-    {
       "id": "freepd/frank-nora-ambient-q-chime-song",
       "title": "Ambient Q Chime Song",
       "artist": "Frank Nora",
@@ -2876,34 +2569,6 @@
       "sha256": "46bf3a9752cf3d07695286df93b360679a5810f476e638ac009e7db33656f60e"
     },
     {
-      "id": "freepd/frank-nora-chill-b",
-      "title": "Chill B",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Chill B.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 118.2,
-      "album": "Public Domain",
-      "genre": "Chill",
-      "year": "2010",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -10.8,
-      "loudnessRange": 8.8,
-      "truePeakDb": 1.3,
-      "sizeBytes": 4732260,
-      "sha256": "edbbd5d3956dc7c99643db0525f9db9e565ed52b30cdb47338a5b57645db3545"
-    },
-    {
       "id": "freepd/frank-nora-chill-beat",
       "title": "Chill Beat",
       "artist": "Frank Nora",
@@ -3014,34 +2679,6 @@
       "truePeakDb": -0.5,
       "sizeBytes": 8086382,
       "sha256": "87155aff0f903fc35fc30b3be6dc2b16a14e95f85c0422098ada86cdfa6036dd"
-    },
-    {
-      "id": "freepd/frank-nora-chill-china-glitter",
-      "title": "Chill China Glitter",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Chill China Glitter.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 108.5,
-      "album": "Public Domain",
-      "genre": "Chill",
-      "year": "2010",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -14.6,
-      "loudnessRange": 3.6,
-      "truePeakDb": -0.3,
-      "sizeBytes": 4344602,
-      "sha256": "e6757a39c9c7234041328174e5dfe10f27ad5904873903745d322a48d292a036"
     },
     {
       "id": "freepd/frank-nora-chill-china-love",
@@ -3660,34 +3297,6 @@
       "sha256": "1041460ec0b1b1e7ec245aeda1c90d841151ce1273f7312624e311e31b5fd45c"
     },
     {
-      "id": "freepd/frank-nora-electro-chill-b",
-      "title": "Electro Chill B",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Electro Chill B.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 119,
-      "album": "Public Domain",
-      "genre": "Chill",
-      "year": "2010",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -10.7,
-      "loudnessRange": 6.1,
-      "truePeakDb": 0.6,
-      "sizeBytes": 4763607,
-      "sha256": "9f8b00159ac3da47440ca8bc49ca058b270906e6688787377bd03a79aad66926"
-    },
-    {
       "id": "freepd/frank-nora-electro-chill-c",
       "title": "Electro Chill C",
       "artist": "Frank Nora",
@@ -4164,34 +3773,6 @@
       "sha256": "69afcee30481d13cced6d006743b3fc66e4be1e1580084e2011f364a8b6c90b9"
     },
     {
-      "id": "freepd/frank-nora-electronic-d-turn-around",
-      "title": "Electronic D Turn Around",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Electronic D Turn Around.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 117.9,
-      "album": "Public Domain",
-      "genre": "MCS",
-      "year": "2010",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -9.7,
-      "loudnessRange": 14.4,
-      "truePeakDb": 1,
-      "sizeBytes": 4721811,
-      "sha256": "4db701070b58bd92509b8743d13e985d90242df180305a7b98fcd3fa45bcc9c2"
-    },
-    {
       "id": "freepd/frank-nora-electronic-e-system-is-down",
       "title": "Electronic E System is Down",
       "artist": "Frank Nora",
@@ -4218,34 +3799,6 @@
       "truePeakDb": 2.1,
       "sizeBytes": 8261925,
       "sha256": "805dfcef99108904f1e3e543feb9417491157a0ac0412962277ce18af5c3452d"
-    },
-    {
-      "id": "freepd/frank-nora-electronic-f-electrohorse",
-      "title": "Electronic F Electrohorse",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Electronic F Electrohorse.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 115.4,
-      "album": "Public Domain",
-      "genre": "MCS",
-      "year": "2010",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -9.8,
-      "loudnessRange": 2.9,
-      "truePeakDb": 0.9,
-      "sizeBytes": 4621500,
-      "sha256": "801ff6b5d6981821d21a191a7d35bc216c20622f5ee16fcb01b506032e2e8d05"
     },
     {
       "id": "freepd/frank-nora-electronic-g-percussive-party",
@@ -4472,34 +4025,6 @@
       "sha256": "a0c3833d7dfa95d69880735c53ce05c05022009cf948015e2b39b343489e9232"
     },
     {
-      "id": "freepd/frank-nora-electronic-o-odd-flower",
-      "title": "Electronic O Odd Flower",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Electronic O Odd Flower.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 114.4,
-      "album": "Public Domain",
-      "genre": "MCS",
-      "year": "2010",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -9.6,
-      "loudnessRange": 9.1,
-      "truePeakDb": 1.7,
-      "sizeBytes": 4581794,
-      "sha256": "8fda54478d639bab23d1824156ac83320ed97dc0bcc0ec885ca2139dd58696bc"
-    },
-    {
       "id": "freepd/frank-nora-electronic-p-disco-accordion",
       "title": "Electronic P Disco Accordion",
       "artist": "Frank Nora",
@@ -4554,118 +4079,6 @@
       "truePeakDb": 0.9,
       "sizeBytes": 5801190,
       "sha256": "50869b5ee115779bdf98a91ae8b3e1987ab196cc78ecbabde4585a04449ea455"
-    },
-    {
-      "id": "freepd/frank-nora-electronic-r-blip-it",
-      "title": "Electronic R Blip It",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Electronic R Blip It.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 113.9,
-      "album": "Public Domain",
-      "genre": "MCS",
-      "year": "2010",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -10.4,
-      "loudnessRange": 8.5,
-      "truePeakDb": 1,
-      "sizeBytes": 4561941,
-      "sha256": "bec89cc2e2b34242fffa6ebe3d7b9cc1c8f4c9561214bab1b01c6b61f8f12235"
-    },
-    {
-      "id": "freepd/frank-nora-electronic-s-cheesy-action",
-      "title": "Electronic S Cheesy Action",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Electronic S Cheesy Action.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 117,
-      "album": "Public Domain",
-      "genre": "MCS",
-      "year": "2010",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -12.3,
-      "loudnessRange": 5.4,
-      "truePeakDb": 0.9,
-      "sizeBytes": 4682105,
-      "sha256": "17a49f0b2ecc04f8490167b4189cd32ab40476f9168d27689942fb0da4d38f17"
-    },
-    {
-      "id": "freepd/frank-nora-electronic-t-terrible",
-      "title": "Electronic T Terrible",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Electronic T Terrible.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 114.9,
-      "album": "Public Domain",
-      "genre": "MCS",
-      "year": "2010",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -10.2,
-      "loudnessRange": 11.2,
-      "truePeakDb": 1.2,
-      "sizeBytes": 4601647,
-      "sha256": "f710b75d5f65b9fa1f5c7bf7d69bcf9e35f253e5149a86059d559ccd2b6fd9cb"
-    },
-    {
-      "id": "freepd/frank-nora-electronic-u-popper",
-      "title": "Electronic U Popper",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Electronic U Popper.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 113.9,
-      "album": "Public Domain",
-      "genre": "MCS",
-      "year": "2010",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -9.3,
-      "loudnessRange": 3.5,
-      "truePeakDb": 1.4,
-      "sizeBytes": 4561941,
-      "sha256": "ad78dff468540c7140ad8347ed93ff936fcf33157efcd25e3c7a96fc758cccec"
     },
     {
       "id": "freepd/frank-nora-electroshuffle-dark",
@@ -4890,34 +4303,6 @@
       "truePeakDb": -0.5,
       "sizeBytes": 4966317,
       "sha256": "ec4c093d845138d6a92c81ef5d4475b8cdda8ee86fa8ee458f711e7c13186fd8"
-    },
-    {
-      "id": "freepd/frank-nora-hip-hop-driver",
-      "title": "Hip Hop Driver",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Hip Hop Driver.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 107.1,
-      "album": "Public Domain",
-      "genre": "MCS",
-      "year": "2010",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -17.6,
-      "loudnessRange": 8.9,
-      "truePeakDb": -0.6,
-      "sizeBytes": 4287133,
-      "sha256": "db89db2d0446957542db68884fdbe29747b8ce324593c89e38eb8ecca555624c"
     },
     {
       "id": "freepd/frank-nora-hip-hop-epics",
@@ -5619,33 +5004,6 @@
       "sha256": "510f0470199d3bd52a137465226a2b90857711edc883f6b779641cfa6dc911ae"
     },
     {
-      "id": "freepd/frank-nora-mc-ballad-b",
-      "title": "MC Ballad B",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - MC Ballad B.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 114.5,
-      "album": "Public Domain",
-      "genre": "Ballad",
-      "comment": "Source: Midnigh Casette System",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -19,
-      "loudnessRange": 7,
-      "truePeakDb": 0,
-      "sizeBytes": 4583884,
-      "sha256": "61351d73230d3d5405b811166407698cc0ebd98b9a631a12fc183efc44f331c0"
-    },
-    {
       "id": "freepd/frank-nora-mc-ballad-c",
       "title": "MC Ballad C",
       "artist": "Frank Nora",
@@ -5862,87 +5220,6 @@
       "sha256": "bc4cffafc2bd39468e28997da8194ad1b265b3d4e4055e53b4644439f74a8d3a"
     },
     {
-      "id": "freepd/frank-nora-mc-ballad-k",
-      "title": "MC Ballad K",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - MC Ballad K.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 113,
-      "album": "Public Domain",
-      "genre": "Ballad",
-      "comment": "Source: Midnigh Casette System",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -16.9,
-      "loudnessRange": 9.7,
-      "truePeakDb": 0,
-      "sizeBytes": 4524325,
-      "sha256": "67c515c49a5bb59f9c4cfb0c2d409f5b96a26d7ed0f32c0f3f58c51d42c3609d"
-    },
-    {
-      "id": "freepd/frank-nora-mc-ballad-l",
-      "title": "MC Ballad L",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - MC Ballad L.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 114.5,
-      "album": "Public Domain",
-      "genre": "Ballad",
-      "comment": "Source: Midnigh Casette System",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -19.7,
-      "loudnessRange": 7.3,
-      "truePeakDb": -0.1,
-      "sizeBytes": 4583884,
-      "sha256": "da265d5e053647129b16e39d059efe72af57bf2e9430a80c323359b464bd130d"
-    },
-    {
-      "id": "freepd/frank-nora-mc-ballad-m",
-      "title": "MC Ballad M",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - MC Ballad M.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 117.4,
-      "album": "Public Domain",
-      "genre": "Ballad",
-      "comment": "Source: Midnigh Casette System",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -17.3,
-      "loudnessRange": 5.2,
-      "truePeakDb": -0.2,
-      "sizeBytes": 4701958,
-      "sha256": "9ad6ee0e7f89ffe668cde382c7a171ae385e7ee99e9dfcc134a685752705652e"
-    },
-    {
       "id": "freepd/frank-nora-mc-ballad-o",
       "title": "MC Ballad O",
       "artist": "Frank Nora",
@@ -5968,60 +5245,6 @@
       "truePeakDb": 0.1,
       "sizeBytes": 6010170,
       "sha256": "0a4488d2cef30c600d0e301f3478805d863edfaadbb5802c156895eebe59fa97"
-    },
-    {
-      "id": "freepd/frank-nora-mc-ballad-p",
-      "title": "MC Ballad P",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - MC Ballad P.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 108.5,
-      "album": "Public Domain",
-      "genre": "Ballad",
-      "comment": "Source: Midnigh Casette System",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -18.8,
-      "loudnessRange": 9,
-      "truePeakDb": -0.1,
-      "sizeBytes": 4345647,
-      "sha256": "a32196988daa07a152a143eae90f2bc99a8a7ef53d10d1b8880fc2a610ba78da"
-    },
-    {
-      "id": "freepd/frank-nora-mc-ballad-q",
-      "title": "MC Ballad Q",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - MC Ballad Q.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 118.9,
-      "album": "Public Domain",
-      "genre": "Ballad",
-      "comment": "Source: Midnigh Casette System",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -15.9,
-      "loudnessRange": 6.6,
-      "truePeakDb": -0.1,
-      "sizeBytes": 4761517,
-      "sha256": "10c81efbf1763ecd4023469547f1d45d03a5998d1fdaa553e708fe5b05659b8a"
     },
     {
       "id": "freepd/frank-nora-mc-ballad-r",
@@ -6213,34 +5436,6 @@
       "sha256": "a05ebd2125da6896ed594e1c1e434fd51917fdbe85299c327721cadb7835f5c3"
     },
     {
-      "id": "freepd/frank-nora-messy-beat",
-      "title": "Messy Beat",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Messy Beat.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 114.9,
-      "album": "Public Domain",
-      "genre": "MCS",
-      "year": "2010",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -10.5,
-      "loudnessRange": 10.6,
-      "truePeakDb": 1.1,
-      "sizeBytes": 4601647,
-      "sha256": "87461ba9c13b4b7bcab92e17a0deda956c3e9fc2c201ea379431728cc43185b9"
-    },
-    {
       "id": "freepd/frank-nora-montageur",
       "title": "Montageur",
       "artist": "Frank Nora",
@@ -6267,34 +5462,6 @@
       "truePeakDb": 1.2,
       "sizeBytes": 12133272,
       "sha256": "65ed995710456e66fce68ea8f8cf5fee04f5aae8a18140a55398b575da1367e9"
-    },
-    {
-      "id": "freepd/frank-nora-new-age-a-weathered",
-      "title": "New Age A Weathered",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - New Age A Weathered.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 114.1,
-      "album": "Public Domain",
-      "genre": "New Age",
-      "year": "2010",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -17.8,
-      "loudnessRange": 8.3,
-      "truePeakDb": -2,
-      "sizeBytes": 4567166,
-      "sha256": "d92e49d701639aecef66103137fb0be05c2884d78c57a0923b2320ff55acf93d"
     },
     {
       "id": "freepd/frank-nora-new-age-c-chimer",
@@ -6521,34 +5688,6 @@
       "sha256": "10ca4fbceed66fdc6c387edb66844ea90823f71e5ccb361551771175fdd2226f"
     },
     {
-      "id": "freepd/frank-nora-new-age-k-glow",
-      "title": "New Age K Glow",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - New Age K Glow.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 107.3,
-      "album": "Public Domain",
-      "genre": "New Age",
-      "year": "2010",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -19,
-      "loudnessRange": 8.5,
-      "truePeakDb": -2.4,
-      "sizeBytes": 4296537,
-      "sha256": "7af65dcfa9bf3b862016809b51bca652b14249fdb9d430515de9a99b4833757f"
-    },
-    {
       "id": "freepd/frank-nora-new-age-l-wood-synth",
       "title": "New Age L Wood Synth",
       "artist": "Frank Nora",
@@ -6575,34 +5714,6 @@
       "truePeakDb": -2.1,
       "sizeBytes": 4867051,
       "sha256": "855687d0a1960bfeb52570da144cf6e2ddef23e4e232fca9a57220f6ce697a2d"
-    },
-    {
-      "id": "freepd/frank-nora-new-age-m-unspired",
-      "title": "New Age M Unspired",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - New Age M Unspired.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 113.1,
-      "album": "Public Domain",
-      "genre": "New Age",
-      "year": "2010",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -15.4,
-      "loudnessRange": 6.8,
-      "truePeakDb": -1.6,
-      "sizeBytes": 4526415,
-      "sha256": "8fa87ff204275388e73e400f712c0b29eade4a8b0fa2ae365e1aaa7f3ec7721c"
     },
     {
       "id": "freepd/frank-nora-new-age-n-mysterion",
@@ -6633,34 +5744,6 @@
       "sha256": "8340cc97c16a74b21273e98ddd88a96dd7a743b5e142097bf308ef7c3964e58f"
     },
     {
-      "id": "freepd/frank-nora-new-age-o-smoother",
-      "title": "New Age O Smoother",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - New Age O Smoother.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 107.6,
-      "album": "Public Domain",
-      "genre": "New Age",
-      "year": "2010",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -15,
-      "loudnessRange": 8.9,
-      "truePeakDb": 0.5,
-      "sizeBytes": 4306986,
-      "sha256": "04f595830e83db6e5535c54009c42b7f9705d11d1b0ab5f4b3e4cc2628c6e2f2"
-    },
-    {
       "id": "freepd/frank-nora-new-age-p-space-kudzu",
       "title": "New Age P Space Kudzu",
       "artist": "Frank Nora",
@@ -6687,34 +5770,6 @@
       "truePeakDb": -0.1,
       "sizeBytes": 7086415,
       "sha256": "b29343a0572a5fb910cfed6f20a2ebd959848f9a89d6144cd7eceab454528506"
-    },
-    {
-      "id": "freepd/frank-nora-new-age-q-glitter",
-      "title": "New Age Q Glitter",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - New Age Q Glitter.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 115.6,
-      "album": "Public Domain",
-      "genre": "New Age",
-      "year": "2010",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -11.9,
-      "loudnessRange": 13.6,
-      "truePeakDb": 0,
-      "sizeBytes": 4626725,
-      "sha256": "31b2c665471b06da351771a3e10a00f5217d35b4f6b54b2e6b67b1d51f1cdecb"
     },
     {
       "id": "freepd/frank-nora-new-age-r-water-shine",
@@ -6773,34 +5828,6 @@
       "sha256": "a4e73e3d46572e0c32fd1fce604b5fd809250ac7ed3e6bf07da391649359d9fa"
     },
     {
-      "id": "freepd/frank-nora-new-age-t-answered",
-      "title": "New Age T Answered",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - New Age T Answered.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 106.6,
-      "album": "Public Domain",
-      "genre": "New Age",
-      "year": "2010",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -15.7,
-      "loudnessRange": 8.5,
-      "truePeakDb": 0.9,
-      "sizeBytes": 4266235,
-      "sha256": "cbad96fbf0cbc13608a97f5195ae1e8b3fb99700f6ff42af95380b238d3fe821"
-    },
-    {
       "id": "freepd/frank-nora-octave-jumper",
       "title": "Octave Jumper",
       "artist": "Frank Nora",
@@ -6827,35 +5854,6 @@
       "truePeakDb": 1.6,
       "sizeBytes": 10807296,
       "sha256": "bc0bf43eaa5d2c1c8d7c73b9f3f8e0e7653009e8a8983656f23c43571bcc1866"
-    },
-    {
-      "id": "freepd/frank-nora-ragga-a-smooth",
-      "title": "Ragga A Smooth",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Ragga A Smooth.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "bpm": 120,
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 114.1,
-      "album": "Public Domain",
-      "genre": "Reggae",
-      "year": "2011-05-25 05:13",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -15.9,
-      "loudnessRange": 3.6,
-      "truePeakDb": 0.1,
-      "sizeBytes": 4567166,
-      "sha256": "8d9196a63842b302b36adea1355a9eebf41573733acf780127b0dc302f5859db"
     },
     {
       "id": "freepd/frank-nora-ragga-b-electroisland",
@@ -6885,64 +5883,6 @@
       "truePeakDb": -0.5,
       "sizeBytes": 7010137,
       "sha256": "62e632437b68ac64d34e53b29fba6ccbe271415d9cda1362f843e817a27f4834"
-    },
-    {
-      "id": "freepd/frank-nora-ragga-c-jump-beat",
-      "title": "Ragga C Jump Beat",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Ragga C Jump Beat.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "bpm": 120,
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 116.5,
-      "album": "Public Domain",
-      "genre": "Reggae",
-      "year": "2011-05-25 05:13",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -17.4,
-      "loudnessRange": 3.9,
-      "truePeakDb": -0.8,
-      "sizeBytes": 4663296,
-      "sha256": "9a7b30d1bf6f4f1705229b804fd7251e0f5a775034581e5715c86b3c5860b0f7"
-    },
-    {
-      "id": "freepd/frank-nora-ragga-d-cold-sizzle",
-      "title": "Ragga D Cold Sizzle",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Ragga D Cold Sizzle.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "bpm": 120,
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 113.6,
-      "album": "Public Domain",
-      "genre": "Reggae",
-      "year": "2011-05-25 05:13",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -17,
-      "loudnessRange": 3.8,
-      "truePeakDb": -1.3,
-      "sizeBytes": 4546268,
-      "sha256": "d2853e38b745be9554981bf4cd5c13afc23257c8d78e5095a34ded3d2f02fd7d"
     },
     {
       "id": "freepd/frank-nora-ragga-e-harsh-love-theme",
@@ -7322,64 +6262,6 @@
       "sha256": "0976aba07ad68382f940e4fee4ae14f1de51fbf300f40f3156184c03254f0905"
     },
     {
-      "id": "freepd/frank-nora-ragga-s-interrupt",
-      "title": "Ragga S Interrupt",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Ragga S Interrupt.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "bpm": 120,
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 117.6,
-      "album": "Public Domain",
-      "genre": "Reggae",
-      "year": "2011-05-25 05:13",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -18,
-      "loudnessRange": 4.1,
-      "truePeakDb": -0.2,
-      "sizeBytes": 4706137,
-      "sha256": "0e9aa66e330ebf1f7678141d57828dba7beaa92a6dc280fcf2a7d6345194249c"
-    },
-    {
-      "id": "freepd/frank-nora-ragga-t-backer",
-      "title": "Ragga T Backer",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Ragga T Backer.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "bpm": 120,
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 115,
-      "album": "Public Domain",
-      "genre": "Reggae",
-      "year": "2011-05-25 05:13",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -17.2,
-      "loudnessRange": 3.3,
-      "truePeakDb": -0.6,
-      "sizeBytes": 4605827,
-      "sha256": "b5157701dc82dd0d8f14d522cedc065df7d6cb29fb346e3b2afd3b5615c6d11b"
-    },
-    {
       "id": "freepd/frank-nora-rap-bad-brass-groove",
       "title": "Rap Bad Brass Groove",
       "artist": "Frank Nora",
@@ -7434,34 +6316,6 @@
       "truePeakDb": 0.7,
       "sizeBytes": 5867019,
       "sha256": "659dc27943b5109749486b2643b62053c3dc36a3530a89f505da1f2367888cea"
-    },
-    {
-      "id": "freepd/frank-nora-rap-creep-out",
-      "title": "Rap Creep Out",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Rap Creep Out.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 119,
-      "album": "Public Domain",
-      "genre": "Experimental",
-      "year": "2010",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -10.4,
-      "loudnessRange": 6.9,
-      "truePeakDb": 1,
-      "sizeBytes": 4762562,
-      "sha256": "0fcf08fbf6b923bfbc3c35a67c73b5c980dec74875a081f8260e348a339404e2"
     },
     {
       "id": "freepd/frank-nora-rap-deep-groove",
@@ -7574,34 +6428,6 @@
       "truePeakDb": 1.2,
       "sizeBytes": 5802235,
       "sha256": "cae594f56b69269558553c5038fe03fa5a6be8b6de22549793a5e9cdd5bb7608"
-    },
-    {
-      "id": "freepd/frank-nora-rap-hard-loop",
-      "title": "Rap Hard Loop",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Rap Hard Loop.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 108.4,
-      "album": "Public Domain",
-      "genre": "Experimental",
-      "year": "2010",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -13.3,
-      "loudnessRange": 9.2,
-      "truePeakDb": 1.5,
-      "sizeBytes": 4341468,
-      "sha256": "51d376d7fc12166bd268bae29aec651704a66c1bab3f40eaaff11cef1ab2c8c9"
     },
     {
       "id": "freepd/frank-nora-rap-light-and-heavy",
@@ -8739,34 +7565,6 @@
       "sha256": "db9b757518a830e6dad406b3f4b4acfc5633c3a1220c70807b622d2dc531156d"
     },
     {
-      "id": "freepd/frank-nora-urban-funk-a",
-      "title": "Urban Funk A",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Urban Funk A.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 108.4,
-      "album": "Public Domain",
-      "genre": "MCS",
-      "year": "2010",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -9.3,
-      "loudnessRange": 7.2,
-      "truePeakDb": 2,
-      "sizeBytes": 4341468,
-      "sha256": "7488ad7cdc1e4b0794dcc052e872a97320f902c21130b016fdbacebe41e1c57c"
-    },
-    {
       "id": "freepd/frank-nora-urban-funk-b",
       "title": "Urban Funk B",
       "artist": "Frank Nora",
@@ -8821,34 +7619,6 @@
       "truePeakDb": 1.8,
       "sizeBytes": 8001745,
       "sha256": "d70b086ec1f72936d890051ab10692aed6e8d20799ee6b3e1300adb5e7a3371a"
-    },
-    {
-      "id": "freepd/frank-nora-urban-light-and-thin",
-      "title": "Urban Light and Thin",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Urban Light and Thin.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 108.9,
-      "album": "Public Domain",
-      "genre": "MCS",
-      "year": "2010",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -14.7,
-      "loudnessRange": 11.3,
-      "truePeakDb": 0.2,
-      "sizeBytes": 4361321,
-      "sha256": "ab3d5e66d6574392ab66dd94484ec8d3df0300662094369a49f983565832d7c6"
     },
     {
       "id": "freepd/frank-nora-urban-mixer",
@@ -8989,34 +7759,6 @@
       "truePeakDb": 1.3,
       "sizeBytes": 7121941,
       "sha256": "330fe5b6b0f79d983e0720d4d3789913d9311ea06f1c826104c7b0d84ec49d1f"
-    },
-    {
-      "id": "freepd/frank-nora-wake-up-ghost",
-      "title": "Wake up Ghost",
-      "artist": "Frank Nora",
-      "source": "freepd",
-      "file": "freepd/Frank Nora - Wake up Ghost.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Автор випустив Midnight Cassette System під CC0 на Internet Archive",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 111.5,
-      "album": "Public Domain",
-      "genre": "Bizarre",
-      "year": "2010",
-      "comment": "Source: Midnight Casette System http://mcs.franknora.com/",
-      "bitrateKbps": 320,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -12.7,
-      "loudnessRange": 6.8,
-      "truePeakDb": 1.3,
-      "sizeBytes": 4465811,
-      "sha256": "bb7d56dfc05bde3029d7ca013b40b43fd12b30b33fc3370b68cf061618aeecd4"
     },
     {
       "id": "freepd/hussalonia-foaf",
@@ -9364,34 +8106,6 @@
       "sha256": "f54bcab3673879513f4d61e74c15509a6bdf3ef09240ca42f888b90e3ca92dd1"
     },
     {
-      "id": "freepd/imp-epilogue",
-      "title": "Epilogue",
-      "artist": "*imp*",
-      "source": "freepd",
-      "file": "freepd/_imp_ - Epilogue.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 95.7,
-      "album": "Fractal Planetoid 2.0",
-      "genre": "Cinematic",
-      "year": "2013",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 201,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -14.5,
-      "loudnessRange": 9.3,
-      "truePeakDb": -0.2,
-      "sizeBytes": 2404905,
-      "sha256": "fd5e7dd938eae268901c3d3d5aa50cf42798ec5b0062023e4594a85c677b1868"
-    },
-    {
       "id": "freepd/imp-fractal-planetoid",
       "title": "Fractal Planetoid",
       "artist": "*imp*",
@@ -9474,62 +8188,6 @@
       "truePeakDb": -3.9,
       "sizeBytes": 4480109,
       "sha256": "6690e19b0ca77249a04f6aa7d3e2d6f2e2b5b7023044f73c1c2c09d7bc2209ab"
-    },
-    {
-      "id": "freepd/imp-hypocampus-jump",
-      "title": "Hypocampus Jump",
-      "artist": "*imp*",
-      "source": "freepd",
-      "file": "freepd/_imp_ - Hypocampus Jump.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 110.1,
-      "album": "Alien Hypnosis Dance Party (EP)",
-      "genre": "Electronic",
-      "year": "2013",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 143,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -18.3,
-      "loudnessRange": 6.8,
-      "truePeakDb": -0.1,
-      "sizeBytes": 1973320,
-      "sha256": "d5d974ea2b353220c97f35cae7e11c7a5472ee3e283c379e7f3c37db836f44e8"
-    },
-    {
-      "id": "freepd/imp-interluder",
-      "title": "Interluder",
-      "artist": "*imp*",
-      "source": "freepd",
-      "file": "freepd/_imp_ - Interluder.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 106.2,
-      "album": "Fractal Planetoid 2.0",
-      "genre": "Bizarre",
-      "year": "2013",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 200,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -16.4,
-      "loudnessRange": 9.5,
-      "truePeakDb": -0.5,
-      "sizeBytes": 2656939,
-      "sha256": "a5f4f099dc2ade35313da70af8d5cf7f5da5fa6a1a90189eadf479f2250def25"
     },
     {
       "id": "freepd/imp-island-mystery",
@@ -10296,34 +8954,6 @@
       "truePeakDb": 0,
       "sizeBytes": 6627057,
       "sha256": "cc4e904ecff34f93e32f2d6391d27d9b5809ed90050f07f41e48e659a0ddb5ff"
-    },
-    {
-      "id": "freepd/knight-of-fire-the-insurgent",
-      "title": "The Insurgent",
-      "artist": "Knight of Fire",
-      "source": "freepd",
-      "file": "freepd/Knight of Fire - The Insurgent.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 101.3,
-      "album": "Burnt Promises",
-      "genre": "Atmosphere",
-      "year": "2013",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 206,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -19,
-      "loudnessRange": 11.4,
-      "truePeakDb": -2.8,
-      "sizeBytes": 2602738,
-      "sha256": "88eeadd1dd9888a8e2f82195abb8ac30c1c4aa2bdc507b17d4fde82fcca1866a"
     },
     {
       "id": "freepd/knight-of-fire-to-dance-with-demon",
@@ -11649,35 +10279,6 @@
       "confidence": "середня"
     },
     {
-      "id": "freepd/thundermine-constructor",
-      "title": "Constructor",
-      "artist": "Thundermine",
-      "source": "freepd",
-      "file": "freepd/Thundermine - Constructor.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "bpm": 102,
-      "contentIdCheck": "не перевірено",
-      "evidence": "Присвята в тегах файлу",
-      "confidence": "висока",
-      "kind": "трек",
-      "durationSec": 105.7,
-      "album": "Thundermine",
-      "genre": "Electronic",
-      "year": "2017",
-      "comment": "Dedicated to the Public Domain April 2017 by Max Fedorov",
-      "bitrateKbps": 321,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -9.1,
-      "loudnessRange": 0.4,
-      "truePeakDb": 0.6,
-      "sizeBytes": 4238029,
-      "sha256": "8cf3ac96cef2670a62bd950cd3f1cfd74874eb61d72c7477a50a2f5f16534843"
-    },
-    {
       "id": "freepd/thundermine-distant-star",
       "title": "Distant Star",
       "artist": "Thundermine",
@@ -12868,6 +11469,36 @@
       "reason": "Автор невідомий: у файлі немає тегів, тож неможливо перевірити ризик Content ID"
     },
     {
+      "title": "Epilogue",
+      "artist": "*imp*",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 96,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Hypocampus Jump",
+      "artist": "*imp*",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 110,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Interluder",
+      "artist": "*imp*",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 106,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
       "title": "Adventures of Flying Jack",
       "artist": "Alexander Nakarada",
       "source": "freepd",
@@ -13688,6 +12319,16 @@
       "reason": "Автора не встановлено: у тегах порожньо чи псевдонім без імені"
     },
     {
+      "title": "Arafura Treasure",
+      "artist": "Arthur Fordsworthy",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 103,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
       "title": "Footsteps in the Attic",
       "artist": "Arthur Fordsworthy",
       "source": "freepd",
@@ -13695,7 +12336,7 @@
         "horror"
       ],
       "durationSec": 55,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Here We Go",
@@ -13705,7 +12346,7 @@
         "zoned"
       ],
       "durationSec": 58,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Mary Had a Little Wolf",
@@ -13715,7 +12356,17 @@
         "zoned"
       ],
       "durationSec": 28,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Right Around the Corner",
+      "artist": "Arthur Fordsworthy",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 114,
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Smooth it Out",
@@ -13735,7 +12386,7 @@
         "zoned"
       ],
       "durationSec": 74,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Intro",
@@ -13745,7 +12396,27 @@
         "zoned"
       ],
       "durationSec": 50,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Outro",
+      "artist": "boringXtreme",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 99,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Pursuit and Thought",
+      "artist": "boringXtreme",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 111,
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Quick Metal Riff 1",
@@ -13756,7 +12427,7 @@
         "rock"
       ],
       "durationSec": 7,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Quick Metal Riff 2",
@@ -13776,7 +12447,7 @@
         "miscellaneous"
       ],
       "durationSec": 58,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Maestro",
@@ -13786,7 +12457,7 @@
         "zoned"
       ],
       "durationSec": 64,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Punchline",
@@ -13796,7 +12467,27 @@
         "zoned"
       ],
       "durationSec": 60,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "The Terror Below",
+      "artist": "Brian Boyko",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 117,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "And Just Like That",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "categories": [
+        "upbeat"
+      ],
+      "durationSec": 114,
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Busybody",
@@ -13806,7 +12497,7 @@
         "comedy"
       ],
       "durationSec": 86,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Elevate Inspirate",
@@ -13816,7 +12507,7 @@
         "unsorted"
       ],
       "durationSec": 65,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Stunted Adventure",
@@ -13826,7 +12517,7 @@
         "scoring"
       ],
       "durationSec": 70,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Sun Up Gunned Down",
@@ -13836,7 +12527,7 @@
         "miscellaneous"
       ],
       "durationSec": 87,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "qui fait pousser mes ongles par la force de sa marée",
@@ -13876,7 +12567,7 @@
         "zoned"
       ],
       "durationSec": 20,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Beautiful Soup",
@@ -13886,7 +12577,7 @@
         "zoned"
       ],
       "durationSec": 46,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "How Doth The Little Crocodile",
@@ -13896,7 +12587,7 @@
         "zoned"
       ],
       "durationSec": 19,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Humpty Dumpty",
@@ -13906,7 +12597,7 @@
         "zoned"
       ],
       "durationSec": 20,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Hush-a-by, Lady",
@@ -13916,7 +12607,7 @@
         "zoned"
       ],
       "durationSec": 31,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Jabberwocky",
@@ -13926,7 +12617,7 @@
         "zoned"
       ],
       "durationSec": 86,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Pig And Pepper",
@@ -13936,7 +12627,7 @@
         "zoned"
       ],
       "durationSec": 15,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Queen Alice",
@@ -13946,7 +12637,7 @@
         "zoned"
       ],
       "durationSec": 54,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "The Aged, Aged Man",
@@ -13956,7 +12647,7 @@
         "zoned"
       ],
       "durationSec": 87,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "The Fish Riddle",
@@ -13966,7 +12657,7 @@
         "zoned"
       ],
       "durationSec": 26,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "The Lion And The Unicorn",
@@ -13976,7 +12667,17 @@
         "zoned"
       ],
       "durationSec": 21,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "The Lobster Quadrille",
+      "artist": "DimensionBucket",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 112,
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "The Message to the Fish",
@@ -13986,7 +12687,7 @@
         "zoned"
       ],
       "durationSec": 87,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "The Queen Of Hearts",
@@ -13996,7 +12697,7 @@
         "zoned"
       ],
       "durationSec": 29,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Tweedledum and Tweedledee",
@@ -14006,7 +12707,7 @@
         "zoned"
       ],
       "durationSec": 31,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Twinkle, Twinkle, Little Bat!",
@@ -14016,7 +12717,17 @@
         "zoned"
       ],
       "durationSec": 13,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Who Stole The Tarts?",
+      "artist": "DimensionBucket",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 103,
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "You Are Old, Father William",
@@ -14026,7 +12737,7 @@
         "zoned"
       ],
       "durationSec": 85,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Kleine Bar",
@@ -14037,6 +12748,206 @@
       ],
       "durationSec": 206,
       "reason": "У файлі немає ознак вільної ліцензії, а в оригінальному списку FreePD його теж немає"
+    },
+    {
+      "title": "Ambient A Zyow",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 119,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Ambient H Spaced Out",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 114,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Ambient P Desertland",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 104,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Chill B",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 118,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Chill China Glitter",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 109,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Electro Chill B",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 119,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Electronic D Turn Around",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 118,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Electronic F Electrohorse",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 115,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Electronic O Odd Flower",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 114,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Electronic R Blip It",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 114,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Electronic S Cheesy Action",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 117,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Electronic T Terrible",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 115,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Electronic U Popper",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 114,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Hip Hop Driver",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 107,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "MC Ballad B",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 115,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "MC Ballad K",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 113,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "MC Ballad L",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 115,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "MC Ballad M",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 117,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "MC Ballad P",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 109,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "MC Ballad Q",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 119,
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "MCS Trance 1 Offset",
@@ -14069,6 +12980,176 @@
       "reason": "У файлі немає ознак вільної ліцензії, а в оригінальному списку FreePD його теж немає"
     },
     {
+      "title": "Messy Beat",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 115,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "New Age A Weathered",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 114,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "New Age K Glow",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 107,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "New Age M Unspired",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 113,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "New Age O Smoother",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 108,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "New Age Q Glitter",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 116,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "New Age T Answered",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 107,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Ragga A Smooth",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 114,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Ragga C Jump Beat",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 117,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Ragga D Cold Sizzle",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 114,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Ragga S Interrupt",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 118,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Ragga T Backer",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 115,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Rap Creep Out",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 119,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Rap Hard Loop",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 108,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Urban Funk A",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 108,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Urban Light and Thin",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 109,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Wake up Ghost",
+      "artist": "Frank Nora",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 112,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
       "title": "ABT2",
       "artist": "Hussalonia",
       "source": "freepd",
@@ -14076,7 +13157,7 @@
         "zoned"
       ],
       "durationSec": 60,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Landra's Dream",
@@ -14086,7 +13167,7 @@
         "romance"
       ],
       "durationSec": 89,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Hexxit DRAVE Symphonie",
@@ -17099,6 +16180,16 @@
       "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
     },
     {
+      "title": "The Insurgent",
+      "artist": "Knight of Fire",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 101,
+      "reason": "Коротший за дві хвилини"
+    },
+    {
       "title": "A good bass for gambling",
       "artist": "Komiku",
       "source": "freepd",
@@ -17826,7 +16917,7 @@
         "zoned"
       ],
       "durationSec": 37,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Edgar's Bells - Movement 2 Golden",
@@ -17836,7 +16927,7 @@
         "zoned"
       ],
       "durationSec": 47,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "Edgar's Bells - Movement 3 Brazen",
@@ -17846,7 +16937,7 @@
         "zoned"
       ],
       "durationSec": 63,
-      "reason": "Коротший за півтори хвилини"
+      "reason": "Коротший за дві хвилини"
     },
     {
       "title": "The Ginger Girl",
@@ -18467,6 +17558,16 @@
       ],
       "durationSec": 331,
       "reason": "У файлі немає ознак вільної ліцензії, а в оригінальному списку FreePD його теж немає"
+    },
+    {
+      "title": "Constructor",
+      "artist": "Thundermine",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 106,
+      "reason": "Коротший за дві хвилини"
     }
   ]
 }
