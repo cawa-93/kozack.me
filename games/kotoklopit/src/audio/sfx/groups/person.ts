@@ -11,7 +11,7 @@ import type { Cue, LoopCue, SoundDef, SoundGroup } from "../types";
 const range = (name: string, count: number): string[] => Array.from({ length: count }, (_, i) => `${name}-${i + 1}`);
 
 /** Голос персонажа: часті звуки — з легким розкидом, щоб не набридали. */
-const voice = (file: string, gain: number): SoundDef => ({ files: [file], gain, pitch: 0.03, spread: 0.08, voices: 1, cooldownMs: 400 });
+const voice = (file: string, gain: number, files: readonly string[] = [file]): SoundDef => ({ files, gain, pitch: 0.03, spread: 0.08, voices: 1, cooldownMs: 400 });
 
 const sounds: Record<string, SoundDef> = {
   // Кроки тихі: вони звучать постійно. Плитка дзвінкіша, тож тихіша за дерево; килим глухий.
@@ -26,12 +26,14 @@ const sounds: Record<string, SoundDef> = {
   "gasp-he": { files: range("gasp-he", 3), gain: 0.4, pitch: 0.03, voices: 1, cooldownMs: 300 },
   "gasp-she": { files: range("gasp-she", 3), gain: 0.4, pitch: 0.03, voices: 1, cooldownMs: 300 },
   swallow: { files: ["swallow"], gain: 0.5, pitch: 0.04, voices: 1 },
+  // Хрумкіт: пік на −1 дБ, а саме жування тихе — тож на повну.
+  eat: { files: range("eat", 2), gain: 1, pitch: 0.04, voices: 1 },
   plate: { files: range("plate", 2), gain: 0.4, pitch: 0.04, voices: 1 },
   shower: { files: ["shower-loop"], gain: 0.4, loop: true },
   "shower-off": { files: ["shower-off"], gain: 0.5, voices: 1 },
-  splash: { files: ["splash-loop"], gain: 0.45, loop: true },
+  splash: { files: ["splash-loop"], gain: 0.6, loop: true },
   scoop: { files: range("scoop", 2), gain: 0.4, pitch: 0.05, voices: 1 },
-  "litter-pour": { files: ["litter-pour"], gain: 0.3, pitch: 0.05, voices: 1 },
+  "litter-pour": { files: ["litter-pour"], gain: 0.17, pitch: 0.05, voices: 1 },
   wipe: { files: range("wipe", 2), gain: 0.35, pitch: 0.05, voices: 1 },
   sweep: { files: range("sweep", 2), gain: 0.4, pitch: 0.05, voices: 1 },
   kibble: { files: range("kibble", 2), gain: 0.45, pitch: 0.05, voices: 1 },
@@ -48,8 +50,9 @@ const sounds: Record<string, SoundDef> = {
   "pant-she": voice("pant-she", 0.4),
   "relief-he": voice("relief-he", 0.4),
   "relief-she": voice("relief-she", 0.4),
-  "yawn-he": voice("yawn-he", 0.4),
-  "yawn-she": voice("yawn-she", 0.4),
+  // Позіх записано жіночим голосом; «він» — той самий запис нижче (`sources.json`).
+  "yawn-he": voice("yawn-he", 0.28, range("yawn-he", 3)),
+  "yawn-she": voice("yawn-she", 0.28, range("yawn-she", 3)),
   "sigh-he": voice("sigh-he", 0.4),
   "sigh-she": voice("sigh-she", 0.4),
   blanket: { files: range("blanket", 2), gain: 0.45, pitch: 0.05, voices: 1 },

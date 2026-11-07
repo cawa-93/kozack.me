@@ -103,6 +103,14 @@
     "hash": "f8c7b30cc4a5f2d4",
     "seconds": 0.37
   },
+  "eat-1": {
+    "hash": "00ba63c0826017d8",
+    "seconds": 1.15
+  },
+  "eat-2": {
+    "hash": "320a42c44aa08937",
+    "seconds": 1.35
+  },
   "plate-1": {
     "hash": "e087bacb1d711c09",
     "seconds": 0.4
@@ -124,11 +132,11 @@
     "seconds": 1.5
   },
   "splash-loop": {
-    "hash": "c7e11a85ae6df91f",
-    "seconds": 3.95,
+    "hash": "5bcfbeeef6c5a2b0",
+    "seconds": 6,
     "loop": {
       "start": 0.1,
-      "end": 4.05
+      "end": 6.1
     }
   },
   "scoop-1": {
@@ -140,8 +148,8 @@
     "seconds": 0.95
   },
   "litter-pour": {
-    "hash": "505d05cd1a5f926c",
-    "seconds": 1
+    "hash": "33d003607e083de4",
+    "seconds": 1.1
   },
   "wipe-1": {
     "hash": "67cf775e191147b1",
@@ -160,12 +168,12 @@
     "seconds": 1.06
   },
   "kibble-1": {
-    "hash": "16c304f71b8f2dd6",
+    "hash": "56bfc61c35b69273",
     "seconds": 1.2
   },
   "kibble-2": {
-    "hash": "8df55aeb253d22d5",
-    "seconds": 1
+    "hash": "a0b4d1590cf6ca1e",
+    "seconds": 1.2
   },
   "water-1": {
     "hash": "a0aca561fed20fb1",
@@ -243,13 +251,29 @@
     "hash": "df244799a415709f",
     "seconds": 1.071
   },
-  "yawn-he": {
-    "hash": "03a9583cf68ce24b",
-    "seconds": 2.7
+  "yawn-she-1": {
+    "hash": "0c538331220673ee",
+    "seconds": 2.34
   },
-  "yawn-she": {
-    "hash": "635d244d07e04d70",
-    "seconds": 2.41
+  "yawn-she-2": {
+    "hash": "9500464eaa4388fc",
+    "seconds": 1.9
+  },
+  "yawn-she-3": {
+    "hash": "102e6fb80f323fd7",
+    "seconds": 2.85
+  },
+  "yawn-he-1": {
+    "hash": "727e278d8621da36",
+    "seconds": 3
+  },
+  "yawn-he-2": {
+    "hash": "3a2e813591014af2",
+    "seconds": 2.435917
+  },
+  "yawn-he-3": {
+    "hash": "2dbb439679788930",
+    "seconds": 3.653854
   },
   "sigh-he": {
     "hash": "a86482e0dd06d282",

@@ -30,9 +30,10 @@ const SLIP = voiced((voice) => [
   { sound: "fall", at, delayMs: 230 },
   { sound: "knock", at, delayMs: 250 },
 ]);
+// Жування (до 1,35 с), потім тарілку відставили.
 const ATE: readonly Cue[] = [
-  { sound: "swallow", at },
-  { sound: "plate", at, delayMs: 300 },
+  { sound: "eat", at },
+  { sound: "plate", at, delayMs: 1100 },
 ];
 const SHOWERED: readonly Cue[] = [{ sound: "shower-off", at: "shower" }];
 const LITTER: readonly Cue[] = [
@@ -66,7 +67,7 @@ const SOCK: readonly Cue[] = [{ sound: "sock", at }];
 export const YAWN = voiced((voice) => [{ sound: `yawn-${voice}`, at }]);
 const FALL_ASLEEP = voiced((voice) => [
   { sound: "blanket", at },
-  { sound: `sigh-${voice}`, at, delayMs: 400 },
+  { sound: `yawn-${voice}`, at, delayMs: 400 },
 ]);
 const COLLAPSE = voiced((voice) => [
   { sound: "fall", at, gain: 1.15 },

@@ -99,15 +99,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "3dce806f96639fc032070620c1adb0aa194efc5fd71a45d9e1c7ad19f32f8b3b"
     },
-    "splash": {
-      "file": "archive/Designers-Choice-Collection-Water/WATRSplsh-Samsung_Galaxy_Smartphone_CU_Water_Jump_In_Splash_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Water",
-      "title": "The Designer's Choice UCS Collection - WATER — WATER/SPLASH/WATRSplsh-Samsung Galaxy Smartphone, CU_Water, Jump In, Splash_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "734d14d90222fc3eb89ea04840262e16a5e23e2393eab970974f72ec7433bf45"
-    },
     "snap": {
       "file": "archive/Designers-Choice-Collection-Objects/OBJFash-Blue_Snowball_Microphone_MCU_Button_Snap_On_Off_Windbreaker_Nicholas_Judy_TDC.flac",
       "url": "https://archive.org/details/Designers-Choice-Collection-Objects",
@@ -161,15 +152,6 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "81c669ab8b15cc4072c26e04b713141a7fb0c9b2d35eaae43c9d62dfa0513fcd"
-    },
-    "grain": {
-      "file": "archive/pouring-grain-into-container-d.-d.-teoli-jr.-2/Pouring_grain_into_container_D.D.Teoli_Jr._2.mp3",
-      "url": "https://archive.org/details/pouring-grain-into-container-d.-d.-teoli-jr.-2",
-      "title": "Pouring Grain Into Container D. D. Teoli Jr. 2 — Pouring grain into container D.D.Teoli Jr. 2.mp3",
-      "author": "D.D.Teoli Jr.",
-      "license": "PD",
-      "licenseUrl": "http://creativecommons.org/publicdomain/mark/1.0/",
-      "sha256": "f2a66b534e94fb69260e0e2c358c7465687d51b3b34fec39d6ff3c7e0e12faa5"
     },
     "pills": {
       "file": "archive/Designers-Choice-Collection-Cartoon/TOONShake-Samsung_Galaxy_Smartphone_CU_Pill_Bottle_01_Nicholas_Judy_TDC.flac",
@@ -233,6 +215,60 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "b4ee47589502770c9413a0556a077ff28ac26295eca1727b63e9e9a8e0a1e6a2"
+    },
+    "yawn-1": {
+      "file": "commons/Yawning_1.ogg",
+      "url": "https://commons.wikimedia.org/wiki/File:Yawning_1.ogg",
+      "title": "Yawning 1",
+      "author": "ezwa (PDSounds)",
+      "license": "PD",
+      "licenseUrl": "https://commons.wikimedia.org/wiki/File:Yawning_1.ogg",
+      "sha256": "5074c4b98e575f271e1a382c72461737b1d4287f244a2157c0f13d6df57e471e"
+    },
+    "yawn-2": {
+      "file": "commons/Yawning_2.ogg",
+      "url": "https://commons.wikimedia.org/wiki/File:Yawning_2.ogg",
+      "title": "Yawning 2",
+      "author": "ezwa (PDSounds)",
+      "license": "PD",
+      "licenseUrl": "https://commons.wikimedia.org/wiki/File:Yawning_2.ogg",
+      "sha256": "27fcdc82ed897eead054a354b1d04b80ad64f081746f5acf542026e384ee41df"
+    },
+    "yawn-twice": {
+      "file": "commons/Yawning_twice.ogg",
+      "url": "https://commons.wikimedia.org/wiki/File:Yawning_twice.ogg",
+      "title": "Yawning twice",
+      "author": "ezwa (PDSounds)",
+      "license": "PD",
+      "licenseUrl": "https://commons.wikimedia.org/wiki/File:Yawning_twice.ogg",
+      "sha256": "425b81da25b5c9d86e2abf63d991542b27c5f3db95e4ed75e6b1190a577c1548"
+    },
+    "lentils": {
+      "file": "commons/Pouring_particles_like_grain.ogg",
+      "url": "https://commons.wikimedia.org/wiki/File:Pouring_particles_like_grain.ogg",
+      "title": "Pouring particles like grain",
+      "author": "stephan (PDSounds)",
+      "license": "PD",
+      "licenseUrl": "https://commons.wikimedia.org/wiki/File:Pouring_particles_like_grain.ogg",
+      "sha256": "50adba5939d24f0134d8f708b3e5e38ad8fc4a12c12d2a3ced9b36b2f285b636"
+    },
+    "bathtub": {
+      "file": "commons/Bathtub_water_splashes.ogg",
+      "url": "https://commons.wikimedia.org/wiki/File:Bathtub_water_splashes.ogg",
+      "title": "Bathtub water splashes",
+      "author": "gradha (PDSounds)",
+      "license": "PD",
+      "licenseUrl": "https://commons.wikimedia.org/wiki/File:Bathtub_water_splashes.ogg",
+      "sha256": "471b9c2cc35a183d74af61abc1352c93ecc457450cef1c29aa79669113010f38"
+    },
+    "snacks": {
+      "file": "commons/Eating_snacks.ogg",
+      "url": "https://commons.wikimedia.org/wiki/File:Eating_snacks.ogg",
+      "title": "Eating snacks",
+      "author": "earthcalling (PDSounds)",
+      "license": "PD",
+      "licenseUrl": "https://commons.wikimedia.org/wiki/File:Eating_snacks.ogg",
+      "sha256": "f801e98415e51c9a13393df11700a53f762d682ca678fd20441a5452b388ec46"
     }
   },
   "files": {
@@ -445,6 +481,20 @@
       "fadeOut": 0.06,
       "note": "ковток"
     },
+    "eat-1": {
+      "from": "snacks",
+      "start": 14.15,
+      "end": 15.3,
+      "fadeOut": 0.08,
+      "note": "їсть: хрумкий укус і жування"
+    },
+    "eat-2": {
+      "from": "snacks",
+      "start": 21.7,
+      "end": 23.05,
+      "fadeOut": 0.1,
+      "note": "їсть: жування"
+    },
     "plate-1": {
       "from": "bowl",
       "start": 7.22,
@@ -475,11 +525,11 @@
       "note": "вода стихла, краплі: душ скінчився"
     },
     "splash-loop": {
-      "from": "splash",
-      "start": 2,
-      "end": 6.25,
+      "from": "bathtub",
+      "start": 20.45,
+      "end": 26.75,
       "loop": true,
-      "note": "плюскіт: купання кота"
+      "note": "плюскіт у ванні: купання кота; кілька сплесків із тишею між ними — під шумом води"
     },
     "scoop-1": {
       "from": "scoop",
@@ -498,12 +548,12 @@
       "note": "совок у лотку"
     },
     "litter-pour": {
-      "from": "grain",
-      "start": 6.62,
-      "end": 7.62,
-      "fadeIn": 0.02,
+      "from": "lentils",
+      "start": 32.6,
+      "end": 33.7,
+      "fadeIn": 0.05,
       "fadeOut": 0.25,
-      "note": "свіжий наповнювач сиплеться в лоток"
+      "note": "свіжий наповнювач сиплеться в лоток: сочевиця густим струменем"
     },
     "wipe-1": {
       "from": "wipe",
@@ -534,17 +584,17 @@
       "note": "підмести сухий безлад"
     },
     "kibble-1": {
-      "from": "grain",
-      "start": 3.35,
-      "end": 4.55,
+      "from": "lentils",
+      "start": 2.35,
+      "end": 3.55,
       "fadeIn": 0.02,
       "fadeOut": 0.25,
-      "note": "корм сиплеться в миску"
+      "note": "корм сиплеться в миску: сочевиця в пластикову миску"
     },
     "kibble-2": {
-      "from": "grain",
-      "start": 8.45,
-      "end": 9.45,
+      "from": "lentils",
+      "start": 9.45,
+      "end": 10.65,
       "fadeIn": 0.02,
       "fadeOut": 0.25,
       "note": "корм сиплеться в миску"
@@ -686,22 +736,56 @@
       "fadeOut": 0.15,
       "note": "видих полегшення (вона)"
     },
-    "yawn-he": {
-      "from": "breath",
-      "start": 0.05,
-      "end": 2.75,
+    "yawn-she-1": {
+      "from": "yawn-2",
+      "start": 0.78,
+      "end": 3.12,
       "fadeIn": 0.05,
       "fadeOut": 0.15,
-      "note": "глибокий сонний вдих і видих замість позіху: «Сонливість» (він)"
+      "note": "позіх: «Сонливість» і засинання (вона)"
     },
-    "yawn-she": {
-      "from": "breath",
-      "start": 0.0504,
-      "end": 2.7496,
-      "filter": "asetrate=49392,aresample=48000",
+    "yawn-she-2": {
+      "from": "yawn-twice",
+      "start": 2.85,
+      "end": 4.75,
       "fadeIn": 0.05,
       "fadeOut": 0.15,
-      "note": "сонний вдих і видих (вона)"
+      "note": "позіх: «Сонливість» і засинання (вона)"
+    },
+    "yawn-she-3": {
+      "from": "yawn-1",
+      "start": 1.5,
+      "end": 4.35,
+      "fadeIn": 0.05,
+      "fadeOut": 0.2,
+      "note": "позіх: «Сонливість» і засинання (вона)"
+    },
+    "yawn-he-1": {
+      "from": "yawn-2",
+      "start": 0.78,
+      "end": 3.12,
+      "filter": "asetrate=34398,aresample=48000",
+      "fadeIn": 0.05,
+      "fadeOut": 0.15,
+      "note": "позіх (він): той самий жіночий голос нижче ×0,78"
+    },
+    "yawn-he-2": {
+      "from": "yawn-twice",
+      "start": 2.85,
+      "end": 4.75,
+      "filter": "asetrate=34398,aresample=48000",
+      "fadeIn": 0.05,
+      "fadeOut": 0.15,
+      "note": "позіх (він): той самий жіночий голос нижче ×0,78"
+    },
+    "yawn-he-3": {
+      "from": "yawn-1",
+      "start": 1.5,
+      "end": 4.35,
+      "filter": "asetrate=34398,aresample=48000",
+      "fadeIn": 0.05,
+      "fadeOut": 0.2,
+      "note": "позіх (він): той самий жіночий голос нижче ×0,78"
     },
     "sigh-he": {
       "from": "sigh",
