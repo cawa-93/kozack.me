@@ -23,9 +23,11 @@ import { CARRIER_TARGET, targetOf } from "../sim/targets";
 import { clockFrame, weekOf } from "../sim/time";
 import type { Address, Chronotype, Difficulty, GameState, HomeItem, Look, Quality, Save, ThingKind } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel, standupToday, workGoesOn } from "../sim/work";
+import type { Radio } from "../audio/radio/radio";
 import type { Session } from "../session";
 import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, addressCard, startName, wardrobeCard, type EnteredName, type PhoneTab } from "../ui/cards";
 import { catIntroCard } from "../ui/catintro";
+import { radioCard } from "../ui/radio";
 import { lookRng, randomLook } from "../ui/look";
 import { diseaseLabel } from "../ui/icons";
 import { answerCall, decideFoundling, ignoreCall, powerOut } from "../sim/modifiers";
@@ -142,7 +144,10 @@ export class DayScene extends Phaser.Scene {
   private catPress: number | null = null;
   private readonly cleanup: (() => void)[] = [];
 
-  constructor(private readonly session: Session) {
+  constructor(
+    private readonly session: Session,
+    private readonly radio: Radio,
+  ) {
     super("day");
   }
 
@@ -284,6 +289,10 @@ export class DayScene extends Phaser.Scene {
     const target = targetOf(this.state);
     if (held === null && target?.id === "wardrobe") {
       this.openWardrobe();
+      return;
+    }
+    if (held === null && target?.id === "radio") {
+      this.openRadio();
       return;
     }
     // Кота в протистоянні торкаються одразу, натисканням (§9.4): відпустивши кнопку, його не беруть на руки.
@@ -827,6 +836,7 @@ export class DayScene extends Phaser.Scene {
     set("door", state.cats.some((c) => c.away === "stairs") ? STATE_ICONS.door.stairs : state.home.porch.length > 0 ? STATE_ICONS.door.porch : null);
     const table = objectById("table");
     const target = targetOf(state);
+    this.radio.setNear(target?.id === "radio");
     // Страва на столі — її іконкою: мамин судочок — своєю (§6.4).
     const onTable = state.home.surfaces["table"] ?? null;
     set("table", onTable !== null && state.character.activity === null && canUse(state, { type: "object", id: "table", object: table }) && target?.id !== "table" ? itemIcon(onTable) : null);
@@ -1288,6 +1298,11 @@ export class DayScene extends Phaser.Scene {
         () => randomLook(looks),
       ),
     );
+  }
+
+  /** Картка радіо (§8.10): поки вона відкрита, решта станцій лишається напоготові. */
+  private openRadio(): void {
+    this.overlay.show(radioCard(this.radio, () => this.overlay.close()));
   }
 
   private openPhone(): void {

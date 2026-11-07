@@ -55,6 +55,8 @@ export interface Card {
   onDismiss?: () => void;
   /** Хрестик у кутку замість кнопки «Скасувати» чи «Закрити»; натискання — як Esc. */
   closable?: boolean;
+  /** Своє оформлення картки замість паперу: клас `card-<skin>`. */
+  skin?: "radio";
   /** Темне тло: гра ще не почалася (меню, нова гра), тож квартиру за карткою не видно. */
   solid?: boolean;
 }
@@ -214,7 +216,7 @@ export class Overlay {
     this.root.classList.remove("cinematic", "dawn");
     this.root.classList.toggle("solid", card.solid ?? false);
     if (card.solid) this.root.classList.remove("aside", "away");
-    const panel = element("section", "card");
+    const panel = element("section", card.skin ? `card card-${card.skin}` : "card");
     panel.setAttribute("role", "dialog");
     panel.setAttribute("aria-modal", "true");
     if (card.closable && card.onDismiss) {

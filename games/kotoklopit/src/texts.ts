@@ -39,6 +39,24 @@ export const UTILITIES_MESSAGES: Record<Exclude<UtilitiesReport["outcome"], "evi
   cleared: "Борг за комунальні погашено: −{сума} ₴. ОСББ зняло попередження.",
 };
 
+/** Картка радіо (§8.10). */
+export const RADIO_TEXTS = {
+  nowPlaying: "Зараз грає",
+  silence: "Радіо мовчить",
+  turnOn: "Увімкнути",
+  turnOff: "Вимкнути",
+  volume: "Гучність",
+} as const;
+
+/** Станції радіо (§8.10, `TEXTS.md`, «Радіо»); id і склад — `audio/catalog.json`. */
+export const RADIO_STATIONS: Readonly<Record<string, { name: string; tagline: string }>> = {
+  mur: { name: "Тихий Мур", tagline: "Тихо. Хтось спить у вас на клавіатурі." },
+  khvostobit: { name: "Хвостобіт", tagline: "Сонце, біт і жодних планів." },
+  retro: { name: "Вусате ретро", tagline: "Платівка подряпана. Винуватого не знайшли." },
+  zumi: { name: "Електрозумі", tagline: "Третя ночі. Хтось щойно вирішив бігти." },
+  berezen: { name: "Березневий рок", tagline: "Концерт під вікном. Відмовитися не можна." },
+};
+
 /**
  * Гра не завантажилася (крок 16): атлас арту не прийшов і після повторів — заставка замість гри, кнопка довантажує те,
  * чого бракує (`src/scenes/PreloadScene.ts`; лише в продакшні — у режимі розробки гра йде на заглушках).

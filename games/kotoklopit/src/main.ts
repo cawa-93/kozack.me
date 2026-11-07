@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 
+import { Radio } from "./audio/radio/radio";
 import { DayScene } from "./scenes/DayScene";
 import { PreloadScene } from "./scenes/PreloadScene";
 import { RaceScene } from "./scenes/RaceScene";
@@ -26,6 +27,9 @@ if (__DEV_TOOLS__) {
 // Гра на весь екран (§10): полотно на все вікно, без порожніх смуг, у пікселях пристрою (`fitCanvas`: розмір веде гра, а
 // не Phaser — `Phaser.Scale.NONE`, CSS-розмір полотна — уся тека, style.css); що з квартири видно, вирішує камера (§8.4).
 fullscreenOnFirstAction();
+// Радіо живе поза сценами: музика грає й у поїздках (§8.10).
+const radio = new Radio();
+radio.start();
 const canvas = startCanvas(document.getElementById("game"), software);
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -38,8 +42,10 @@ const game = new Phaser.Game({
     autoCenter: Phaser.Scale.NO_CENTER,
   },
   input: { activePointers: 3 },
+  // Звук гри — `src/audio/`: другий AudioContext не потрібен.
+  audio: { noAudio: true },
   ...(render ? { render } : {}),
   // Спершу атлас арту (крок 16), потім день; гонку запускає DayScene.
-  scene: [new PreloadScene("day"), new DayScene(session), new RaceScene(session)],
+  scene: [new PreloadScene("day"), new DayScene(session, radio), new RaceScene(session)],
 });
 fitCanvas(game, software);
