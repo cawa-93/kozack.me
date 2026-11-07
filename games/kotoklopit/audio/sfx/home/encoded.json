@@ -1,0 +1,234 @@
+{
+  "fridge-open-1": {
+    "hash": "ec64d84aed063c74",
+    "seconds": 1
+  },
+  "fridge-open-2": {
+    "hash": "14025f66417194d8",
+    "seconds": 1
+  },
+  "fridge-close-1": {
+    "hash": "aca58598342f8417",
+    "seconds": 0.58
+  },
+  "fridge-close-2": {
+    "hash": "b406769276f314b6",
+    "seconds": 0.58
+  },
+  "cabinet-1": {
+    "hash": "09e55e5179981c97",
+    "seconds": 0.52
+  },
+  "cabinet-2": {
+    "hash": "1f80c63a84ef0152",
+    "seconds": 0.53
+  },
+  "cabinet-3": {
+    "hash": "2bca40a14a078e2c",
+    "seconds": 0.52
+  },
+  "dish-pick-1": {
+    "hash": "b2566cea97a13000",
+    "seconds": 0.45
+  },
+  "dish-pick-2": {
+    "hash": "d5e987700f88b888",
+    "seconds": 0.43
+  },
+  "dish-pick-3": {
+    "hash": "83bae1f23a587a9d",
+    "seconds": 0.4
+  },
+  "dish-put-1": {
+    "hash": "0b4bda861d464e54",
+    "seconds": 0.54
+  },
+  "dish-put-2": {
+    "hash": "8fd4bac5da6dcf6a",
+    "seconds": 0.49
+  },
+  "trash": {
+    "hash": "186cd7bf336889e1",
+    "seconds": 1.86
+  },
+  "discard": {
+    "hash": "03b8ddfd9c6f7305",
+    "seconds": 0.46
+  },
+  "unpack-1": {
+    "hash": "a10d424508c80eed",
+    "seconds": 1.3
+  },
+  "unpack-2": {
+    "hash": "3ac09e05c51f9783",
+    "seconds": 1.27
+  },
+  "parcel": {
+    "hash": "252077087890472a",
+    "seconds": 1.07
+  },
+  "door": {
+    "hash": "33b5b6e5579e3663",
+    "seconds": 0.8
+  },
+  "lock": {
+    "hash": "6679cecac977289f",
+    "seconds": 0.42
+  },
+  "doorbell": {
+    "hash": "9969292e5ac58e7c",
+    "seconds": 2.9
+  },
+  "knock": {
+    "hash": "54cb4dab9a0b0bfb",
+    "seconds": 0.95
+  },
+  "bag": {
+    "hash": "6c6ac8627479ede5",
+    "seconds": 1.2
+  },
+  "carrier": {
+    "hash": "18780df90b3f558a",
+    "seconds": 0.8
+  },
+  "timer": {
+    "hash": "7768a6e23e9e1459",
+    "seconds": 0.505042
+  },
+  "burnt": {
+    "hash": "000ba8f82736addc",
+    "seconds": 1.2
+  },
+  "stove-loop": {
+    "hash": "82434f361cb4ed9d",
+    "seconds": 5.7,
+    "loop": {
+      "start": 0.1,
+      "end": 5.8
+    }
+  },
+  "washer-close": {
+    "hash": "b34deb0109a3d0d8",
+    "seconds": 0.5
+  },
+  "washer-open": {
+    "hash": "2c03eab9105b667c",
+    "seconds": 0.6
+  },
+  "washer-done": {
+    "hash": "6bb4230a308df2a9",
+    "seconds": 1.7
+  },
+  "wash-loop": {
+    "hash": "f544c01a67a46a5d",
+    "seconds": 5.7,
+    "loop": {
+      "start": 0.1,
+      "end": 5.8
+    }
+  },
+  "spin-start": {
+    "hash": "9a74b69f90d2febd",
+    "seconds": 1.04
+  },
+  "spin-loop": {
+    "hash": "88548ea8152c349a",
+    "seconds": 2.98,
+    "loop": {
+      "start": 0.1,
+      "end": 3.08
+    }
+  },
+  "hung": {
+    "hash": "cbf62908f5147d18",
+    "seconds": 0.8
+  },
+  "vacuum-on": {
+    "hash": "4eea374344d84ef6",
+    "seconds": 1.5
+  },
+  "vacuum-loop": {
+    "hash": "00ea8e67826cd338",
+    "seconds": 5.7,
+    "loop": {
+      "start": 0.1,
+      "end": 5.8
+    }
+  },
+  "vacuum-off": {
+    "hash": "862d69797761dac0",
+    "seconds": 2
+  },
+  "swept": {
+    "hash": "4efbd404573d763d",
+    "seconds": 0.5
+  },
+  "robot-loop": {
+    "hash": "a9e489ce869eaff4",
+    "seconds": 5.7,
+    "loop": {
+      "start": 0.1,
+      "end": 5.8
+    }
+  },
+  "beep-high": {
+    "hash": "0c3a06a0fc5057a9",
+    "seconds": 0.3
+  },
+  "beep-low": {
+    "hash": "8e3094668b8a5eef",
+    "seconds": 0.4
+  },
+  "broke-1": {
+    "hash": "6c493429efb11062",
+    "seconds": 0.47
+  },
+  "broke-2": {
+    "hash": "13a9cc9393870a34",
+    "seconds": 0.49
+  },
+  "feeder-1": {
+    "hash": "eba99e8f68b8509b",
+    "seconds": 0.65
+  },
+  "feeder-2": {
+    "hash": "a24ec48e9502fdfd",
+    "seconds": 1.1
+  },
+  "feeder-empty": {
+    "hash": "b4f824a2b3208559",
+    "seconds": 1.12
+  },
+  "wire": {
+    "hash": "f2bf23bdde60dfa0",
+    "seconds": 0.66
+  },
+  "flies-loop": {
+    "hash": "147d3de6759211c3",
+    "seconds": 3.61,
+    "loop": {
+      "start": 0.1,
+      "end": 3.71
+    }
+  },
+  "guests": {
+    "hash": "80ae9e10063d564e",
+    "seconds": 2.6
+  },
+  "papers": {
+    "hash": "cd377adddbdb0548",
+    "seconds": 1.2
+  },
+  "vet-case": {
+    "hash": "81bd34a7d70e0933",
+    "seconds": 0.62
+  },
+  "bucket": {
+    "hash": "d79d4cbd28490501",
+    "seconds": 0.65
+  },
+  "fireworks": {
+    "hash": "df26f1b2a764828e",
+    "seconds": 5.2
+  }
+}
