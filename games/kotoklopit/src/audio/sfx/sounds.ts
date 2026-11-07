@@ -147,8 +147,9 @@ export class Sounds {
     const def = group.sounds[cue.sound];
     if (!def || def.loop || def.files.length === 0) return;
     const key = `${group.id}/${cue.sound}`;
-    const now = performance.now();
-    if (now - (this.last.get(key) ?? -Infinity) < (def.cooldownMs ?? SFX.cooldownMs)) return;
+    // Пауза між повторами — за миттю звучання: той самий звук із затримкою в одній події не відкидається.
+    const at = performance.now() + (cue.delayMs ?? 0);
+    if (Math.abs(at - (this.last.get(key) ?? -Infinity)) < (def.cooldownMs ?? SFX.cooldownMs)) return;
     if ((this.active.get(key) ?? 0) >= (def.voices ?? SFX.soundVoices) || this.voices >= SFX.voices) return;
     const file = soundFile(group.id, this.pick(key, def));
     if (!file) return;
@@ -160,7 +161,7 @@ export class Sounds {
       this.active.set(key, (this.active.get(key) ?? 1) - 1);
     });
     if (!started) return;
-    this.last.set(key, now);
+    this.last.set(key, at);
     this.voices++;
     this.active.set(key, (this.active.get(key) ?? 0) + 1);
   }

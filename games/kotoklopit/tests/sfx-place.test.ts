@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { SFX } from "../src/audio/config";
 import { distanceGain, panOf, placement, soundPoint } from "../src/audio/sfx/place";
-import { objectById } from "../src/sim/home";
+import { itemPoint, objectById } from "../src/sim/home";
 import { newGame } from "../src/sim/game";
 
 describe("де звучить звук (§11.4а)", () => {
@@ -48,5 +48,11 @@ describe("де звучить звук (§11.4а)", () => {
       expect(soundPoint(state, `cat:${cat.id}`)).toBeNull();
     }
     expect(soundPoint(state, "cat:9999")).toBeNull();
+    const item = state.home.items[0];
+    if (item) expect(soundPoint(state, `item:${item.id}`)).toEqual(itemPoint(item));
+    expect(soundPoint(state, "item:9999")).toBeNull();
+    state.home.messes.push({ id: 777, kind: "broken", x: 3.5, y: 4.5, cat: null });
+    expect(soundPoint(state, "mess:777")).toMatchObject({ x: 3.5, y: 4.5 });
+    expect(soundPoint(state, "mess:9999")).toBeNull();
   });
 });

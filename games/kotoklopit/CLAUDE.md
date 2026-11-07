@@ -13,7 +13,7 @@ Claude Code працює локально на комп'ютері автора,
 
 **Перевірки:**
 
-- **Тести — комплексно** — загальне правило проєкту (кореневий `CLAUDE.md`). Тут: під час роботи — `npm run typecheck -w games/kotoklopit` і тести своєї ділянки (`npx vitest run tests/<файл>` у `games/kotoklopit`); увесь набір `npm test -w games/kotoklopit` — наприкінці блоку (перед пушем) і після зведення гілок. Перед першим прогоном після нових файлів у `scenarios/` чи `src/view/art/manifest/` — `npx vitest --clearCache`.
+- **Тести — комплексно** — загальне правило проєкту (кореневий `CLAUDE.md`). Тут: під час роботи — `npm run typecheck -w games/kotoklopit` і тести своєї ділянки (`npx vitest run tests/<файл>` у `games/kotoklopit`); увесь набір `npm test -w games/kotoklopit` — наприкінці блоку (перед пушем) і після зведення гілок. Перед першим прогоном після нових файлів у `scenarios/`, `src/view/art/manifest/`, `src/audio/sfx/groups/` чи `audio/sfx/` — `npx vitest --clearCache`: інакше `import.meta.glob` бачить старий перелік.
 - Раз наприкінці блоку: `npm run build -w games/kotoklopit`, якщо зачеплено сцени, графіку чи конфіг; короткий баланс `BALANCE_WEEKS=2 BALANCE_SEEDS=1 npm run balance -w games/kotoklopit`, якщо змінилася поведінка (`balance/REPORT.md` після короткого прогону не комітити — `git checkout`).
 - Повний баланс (`BALANCE_WEEKS=20 npm run balance -w games/kotoklopit`, 20 тижнів × 3 seed; без `BALANCE_WEEKS` — лише 6 тижнів) — наприкінці великої механіки, з комітом `balance/REPORT.md`.
 - Не комітити `.idea/` і згенероване (`balance/TRACE.txt`, `public/games/`).

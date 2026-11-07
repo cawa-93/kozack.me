@@ -1,7 +1,7 @@
 // Де звучить звук квартири (§11.4а): гучність від відстані до персонажа й зсув уліво-вправо, як на ізометричному екрані.
 // Чисті функції: перевіряє `tests/sfx-place.test.ts`.
 
-import { objectById } from "../../sim/home";
+import { itemPoint, objectById } from "../../sim/home";
 import type { GameState } from "../../sim/types";
 import { SFX } from "../config";
 import type { SoundAt } from "./types";
@@ -11,7 +11,7 @@ export interface Point {
   y: number;
 }
 
-/** Точка звуку в клітинках; null — без місця (чи кота немає вдома, чи такої речі немає). */
+/** Точка звуку в клітинках: як у баблів (`person`, `cat:N`, `item:N`, `mess:N`, id речі); null — без місця чи цього вже немає. */
 export function soundPoint(state: GameState, at: SoundAt | undefined): Point | null {
   if (at === null || at === undefined) return null;
   if (typeof at !== "string") return at;
@@ -19,6 +19,14 @@ export function soundPoint(state: GameState, at: SoundAt | undefined): Point | n
   if (at.startsWith("cat:")) {
     const cat = state.cats.find((c) => c.id === Number(at.slice(4)));
     return cat && cat.away === null ? cat : null;
+  }
+  if (at.startsWith("item:")) {
+    const item = state.home.items.find((i) => i.id === Number(at.slice(5)));
+    return item ? itemPoint(item) : null;
+  }
+  if (at.startsWith("mess:")) {
+    const mess = state.home.messes.find((m) => m.id === Number(at.slice(5)));
+    return mess ?? null;
   }
   try {
     const object = objectById(at);

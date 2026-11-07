@@ -81,7 +81,16 @@ interface CommonsInfo {
 async function commonsInfo(name: string): Promise<CommonsInfo> {
   const html = await commonsPage(name);
   const title = (name.startsWith("File:") ? name : `File:${name}`).replace(/ /g, "_");
-  const licenses = [...html.matchAll(/licensetpl&#95;link" style="display:none;">([^<]*)<\/span><span class="licensetpl&#95;short" style="display:none;">([^<]*)</g)].map((m) => ({ url: m[1]!, short: m[2]!.trim() }));
+  // Посилання на ліцензію є не завжди: у шаблонів суспільного надбання (PD-author, PDSounds) лише коротка назва.
+  const licenses: { url: string; short: string }[] = [];
+  let link = "";
+  for (const m of html.matchAll(/licensetpl&#95;(link|short)" style="display:none;">([^<]*)</g)) {
+    if (m[1] === "link") link = m[2]!;
+    else {
+      licenses.push({ url: link, short: m[2]!.trim() });
+      link = "";
+    }
+  }
   // Кілька ліцензій на вибір (подвійне ліцензування) — беремо першу з дозволених.
   const license = licenses.map((l) => licenseOf(l.url, l.short)).find((l) => l !== null) ?? null;
   const field = (id: string): string => text(new RegExp(`id="fileinfotpl&#95;${id}"[^>]*>[\\s\\S]*?</td>\\s*<td[^>]*>([\\s\\S]*?)</td>`).exec(html)?.[1] ?? "");
@@ -158,13 +167,13 @@ switch (command) {
     if (!info.license) throw new Error(`Ліцензія не з дозволених (${LICENSES.join(", ")}): ${JSON.stringify(info.licenses)}`);
     if (!info.original) throw new Error("Не знайшов посилання на оригінал");
     const saved = await download(info.original, group, "commons", decodeURIComponent(info.original.split("/").at(-1)!));
-    const licenseUrl = info.licenses.find((l) => licenseOf(l.url, l.short) === info.license)?.url ?? "";
+    const licenseUrl = info.licenses.find((l) => licenseOf(l.url, l.short) === info.license)?.url || info.page;
     remember(group, key, { file: saved.file, url: info.page, title: info.title.replace(/^File:/, "").replace(/_/g, " ").replace(AUDIO, ""), author: info.author || "невідомо — перевірити", license: info.license, licenseUrl, sha256: saved.sha256 });
     console.log(`${info.license}; автор: ${info.author}; ${info.length}; ${info.description}`);
     break;
   }
   case "ia-search": {
-    const query = `(${args.join(" ")}) AND mediatype:audio AND (licenseurl:*publicdomain* OR licenseurl:*licenses/by/*)`;
+    const query = `(${args.join(" ")}) AND mediatype:audio AND (licenseurl:*publicdomain* OR licenseurl:*creativecommons*)`;
     const url = `https://archive.org/advancedsearch.php?q=${encodeURIComponent(query)}&fl[]=identifier&fl[]=title&fl[]=creator&fl[]=licenseurl&rows=60&output=json`;
     const response = await get(url);
     const found = ((await response.json()) as { response: { docs: Record<string, unknown>[] } }).response.docs;
