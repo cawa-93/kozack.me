@@ -414,7 +414,7 @@ export function putVacuumDown(state: GameState): void {
 /**
  * Інструмент у руках за хвилини (§8.7): пилосос гуде — гучний звук щоразу через `VACUUM.noiseEvery` хвилин (§9.12); неприємне —
  * здоровий глузд `VACUUM.sanityPerMinute` за хвилину (§8.1); прибирає сухе сміття навколо персонажа (`TOOL_REACH`); біля дивана
- * витягає шкарпетку з котячої схованки (§9.12, «Подарунки й схованки»).
+ * витягає шкарпетку з котячої схованки (§9.12, «Схованки»).
  */
 export function tickVacuum(state: GameState, minutes: number): void {
   const held = state.character.held;

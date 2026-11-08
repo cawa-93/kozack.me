@@ -331,7 +331,7 @@ export class IsoFloorView implements WorldPart {
       id: "basket",
       half: isoItemLook("basket").half,
     });
-    // Шкарпетка в схованці (§9.12, «Подарунки й схованки»): п'ятка визирає з-за дивана — під ним (`SOFA_PEEK`).
+    // Шкарпетка в схованці (§9.12, «Схованки»): п'ятка визирає з-за дивана — під ним (`SOFA_PEEK`).
     if (home.sock === true) this.single("sock", { id: "mess/sock", state: "peek" }, SOFA_PEEK, 8, { half: 20 }, "sofa");
     // Вертикальний пилосос (§8.7, «Пилосос у руках»): стоїть там, де його поставили; у руках його малює персонаж (`item/vacuum`).
     const vacuum = home.vacuumAt;

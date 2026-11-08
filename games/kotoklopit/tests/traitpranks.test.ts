@@ -260,7 +260,7 @@ function carryOut(save: Save, cat: Cat, present = true): void {
   for (let i = 0; i < 80 && cat.act.kind === "carry"; i++) tickCats(save.current, 0.25, { present });
 }
 
-describe("«Подарунки й схованки» (§9.12, рішення автора 2026-10-25)", () => {
+describe("«Схованки» (§9.12, рішення автора 2026-10-25)", () => {
   it("вага «понести річ»: «−» — ніколи, кіт без риси — 0,05, «+» — 0,15 × (1 + рівень)", () => {
     const save = game();
     expect(giftWeight(withCat(save, { gifts: -1 }))).toBe(0);

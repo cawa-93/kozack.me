@@ -94,7 +94,7 @@ export function startTrip(state: GameState, destination: Destination): boolean {
   // до ветеринара, лікаря, грумера, на виставку, у притулок чи розплідник часу на місці ще немає.
   const visit = TRIPS[destination].service ? 0 : TRIPS[destination].visit;
   state.trip = { destination, phase: "drive", cat: riders[0]?.cat ?? null, riders, race: newRace(roadMinutes(state, destination), seed), losses: [], visit, seed };
-  // Шкарпетку кіт заніс у схованку (§9.12, «Подарунки й схованки»): поки її шукали, минуло 10 хвилин — поїздка довша.
+  // Шкарпетку кіт заніс у схованку (§9.12, «Схованки»): поки її шукали, минуло 10 хвилин — поїздка довша.
   if (state.home.sock === true) {
     delete state.home.sock;
     state.trip.search = GIFTS.sockSearch;
@@ -200,7 +200,7 @@ export function accidentOf(state: GameState): AccidentCost | null {
 
 /**
  * Хвилина, коли після аварії персонаж удома й день триває (§8.5; рішення автора 2026-11-02): години аварії й час, поки шукали
- * шкарпетку перед виїздом (§9.12, «Подарунки й схованки»; він минає й після звичайної поїздки, `returnHome`). null — перемотування
+ * шкарпетку перед виїздом (§9.12, «Схованки»; він минає й після звичайної поїздки, `returnHome`). null — перемотування
  * доходить до оптимального часу сну чи далі, і день закінчується, як і раніше (`accidentBedtime`); так само, коли це не аварія.
  */
 export function accidentHome(state: GameState): number | null {

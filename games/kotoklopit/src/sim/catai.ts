@@ -1286,10 +1286,10 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng, context: CatContext): 
     const hungry = cat.needs.hunger >= MISCHIEF.hungryFrom ? MISCHIEF.hungrySteal : 1;
     allowed("kitchen", steal.id, MISCHIEF.steal * traitFactor(cat, "thief", MISCHIEF.traitStep) * hungry, active(() => start(cat, "steal", objectTile(steal.id), 1, steal.id)));
   }
-  // Іграшку під меблями чи в зубах в іншого кота не поганяєш (§9.12, «Подарунки й схованки»).
+  // Іграшку під меблями чи в зубах в іншого кота не поганяєш (§9.12, «Схованки»).
   const toy = nearest(cat, looseToys(state));
   if (toy) options.push({ weight: MISCHIEF.toy, value: active(() => start(cat, "toy", itemTile(toy), TOY.aloneMinutes, `item:${toy.id}`)) });
-  // Понести річ у схованку (§9.12, «Подарунки й схованки»).
+  // Понести річ у схованку (§9.12, «Схованки»).
   const gift = giftWeight(cat);
   if (gift > 0 && (toy !== null || sockFree(state, cat))) options.push({ weight: gift, value: active(() => startCarry(state, cat, rng)) });
   // «Ігривість +» кличе гратися: несе іграшку до ніг того, хто вдома й не працює (§9.12, «Гра й стосунки котів»).
@@ -1470,7 +1470,7 @@ function raidDone(state: GameState, cat: Cat, rng: Rng): void {
 }
 
 /**
- * Вага «понести річ», коли кіт хоче гратися (§9.12, рішення автора 2026-10-25): 0,15 × (1 + «Подарунки й схованки»), кіт без
+ * Вага «понести річ», коли кіт хоче гратися (§9.12, рішення автора 2026-10-25): 0,15 × (1 + «Схованки»), кіт без
  * риси — 0,05, «−» — ніколи.
  */
 export function giftWeight(cat: Cat): number {
@@ -1497,7 +1497,7 @@ function sockFree(state: GameState, cat: Cat): boolean {
 }
 
 /**
- * Кіт іде по річ (§9.12, «Подарунки й схованки»): іграшку з підлоги чи вашу шкарпетку з кошика білизни — навпіл, коли є і те,
+ * Кіт іде по річ (§9.12, «Схованки»): іграшку з підлоги чи вашу шкарпетку з кошика білизни — навпіл, коли є і те,
  * і те. Іграшку заганяє під диван чи холодильник, шкарпетку — у схованку під диваном. До ваших ніг іграшку приносить лише
  * «Ігривість +» (`startInvite`; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А16: раніше й «Подарунки» з шансом 50%, і на екрані
  * це було те саме).
@@ -2874,7 +2874,7 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       cat.facing = 1;
       return;
     case "carry":
-      // «Ігривість +» приніс іграшку до ніг персонажа й кличе гратися (§9.12, «Ігривість»; «Подарунки й схованки» до ніг не
+      // «Ігривість +» приніс іграшку до ніг персонажа й кличе гратися (§9.12, «Ігривість»; «Схованки» до ніг не
       // носять з 2026-10-29, А16): кладе її й чекає поруч.
       if (act.picked === true && act.dest === "feet" && act.dropped !== true) dropGift(state, cat);
       return;
@@ -3290,7 +3290,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       if (cat.act === done || cat.act.minutes <= 1e-9) decide(state, cat, rng, context);
     }
   }
-  // Іграшка в зубах їде разом із котом (§9.12, «Подарунки й схованки»).
+  // Іграшка в зубах їде разом із котом (§9.12, «Схованки»).
   carryAlong(state, cat, context);
 }
 

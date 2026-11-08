@@ -332,7 +332,7 @@ export class IsoCatView {
     }
   }
 
-  /** Іграшка чи шкарпетка в зубах (§9.12, «Подарунки й схованки»): кадр у гнізді `teeth`. */
+  /** Іграшка чи шкарпетка в зубах (§9.12, «Схованки»): кадр у гнізді `teeth`. */
   private updateTeeth(teeth: CatFrame["teeth"], visible: boolean): void {
     if (!teeth) {
       this.teethImage?.setVisible(false);

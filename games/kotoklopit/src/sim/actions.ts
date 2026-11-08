@@ -471,7 +471,7 @@ function dropToy(state: GameState): void {
   if (held?.kind !== "toy") return;
   const { x, y, facing } = state.character.body;
   const spot = visibleFloorNear(state, { x: x + facing.x * 0.5, y: y + facing.y * 0.5 });
-  // Дістану з-під меблів іграшку кладуть уже на видне місце (§9.12, «Подарунки й схованки»).
+  // Дістану з-під меблів іграшку кладуть уже на видне місце (§9.12, «Схованки»).
   const { hidden: _hidden, ...toy } = held.toy;
   state.home.items.push({ ...toy, x: spot.x, y: spot.y });
   state.character.held = null;

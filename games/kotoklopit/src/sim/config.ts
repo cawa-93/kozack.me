@@ -694,7 +694,7 @@ export const TRACE_CAT_DAYS: readonly { trace: CatTrace; catDays: number }[] = [
 ];
 /** «Мисливський інстинкт» (§9.12): `solo*` — множник гри наодинці. */
 export const HUNTING = { roll: 0.05, rollStep: 0.75, kitten: 2, pawMinutes: 1, soloStep: 0.25, soloMin: 0.5, wearStep: 0.5, observeEvery: 30 } as const;
-/** «Подарунки й схованки» (§9.12): `sockSearch` — на скільки довший виїзд. */
+/** «Схованки» (§9.12): `sockSearch` — на скільки довший виїзд. */
 export const GIFTS = { weight: 0.15, base: 0.05, fridge: 0.5, pickMinutes: 0.3, sockSearch: 10, stray: 0.03, strayReach: 3 } as const;
 /** «Кмітливість у бешкеті» (§9.12): `full*` — лізе в шафку ситим. */
 export const CUNNING = { openStep: 0.15, pawMinutes: 1, fullLevel: 2, fullWeight: 0.1, fullVomit: 0.3, trashStep: 0.1, cheapLock: 0.3, observeEvery: 30 } as const;
