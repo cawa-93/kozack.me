@@ -1,0 +1,38 @@
+{
+  "originals": {
+    "fs-car-door": {
+      "file": "freesound/424031__mandymatz__car-door-slam.wav",
+      "url": "https://freesound.org/people/mandymatz/sounds/424031/",
+      "title": "Car Door Slam",
+      "author": "mandymatz",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "8c249584717591ce00142a0fc68e3b47aa0a561eea7cbdeca5b7ba06db766e14"
+    },
+    "fs-handbrake": {
+      "file": "freesound/173007__ninebilly__handbrake.wav",
+      "url": "https://freesound.org/people/ninebilly/sounds/173007/",
+      "title": "Handbrake.wav",
+      "author": "ninebilly",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "7302ba88d585dadea3684e4a5e75170cb392af71766406a0053c31fdcd3bd461"
+    }
+  },
+  "files": {
+    "car-door-1": {
+      "from": "fs-car-door",
+      "start": 0,
+      "end": 0.17,
+      "fadeOut": 0.02,
+      "note": "дверцята авто зачинили"
+    },
+    "handbrake-1": {
+      "from": "fs-handbrake",
+      "start": 0.09,
+      "end": 0.5,
+      "fadeOut": 0.06,
+      "note": "ручне гальмо: тріскачка"
+    }
+  }
+}
