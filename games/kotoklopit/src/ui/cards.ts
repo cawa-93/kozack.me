@@ -39,6 +39,7 @@ import { creditsLink } from "./creditslink";
 import { destinationLabel, diseaseLabel, named, productLabel } from "./icons";
 import { element, type Card, type CardAction, type TitleSection } from "./overlay";
 import { shopCatalog, variantLabel } from "./shop";
+import { phoneStatusBar } from "./phonebar";
 import type { CartLine } from "../sim/shop";
 import { plural } from "./titles";
 
@@ -254,7 +255,8 @@ export function phoneCard(state: GameState, wanted: PhoneTab, handlers: PhoneHan
   // Коти й альбом з'являються, коли в них є що показати (§11.3а): до першого кота — лише порожні сторінки.
   const tabs = (Object.keys(PHONE_TABS) as PhoneTab[]).filter((t) => (t !== "cats" || state.cats.length > 0) && (t !== "album" || state.album.length > 0));
   const tab = tabs.includes(wanted) ? wanted : "shop";
-  const body: (string | HTMLElement)[] = [];
+  // Рядок стану з годинником гри — угорі екрана, над вкладками (`phone.css`), хоч у картці він першим у тілі, після вкладок.
+  const body: (string | HTMLElement)[] = [phoneStatusBar(state.minute)];
   // Що вже їде, видно в рядку кожного товару (§6.4); смуга кошика з «Замовити» — внизу картки (рішення автора 2026-11-03).
   const shop = tab === "shop" ? shopCatalog(state, "delivery", { checkout: handlers.checkout }) : null;
   if (shop) body.push(shop.list);
