@@ -44,6 +44,15 @@
       "license": "CC-BY-4.0",
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
       "sha256": "4dc1340c479ee330040ad604c6668bdbfd07f7d7ac3133469231bdbab1d9888a"
+    },
+    "fs-engine": {
+      "file": "freesound/592404__dan_audiofile__fr-engine-start-stop-exhaust.wav",
+      "url": "https://freesound.org/people/Dan_AudioFile/sounds/592404/",
+      "title": "FR- engine, start, stop, exhaust.wav",
+      "author": "Dan_AudioFile",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "sha256": "850239c5796bb0420e1682194d31e9a2f6e8fc8f0a08eeb92a3264bc4df623b7"
     }
   },
   "files": {
@@ -82,6 +91,22 @@
       "end": 0.5,
       "fadeOut": 0.1,
       "note": "старий клаксон із луною"
+    },
+    "engine-start-1": {
+      "from": "fs-engine",
+      "start": 8.62,
+      "end": 9.35,
+      "fadeIn": 0.02,
+      "fadeOut": 0.12,
+      "note": "кінець роботи стартера й мотор підхопив"
+    },
+    "engine-stop-1": {
+      "from": "fs-engine",
+      "start": 18.5,
+      "end": 19.05,
+      "fadeIn": 0.05,
+      "fadeOut": 0.08,
+      "note": "мотор глухне"
     }
   }
 }

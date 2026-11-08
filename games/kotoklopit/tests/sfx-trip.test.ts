@@ -1,5 +1,5 @@
-// Звуки поїздки (§8.5, §11.4а; `SOUND_PLAN.md`, «Ефекти», рядок `trip`): двері авто на виїзді, ручник і двері на місці; чути
-// й у поїздці.
+// Звуки поїздки (§8.5, §11.4а; `SOUND_PLAN.md`, «Ефекти», рядок `trip`): двері й мотор на виїзді, ручник, мотор і двері на місці,
+// гудки в гонці; чути й у поїздці.
 
 import { describe, expect, it } from "vitest";
 
@@ -15,9 +15,9 @@ describe("звуки поїздки", () => {
   const state = newGame({ address: "he", difficulty: "normal", seed: 3 }).current;
   const sounds = (event: GameEvent): string[] => (group.onEvent?.(event, state) ?? []).map((cue) => cue.sound);
 
-  it("двері авто — коли сів на виїзді; на місці — ручник і двері", () => {
-    expect(sounds({ type: "trip-started", destination: "shop" })).toEqual(["car-door"]);
-    expect(sounds({ type: "trip-arrived", destination: "shop" })).toEqual(["handbrake", "car-door"]);
+  it("на виїзді — двері й мотор заводиться; на місці — ручник, мотор глухне, двері", () => {
+    expect(sounds({ type: "trip-started", destination: "shop" })).toEqual(["car-door", "engine-start"]);
+    expect(sounds({ type: "trip-arrived", destination: "shop" })).toEqual(["handbrake", "engine-stop", "car-door"]);
     expect(sounds({ type: "doorbell" })).toEqual([]);
   });
 
