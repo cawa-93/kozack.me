@@ -35,11 +35,13 @@ const VISITS: Partial<Record<ModifierEvent, readonly HomeCue[]>> = {
   cleaner: visit("bucket", 800),
   fireworks: one("fireworks", "sill-living"),
 };
-/** Мама заходить сама (§4.1): стукає, відчиняє й несе пакет; не застала — пакет у ящиках біля входу. */
+/** Мама заходить сама (§4.1): стукає тричі, відчиняє й несе пакет; не застала — пакет у ящиках біля входу. */
 const MOM: readonly HomeCue[] = [
   { sound: "knock", at: "door" },
-  { sound: "door", at: "door", delayMs: 650 },
-  { sound: "bag", at: "door", delayMs: 1100 },
+  { sound: "knock", at: "door", delayMs: 190, rate: 1.04 },
+  { sound: "knock", at: "door", delayMs: 380, rate: 0.97 },
+  { sound: "door", at: "door", delayMs: 900 },
+  { sound: "bag", at: "door", delayMs: 1350 },
 ];
 const MOM_PORCH = one("bag", "boxes");
 const RECEIVED: readonly HomeCue[] = [

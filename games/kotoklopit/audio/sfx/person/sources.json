@@ -198,24 +198,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "446b67f8cf757b1996f4a9a9ab74fb3b3d5b89b9e732d79bd6de586e663e8f5a"
     },
-    "board-2": {
-      "file": "archive/Designers-Choice-Collection-Wood/WOODImpt-Samsung_Galaxy_Smartphone_CU_Board_Drop_02_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Wood",
-      "title": "The Designer's Choice UCS Collection - WOOD — WOOD/IMPACT/WOODImpt-Samsung Galaxy Smartphone, CU_Board Drop 02_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "47183acb5c5433c337eba9a23c5ff8703a9f70ae8e7336b6ab710b652b9bd21d"
-    },
-    "board-4": {
-      "file": "archive/Designers-Choice-Collection-Wood/WOODImpt-Samsung_Galaxy_Smartphone_CU_Board_Drop_04_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Wood",
-      "title": "The Designer's Choice UCS Collection - WOOD — WOOD/IMPACT/WOODImpt-Samsung Galaxy Smartphone, CU_Board Drop 04_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "b4ee47589502770c9413a0556a077ff28ac26295eca1727b63e9e9a8e0a1e6a2"
-    },
     "yawn-1": {
       "file": "commons/Yawning_1.ogg",
       "url": "https://commons.wikimedia.org/wiki/File:Yawning_1.ogg",
@@ -296,6 +278,15 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "7e27fd77c00d3eaa54a2a936bc2dc7a49b129051db12711f5d2fe2993954ab29"
+    },
+    "fs-cat-kick": {
+      "file": "freesound/258260__lostphosphene__cat-kick-1.aiff",
+      "url": "https://freesound.org/people/lostphosphene/sounds/258260/",
+      "title": "Cat Kick 1.aif",
+      "author": "lostphosphene",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "sha256": "b6e917a1a5c9c930ef6b596923c0e28faad64324e8465fb09a94c185b118db28"
     }
   },
   "files": {
@@ -444,17 +435,8 @@
       "note": "падіння тіла: глухий удар"
     },
     "knock-1": {
-      "from": "board-2",
-      "start": 0.3,
-      "end": 0.8,
-      "fadeOut": 0.15,
-      "note": "удар об підлогу під падінням"
-    },
-    "knock-2": {
-      "from": "board-4",
-      "start": 0,
-      "end": 0.45,
-      "fadeOut": 0.15,
+      "from": "fs-cat-kick",
+      "fadeOut": 0.02,
       "note": "удар об підлогу під падінням"
     },
     "gasp-he-1": {

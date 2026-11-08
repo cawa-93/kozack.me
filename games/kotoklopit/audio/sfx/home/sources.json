@@ -63,15 +63,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "347d9f3e3f97288032654e53486dd7304d92c2628c9f52969c45c2d92fe85a6b"
     },
-    "knock": {
-      "file": "archive/Designers-Choice-Collection-Doors/DOORKnck-Samsung_Galaxy_Smartphone_CU_Master_Bathroom_Door_Knocks_Pounds_Nicholas_Judy_TDC.mp3",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Doors",
-      "title": "The Designer's Choice UCS Collection - DOORS — DOORS/KNOCK/DOORKnck-Samsung Galaxy Smartphone, CU_Master Bathroom Door, Knocks, Pounds_Nicholas Judy_TDC.mp3",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "c99bcf6a16a77db7c0381f223633352fa83de9e82f4f3e56692e66c421833822"
-    },
     "vacuum": {
       "file": "archive/Designers-Choice-Collection-Machines/MACHAppl-Samsung_Galaxy_Smartphone_CU_Bissell_FeatherWeight_Vacuum_Turn_On_Run_Off_Nicholas_Judy_TDC.mp3",
       "url": "https://archive.org/details/Designers-Choice-Collection-Machines",
@@ -323,6 +314,15 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "741539648172dc1ea718fe3da7595441610381fc501936a886f7027edb1fb6a6"
+    },
+    "fs-cat-kick": {
+      "file": "freesound/258260__lostphosphene__cat-kick-1.aiff",
+      "url": "https://freesound.org/people/lostphosphene/sounds/258260/",
+      "title": "Cat Kick 1.aif",
+      "author": "lostphosphene",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "sha256": "b6e917a1a5c9c930ef6b596923c0e28faad64324e8465fb09a94c185b118db28"
     }
   },
   "files": {
@@ -456,10 +456,9 @@
       "note": "Дзвінок у двері"
     },
     "knock": {
-      "from": "knock",
-      "end": 0.95,
-      "fadeOut": 0.1,
-      "note": "Мама стукає"
+      "from": "fs-cat-kick",
+      "fadeOut": 0.02,
+      "note": "один короткий удар; мама стукає тричі (src/audio/sfx/home/cues.ts)"
     },
     "bag": {
       "from": "paper-bag",

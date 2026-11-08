@@ -22,7 +22,7 @@ const sounds: Record<string, SoundDef> = {
   slide: { files: range("dash", 4), gain: 0.35, pitch: 0.04, voices: 1 },
   // Падіння — найгучніше в групі: його треба помітити.
   fall: { files: ["fall-1"], gain: 0.85, pitch: 0.06, spread: 0.08, voices: 1, cooldownMs: 300 },
-  knock: { files: range("knock", 2), gain: 0.45, pitch: 0.05, voices: 1, cooldownMs: 300 },
+  knock: { files: ["knock-1"], gain: 0.45, pitch: 0.06, voices: 1, cooldownMs: 300 },
   "gasp-he": { files: range("gasp-he", 3), gain: 0.4, pitch: 0.03, voices: 1, cooldownMs: 300 },
   "gasp-she": { files: range("gasp-she", 3), gain: 0.4, pitch: 0.03, voices: 1, cooldownMs: 300 },
   swallow: { files: ["swallow"], gain: 0.5, pitch: 0.04, voices: 1 },

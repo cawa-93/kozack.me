@@ -315,15 +315,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "5a64fef0ac166b58f79642c9e83049d911632c5da9194d949acaabdb6dec4d9b"
     },
-    "baby-sneeze": {
-      "file": "commons/Baby_sneeze.ogg",
-      "url": "https://commons.wikimedia.org/wiki/File:Baby_sneeze.ogg",
-      "title": "Baby sneeze",
-      "author": "stephan (PDSounds)",
-      "license": "PD",
-      "licenseUrl": "https://commons.wikimedia.org/wiki/File:Baby_sneeze.ogg",
-      "sha256": "fde5adb8a4c72214cd4bda8a1d189c1d01bf6435d0020ccc2eeeba369f82c263"
-    },
     "fs-chatter-trill": {
       "file": "freesound/850103__catphony__chatter-and-trill.mp3",
       "url": "https://freesound.org/people/CatPhony/sounds/850103/",
@@ -413,6 +404,15 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "0c2576f9231ed3dcb2c1a5c381e82b6842b7f582bcb0503fdcf4ee1454ef0834"
+    },
+    "fs-spit2": {
+      "file": "freesound/643871__kneeling__spit2.ogg",
+      "url": "https://freesound.org/people/Kneeling/sounds/643871/",
+      "title": "spit2.ogg",
+      "author": "Kneeling",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "a2b3b9b70c41e2cab3141199f35b4a08369dfc93765d16d22c3202fc97f89541"
     }
   },
   "files": {
@@ -823,19 +823,11 @@
       "note": "кігті — різкий шкряб"
     },
     "sneeze-1": {
-      "from": "baby-sneeze",
-      "start": 1.86,
-      "end": 2.22,
-      "filter": "highpass=f=300",
-      "fadeOut": 0.05,
-      "note": "котяче «пчх»: чхання двомісячного немовляти, поштовхи мікрофона нижче 300 Гц зрізано"
-    },
-    "sneeze-2": {
-      "from": "baby-sneeze",
-      "start": 3.72,
-      "end": 4.06,
-      "filter": "highpass=f=300",
-      "fadeOut": 0.05
+      "from": "fs-spit2",
+      "start": 0.008,
+      "end": 0.3,
+      "fadeOut": 0.08,
+      "note": "котяче «пчх»: короткий видих-плювок"
     },
     "hack-1": {
       "from": "dc-hawk",
