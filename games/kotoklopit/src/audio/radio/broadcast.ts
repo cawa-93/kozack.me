@@ -6,6 +6,7 @@
 
 import { RADIO, SAMPLE_RATE } from "../config";
 import type { AudioEngine } from "../engine";
+import { soundFile } from "../sfx/files";
 import type { ChunkStore } from "./chunks";
 import { chunkKey, chunkOf, chunkSamples, chunkStart, nextSlot, slotAt, trackSamples, type ChunkRef, type Slot, type Station } from "./schedule";
 
@@ -181,24 +182,44 @@ export class Broadcast {
     if (context && this.noise) this.fade(context, this.noise, 0, context.currentTime);
   }
 
+  /**
+   * Гучність шуму ефіру. Вузол є одразу, а петлю з файлу (група `radio`) він отримує, щойно її декодовано: переходи йдуть як
+   * завжди, першу мить хіба що тихо. Не завантажилась — наступне настроювання спробує знову.
+   */
   private noiseGain(context: AudioContext): GainNode {
-    this.noise ??= startNoise(context, this.engine.music!);
-    return this.noise;
+    if (this.noise) return this.noise;
+    const gain = context.createGain();
+    gain.gain.value = 0;
+    gain.connect(this.engine.music!);
+    this.noise = gain;
+    void loadNoise(context).then((buffer) => {
+      if (this.noise !== gain) return;
+      if (!buffer) {
+        gain.disconnect();
+        this.noise = null;
+        return;
+      }
+      const source = context.createBufferSource();
+      source.buffer = buffer.data;
+      source.loop = true;
+      source.loopStart = buffer.loop.start;
+      source.loopEnd = buffer.loop.end;
+      source.connect(gain);
+      source.start(0, buffer.loop.start);
+    });
+    return gain;
   }
 }
 
-/** ТИМЧАСОВО (§8.10): білий шум створюється один раз під час гри, бо звук ще не обрано. До релізу замінити файлом. */
-function startNoise(context: AudioContext, output: AudioNode): GainNode {
-  const buffer = context.createBuffer(1, 2 * SAMPLE_RATE, SAMPLE_RATE);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-  const source = context.createBufferSource();
-  source.buffer = buffer;
-  source.loop = true;
-  const gain = context.createGain();
-  gain.gain.value = 0;
-  source.connect(gain);
-  gain.connect(output);
-  source.start();
-  return gain;
+/** Петля шуму ефіру: декодований файл і її коло в ньому, с; файлу немає чи мережа впала — null. */
+async function loadNoise(context: AudioContext): Promise<{ data: AudioBuffer; loop: { start: number; end: number } } | null> {
+  const file = soundFile("radio", "static");
+  if (!file?.loop) return null;
+  try {
+    const response = await fetch(file.url);
+    if (!response.ok) return null;
+    return { data: await context.decodeAudioData(await response.arrayBuffer()), loop: file.loop };
+  } catch {
+    return null;
+  }
 }

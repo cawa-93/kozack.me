@@ -46,8 +46,8 @@ export const RADIO = {
   parallelRequests: 3,
   /** Коли знову просити шматок, який не прийшов, мс. */
   retryMs: 2000,
-  /** Гучність шуму ефіру відносно музики. */
-  staticLevel: 0.07,
+  /** Гучність шуму ефіру відносно музики: файл шуму (`audio/sfx/radio/`) тоді на ~9 LU тихіший за музику (`LOUDNESS` у `scripts/audio/encode.ts`). */
+  staticLevel: 0.49,
   /** Згасання станції на перемиканні, с. */
   fadeSeconds: 0.2,
 } as const;

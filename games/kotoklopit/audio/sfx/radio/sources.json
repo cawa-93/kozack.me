@@ -1,0 +1,22 @@
+{
+  "originals": {
+    "fs-noise": {
+      "file": "freesound/751513__jsuite22__whitenoise_fade.wav",
+      "url": "https://freesound.org/people/jsuite22/sounds/751513/",
+      "title": "Whitenoise_fade",
+      "author": "jsuite22",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "81fd74eb11a01ba14060c7e0385b749bb711de83d2f3af4b131a4378f0754902"
+    }
+  },
+  "files": {
+    "static": {
+      "from": "fs-noise",
+      "start": 120,
+      "end": 126,
+      "loop": true,
+      "note": "Шум ефіру між станціями: середина п'ятихвилинного запису, без згасань на краях"
+    }
+  }
+}
