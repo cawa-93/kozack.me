@@ -104,8 +104,8 @@ export function isArtStub(image: Phaser.GameObjects.Image): boolean {
 }
 
 /**
- * Позначка для скрипта знімків: атлас завантажено («ready») чи його немає («none»). Кличе PreloadScene; скрипт знімків
- * чекає `<html data-art>`, якщо в сторінці є PreloadScene.
+ * Позначка для скрипта знімків: атлас завантажено («ready») чи його немає («none»). Кличе PreloadScene (лише під `__DEV_TOOLS__`:
+ * знімки роблять із dev-сервера); скрипт знімків чекає `<html data-art>`, якщо в сторінці є PreloadScene.
  */
 export function markArtReady(state: "ready" | "none"): void {
   document.documentElement.dataset[ART_READY_ATTR] = state;

@@ -379,7 +379,7 @@ export class DayScene extends Phaser.Scene {
   private soundMode(): SoundMode {
     if (this.asleep !== null) return "silent";
     if (this.state.trip || this.state.end !== null) return "away";
-    return this.overlay.isOpen || this.session.paused ? "paused" : "live";
+    return this.overlay.isOpen || (__DEV_TOOLS__ && this.session.paused) ? "paused" : "live";
   }
 
   /** Прибрати засинання: очі, наїзд і темряву (і темряву після дороги). */
@@ -483,7 +483,7 @@ export class DayScene extends Phaser.Scene {
 
   /** Гра стоїть: картка, пауза розробника, кінець гри, засинання, виїзд із дому чи заглушка «Поверніть телефон» (§10). */
   private blocked(): boolean {
-    return this.overlay.isOpen || this.session.paused || this.state.end !== null || this.asleep !== null || this.leaving !== null || isRotateNoticeShown();
+    return this.overlay.isOpen || (__DEV_TOOLS__ && this.session.paused) || this.state.end !== null || this.asleep !== null || this.leaving !== null || isRotateNoticeShown();
   }
 
   private readInput(): Input {
@@ -749,7 +749,7 @@ export class DayScene extends Phaser.Scene {
    */
   private tickClock(seconds: number, running: boolean, input?: Input): number {
     const working = workGoesOn(this.state, input);
-    const clock = clockFrame(this.session.workSeconds, { seconds, running, working, speed: this.session.speed });
+    const clock = clockFrame(this.session.workSeconds, { seconds, running, working, speed: __DEV_TOOLS__ ? this.session.speed : 1 });
     this.session.workSeconds = clock.boostSeconds;
     return clock.minutes;
   }
@@ -774,7 +774,7 @@ export class DayScene extends Phaser.Scene {
 
   private render(time: number, seconds: number): void {
     const state = this.state;
-    const frame: WorldFrame = { time, seconds, moving: this.moving, sleepiness: this.sleepiness(time), blocked: this.blocked(), showHidden: this.session.showHidden, lightMinute: lightMinuteOf(this.session, state.minute) };
+    const frame: WorldFrame = { time, seconds, moving: this.moving, sleepiness: this.sleepiness(time), blocked: this.blocked(), showHidden: __DEV_TOOLS__ && this.session.showHidden, lightMinute: lightMinuteOf(this.session, state.minute) };
     this.hud.update(state, time);
     if (!this.overlay.isOpen && !this.hud.saying) {
       const news = this.news.shift();
@@ -1419,6 +1419,6 @@ export class DayScene extends Phaser.Scene {
 
 /** Хвилина світла доби для кадру (§8.9): за годинником гри, або та, яку задав режим розробки (`Session.lightAt`). */
 function lightMinuteOf(session: Session, minute: number): number | null {
-  const at = session.lightAt;
+  const at = __DEV_TOOLS__ ? session.lightAt : null;
   return at === "off" ? null : (at ?? minute);
 }

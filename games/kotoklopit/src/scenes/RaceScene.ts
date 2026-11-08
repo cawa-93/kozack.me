@@ -383,7 +383,7 @@ export class RaceScene extends Phaser.Scene {
     if (this.running()) {
       const seconds = Math.min(delta / 1000, MAX_FRAME_SECONDS);
       const input = this.input_();
-      const { result, night } = drive(this.session.save, raceMinutes(seconds) * this.session.speed, input);
+      const { result, night } = drive(this.session.save, raceMinutes(seconds) * (__DEV_TOOLS__ ? this.session.speed : 1), input);
       const race = this.state.trip?.race;
       if (result === null && race) {
         if (this.horns.tick(race, seconds * 1000)) uiSound("trip", "horn");
@@ -436,7 +436,7 @@ export class RaceScene extends Phaser.Scene {
 
   /** Чи йде час дороги: пауза розробника чи заглушка «Поверніть телефон» (§10) зупиняють і гонку, і анімації. */
   private running(): boolean {
-    return !this.session.paused && !isRotateNoticeShown();
+    return !(__DEV_TOOLS__ && this.session.paused) && !isRotateNoticeShown();
   }
 
   /** Мілісекунди анімації за кадр: стільки ж, скільки гра йде (довгий кадр — не більше 0,1 с). */
@@ -527,7 +527,7 @@ export class RaceScene extends Phaser.Scene {
     const trip = this.state.trip;
     const art = this.art;
     if (!trip || !art) return this.finish({ mode: "race" });
-    const start = arrivalStart(trip.race, trip.seed, this.session.speed, (car) => art.lookOf(car));
+    const start = arrivalStart(trip.race, trip.seed, __DEV_TOOLS__ ? this.session.speed : 1, (car) => art.lookOf(car));
     this.arrival = { start, ms: 0, save: this.session.save };
     this.stick = null;
     this.g.clear();
@@ -715,7 +715,7 @@ export class RaceScene extends Phaser.Scene {
    * удома тон не стрибає. Режим розробки задає хвилину сам (`Session.lightAt`, `?light=`); `off` — без світла доби (null).
    */
   private lightMinute(): number | null {
-    const at = this.session.lightAt;
+    const at = __DEV_TOOLS__ ? this.session.lightAt : null;
     if (at === "off") return null;
     if (at !== null) return at;
     const home = this.home;

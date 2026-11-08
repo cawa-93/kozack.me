@@ -113,8 +113,8 @@ export class PreloadScene extends Phaser.Scene {
       game.scene.stop(this.scene.key);
       game.scene.start(this.next);
     } finally {
-      // І якщо сцена впала: скрипт знімків покаже її помилку, а не «не дочекався атласу».
-      markArtReady(state);
+      // І якщо сцена впала: скрипт знімків покаже її помилку, а не «не дочекався атласу». Знімки — лише з dev-сервера.
+      if (__DEV_TOOLS__) markArtReady(state);
     }
     warmCardArt();
   }

@@ -55,6 +55,17 @@ describe("режим розробки", () => {
       }
     }
   });
+
+  // Поза `src/dev/` код режиму розробки — лише під `__DEV_TOOLS__`: тоді продакшн-збірка його викидає.
+  it("поля сесії режиму розробки й приховані числа поза src/dev — лише під __DEV_TOOLS__", () => {
+    for (const [file, source] of Object.entries(app)) {
+      if (file.includes("/src/dev/")) continue;
+      for (const line of source.split("\n")) {
+        if (/^\s*(\/\/|\/?\*)/.test(line)) continue;
+        if (/session\.(speed|paused|showHidden|lightAt)\b|new HiddenNumbers\b/.test(line)) expect(line, file).toMatch(/__DEV_TOOLS__/);
+      }
+    }
+  });
 });
 
 const pages = import.meta.glob<string>(["../index.html", "../gallery.html", "../sounds.html"], { query: "?raw", import: "default", eager: true });

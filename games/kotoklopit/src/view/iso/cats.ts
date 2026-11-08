@@ -42,6 +42,7 @@ import { IsoCatView, type CatFrame } from "./catview";
 import { ISO_DEPTH_SLOT, isoDepth, type IsoDepth } from "./depth";
 import { liftedRoot, PERSON_DEPTH } from "./personlook";
 import { CARRIER_GRATE_DEPTH } from "./floor";
+import { HiddenNumbers } from "./hiddennums";
 
 /** На скільки вбік від голови персонажа бабл кота, якого він тримає на руках, px (§11.4), — як у старому вигляді. */
 const CARRIED_BUBBLE_SHIFT = 34;
@@ -164,8 +165,8 @@ export class IsoCatsView implements CatsPart {
   private readonly views = new Map<number, IsoCatView>();
   private readonly memory = new Map<number, Memory>();
   private readonly clouds = new Map<string, Cloud>();
-  /** Приховані числа над котами в режимі розробки (§11.5). */
-  private readonly hiddenLabels = new Map<number, Phaser.GameObjects.Text>();
+  /** Приховані числа над котами (§11.5): лише в режимі розробки, без `__DEV_TOOLS__` збірка викидає `HiddenNumbers`. */
+  private readonly hidden: HiddenNumbers | null;
   /** Імена над котами в нашийниках (§9.10). */
   private readonly collarLabels = new Map<number, Phaser.GameObjects.Text>();
   /** Підсвітка: кого просили цього кадру, кого світимо зараз. */
@@ -232,6 +233,7 @@ export class IsoCatsView implements CatsPart {
   constructor(private readonly ctx: PartContext) {
     this.depth = isoDepth(ctx);
     this.webgl = ctx.scene.sys.game.renderer.type === Phaser.WEBGL;
+    this.hidden = __DEV_TOOLS__ ? new HiddenNumbers(ctx) : null;
   }
 
   update(state: GameState, frame: WorldFrame): void {
@@ -257,19 +259,18 @@ export class IsoCatsView implements CatsPart {
       const view = this.viewOf(cat);
       const mem = this.memoryOf(cat.id);
       this.drawCat(state, cat, view, mem, size, pairs.get(cat.id) ?? null, crowd.get(cat.id) ?? null, time, frame.seconds);
-      this.drawHidden(cat, view, frame.showHidden);
+      this.hidden?.draw(cat, view, frame.showHidden);
       this.drawCollar(cat, view);
     }
     // Підписи котів поруч (пара, клубок бійки) не налягають: вищий — над нижчим.
     this.separate(this.collarLabels);
-    this.separate(this.hiddenLabels);
+    if (this.hidden) this.separate(this.hidden.labels);
     for (const [id, view] of this.views) {
       if (alive.has(id)) continue;
       view.destroy();
       this.views.delete(id);
       this.memory.delete(id);
-      this.hiddenLabels.get(id)?.destroy();
-      this.hiddenLabels.delete(id);
+      this.hidden?.remove(id);
       this.collarLabels.get(id)?.destroy();
       this.collarLabels.delete(id);
     }
@@ -787,24 +788,6 @@ export class IsoCatsView implements CatsPart {
     }
   }
 
-  /** Режим розробки: настрій, здоров'я й любов над котом (§11.5). */
-  private drawHidden(cat: Cat, view: IsoCatView, shown: boolean): void {
-    let label = this.hiddenLabels.get(cat.id);
-    if (!shown || !view.shown) {
-      label?.setVisible(false);
-      return;
-    }
-    if (!label) {
-      label = this.ctx.scene.add
-        .text(0, 0, "", { fontFamily: "system-ui, sans-serif", fontSize: "13px", color: "#ffffff", backgroundColor: "#1f1a24", padding: { x: 3, y: 1 }, resolution: 2 })
-        .setOrigin(0.5, 1)
-        .setDepth(WORLD_LAYERS.hidden)
-        .addToDisplayList(this.ctx.layer);
-      this.hiddenLabels.set(cat.id, label);
-    }
-    label.setVisible(true).setPosition(view.head.x, view.head.y - 30).setText(`н${Math.round(cat.mood)} з${Math.round(cat.health)} л${Math.round(cat.love)}`);
-  }
-
   /** Ім'я над котом у нашийнику (§9.10). */
   private drawCollar(cat: Cat, view: IsoCatView): void {
     let label = this.collarLabels.get(cat.id);
@@ -839,8 +822,7 @@ export class IsoCatsView implements CatsPart {
       for (const tuft of cloud.tufts) tuft.destroy();
     }
     this.clouds.clear();
-    for (const label of this.hiddenLabels.values()) label.destroy();
-    this.hiddenLabels.clear();
+    this.hidden?.clear();
     for (const label of this.collarLabels.values()) label.destroy();
     this.collarLabels.clear();
   }
