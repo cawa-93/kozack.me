@@ -311,12 +311,13 @@ export class GameScene extends Phaser.Scene {
     this.#nextGuestDialogueInMs = null;
     this.#nextGuestDialogueOrdinal = 1;
     this.#gameSpeed = 1;
-    this.#developmentRun = import.meta.env.DEV
+    const developmentRun = import.meta.env.DEV
       && data.developmentRun === true;
-    const initialLevelNumber = this.#developmentRun
+    this.#developmentRun = developmentRun;
+    const initialLevelNumber = developmentRun
       ? data.initialLevelNumber ?? 1
       : 1;
-    const initialCoinBonus = this.#developmentRun
+    const initialCoinBonus = developmentRun
       ? data.initialCoinBonus ?? 0
       : 0;
     this.#simulation = new GameSimulation(
@@ -3280,7 +3281,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     const completedLevels = this.#simulation.completedLevelCount;
-    const record = this.#developmentRun
+    const record = import.meta.env.DEV && this.#developmentRun
       ? null
       : updateHighScore(completedLevels);
     const panelY = showBlanketIllustration ? 208 : 338;

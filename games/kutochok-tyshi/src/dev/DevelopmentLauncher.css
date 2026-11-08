@@ -1,0 +1,52 @@
+.development-level-launcher {
+  position: fixed;
+  z-index: 10000;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  color: #51345f;
+  background: rgb(255 248 232 / 94%);
+  border: 2px solid #765080;
+  border-radius: 14px;
+  box-shadow: 4px 5px 0 rgb(81 52 95 / 22%);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.development-level-launcher__badge {
+  padding: 3px 6px;
+  color: #fff8e8;
+  background: #765080;
+  border-radius: 7px;
+  letter-spacing: 0.06em;
+}
+
+.development-level-launcher input {
+  width: 92px;
+  height: 30px;
+  padding: 3px 7px;
+  color: #51345f;
+  background: #fffdf5;
+  border: 2px solid #b78aaa;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.development-level-launcher button {
+  width: 34px;
+  height: 30px;
+  padding: 0;
+  color: #51345f;
+  background: #9fd7c7;
+  border: 2px solid #765080;
+  border-radius: 9px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.development-level-launcher button:hover {
+  background: #b8e4d7;
+}

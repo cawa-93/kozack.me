@@ -3,6 +3,7 @@ import {
   parseDevelopmentLevel,
   resolveDevelopmentLaunch,
 } from './DevelopmentLaunch';
+import './DevelopmentLauncher.css';
 
 const LAUNCHER_ID = 'development-level-launcher';
 
