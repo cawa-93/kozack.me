@@ -6,9 +6,10 @@ import { petOver, petTolerance } from "../src/sim/actions";
 import { isMoving } from "../src/sim/body";
 import { petResting, traitLevel } from "../src/sim/cat";
 import { catOnComputer, isDirty, itemsOf, trashTipped } from "../src/sim/catai";
-import { BODY_PACE, DISEASES, ILLNESSES, MEDICINE, MINUTES_PER_DAY, PETTING, PRODUCTS, SHELTER, VET } from "../src/sim/config";
+import { BODY_PACE, DISEASES, DRESSING, ILLNESSES, MEDICINE, MINUTES_PER_DAY, PETTING, PRODUCTS, SHELTER, STAT_MAX, VET } from "../src/sim/config";
 import { giveMedicine, isControlled } from "../src/sim/diseases";
-import { needsHumanMeds } from "../src/sim/illness";
+import { dressingFor } from "../src/sim/dressing";
+import { isIll, needsHumanMeds } from "../src/sim/illness";
 import { FUR_SPOTS, furVisible, isDryMess, pendingTufts, tuftsOf } from "../src/sim/household";
 import { waterCapacity } from "../src/sim/resources";
 import { DUST_SPOTS, dustOf, floorDust } from "../src/sim/dust";
@@ -181,6 +182,11 @@ export class Bot {
     if (this.wantsShelter()) return named("shelter", () => this.shelterTrip());
     // Хворий персонаж п'є ліки біля умивальника (§6.5): хвороба забирає здоров'я щоночі.
     if (needsHumanMeds(s) && supplyCount(s, "humanMeds") > 0 && !this.skipped("sink")) return named("meds", () => this.use("sink"));
+    // Бинт знімає травму одразу, пластир — підлатати здоров'я, коли його помітно бракує (§6.5): умивальник сам обере, що взяти.
+    const dressing = dressingFor(s);
+    if (dressing !== null && ((dressing === "premium" && isIll(s, "injury")) || s.character.stats.health <= STAT_MAX - DRESSING.health.premium) && !this.skipped("sink")) {
+      return named("dressing", () => this.use("sink"));
+    }
     // Бійку розбороняє, а протистояння розводить — торкнувшись кота (§9.4).
     const fighter = s.cats.find((c) => (c.act.kind === "fight" || c.act.kind === "standoff") && c.away === null);
     if (fighter) return named("separate", () => this.separate(fighter));
@@ -328,6 +334,12 @@ export class Bot {
     need("hygiene", 3);
     need("detergent", 2);
     if (s.character.illnesses.some((i) => ILLNESSES[i.id].doses !== null)) need("humanMeds", 1);
+    need("dressing", 2);
+    // Травма — пачка бинтів: вона знімає травму одразу (§6.5).
+    const bandages = s.home.supplies.dressing.premium + (s.home.boxes?.dressing?.premium ?? 0) + [...s.home.deliveries, ...s.home.porch].filter((d) => "product" in d && d.product === "dressing" && d.quality === "premium").length;
+    if (bandages === 0 && s.character.illnesses.some((i) => i.id === "injury") && s.character.money > PRODUCTS.dressing.price.premium + SPARE_MONEY) {
+      cart.push({ goods: { product: "dressing" }, quality: "premium", count: 1 });
+    }
     if (cats > 0) {
       const sick = (medicine: Medicine): boolean => s.cats.some((c) => c.diseases.some((d) => {
         const cure = DISEASES[d.id].cure;
