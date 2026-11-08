@@ -7,17 +7,14 @@ import type { SoundDef } from "../types";
 
 const files = (name: string, count: number): string[] => Array.from({ length: count }, (_, i) => `${name}-${i + 1}`);
 
-/** Вулицю чути з трьох вікон водночас (`AMBIENT.windows`): петлі вулиці — на три голоси. */
-const STREET = 3;
-
 export const AMBIENT_SOUNDS = {
-  birds: { files: ["birds-loop"], gain: 0.055, loop: true, voices: STREET },
-  city: { files: ["city-loop"], gain: 0.065, loop: true, voices: STREET },
-  evening: { files: ["evening-loop"], gain: 0.05, loop: true, voices: STREET },
-  rain: { files: ["rain-loop"], gain: 0.055, loop: true, voices: STREET },
-  cicadas: { files: ["cicadas-loop"], gain: 0.055, loop: true, voices: STREET },
-  wind: { files: ["wind-loop"], gain: 0.055, loop: true, voices: STREET },
-  festival: { files: ["festival-loop"], gain: 0.07, loop: true, voices: STREET },
+  birds: { files: ["birds-loop"], gain: 0.055, loop: true },
+  city: { files: ["city-loop"], gain: 0.065, loop: true },
+  evening: { files: ["evening-loop"], gain: 0.05, loop: true },
+  rain: { files: ["rain-loop"], gain: 0.055, loop: true },
+  cicadas: { files: ["cicadas-loop"], gain: 0.055, loop: true },
+  wind: { files: ["wind-loop"], gain: 0.055, loop: true },
+  festival: { files: ["festival-loop"], gain: 0.07, loop: true },
   party: { files: ["party-loop"], gain: 0.1, loop: true },
   fridge: { files: ["fridge-loop"], gain: 0.04, loop: true },
   drill: { files: files("drill", 3), gain: 0.11, pitch: 0.04, spread: 0.15, cooldownMs: 0, voices: 1 },
