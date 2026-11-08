@@ -1,0 +1,131 @@
+// Телефон — смартфон набік (GAME_DESIGN §6.4): своє оформлення картки (`skin: "phone"`, `phone.css`), угорі екрана — рядок стану
+// з годинником гри; вкладки лишаються вкладками картки, хрестик — закриває, як Esc.
+
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+
+import { createCat } from "../src/sim/cat";
+import { newGame } from "../src/sim/game";
+import { addCat } from "../src/sim/night";
+import { createRng } from "../src/sim/rng";
+import { formatClock } from "../src/sim/time";
+import type { GameState } from "../src/sim/types";
+import { phoneCard, type PhoneHandlers, type PhoneTab } from "../src/ui/cards";
+import { GLYPH_ART } from "../src/view/art/manifest/a12-icons";
+
+// Живий портрет кота (вкладка «Коти») малює на полотні атласом арту — у DOM без браузера його немає.
+vi.mock("../src/ui/liveportrait", () => ({ liveCatPortrait: () => undefined }));
+
+/** Найпростіший DOM без браузера: елемент пам'ятає клас, текст, дітей і атрибути. */
+class FakeElement {
+  className = "";
+  hidden = false;
+  disabled = false;
+  value = "";
+  type = "";
+  readonly style: Record<string, string> = {};
+  readonly attributes: Record<string, string> = {};
+  children: (FakeElement | string)[] = [];
+  private text = "";
+  readonly classList = {
+    toggle: (name: string, force?: boolean): boolean => {
+      const set = new Set(this.className.split(" ").filter(Boolean));
+      const on = force ?? !set.has(name);
+      if (on) set.add(name);
+      else set.delete(name);
+      this.className = [...set].join(" ");
+      return on;
+    },
+    add: (name: string): void => void this.classList.toggle(name, true),
+    remove: (name: string): void => void this.classList.toggle(name, false),
+  };
+  constructor(readonly tagName: string) {}
+  get textContent(): string {
+    return this.text + this.children.map((c) => (typeof c === "string" ? c : c.textContent)).join("");
+  }
+  set textContent(value: string) {
+    this.text = value;
+    this.children = [];
+  }
+  append(...nodes: (FakeElement | string)[]): void {
+    this.children.push(...nodes);
+  }
+  setAttribute(name: string, value: string): void {
+    this.attributes[name] = value;
+  }
+  addEventListener(): void {}
+  find(className: string): FakeElement | undefined {
+    for (const child of this.children) {
+      if (typeof child === "string") continue;
+      if (child.className.split(" ").includes(className)) return child;
+      const found = child.find(className);
+      if (found) return found;
+    }
+    return undefined;
+  }
+}
+
+const noop = (): void => undefined;
+const handlers: PhoneHandlers = { checkout: noop, discard: noop, discardThing: noop, advertise: noop, cancelAd: noop, newGame: noop, exportSave: noop, importSave: noop, tab: noop, close: noop, effects: { volume: 1, set: noop } };
+const TABS: PhoneTab[] = ["shop", "mine", "cats", "album", "game"];
+
+/** Гра з котом і записом в альбомі: у телефоні всі п'ять вкладок. */
+function fullPhone(): GameState {
+  const state = newGame({ address: "she", difficulty: "normal", seed: 8 }).current;
+  const cat = createCat(state, createRng(3), { source: "shelter", ageWeeks: 20, at: { x: 9.5, y: 8.5 } });
+  addCat(state, cat);
+  const { id, name, sex, source, ageWeeks, traits, breed, genes, shape } = cat;
+  state.album.push({ id: id + 1, name, sex, source, ageWeeks, traits, breed, genes, shape, cause: { kind: "old" }, lifeMood: 60, days: 10, arrivedDay: 0, day: 3 });
+  return state;
+}
+
+beforeAll(() => {
+  vi.stubGlobal("document", { createElement: (tag: string) => new FakeElement(tag), createTreeWalker: () => ({ nextNode: () => null }) });
+  vi.stubGlobal("NodeFilter", { SHOW_TEXT: 4 });
+  vi.stubGlobal("window", { matchMedia: () => ({ matches: false }) });
+});
+afterAll(() => vi.unstubAllGlobals());
+
+describe("телефон — смартфон набік", () => {
+  it("на кожній вкладці — оформлення телефона, вкладки й хрестик", () => {
+    const state = fullPhone();
+    for (const tab of TABS) {
+      const card = phoneCard(state, tab, handlers);
+      expect(card.skin, tab).toBe("phone");
+      expect(card.tabs?.find((t) => t.active)?.label, tab).toBeDefined();
+      expect(card.closable, tab).toBe(true);
+      expect(card.onDismiss, tab).toBe(handlers.close);
+    }
+  });
+
+  it("рядок стану першим у тілі: годинник гри, значки зв'язку й батареї приховані від читача екрана", () => {
+    const state = fullPhone();
+    for (const minute of [9 * 60 + 5, 23 * 60 + 59]) {
+      state.minute = minute;
+      for (const tab of TABS) {
+        const bar = phoneCard(state, tab, handlers).body[0] as unknown as FakeElement;
+        expect(bar.className, tab).toBe("phone-status");
+        expect(bar.find("phone-clock")?.textContent, tab).toBe(formatClock(minute));
+        const icons = bar.find("phone-status-icons");
+        expect(icons?.attributes["aria-hidden"]).toBe("true");
+        expect(icons?.find("phone-signal")).toBeDefined();
+        expect(icons?.find("phone-battery")).toBeDefined();
+      }
+    }
+    expect(formatClock(9 * 60 + 5)).toBe("09:05");
+  });
+
+  // `phone.css` фарбує плитку вкладки за її місцем: Магазин і Речі — перші дві, Коти — третя з іконкою, Альбом — посередині без
+  // іконки, Гра — остання без іконки. Змінився порядок чи іконки — треба змінити й кольори там.
+  it("порядок вкладок і їхні іконки — ті, на які спираються кольори плиток", () => {
+    const glyphs = Object.keys(GLYPH_ART);
+    const hasGlyph = (label: string): boolean => glyphs.some((g) => label.includes(g));
+    const labels = (state: GameState): string[] => (phoneCard(state, "shop", handlers).tabs ?? []).map((t) => t.label);
+    const full = labels(fullPhone());
+    expect(full).toHaveLength(5);
+    expect(full.map(hasGlyph)).toEqual([true, true, true, false, false]);
+    expect(full.at(-1)).toContain("Гра");
+    // Без котів і альбому — лише Магазин, Речі й Гра.
+    const fresh = labels(newGame({ address: "she", difficulty: "normal", seed: 8 }).current);
+    expect(fresh).toEqual([full[0], full[1], full[4]]);
+  });
+});
