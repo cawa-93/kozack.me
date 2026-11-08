@@ -1,5 +1,5 @@
 // Звуки роботи (§8.6, §4.1, §11.4а; `SOUND_PLAN.md`, «Ефекти», рядок `work`): кожна подія роботи звучить наявним звуком,
-// тривога терпіння — лише коли воно падає, клавіші клацають, поки персонаж друкує, гамір дзвінка — поки він на дзвінку,
+// тривога терпіння — лише коли воно падає, клавіші клацають, поки персонаж друкує, колеги кажуть — поки він на дзвінку,
 // телефон — поки дзвінок мами чекає відповіді.
 
 import { describe, expect, it } from "vitest";
@@ -7,7 +7,8 @@ import { describe, expect, it } from "vitest";
 import { soundFile } from "../src/audio/sfx/files";
 import { group } from "../src/audio/sfx/groups/work";
 import type { Cue, LoopCue } from "../src/audio/sfx/types";
-import { isTyping } from "../src/audio/sfx/work/loops";
+import { isOnCall, isTyping } from "../src/audio/sfx/work/loops";
+import { Talk } from "../src/audio/sfx/work/talk";
 import { Typing, TYPING } from "../src/audio/sfx/work/typing";
 import { MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../src/sim/config";
 import type { GameEvent, ModifierEvent } from "../src/sim/events";
@@ -137,7 +138,7 @@ describe("звуки роботи: петлі зі стану (§8.6, §4.1)", (
     expect(typed.some((cue) => cue.sound === "mouse")).toBe(false);
   });
 
-  it("летучка з симуляції: гудок виклику, гамір колег замість клавіатури, потім знову клавіатура", () => {
+  it("летучка з симуляції: гудок виклику, голоси колег замість клавіатури, потім знову клавіатура", () => {
     const save = game();
     const state = save.current;
     expect(isWorkday(state) && standupToday(state)).toBe(true);
@@ -147,27 +148,36 @@ describe("звуки роботи: петлі зі стану (§8.6, §4.1)", (
     const { events, stop } = recordEvents();
     try {
       advance(save, 10);
-      expect(names(loops(state))).toEqual(["murmur"]);
+      expect(isOnCall(state)).toBe(true);
       expect(isTyping(state)).toBe(false);
-      expectPlayable(loops(state), true);
+      expect(loops(state)).toEqual([]);
+      const talk = new Talk(() => 0.5);
+      const heard: Cue[] = [];
+      for (let t = 0; t < 6000; t += 16) heard.push(...talk.tick(state, 16));
+      expect(new Set(names(heard))).toEqual(new Set(["talk"]));
+      // Фраза — щосекунди-дві, не одна на одну.
+      expect(heard.length).toBeGreaterThanOrEqual(2);
+      expect(heard.length).toBeLessThanOrEqual(6);
+      expectPlayable(heard, false);
       advance(save, STANDUP_MINUTES);
     } finally {
       stop();
     }
     expect(loops(state)).toEqual([]);
     expect(isTyping(state)).toBe(true);
+    expect(isOnCall(state)).toBe(false);
     const heard = events.flatMap((e) => names(onEvent(e, state)));
     expect(heard).toContain("call");
     expect(heard).toContain("call-ok");
     for (const event of events) expectPlayable(onEvent(event, state), false);
   });
 
-  it("важлива нарада дня — теж гамір; безробітний шукає роботу, клацаючи клавішами, навіть о летучці", () => {
+  it("важлива нарада дня — теж голоси колег; безробітний шукає роботу, клацаючи клавішами, навіть о летучці", () => {
     const state = game().current;
     state.modifiers.day = "meeting";
     state.minute = MODIFIERS.meeting.from + 1;
     startWork(state);
-    expect(names(loops(state))).toEqual(["murmur"]);
+    expect(isOnCall(state)).toBe(true);
 
     const jobless = game().current;
     jobless.job.unemployed = true;

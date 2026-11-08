@@ -6,10 +6,12 @@ import type { GameState } from "../../../sim/types";
 import { isWorking } from "../../../sim/work";
 import type { Cue, SoundGroup } from "../types";
 import { workLoops } from "../work/loops";
+import { Talk } from "../work/talk";
 import { Typing } from "../work/typing";
 
 const NONE: readonly Cue[] = [];
 const typing = new Typing();
+const talk = new Talk();
 const atComputer = (sound: string): readonly Cue[] => [{ sound, at: "computer" }];
 const anywhere = (sound: string): readonly Cue[] => [{ sound }];
 
@@ -50,15 +52,15 @@ function modifierCues(kind: ModifierEvent): readonly Cue[] {
 
 export const group: SoundGroup = {
   id: "work",
-  // Гучність за найгучнішими 300 мс файлу: гамір — тло (близько −32 дБ), клавіші — тихі клацання; «!», «Х» і виклик на дзвінок
-  // звучать,
+  // Гучність за найгучнішими 300 мс файлу: голоси колег — тло, клавіші — тихі клацання; «!», «Х» і виклик на дзвінок звучать,
   // коли персонаж далеко від комп'ютера, тож гучніші за решту: відстань їх притишить (`SFX.floor`).
   sounds: {
     "work-start": { files: ["work-start"], gain: 0.15 },
     // Клавіша: одна, а набір складає `work/typing.ts`; розкид висоти й гучності — щоб клавіші звучали по-різному.
     key: { files: ["key-1"], gain: 0.3, pitch: 0.08, spread: 0.25, cooldownMs: 30, voices: 3 },
     mouse: { files: ["mouse-1", "mouse-2"], gain: 0.3, pitch: 0.04, spread: 0.15, cooldownMs: 0, voices: 2 },
-    murmur: { files: ["murmur"], loop: true, gain: 0.28 },
+    // Голоси колег: фраза за фразою (`work/talk.ts`), не одна на одну.
+    talk: { files: ["talk-1", "talk-2", "talk-3", "talk-4", "talk-5", "talk-6"], gain: 0.25, pitch: 0.03, spread: 0.15, cooldownMs: 0, voices: 1 },
     // Дзвінок — сама картка «Мама дзвонить»: поки вона висить, час стоїть, а дзвінок не тихне.
     ring: { files: ["ring"], loop: true, gain: 0.4, ui: true },
     coin: { files: ["coin"], gain: 0.75, pitch: 0.03 },
@@ -106,6 +108,14 @@ export const group: SoundGroup = {
   },
 
   loops: workLoops,
-  tick: (state, dtMs) => typing.tick(state, dtMs),
-  reset: () => typing.reset(),
+  tick: (state, dtMs) => {
+    // Друкує й на дзвінку — ніколи водночас (`isTyping`, `isOnCall`): звучить щонайбільше одне.
+    const keys = typing.tick(state, dtMs);
+    const voices = talk.tick(state, dtMs);
+    return keys.length > 0 ? keys : voices;
+  },
+  reset: () => {
+    typing.reset();
+    talk.reset();
+  },
 };

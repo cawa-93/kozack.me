@@ -108,15 +108,6 @@
       "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
       "sha256": "8e10238f86d6e7495165f5a60f02a816eed98bf083fec8e18271578839e842ae"
     },
-    "cafe": {
-      "file": "commons/Cafe_ambiance.ogg",
-      "url": "https://commons.wikimedia.org/wiki/File:Cafe_ambiance.ogg",
-      "title": "Cafe ambiance",
-      "author": "Marble Toast",
-      "license": "CC0-1.0",
-      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
-      "sha256": "6360791fdcee1f64638f0fc9abd6d2c7a1aa75fd3d2b80033170a02d025099dc"
-    },
     "gs-accept": {
       "file": "commons/Accept_(Gravity_Sound).wav",
       "url": "https://commons.wikimedia.org/wiki/File:Accept_(Gravity_Sound).wav",
@@ -152,6 +143,24 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "3c5d6abe2b0912ac973975efc12bfa8acc686ff2161a6716efff1c207be44795"
+    },
+    "fs-mmh": {
+      "file": "freesound/557374__valentinpetiteau__voice_man_mmh_calling_closed-mouth.wav",
+      "url": "https://freesound.org/people/ValentinPetiteau/sounds/557374/",
+      "title": "Voice_Man_mmh_calling_closed-mouth.wav",
+      "author": "ValentinPetiteau",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "8099bb6b19f01573353506cfaba18df7ad303df659c79c6131fe9b29191958b8"
+    },
+    "fs-hey": {
+      "file": "freesound/469162__hawkeye_sprout__stand-out-calling-02.wav",
+      "url": "https://freesound.org/people/Hawkeye_Sprout/sounds/469162/",
+      "title": "Stand out (calling 02).wav",
+      "author": "Hawkeye_Sprout",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "sha256": "f6ebe2f52686ca6f261f2e88e022395cd9e9b3fa937e88d6ee143a83af188b13"
     }
   },
   "files": {
@@ -249,13 +258,54 @@
       "loop": true,
       "note": "Мама дзвонить: дзвінок дискового телефона петлею — трель 2,6 с і тиша; гул кімнати нижче 150 Гц зрізано"
     },
-    "murmur": {
-      "from": "cafe",
-      "start": 353,
-      "end": 359.3,
-      "filter": "highpass=f=250,highpass=f=250,lowpass=f=800,lowpass=f=800",
-      "loop": true,
-      "note": "Гамір колег на дзвінку петлею: розмови в кав'ярні, звужені до нерозбірливого бубоніння з динаміка"
+    "talk-1": {
+      "from": "fs-mmh",
+      "start": 0.33,
+      "end": 0.82,
+      "fadeIn": 0.01,
+      "fadeOut": 0.05,
+      "filter": "highpass=f=200,lowpass=f=4000",
+      "note": "безсловесна фраза колеги на дзвінку; частоти звужено, як із динаміка"
+    },
+    "talk-2": {
+      "from": "fs-mmh",
+      "start": 3.89,
+      "end": 4.3,
+      "fadeIn": 0.01,
+      "fadeOut": 0.05,
+      "filter": "highpass=f=200,lowpass=f=4000"
+    },
+    "talk-3": {
+      "from": "fs-mmh",
+      "start": 6.91,
+      "end": 7.38,
+      "fadeIn": 0.01,
+      "fadeOut": 0.05,
+      "filter": "highpass=f=200,lowpass=f=4000"
+    },
+    "talk-4": {
+      "from": "fs-mmh",
+      "start": 9.31,
+      "end": 10.13,
+      "fadeIn": 0.01,
+      "fadeOut": 0.05,
+      "filter": "highpass=f=200,lowpass=f=4000"
+    },
+    "talk-5": {
+      "from": "fs-hey",
+      "start": 0.05,
+      "end": 0.83,
+      "fadeIn": 0.01,
+      "fadeOut": 0.05,
+      "filter": "highpass=f=200,lowpass=f=4000"
+    },
+    "talk-6": {
+      "from": "fs-hey",
+      "start": 0.9,
+      "end": 1.7,
+      "fadeIn": 0.01,
+      "fadeOut": 0.05,
+      "filter": "highpass=f=200,lowpass=f=4000"
     },
     "mouse-1": {
       "from": "fs-mouse-clicks",
