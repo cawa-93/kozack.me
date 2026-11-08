@@ -160,7 +160,7 @@ describe("вогні під кузовом своєї машини", () => {
     expect(underBody(at(w / 2 - 1, h / 2 - 1), { ...pose, rotation: 0 }, "player", k)).toBe(false);
   });
 
-  it("кадр аварії: фари машини впритул позаду (сим тримає її за `RACE.carLength`) і задні вогні тієї, у яку врізалися, — під кузовом своєї й не горять; решта горять", () => {
+  it("кадр аварії: задні вогні тієї, у яку врізалися, — під кузовом своєї й не горять; машина позаду бампер до бампера (`RACE.carLength`) — її фари горять", () => {
     const save = scenario("night-drive");
     const race = save.current.trip?.race;
     if (!race) throw new Error("немає гонки");
@@ -186,7 +186,8 @@ describe("вогні під кузовом своєї машини", () => {
       const own = { x: laneX(cx, race.lane, k), y: playerY, rotation: steerTilt(race.lane, race.targetLane) };
       const poseOf = (car: RaceCar): { x: number; y: number; rotation: number } => ({ x: laneX(cx, car.lane, k), y: playerY - (carAt(race, car) - race.done) * ppu, rotation: 0 });
       for (const kind of TRAFFIC_KINDS) {
-        expect(trafficLights(poseOf(behind), kind, own, k).map((light) => light.kind), kind).toEqual(["tail", "tail"]);
+        // Машина позаду стоїть бампер до бампера (довжина зіткнення — кузов на малюнку): її фари не під своєю машиною й горять.
+        expect(trafficLights(poseOf(behind), kind, own, k).map((light) => light.kind), kind).toEqual(["head", "head", "tail", "tail"]);
         expect(trafficLights(poseOf(ahead), kind, own, k).map((light) => light.kind), kind).toEqual(["head", "head"]);
         // Без своєї машини — усі чотири, як `carLights`.
         expect(trafficLights(poseOf(behind), kind, null, k)).toEqual(carLights(poseOf(behind), kind, k));

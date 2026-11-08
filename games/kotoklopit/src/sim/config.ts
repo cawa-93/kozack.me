@@ -822,12 +822,12 @@ export const RACE = {
    * Своя смуга вільна від старту, щоб без натискань не наздогнати потік: (`startSpeed` − `carSpeed`)² / (2 × `coasting`) +
    * `carLength` + запас.
    */
-  startClear: 4.7,
+  startClear: 4.8,
   /**
    * Сусідні смуги вільні, щоб перестроювання першою дією давало `startReaction`; більше — й машин на старті не лишилося б
    * (`racePixelsPerUnit`).
    */
-  startSide: 2.3,
+  startSide: 2.42,
   /** Реальні секунди. */
   startReaction: 1,
   /** Приріст швидкості за хвилину. */
@@ -844,7 +844,8 @@ export const RACE = {
   /** Середній проміжок між машинами, хвилини дороги; `traffic` — множник густоти. */
   gap: 1.5,
   traffic: { easy: 0.8, normal: 1, hard: 1.25 } as Record<Difficulty, number>,
-  carLength: 0.15,
+  /** Довжина кузова на малюнку (`art/race/car/*.svg`, 58 одиниць арту, `racePixelsPerUnit`): аварія — коли кузови торкаються. */
+  carLength: 0.27,
   view: 2.5,
 } as const;
 /** Аварія (§8.5): `chance` — шанс кожної втрати, `max` — найбільше втрат. */

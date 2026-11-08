@@ -177,7 +177,8 @@ describe("виїзд із дому: свій будинок", () => {
 
   it("потік не зник (рецензія 2026-11-03): сусідні смуги вільні ближче, ніж видно дорогу, і машини потоку на старті бувають у кадрі", () => {
     // Скільки дороги видно попереду своєї машини: від неї до верхнього краю кадру.
-    for (const height of HEIGHTS) expect((height * RACE_PLAYER_Y) / racePixelsPerUnit(height)).toBeGreaterThan(RACE.startSide + RACE.carLength);
+    // Машина на межі `startSide` (її середина) видна цілою: до верхнього краю кадру — ще пів її довжини.
+    for (const height of HEIGHTS) expect((height * RACE_PLAYER_Y) / racePixelsPerUnit(height)).toBeGreaterThan(RACE.startSide + RACE.carLength / 2);
     for (const difficulty of DIFFICULTIES) {
       for (const traffic of TRAFFIC) {
         let shown = 0;
@@ -616,6 +617,9 @@ describe("сценарій «Виїзд із дому» (scenarios/home-departur
     const save = applyScenario(scenario());
     const trip = leaveHome(save, scenario());
     if (!trip) throw new Error("сценарій не вирушив");
+    // Машина в сусідній смузі на найближчому дозволеному місці (`RACE.startSide`) — щоб тест не залежав від того, чи випала
+    // вона так близько в зерні сценарію.
+    trip.race.cars.push({ lane: trip.race.lane + 1, start: RACE.startSide });
     const start = homeDepartureStart(trip.race, save.current.seed, save.current.difficulty, 1);
     const end = homeDepartureFrame(HOME_DEPARTURE.ms, 720, start);
     expect(end.traffic.length).toBeGreaterThanOrEqual(1);

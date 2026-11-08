@@ -40,7 +40,8 @@ describe("масштаб гонки", () => {
     expect(racePixelsPerUnit(720)).toBeCloseTo(216);
     // Вище полотно збільшує арт і дорогу однаково: машина займає ту саму частку дороги, що й зіткнення.
     for (const height of [720, 960, 1080]) expect(racePixelsPerUnit(height) / raceScale(height)).toBeCloseTo(216);
-    expect(58 / racePixelsPerUnit(720)).toBeGreaterThan(RACE.carLength);
+    // Довжина зіткнення — кузов на малюнку (58 одиниць): машина не в'їжджає в іншу без аварії.
+    expect(Math.abs(58 / racePixelsPerUnit(720) - RACE.carLength)).toBeLessThan(0.01);
   });
 });
 

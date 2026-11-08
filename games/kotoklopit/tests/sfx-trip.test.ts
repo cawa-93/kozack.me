@@ -47,7 +47,8 @@ describe("звуки поїздки", () => {
     race.spawned = Infinity;
     race.done = 5;
     race.speed = 0;
-    race.cars.push({ lane: race.lane, start: 5 - RACE.carLength * 2 });
+    // Машина позаду за 0,15 дороги до «впритул» (`RACE.carLength`): наздоганяє за кілька кроків.
+    race.cars.push({ lane: race.lane, start: 5 - RACE.carLength - 0.15 });
     const horns = new Horns();
     const honks = (ms: number): number => {
       let count = 0;
