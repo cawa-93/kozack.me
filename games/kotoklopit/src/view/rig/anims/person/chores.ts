@@ -622,6 +622,44 @@ function meds(s: Space): readonly Beat[] {
 }
 
 /**
+ * Перев'язується біля умивальника (пластир чи бинт): дальню руку виносить перед собою, ближня кілька разів обводить її
+ * передпліччя — намотує бинт чи розгладжує пластир, — голова схилена до руки. Ліктів немає, тож «передпліччя» — кінець прямої
+ * дальньої руки, а ближня обводить його колом на екрані. Дальня рука завжди за тулубом, тож її кулак має вийти за силует
+ * уперед (у ¾ спереду — праворуч-униз, у ¾ ззаду — праворуч): там і крутиться ближня; цілі — точки екрана (`Space.point`).
+ */
+function dress(s: Space): readonly Beat[] {
+  const front = s.view === "front";
+  const b = lean(front ? 6 : 5);
+  const far = s.point("far", b, front ? { x: 38, y: PELVIS_Y - 14 } : { x: 36, y: PELVIS_Y - 12 });
+  // Середина кола — на передпліччі, трохи ближче до плеча за кулак.
+  const wrap: Vec2 = front ? { x: 30, y: PELVIS_Y - 20 } : { x: 29, y: PELVIS_Y - 17 };
+  const RX = 5;
+  const RY = 6;
+  const head = front ? 16 : 12;
+  const pose = (deg: number, dy = 0): Pose =>
+    add(
+      body(b),
+      { "arm-far": far, "arm-near": s.point("near", b, { x: wrap.x + RX * Math.cos(deg * RAD), y: wrap.y + dy - RY * Math.sin(deg * RAD) }) },
+      nod(head),
+    );
+  const LOOPS = 3;
+  const START = 200;
+  const LOOP_MS = 240;
+  const STEPS = 8;
+  const loops: Beat[] = [];
+  for (let i = 0; i < LOOPS * STEPS; i++) loops.push([START + Math.round((i * LOOP_MS) / STEPS), pose((360 * i) / STEPS), "linear"]);
+  const end = START + LOOPS * LOOP_MS;
+  return [
+    [0, REST],
+    ...loops,
+    // Наприкінці — притискає кінець пов'язки й опускає руки.
+    [end, pose(0, -2), "out"],
+    [end + 110, add(pose(90, -3), nod(4))],
+    [PERSON_ONE_SHOT_MS.dress, REST],
+  ];
+}
+
+/**
  * Ближня рука тягнеться вперед до речі (полиця, стіл, смітник, кран). У ¾ спереду ближнє плече — по той бік тулуба, і рука до
  * точки за ¾ ззаду лягала навскіс через груди, а річ у ній — на груди («притискає до себе»). Тому там тіло нахиляється на
  * `FRONT_LEAN` більше, а кулак іде на `FRONT_F` далі вперед і на `FRONT_N` до дальнього боку — річ виходить за силует тулуба.
@@ -1070,6 +1108,7 @@ export const PERSON_CHORES = defineAnims(PERSON_RIG, {
   meeting: anim(2800, true, meeting, SIT_SLOTS),
   eat: anim(2000, true, eat, SIT_SLOTS),
   meds: anim(MS.meds, false, meds),
+  dress: anim(MS.dress, false, dress),
   litter: anim(1800, true, litter),
   clean: anim(1600, true, clean),
   washer: anim(MS.washer, false, washer),

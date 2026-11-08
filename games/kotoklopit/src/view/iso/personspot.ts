@@ -190,7 +190,7 @@ export type ShotPlace = { readonly object: string } | { readonly item: number };
 /**
  * Біля чого разова справа від події (`personEventAnim`): узяв і поклав — річ, з якої взяв чи на яку поклав (холодильник,
  * плита, стіл, стільниця, шафка з кормом); викинув — смітник; насипав корм, налив води, спорожнив годівницю — миска чи
- * годівниця; відкрив кран котові й випив ліки — умивальник; пральна машина; розпакував ящики; двері (пакунки, кіт зі сходів,
+ * годівниця; відкрив кран котові, випив ліки й перев'язався — умивальник; пральна машина; розпакував ящики; двері (пакунки, кіт зі сходів,
  * мамині гостинці). null — подія не біля речі (кіт на руках, вкусили, спіткнувся).
  */
 export function shotPlace(event: GameEvent): ShotPlace | null {
@@ -206,6 +206,7 @@ export function shotPlace(event: GameEvent): ShotPlace | null {
       return { item: event.item };
     case "tap-opened":
     case "person-meds":
+    case "person-dressing":
       return { object: "sink" };
     case "laundry":
       return event.stage === "started" || event.stage === "hung" || event.stage === "cat" ? { object: "washer" } : null;

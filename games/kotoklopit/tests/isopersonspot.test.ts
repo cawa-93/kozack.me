@@ -201,6 +201,7 @@ describe("разові справи біля речі — лицем до неї
     expect(shotPlace({ type: "fed", item: 4, food: 1 })).toEqual({ item: 4 });
     expect(shotPlace({ type: "watered", item: 5 })).toEqual({ item: 5 });
     expect(shotPlace({ type: "tap-opened", cat: 1 })).toEqual({ object: "sink" });
+    expect(shotPlace({ type: "person-dressing", quality: "cheap", cured: false })).toEqual({ object: "sink" });
     expect(shotPlace({ type: "laundry", stage: "started" })).toEqual({ object: "washer" });
     expect(shotPlace({ type: "laundry", stage: "spin" })).toBeNull();
     expect(shotPlace({ type: "unpacked", moved: [] })).toEqual({ object: "boxes" });

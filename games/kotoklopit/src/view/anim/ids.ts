@@ -92,7 +92,8 @@ export const PERSON_ANIM_GROUPS = {
   move: ["idle", "walk", "dash", "carry", "holdCat", "holdVacuum", "holdBroom", "pet", "rod", "dizzy", "bitten", "sick", "limp", "exhausted", "trudge", "refuse", "trip", "slip", "pickUp", "putDown"],
   /**
    * N4b «Персонаж — справи» → `rig/anims/person/chores.ts`: працює сидячи за комп'ютером, нарада (летучка й важлива нарада:
-   * говорить у камеру), їсть за столом, ліки (разова: п'є таблетку), чистить лоток, прибирає безлад, пралька (разова:
+   * говорить у камеру), їсть за столом, ліки (разова: п'є таблетку), перев'язується (разова: біля умивальника ближня рука
+   * обводить передпліччя дальньої — бинт чи пластир), чистить лоток, прибирає безлад, пралька (разова:
    * запускає, виймає білизну, виганяє кота з барабана), миски (разова: насипає корм, наливає воду, спорожняє годівницю),
    * розпаковує ящики (разова), двері (разова: забирає пакунки, заносить мамині гостинці, повертає кота зі сходів),
    * телефон (дзвонить мама; лише з порожніми руками — з річчю чи котом у руках персонаж тримає їх, а дзвінок показує бабл),
@@ -100,7 +101,7 @@ export const PERSON_ANIM_GROUPS = {
    * плита готує сама), викидає в смітник (разова), лагодить дріт, купає кота в душі, відкриває кран котові (разова), доглядає
    * кота на руках (`tend`, разова: дає ліки, надягає нашийник — кіт лишається на руках).
    */
-  chores: ["work", "meeting", "eat", "meds", "litter", "clean", "washer", "bowl", "unpack", "door", "phone", "fallAsleep", "collapse", "take", "put", "trash", "fix", "bath", "tap", "tend"],
+  chores: ["work", "meeting", "eat", "meds", "dress", "litter", "clean", "washer", "bowl", "unpack", "door", "phone", "fallAsleep", "collapse", "take", "put", "trash", "fix", "bath", "tap", "tend"],
 } as const;
 
 export type PersonAnimGroup = keyof typeof PERSON_ANIM_GROUPS;
@@ -121,6 +122,7 @@ export const PERSON_ONE_SHOT_MS = {
   pickUp: 400,
   putDown: 400,
   meds: 900,
+  dress: 1200,
   washer: 900,
   bowl: 700,
   unpack: 1100,
