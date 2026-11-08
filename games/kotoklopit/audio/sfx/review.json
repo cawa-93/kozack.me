@@ -1,0 +1,1004 @@
+{
+  "cats/bag-rip": {
+    "decision": "replace",
+    "print": "0.9|bag-rip-1:01a835b35df33a76",
+    "at": "2026-11-08T06:14:41.174Z"
+  },
+  "cats/bin": {
+    "decision": "delete",
+    "print": "1|bin-1:2befd069625f2f0d",
+    "at": "2026-11-08T06:13:26.639Z"
+  },
+  "cats/bite": {
+    "decision": "replace",
+    "print": "0.85|bite-1:0399d2b1a9b633af",
+    "at": "2026-11-08T06:11:17.484Z"
+  },
+  "cats/cabinet-lock": {
+    "decision": "ok",
+    "print": "0.75|cabinet-lock-1:6200f8a453f368c5",
+    "at": "2026-11-08T06:14:52.340Z"
+  },
+  "cats/cabinet-open": {
+    "decision": "ok",
+    "print": "0.75|cabinet-open-1:42547a2759536c12",
+    "at": "2026-11-08T06:14:47.728Z"
+  },
+  "cats/chatter": {
+    "decision": "replace",
+    "print": "0.6|chatter-1:66f6a223127c7134,chatter-2:a32832c4e0917b9b",
+    "at": "2026-11-08T06:07:23.237Z",
+    "variants": [
+      "chatter-1",
+      "chatter-2"
+    ],
+    "comment": "гуде"
+  },
+  "cats/chew-box": {
+    "decision": "replace",
+    "print": "0.8|chew-box-1:5913d0601ec01371",
+    "at": "2026-11-08T06:14:22.755Z"
+  },
+  "cats/chew-loop": {
+    "decision": "replace",
+    "print": "0.7|chew-loop:6499ee38065287b9",
+    "at": "2026-11-08T06:14:27.655Z"
+  },
+  "cats/chew-wire": {
+    "decision": "replace",
+    "print": "0.6|chew-wire-1:c1fcde6438014b16",
+    "at": "2026-11-08T06:14:00.616Z"
+  },
+  "cats/claw": {
+    "decision": "replace",
+    "print": "0.8|claw-1:f26247d0824c5a47",
+    "at": "2026-11-08T06:11:21.517Z"
+  },
+  "cats/crunch": {
+    "decision": "delete",
+    "print": "0.9|crunch-1:11c420dd809fe8a0,crunch-2:cca2935894b56dda",
+    "at": "2026-11-08T06:12:00.203Z",
+    "variants": [
+      "crunch-1",
+      "crunch-2"
+    ]
+  },
+  "cats/cry": {
+    "decision": "replace",
+    "print": "0.85|cry-1:cd62e3145b0e177d,cry-2:f88adbf71338a6c6",
+    "at": "2026-11-08T06:07:07.423Z",
+    "variants": [
+      "cry-1",
+      "cry-2"
+    ]
+  },
+  "cats/dig": {
+    "decision": "ok",
+    "print": "0.6|dig-1:68750fbc3f403cc3",
+    "at": "2026-11-08T06:12:27.372Z"
+  },
+  "cats/dig-loop": {
+    "decision": "ok",
+    "print": "0.6|dig-loop:e30fc010508fe801",
+    "at": "2026-11-08T06:12:33.148Z"
+  },
+  "cats/eat-loop": {
+    "decision": "replace",
+    "print": "0.9|eat-loop:d000995ed56b1384",
+    "at": "2026-11-08T06:12:04.167Z"
+  },
+  "cats/fight": {
+    "decision": "ok",
+    "print": "1|fight-1:29e848ea9034f8e9,fight-2:e60a691154848531",
+    "at": "2026-11-08T06:10:55.704Z"
+  },
+  "cats/fight-loop": {
+    "decision": "ok",
+    "print": "0.8|fight-loop:ddd3133012d2fb60",
+    "at": "2026-11-08T06:11:11.647Z"
+  },
+  "cats/growl": {
+    "decision": "replace",
+    "print": "0.7|growl-1:fea6a1b478d7d98b,growl-2:fbf50fb7bf1776c0",
+    "at": "2026-11-08T06:07:47.089Z",
+    "variants": [
+      "growl-1",
+      "growl-2"
+    ]
+  },
+  "cats/hack": {
+    "decision": "replace",
+    "print": "0.6|hack-1:42b93b4fabe7152e",
+    "at": "2026-11-08T06:10:00.532Z"
+  },
+  "cats/hiss": {
+    "decision": "replace",
+    "print": "0.75|hiss-1:48c07a8151ebb08a,hiss-2:65e74b4ed737781a,hiss-3:b80c05111cb0ec56",
+    "at": "2026-11-08T06:07:31.531Z",
+    "variants": [
+      "hiss-2",
+      "hiss-3"
+    ]
+  },
+  "cats/keys": {
+    "decision": "replace",
+    "print": "1|keys-1:73e9772e7ddb677b,keys-2:e2e250afe26610b8",
+    "at": "2026-11-08T06:13:43.107Z",
+    "variants": [
+      "keys-1",
+      "keys-2"
+    ]
+  },
+  "cats/land": {
+    "decision": "delete",
+    "print": "0.5|land-1:eb7484f97dff99d4,land-2:fd6ee04ba6b44408",
+    "at": "2026-11-08T06:09:32.869Z",
+    "variants": [
+      "land-1"
+    ],
+    "comment": "land-2 норм але треба підрізати, або замінити"
+  },
+  "cats/lap-loop": {
+    "decision": "ok",
+    "print": "0.55|lap-loop:6001abe11eaa4217",
+    "at": "2026-11-08T06:10:43.419Z",
+    "comment": "загучно"
+  },
+  "cats/lick": {
+    "decision": "replace",
+    "print": "0.9|lick-1:b023bfd4362b2565",
+    "at": "2026-11-08T06:10:09.964Z"
+  },
+  "cats/meow": {
+    "decision": "replace",
+    "print": "0.7|meow-1:9ec3fdc50ae3c138,meow-2:9405b3b3c0094af3,meow-3:b17f8cbbe667a8e9,meow-4:84975f2edaa731d4",
+    "at": "2026-11-08T06:04:40.225Z",
+    "variants": [
+      "meow-1",
+      "meow-2",
+      "meow-3"
+    ]
+  },
+  "cats/meow-angry": {
+    "decision": "replace",
+    "print": "0.75|meow-angry-1:c907b18750532b99,meow-angry-2:69c20f120383d3f2",
+    "at": "2026-11-08T06:06:36.076Z",
+    "variants": [
+      "meow-angry-1",
+      "meow-angry-2"
+    ],
+    "comment": "гуде"
+  },
+  "cats/meow-ask": {
+    "decision": "replace",
+    "print": "0.7|meow-ask-1:e62a88aa6af9e132,meow-ask-2:6aeaa74d098c6674,meow-ask-3:0c2f4d215493a50b,meow-ask-4:6aebc793270856dd,meow-ask-5:184de56672f07904",
+    "at": "2026-11-08T06:05:01.942Z",
+    "variants": [
+      "meow-ask-1",
+      "meow-ask-2",
+      "meow-ask-3",
+      "meow-ask-4",
+      "meow-ask-5"
+    ]
+  },
+  "cats/meow-door": {
+    "decision": "replace",
+    "print": "0.8|meow-door-1:c229d4a6355a48d8,meow-door-2:f0a259b497e18c14,meow-door-3:36d3061df32696f9",
+    "at": "2026-11-08T06:06:51.446Z",
+    "variants": [
+      "meow-door-1",
+      "meow-door-2",
+      "meow-door-3"
+    ]
+  },
+  "cats/meow-happy": {
+    "decision": "replace",
+    "print": "0.65|meow-happy-1:5d9a07213f64b113,meow-happy-2:98f8296f8be474e4,meow-happy-3:35030e00ca21accc",
+    "at": "2026-11-08T06:05:10.859Z",
+    "variants": [
+      "meow-happy-1",
+      "meow-happy-2",
+      "meow-happy-3"
+    ]
+  },
+  "cats/meow-kitten": {
+    "decision": "ok",
+    "print": "0.55|meow-kitten-1:3780503974d0ca6d,meow-kitten-2:0e35f3a33663ee83,meow-kitten-3:d37375198020175c,meow-kitten-4:c5acdc86dbe9b684,meow-kitten-5:62b7d192a5ed2ecd,meow-kitten-6:b1763b6590655672",
+    "at": "2026-11-08T06:06:12.269Z"
+  },
+  "cats/meow-old": {
+    "decision": "replace",
+    "print": "0.65|meow-old-1:60d6af9eea6d9f28,meow-old-2:967e1480bc7d6723",
+    "at": "2026-11-08T06:06:01.007Z",
+    "variants": [
+      "meow-old-2"
+    ],
+    "comment": "meow-old-1 можна використати як кіт випрошує їжу. Як одна з варіацій"
+  },
+  "cats/meow-sad": {
+    "decision": "replace",
+    "print": "0.6|meow-sad-1:0341267de1cca6bf,meow-sad-2:3a7ab47873d7d8fb",
+    "at": "2026-11-08T06:05:19.617Z",
+    "variants": [
+      "meow-sad-1",
+      "meow-sad-2"
+    ]
+  },
+  "cats/mug-break": {
+    "decision": "ok",
+    "print": "1|mug-break-1:5beaf129da99ec56",
+    "at": "2026-11-08T06:12:52.224Z"
+  },
+  "cats/mug-drop": {
+    "decision": "ok",
+    "print": "0.8|mug-drop-1:2ca4fb9ca099c7c2",
+    "at": "2026-11-08T06:12:48.041Z"
+  },
+  "cats/paper": {
+    "decision": "replace",
+    "print": "0.6|paper-1:70c00cf4973513ae",
+    "at": "2026-11-08T06:13:34.085Z"
+  },
+  "cats/pen-drop": {
+    "decision": "ok",
+    "print": "0.9|pen-drop-1:bc44cd94de481881",
+    "at": "2026-11-08T06:13:01.089Z"
+  },
+  "cats/phone-drop": {
+    "decision": "ok",
+    "print": "0.7|phone-drop-1:3a7828ebb59a4518",
+    "at": "2026-11-08T06:12:56.065Z"
+  },
+  "cats/purr": {
+    "decision": "replace",
+    "print": "0.35|purr-1:4460028867fd09a0,purr-2:fb02ee2f1cb5aef2",
+    "at": "2026-11-08T06:07:56.255Z",
+    "variants": [
+      "purr-1",
+      "purr-2"
+    ],
+    "comment": "Гуде"
+  },
+  "cats/purr-loop": {
+    "decision": "replace",
+    "print": "0.5|purr-loop:f2ba4d2d1998318a",
+    "at": "2026-11-08T06:08:05.844Z",
+    "comment": "Гул"
+  },
+  "cats/retch": {
+    "decision": "replace",
+    "print": "0.7|retch-1:d87c91b49b246b73",
+    "at": "2026-11-08T06:10:03.979Z"
+  },
+  "cats/scamper": {
+    "decision": "replace",
+    "print": "0.6|scamper-1:d83c110112b75ba5,scamper-2:fff2dfb4bf3b832c",
+    "at": "2026-11-08T06:09:40.783Z",
+    "variants": [
+      "scamper-1",
+      "scamper-2"
+    ]
+  },
+  "cats/scratch-loop": {
+    "decision": "replace",
+    "print": "0.55|scratch-loop:410ed2bf6629a75a",
+    "at": "2026-11-08T06:11:30.033Z"
+  },
+  "cats/smash": {
+    "decision": "delete",
+    "print": "1|smash-1:92275762eb195a06,smash-2:511c6826d6a0497a",
+    "at": "2026-11-08T06:12:44.025Z",
+    "variants": [
+      "smash-2"
+    ]
+  },
+  "cats/sneeze": {
+    "decision": "replace",
+    "print": "0.45|sneeze-1:4db140ee1d27e5c1,sneeze-2:ee46a0b27064a961",
+    "at": "2026-11-08T06:09:54.135Z",
+    "variants": [
+      "sneeze-1",
+      "sneeze-2"
+    ],
+    "comment": "Це людське чхання"
+  },
+  "cats/spark": {
+    "decision": "replace",
+    "print": "1|spark-1:7a6ecffb26811dad",
+    "at": "2026-11-08T06:14:17.385Z",
+    "comment": "Друга половина добра. Перша ні"
+  },
+  "cats/spit": {
+    "decision": "replace",
+    "print": "0.6|spit-1:f735c44d9fa0f8e5",
+    "at": "2026-11-08T06:10:07.348Z"
+  },
+  "cats/squeak": {
+    "decision": "ok",
+    "print": "0.45|squeak-1:66f0e312517fbcb5,squeak-2:981d4244baf69279",
+    "at": "2026-11-08T06:07:11.484Z"
+  },
+  "cats/tail": {
+    "decision": "delete",
+    "print": "0.5|tail-1:be9712626a37b342",
+    "at": "2026-11-08T06:08:29.422Z"
+  },
+  "cats/tap": {
+    "decision": "ok",
+    "print": "0.6|tap-1:2d2b456fec572a70",
+    "at": "2026-11-08T06:12:20.123Z",
+    "comment": "Загучно"
+  },
+  "cats/toy-break": {
+    "decision": "delete",
+    "print": "1|toy-break-1:50b6f1ef0f4489ad",
+    "at": "2026-11-08T06:30:01.309Z"
+  },
+  "cats/yawn": {
+    "decision": "replace",
+    "print": "0.8|yawn-1:b83726ce12bb9cda",
+    "at": "2026-11-08T06:08:23.359Z"
+  },
+  "cats/zoom-loop": {
+    "decision": "replace",
+    "print": "0.55|zoom-loop:554b8836edd2372e",
+    "at": "2026-11-08T06:11:47.813Z"
+  },
+  "home/bag": {
+    "decision": "delete",
+    "print": "0.5|bag:6c6ac8627479ede5",
+    "at": "2026-11-08T06:18:20.318Z"
+  },
+  "home/beep-high": {
+    "decision": "ok",
+    "print": "0.35|beep-high:0c3a06a0fc5057a9",
+    "at": "2026-11-08T06:20:45.425Z"
+  },
+  "home/beep-low": {
+    "decision": "ok",
+    "print": "0.35|beep-low:8e3094668b8a5eef",
+    "at": "2026-11-08T06:20:48.357Z"
+  },
+  "home/broke": {
+    "decision": "replace",
+    "print": "0.75|broke-1:e20ebc009447ff03,broke-2:cfc5b96026b87c77",
+    "at": "2026-11-08T06:17:34.942Z",
+    "variants": [
+      "broke-1",
+      "broke-2"
+    ]
+  },
+  "home/bucket": {
+    "decision": "ok",
+    "print": "0.45|bucket:d79d4cbd28490501",
+    "at": "2026-11-08T06:19:15.988Z"
+  },
+  "home/burnt": {
+    "decision": "replace",
+    "print": "1|burnt:a75553286ca5d75f",
+    "at": "2026-11-08T06:15:42.269Z"
+  },
+  "home/cabinet": {
+    "decision": "ok",
+    "print": "0.5|cabinet-1:09e55e5179981c97,cabinet-2:1f80c63a84ef0152,cabinet-3:2bca40a14a078e2c",
+    "at": "2026-11-08T06:15:21.924Z"
+  },
+  "home/carrier": {
+    "decision": "replace",
+    "print": "0.55|carrier:18780df90b3f558a",
+    "at": "2026-11-08T06:17:27.029Z"
+  },
+  "home/discard": {
+    "decision": "replace",
+    "print": "0.45|discard:03b8ddfd9c6f7305",
+    "at": "2026-11-08T06:16:47.387Z",
+    "comment": "Використати той самий звук що і смітник"
+  },
+  "home/dish-pick": {
+    "decision": "ok",
+    "print": "0.3|dish-pick-1:b2566cea97a13000,dish-pick-2:d5e987700f88b888,dish-pick-3:83bae1f23a587a9d",
+    "at": "2026-11-08T06:15:28.557Z"
+  },
+  "home/dish-put": {
+    "decision": "ok",
+    "print": "0.4|dish-put-1:0b4bda861d464e54,dish-put-2:8fd4bac5da6dcf6a",
+    "at": "2026-11-08T06:15:35.286Z"
+  },
+  "home/door": {
+    "decision": "ok",
+    "print": "0.55|door:33b5b6e5579e3663",
+    "at": "2026-11-08T06:18:10.815Z"
+  },
+  "home/doorbell": {
+    "decision": "replace",
+    "print": "0.8|doorbell:9969292e5ac58e7c",
+    "at": "2026-11-08T06:17:55.227Z",
+    "comment": "Добре, але укоротити"
+  },
+  "home/feeder": {
+    "decision": "delete",
+    "print": "0.5|feeder-1:eba99e8f68b8509b,feeder-2:a24ec48e9502fdfd",
+    "at": "2026-11-08T06:21:01.316Z",
+    "variants": [
+      "feeder-1",
+      "feeder-2"
+    ]
+  },
+  "home/feeder-empty": {
+    "decision": "delete",
+    "print": "0.45|feeder-empty:b4f824a2b3208559",
+    "at": "2026-11-08T06:21:08.263Z"
+  },
+  "home/fireworks": {
+    "decision": "ok",
+    "print": "0.55|fireworks:df26f1b2a764828e",
+    "at": "2026-11-08T06:19:14.185Z"
+  },
+  "home/flies-loop": {
+    "decision": "ok",
+    "print": "0.22|flies-loop:b918345cdcc9c647",
+    "at": "2026-11-08T06:20:55.034Z"
+  },
+  "home/fridge-close": {
+    "decision": "ok",
+    "print": "0.55|fridge-close-1:aca58598342f8417,fridge-close-2:b406769276f314b6",
+    "at": "2026-11-08T06:15:08.248Z"
+  },
+  "home/fridge-open": {
+    "decision": "replace",
+    "print": "0.5|fridge-open-1:ec64d84aed063c74,fridge-open-2:14025f66417194d8",
+    "at": "2026-11-08T06:14:59.103Z",
+    "variants": [
+      "fridge-open-1",
+      "fridge-open-2"
+    ]
+  },
+  "home/guests": {
+    "decision": "replace",
+    "print": "0.4|guests:47e6629b732ffd18",
+    "at": "2026-11-08T06:18:29.909Z"
+  },
+  "home/hung": {
+    "decision": "ok",
+    "print": "0.45|hung:cbf62908f5147d18",
+    "at": "2026-11-08T06:19:57.762Z"
+  },
+  "home/knock": {
+    "decision": "replace",
+    "print": "0.65|knock:54cb4dab9a0b0bfb",
+    "at": "2026-11-08T06:18:11.970Z"
+  },
+  "home/land": {
+    "decision": "replace",
+    "print": "0.2|parcel:252077087890472a",
+    "at": "2026-11-08T06:17:20.938Z"
+  },
+  "home/lock": {
+    "decision": "ok",
+    "print": "0.45|lock:6679cecac977289f",
+    "at": "2026-11-08T06:18:01.269Z"
+  },
+  "home/papers": {
+    "decision": "ok",
+    "print": "0.5|papers:cd377adddbdb0548",
+    "at": "2026-11-08T06:18:33.793Z"
+  },
+  "home/parcel": {
+    "decision": "replace",
+    "print": "0.55|parcel:252077087890472a",
+    "at": "2026-11-08T06:17:09.668Z"
+  },
+  "home/robot-loop": {
+    "decision": "ok",
+    "print": "0.3|robot-loop:7fbc4b0e4a9397ad",
+    "at": "2026-11-08T06:20:42.529Z"
+  },
+  "home/spin-loop": {
+    "decision": "ok",
+    "print": "0.6|spin-loop:529a829dae8d5076",
+    "at": "2026-11-08T06:19:47.113Z"
+  },
+  "home/spin-start": {
+    "decision": "replace",
+    "print": "0.6|spin-start:d3ca09ba1e9092e0",
+    "at": "2026-11-08T06:19:41.563Z",
+    "comment": "Гул"
+  },
+  "home/stove-loop": {
+    "decision": "ok",
+    "print": "0.3|stove-loop:82434f361cb4ed9d",
+    "at": "2026-11-08T06:15:46.224Z"
+  },
+  "home/swept": {
+    "decision": "delete",
+    "print": "0.3|swept:4efbd404573d763d",
+    "at": "2026-11-08T06:20:36.106Z"
+  },
+  "home/thing-put": {
+    "decision": "replace",
+    "print": "0.4|parcel:252077087890472a",
+    "at": "2026-11-08T06:16:06.840Z"
+  },
+  "home/thing-take": {
+    "decision": "ok",
+    "print": "0.3|dish-pick-1:b2566cea97a13000,dish-pick-2:d5e987700f88b888,dish-pick-3:83bae1f23a587a9d",
+    "at": "2026-11-08T06:15:59.892Z"
+  },
+  "home/timer": {
+    "decision": "ok",
+    "print": "0.65|timer:7768a6e23e9e1459",
+    "at": "2026-11-08T06:15:37.675Z"
+  },
+  "home/trash": {
+    "decision": "replace",
+    "print": "0.5|trash:186cd7bf336889e1",
+    "at": "2026-11-08T06:16:18.679Z"
+  },
+  "home/unpack": {
+    "decision": "replace",
+    "print": "0.55|unpack-1:a10d424508c80eed,unpack-2:3ac09e05c51f9783",
+    "at": "2026-11-08T06:16:58.346Z",
+    "variants": [
+      "unpack-1",
+      "unpack-2"
+    ]
+  },
+  "home/vacuum-loop": {
+    "decision": "ok",
+    "print": "0.85|vacuum-loop:00ea8e67826cd338",
+    "at": "2026-11-08T06:20:13.154Z"
+  },
+  "home/vacuum-off": {
+    "decision": "ok",
+    "print": "0.75|vacuum-off:862d69797761dac0",
+    "at": "2026-11-08T06:20:26.753Z"
+  },
+  "home/vacuum-on": {
+    "decision": "ok",
+    "print": "0.85|vacuum-on:4eea374344d84ef6",
+    "at": "2026-11-08T06:20:12.560Z"
+  },
+  "home/vet-case": {
+    "decision": "replace",
+    "print": "0.5|vet-case:81bd34a7d70e0933",
+    "at": "2026-11-08T06:18:39.105Z"
+  },
+  "home/wash-loop": {
+    "decision": "replace",
+    "print": "0.33|wash-loop:7ddeb74eb56988fb",
+    "at": "2026-11-08T06:19:34.145Z",
+    "comment": "Гул"
+  },
+  "home/washer-close": {
+    "decision": "ok",
+    "print": "0.5|washer-close:b34deb0109a3d0d8",
+    "at": "2026-11-08T06:19:23.820Z"
+  },
+  "home/washer-done": {
+    "decision": "ok",
+    "print": "0.45|washer-done:6bb4230a308df2a9",
+    "at": "2026-11-08T06:19:52.136Z"
+  },
+  "home/washer-open": {
+    "decision": "ok",
+    "print": "0.5|washer-open:2c03eab9105b667c",
+    "at": "2026-11-08T06:19:27.250Z"
+  },
+  "home/wire": {
+    "decision": "ok",
+    "print": "0.5|wire:cd9af73fc615a118",
+    "at": "2026-11-08T06:21:12.045Z"
+  },
+  "person/bell": {
+    "decision": "ok",
+    "print": "0.3|bell:d89dc8b71ed0ef03",
+    "at": "2026-11-08T06:24:28.517Z"
+  },
+  "person/blanket": {
+    "decision": "replace",
+    "print": "0.45|blanket-1:977525894bef6500,blanket-2:abb918da1905f894",
+    "at": "2026-11-08T06:26:05.776Z",
+    "variants": [
+      "blanket-1",
+      "blanket-2"
+    ]
+  },
+  "person/buckle": {
+    "decision": "ok",
+    "print": "0.45|buckle-1:c2d6955648772e29,buckle-2:38b9af2d057ee6e9",
+    "at": "2026-11-08T06:24:24.369Z"
+  },
+  "person/dash": {
+    "decision": "ok",
+    "print": "0.4|dash-1:e4960a002c11baf8,dash-2:066e2d7f6c497a81,dash-3:dc9c10268e8eca67,dash-4:fb11944adec1d469",
+    "at": "2026-11-08T06:21:37.333Z"
+  },
+  "person/drop": {
+    "decision": "delete",
+    "print": "0.35|drop-1:73e35bfce45fa29b,drop-2:ceb3466079c1097b",
+    "at": "2026-11-08T06:24:59.431Z",
+    "variants": [
+      "drop-1",
+      "drop-2"
+    ]
+  },
+  "person/drop-again": {
+    "decision": "delete",
+    "print": "0.35|drop-3:7bf3cda6f80513bc,drop-4:83641a8107a9febc",
+    "at": "2026-11-08T06:24:55.642Z",
+    "variants": [
+      "drop-3",
+      "drop-4"
+    ]
+  },
+  "person/eat": {
+    "decision": "delete",
+    "print": "1|eat-1:00ba63c0826017d8,eat-2:320a42c44aa08937",
+    "at": "2026-11-08T06:22:21.862Z",
+    "variants": [
+      "eat-1",
+      "eat-2"
+    ]
+  },
+  "person/fall": {
+    "decision": "replace",
+    "print": "0.85|fall-1:d9dbda15cf4e0ae2",
+    "at": "2026-11-08T06:21:48.944Z"
+  },
+  "person/gasp-he": {
+    "decision": "ok",
+    "print": "0.4|gasp-he-1:c30575b1f6e9af0d,gasp-he-2:078334471a8b6deb,gasp-he-3:51bf4957a619f016",
+    "at": "2026-11-08T06:22:07.574Z"
+  },
+  "person/gasp-she": {
+    "decision": "ok",
+    "print": "0.4|gasp-she-1:73ebe6b58a1b7bdc,gasp-she-2:c39f5c38533e2f98,gasp-she-3:f7b6484019254586",
+    "at": "2026-11-08T06:22:10.741Z"
+  },
+  "person/kibble": {
+    "decision": "replace",
+    "print": "0.45|kibble-1:56bfc61c35b69273,kibble-2:a0b4d1590cf6ca1e",
+    "at": "2026-11-08T06:24:04.856Z",
+    "variants": [
+      "kibble-1",
+      "kibble-2"
+    ]
+  },
+  "person/knock": {
+    "decision": "replace",
+    "print": "0.45|knock-1:4b51234732c95841,knock-2:8517d84298c2f68b",
+    "at": "2026-11-08T06:21:57.826Z",
+    "variants": [
+      "knock-1",
+      "knock-2"
+    ]
+  },
+  "person/litter-pour": {
+    "decision": "ok",
+    "print": "0.17|litter-pour:33d003607e083de4",
+    "at": "2026-11-08T06:23:37.063Z"
+  },
+  "person/pant-he": {
+    "decision": "replace",
+    "print": "0.4|pant-he:1be51c5557ebe531",
+    "at": "2026-11-08T06:25:20.790Z"
+  },
+  "person/pant-she": {
+    "decision": "replace",
+    "print": "0.4|pant-she:6d02af4cf1dfc761",
+    "at": "2026-11-08T06:25:23.240Z"
+  },
+  "person/pills": {
+    "decision": "replace",
+    "print": "0.4|pills-1:df1641ab54b9b0b7,pills-2:f40eeee81b6b4c25",
+    "at": "2026-11-08T06:24:38.955Z",
+    "variants": [
+      "pills-1",
+      "pills-2"
+    ]
+  },
+  "person/plate": {
+    "decision": "ok",
+    "print": "0.4|plate-1:e087bacb1d711c09,plate-2:fbf71fd73c5d4a05",
+    "at": "2026-11-08T06:23:04.209Z",
+    "comment": "Використати як загальний звук коли страву/тарілку/судочок/тощо ставлять на стіл"
+  },
+  "person/relief-he": {
+    "decision": "delete",
+    "print": "0.4|relief-he:394b8999920fd533",
+    "at": "2026-11-08T06:25:32.804Z"
+  },
+  "person/relief-she": {
+    "decision": "delete",
+    "print": "0.4|relief-she:df244799a415709f",
+    "at": "2026-11-08T06:25:31.702Z"
+  },
+  "person/scoop": {
+    "decision": "replace",
+    "print": "0.4|scoop-1:5a606adbfe16c44a,scoop-2:0e8869da8b31a8bb",
+    "at": "2026-11-08T06:23:30.204Z",
+    "variants": [
+      "scoop-1",
+      "scoop-2"
+    ]
+  },
+  "person/shower": {
+    "decision": "replace",
+    "print": "0.4|shower-loop:571adc3879664497",
+    "at": "2026-11-08T06:23:10.262Z"
+  },
+  "person/shower-off": {
+    "decision": "replace",
+    "print": "0.5|shower-off:742f5b25b5391301",
+    "at": "2026-11-08T06:23:13.867Z"
+  },
+  "person/sigh-he": {
+    "decision": "ok",
+    "print": "0.4|sigh-he:a86482e0dd06d282",
+    "at": "2026-11-08T06:25:56.727Z"
+  },
+  "person/sigh-she": {
+    "decision": "ok",
+    "print": "0.4|sigh-she:17d5e55f03ec7277",
+    "at": "2026-11-08T06:25:56.211Z"
+  },
+  "person/slide": {
+    "decision": "ok",
+    "print": "0.35|dash-1:e4960a002c11baf8,dash-2:066e2d7f6c497a81,dash-3:dc9c10268e8eca67,dash-4:fb11944adec1d469",
+    "at": "2026-11-08T06:21:40.193Z"
+  },
+  "person/sneeze-he": {
+    "decision": "ok",
+    "print": "0.5|sneeze-he:d29b67c7a67db473",
+    "at": "2026-11-08T06:25:12.057Z"
+  },
+  "person/sneeze-she": {
+    "decision": "replace",
+    "print": "0.5|sneeze-she:12d1ae5eb78f3b28",
+    "at": "2026-11-08T06:25:15.505Z"
+  },
+  "person/sock": {
+    "decision": "delete",
+    "print": "0.4|sock:c218b5f8780e3d65",
+    "at": "2026-11-08T06:25:06.239Z"
+  },
+  "person/splash": {
+    "decision": "replace",
+    "print": "0.6|splash-loop:5bcfbeeef6c5a2b0",
+    "at": "2026-11-08T06:23:21.462Z"
+  },
+  "person/step-rug": {
+    "decision": "delete",
+    "print": "0.16|step-rug-1:d60de0ad7104be08,step-rug-2:cd28b2128d5a44c3,step-rug-3:0dea7550916c1a21",
+    "at": "2026-11-08T06:21:26.368Z",
+    "variants": [
+      "step-rug-1",
+      "step-rug-2",
+      "step-rug-3"
+    ]
+  },
+  "person/step-tile": {
+    "decision": "delete",
+    "print": "0.16|step-tile-1:3ae8aaaf929cef93,step-tile-2:285ac193d1f6fe46,step-tile-3:f28b609343fbac75,step-tile-4:b384ade9e5be3779,step-tile-5:cd5143a1e822f165",
+    "at": "2026-11-08T06:21:23.288Z",
+    "variants": [
+      "step-tile-1",
+      "step-tile-2",
+      "step-tile-3",
+      "step-tile-4",
+      "step-tile-5"
+    ]
+  },
+  "person/step-wood": {
+    "decision": "delete",
+    "print": "0.2|step-wood-1:e9c0f41f1887063a,step-wood-2:3250d54c0a4d7cd7,step-wood-3:e851e43d6cbd0e5b,step-wood-4:ba92ec47414c821b",
+    "at": "2026-11-08T06:21:24.898Z",
+    "variants": [
+      "step-wood-1",
+      "step-wood-2",
+      "step-wood-3",
+      "step-wood-4"
+    ]
+  },
+  "person/swallow": {
+    "decision": "ok",
+    "print": "0.5|swallow:f8c7b30cc4a5f2d4",
+    "at": "2026-11-08T06:22:34.349Z"
+  },
+  "person/sweep": {
+    "decision": "replace",
+    "print": "0.4|sweep-1:922c293bfc96cf88,sweep-2:f57203b05b770ffe",
+    "at": "2026-11-08T06:23:53.856Z",
+    "variants": [
+      "sweep-1",
+      "sweep-2"
+    ]
+  },
+  "person/treat": {
+    "decision": "replace",
+    "print": "0.5|treat-1:ccc3db7b8e1dfff2,treat-2:dd4c618cf77bdec7",
+    "at": "2026-11-08T06:24:17.849Z",
+    "variants": [
+      "treat-1",
+      "treat-2"
+    ]
+  },
+  "person/water": {
+    "decision": "replace",
+    "print": "0.4|water-1:a0aca561fed20fb1,water-2:ddebd6b0b99ee347",
+    "at": "2026-11-08T06:24:10.271Z",
+    "variants": [
+      "water-1",
+      "water-2"
+    ]
+  },
+  "person/wipe": {
+    "decision": "replace",
+    "print": "0.35|wipe-1:67cf775e191147b1,wipe-2:fde36cb3eb9eaf8a",
+    "at": "2026-11-08T06:23:42.454Z",
+    "variants": [
+      "wipe-1",
+      "wipe-2"
+    ]
+  },
+  "person/yawn-he": {
+    "decision": "ok",
+    "print": "0.28|yawn-he-1:3e2006ab484dd0c8",
+    "at": "2026-11-08T06:25:36.663Z"
+  },
+  "person/yawn-she": {
+    "decision": "ok",
+    "print": "0.28|yawn-she-1:0c538331220673ee,yawn-she-2:9500464eaa4388fc,yawn-she-3:102e6fb80f323fd7",
+    "at": "2026-11-08T06:25:46.865Z"
+  },
+  "ui/bought": {
+    "decision": "ok",
+    "print": "0.6|bought:32637b767b3a2596",
+    "at": "2026-11-08T06:27:27.032Z"
+  },
+  "ui/click": {
+    "decision": "ok",
+    "print": "0.4|click-1:3a11df1f264d72fe,click-2:1b405b0b6984cad8,click-3:097684dec3f232dc",
+    "at": "2026-11-08T06:26:37.592Z"
+  },
+  "ui/close": {
+    "decision": "replace",
+    "print": "0.14|close:845779cb4ce2c85c",
+    "at": "2026-11-08T06:26:25.300Z"
+  },
+  "ui/end": {
+    "decision": "ok",
+    "print": "0.55|end:221f5623b0750c43",
+    "at": "2026-11-08T06:27:34.049Z"
+  },
+  "ui/glitch": {
+    "decision": "delete",
+    "print": "0.28|glitch:5bd856bd8a917b0c",
+    "at": "2026-11-08T06:27:02.345Z"
+  },
+  "ui/low-stat": {
+    "decision": "ok",
+    "print": "0.4|low-stat:4a97d27229e061d6",
+    "at": "2026-11-08T06:27:05.725Z"
+  },
+  "ui/morning": {
+    "decision": "replace",
+    "print": "0.5|morning:3f54d28965f776a3",
+    "at": "2026-11-08T06:27:30.977Z"
+  },
+  "ui/notify": {
+    "decision": "ok",
+    "print": "0.35|notify:a51d28c07150d51b",
+    "at": "2026-11-08T06:27:09.845Z"
+  },
+  "ui/open": {
+    "decision": "replace",
+    "print": "0.25|open:7351c012866eed12",
+    "at": "2026-11-08T06:26:10.387Z"
+  },
+  "ui/ordered": {
+    "decision": "ok",
+    "print": "0.5|ordered:d6937e470bd603f1",
+    "at": "2026-11-08T06:27:21.369Z"
+  },
+  "ui/refused": {
+    "decision": "ok",
+    "print": "0.28|refused-1:a452fa73c136681e,refused-2:82c6036b78071dd8",
+    "at": "2026-11-08T06:26:47.506Z"
+  },
+  "ui/refused-empty": {
+    "decision": "ok",
+    "print": "0.6|empty-1:a6a555c6f2f4ff7a,empty-2:1336c81d22d8ed23",
+    "at": "2026-11-08T06:26:53.071Z"
+  },
+  "ui/retired": {
+    "decision": "replace",
+    "print": "0.7|retired:47c206c8e5efefca",
+    "at": "2026-11-08T06:27:39.780Z"
+  },
+  "ui/tab": {
+    "decision": "ok",
+    "print": "0.45|tab:a587bbd6be687301",
+    "at": "2026-11-08T06:26:41.608Z"
+  },
+  "work/call": {
+    "decision": "ok",
+    "print": "0.35|call:d09c6b4a97e81d4b",
+    "at": "2026-11-08T06:28:13.233Z"
+  },
+  "work/call-missed": {
+    "decision": "delete",
+    "print": "0.4|call-missed:0063fba311663b41",
+    "at": "2026-11-08T06:28:29.972Z"
+  },
+  "work/call-ok": {
+    "decision": "replace",
+    "print": "0.22|call-ok:bd347dd284857779",
+    "at": "2026-11-08T06:28:24.512Z"
+  },
+  "work/career-down": {
+    "decision": "replace",
+    "print": "0.37|career-down:c56c7bbe8299633f",
+    "at": "2026-11-08T06:29:06.803Z"
+  },
+  "work/career-up": {
+    "decision": "replace",
+    "print": "0.33|career-up:418c4b8a041eda54",
+    "at": "2026-11-08T06:29:03.924Z"
+  },
+  "work/coin": {
+    "decision": "delete",
+    "print": "0.75|coin:6688253b9f122fe9",
+    "at": "2026-11-08T06:27:54.472Z"
+  },
+  "work/keyboard": {
+    "decision": "replace",
+    "print": "0.55|keyboard:e02a951164430a2a",
+    "at": "2026-11-08T06:27:49.336Z"
+  },
+  "work/message": {
+    "decision": "delete",
+    "print": "0.27|message:bfca62fc37a874cf",
+    "at": "2026-11-08T06:29:21.914Z"
+  },
+  "work/murmur": {
+    "decision": "replace",
+    "print": "0.28|murmur:92d14ef21a4b8dfa",
+    "at": "2026-11-08T06:28:16.479Z"
+  },
+  "work/patience-out": {
+    "decision": "delete",
+    "print": "1|patience-out:25bd3e2b45bbc711",
+    "at": "2026-11-08T06:28:06.365Z"
+  },
+  "work/patience-warning": {
+    "decision": "delete",
+    "print": "0.8|patience-warning:ce35f4c202567758",
+    "at": "2026-11-08T06:28:02.802Z"
+  },
+  "work/rejected": {
+    "decision": "ok",
+    "print": "0.45|rejected:c9490c5172608adb",
+    "at": "2026-11-08T06:29:12.867Z"
+  },
+  "work/remark": {
+    "decision": "delete",
+    "print": "0.5|remark:a6461757d9ca36a9",
+    "at": "2026-11-08T06:28:39.054Z"
+  },
+  "work/ring": {
+    "decision": "replace",
+    "print": "0.4|ring:5b4e0289a2d44b8e",
+    "at": "2026-11-08T06:28:52.373Z"
+  },
+  "work/vacation-pay": {
+    "decision": "ok",
+    "print": "0.9|vacation-pay:57647d1b099f7da6",
+    "at": "2026-11-08T06:29:25.485Z"
+  },
+  "work/work-start": {
+    "decision": "ok",
+    "print": "0.15|work-start:d9fea3d82d9a18f9",
+    "at": "2026-11-08T06:27:46.282Z"
+  }
+}
