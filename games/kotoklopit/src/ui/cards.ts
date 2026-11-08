@@ -34,6 +34,7 @@ import {
   WAKE_TEXTS,
 } from "../texts";
 import { allControls, homeControls } from "./controls";
+import { creditsLink } from "./creditslink";
 import { destinationLabel, diseaseLabel, named, productLabel } from "./icons";
 import { element, type Card, type CardAction, type TitleSection } from "./overlay";
 import { shopCatalog, variantLabel } from "./shop";
@@ -277,7 +278,10 @@ export function phoneCard(state: GameState, wanted: PhoneTab, handlers: PhoneHan
   };
 }
 
-/** Меню гри (§4.2, §5): нова гра, експорт і імпорт збереження; керування — щоб перечитати підказку першого дня (§11.3а). */
+/**
+ * Меню гри (§4.2, §5): нова гра, експорт і імпорт збереження; керування — щоб перечитати підказку першого дня (§11.3а);
+ * унизу — посилання на титри (§2.1).
+ */
 function gameMenu(state: GameState, handlers: PhoneHandlers): (string | HTMLElement)[] {
   const box = element("div", "shop");
   const fresh = element("button", "button", "Нова гра");
@@ -310,6 +314,7 @@ function gameMenu(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
     sound,
     box,
     element("p", "game-note", "Гра зберігається в браузері сама, але браузер може її стерти — тож довгу гру варто часом зберігати файлом."),
+    creditsLink(),
   ];
 }
 

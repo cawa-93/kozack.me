@@ -993,6 +993,21 @@
   line-height: 1.3;
 }
 
+/* Посилання на титри (§2.1) — окремим рядком під рискою в самому низу, дрібне й не яскраве. */
+.game-credits {
+  margin: 12px 0 0;
+  padding-top: 6px;
+  border-top: 1px solid var(--shade-soft);
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.game-credits a {
+  color: var(--ink-soft);
+  text-decoration-color: var(--grey);
+  text-underline-offset: 2px;
+}
+
 /* Повзунок «Звуки» (§11.4а). */
 .sound-volume-box {
   display: grid;
@@ -1343,6 +1358,11 @@
   .game-player {
     margin: 4px 0;
     font-size: 17px;
+  }
+
+  .game-credits {
+    margin-top: 6px;
+    padding-top: 4px;
   }
 
   .controls {

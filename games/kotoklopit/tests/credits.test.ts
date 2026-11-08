@@ -1,13 +1,16 @@
 // Титри (§2.1): складаються з файлів ліцензій — кожен оригінал звуку, з якого зроблено файл гри, кожен трек радіо, бібліотеки
-// й шрифти; CC BY — з автором і ліцензією на виду.
+// й шрифти; CC BY — з автором і ліцензією на виду. Посилання на титри — унизу вкладки «Гра» телефона.
 
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import gamePackage from "../package.json";
 import type { Sources } from "../src/audio/sfx/sourcetypes";
 import { buildCredits, catalogTrack, OPEN_SOUND_ENTRIES, type CreditsInput, type SoundEntry } from "../src/credits/credits";
 import { creditsInput, FONT_FILES, FONTS } from "../src/credits/input";
 import { escapeHtml, licenseParagraphs, renderCredits } from "../src/credits/render";
+import { newGame } from "../src/sim/game";
+import { phoneCard, type PhoneHandlers } from "../src/ui/cards";
+import { CREDITS_LINK, CREDITS_URL } from "../src/ui/creditslink";
 
 const input = creditsInput();
 const credits = buildCredits(input);
@@ -152,5 +155,48 @@ describe("титри: програми й шрифти", () => {
     expect(html).toContain("<h1>Котоклопіт</h1>");
     expect(html).toContain('Автор гри — <a href="https://kozack.me/">Олександр Козак</a>');
     expect(html.match(/<a href="\.\/" data-back>/g)).toHaveLength(2);
+  });
+});
+
+/** Найпростіший DOM для вкладки «Гра»: елемент пам'ятає клас, текст, дітей і властивості посилання. */
+class FakeElement {
+  className = "";
+  textContent = "";
+  href = "";
+  target = "";
+  rel = "";
+  children: (FakeElement | string)[] = [];
+  readonly style: Record<string, string> = {};
+  readonly attributes: Record<string, string> = {};
+  constructor(readonly tagName: string) {}
+  append(...nodes: (FakeElement | string)[]): void {
+    this.children.push(...nodes);
+  }
+  setAttribute(name: string, value: string): void {
+    this.attributes[name] = value;
+  }
+  addEventListener(): void {}
+  all(): FakeElement[] {
+    const own = this.children.filter((c): c is FakeElement => typeof c !== "string");
+    return own.flatMap((c) => [c, ...c.all()]);
+  }
+}
+
+describe("посилання на титри", () => {
+  beforeAll(() => {
+    vi.stubGlobal("document", { createElement: (tag: string) => new FakeElement(tag) });
+    vi.stubGlobal("window", { matchMedia: () => ({ matches: false }) });
+  });
+  afterAll(() => vi.unstubAllGlobals());
+
+  it("останнім у вкладці «Гра» телефона: титри в новій вкладці, гра лишається відкритою", () => {
+    const noop = (): void => undefined;
+    const phone: PhoneHandlers = { checkout: noop, discard: noop, discardThing: noop, advertise: noop, cancelAd: noop, newGame: noop, exportSave: noop, importSave: noop, tab: noop, close: noop, effects: { volume: 1, set: noop } };
+    const card = phoneCard(newGame({ address: "she", difficulty: "normal", seed: 8 }).current, "game", phone);
+    const last = card.body.at(-1) as unknown as FakeElement;
+    expect(last.className).toBe("game-credits");
+    const link = last.all().find((el) => el.tagName === "a");
+    expect(link).toMatchObject({ textContent: CREDITS_LINK, href: CREDITS_URL, target: "_blank", rel: "noopener" });
+    expect(CREDITS_URL).toBe(`${import.meta.env.BASE_URL}credits.html`);
   });
 });
