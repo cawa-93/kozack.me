@@ -347,7 +347,8 @@ export function shapedState(state: GameState, object: (typeof SHAPED)[number]): 
 export const STORAGE_OVERLAYS = {
   // Засоби гігієни й шампунь для котів — дві пляшечки на полиці душу.
   shower: ["env/shower/hygiene", "env/shower/shampoo"],
-  sink: ["env/sink/human-meds"],
+  // Ліки для себе — праворуч від крана, пластир і бинт — ліворуч.
+  sink: ["env/sink/human-meds", "env/sink/dressing"],
   washer: ["env/washer/detergent"],
 } as const satisfies Record<string, readonly ArtId[]>;
 
