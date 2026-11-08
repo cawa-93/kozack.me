@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 30" width="44" height="30">
+<!-- fx/sweep-dust — трохи пилу з-під віника (GAME_DESIGN §8.7 «Віник і пилосос у руках»); art/STYLE.md, «fx».
+size 44×30; pivot (22, 26) — підлога під віником; points: —.
+Стани — кадри, що йдуть по колу: st-a хмарки щойно здійнялися, st-b розлетілися, st-c тануть угорі. Дві хмарки paper і greyHi з контуром inkSoft і порошинки grey, без чорнила: пил легкий.
+-->
+<g id="p-a" class="st-a">
+<path d="M18.4 19.7Q19.1 21.8 16.8 22.9Q14.6 24 12 23.5Q9.3 23 9.4 20.7Q9.4 18.3 11.4 16.7Q13.3 15.1 15.5 16.4Q17.7 17.6 18.4 19.7Z" fill="#f2e7d0"/>
+<path d="M18.4 19.7Q19.1 21.8 16.8 22.9Q14.6 24 12 23.5Q9.3 23 9.4 20.7Q9.4 18.3 11.4 16.7Q13.3 15.1 15.5 16.4Q17.7 17.6 18.4 19.7Z" fill="none" stroke="#6b5263" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M32.6 20.8Q33.1 22.5 31.3 23.4Q29.5 24.3 27.3 23.9Q25.2 23.5 25.2 21.6Q25.3 19.6 26.8 18.3Q28.4 17 30.2 18Q32 19 32.6 20.8Z" fill="#cdc6be"/>
+<path d="M32.6 20.8Q33.1 22.5 31.3 23.4Q29.5 24.3 27.3 23.9Q25.2 23.5 25.2 21.6Q25.3 19.6 26.8 18.3Q28.4 17 30.2 18Q32 19 32.6 20.8Z" fill="none" stroke="#6b5263" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="21.5" cy="15" r="1.8" fill="#a69f9b"/>
+</g>
+<g id="p-b" class="st-b">
+<path d="M16.2 16.7Q17 19.2 14.3 20.5Q11.7 21.8 8.6 21.2Q5.5 20.6 5.6 17.8Q5.6 15 7.9 13.1Q10.2 11.2 12.8 12.7Q15.4 14.2 16.2 16.7Z" fill="#f2e7d0"/>
+<path d="M16.2 16.7Q17 19.2 14.3 20.5Q11.7 21.8 8.6 21.2Q5.5 20.6 5.6 17.8Q5.6 15 7.9 13.1Q10.2 11.2 12.8 12.7Q15.4 14.2 16.2 16.7Z" fill="none" stroke="#6b5263" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M35.1 18.7Q35.8 20.7 33.7 21.8Q31.6 22.8 29.1 22.3Q26.6 21.9 26.6 19.6Q26.7 17.4 28.5 15.9Q30.3 14.4 32.4 15.6Q34.5 16.7 35.1 18.7Z" fill="#cdc6be"/>
+<path d="M35.1 18.7Q35.8 20.7 33.7 21.8Q31.6 22.8 29.1 22.3Q26.6 21.9 26.6 19.6Q26.7 17.4 28.5 15.9Q30.3 14.4 32.4 15.6Q34.5 16.7 35.1 18.7Z" fill="none" stroke="#6b5263" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="21" cy="10" r="2" fill="#a69f9b"/>
+<circle cx="37" cy="11" r="1.7" fill="#a69f9b"/>
+</g>
+<g id="p-c" class="st-c">
+<path d="M12.5 11.8Q13.1 13.5 11.3 14.4Q9.5 15.2 7.4 14.8Q5.3 14.4 5.3 12.5Q5.4 10.7 6.9 9.4Q8.4 8.1 10.2 9.1Q11.9 10.1 12.5 11.8Z" fill="#f2e7d0"/>
+<path d="M12.5 11.8Q13.1 13.5 11.3 14.4Q9.5 15.2 7.4 14.8Q5.3 14.4 5.3 12.5Q5.4 10.7 6.9 9.4Q8.4 8.1 10.2 9.1Q11.9 10.1 12.5 11.8Z" fill="none" stroke="#6b5263" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M37 13.8Q37.5 15.3 36 16Q34.4 16.8 32.6 16.4Q30.8 16.1 30.8 14.5Q30.8 12.9 32.2 11.7Q33.5 10.6 35 11.5Q36.5 12.3 37 13.8Z" fill="#cdc6be"/>
+<path d="M37 13.8Q37.5 15.3 36 16Q34.4 16.8 32.6 16.4Q30.8 16.1 30.8 14.5Q30.8 12.9 32.2 11.7Q33.5 10.6 35 11.5Q36.5 12.3 37 13.8Z" fill="none" stroke="#6b5263" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="19" cy="7" r="1.7" fill="#a69f9b"/>
+<circle cx="27" cy="9" r="1.9" fill="#a69f9b"/>
+</g>
+</svg>

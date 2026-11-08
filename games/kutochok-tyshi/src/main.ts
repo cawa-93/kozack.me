@@ -1,14 +1,17 @@
 import Phaser from 'phaser';
 
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from './config/gameConfig';
-import { mountDevelopmentLevelLauncher } from './dev/DevelopmentLauncher';
 import { BonusScene } from './game/scenes/BonusScene';
 import { GameScene } from './game/scenes/GameScene';
 import { MenuScene } from './game/scenes/MenuScene';
 import { PauseScene } from './game/scenes/PauseScene';
 import './style.css';
 
+// Dynamic import keeps the launcher's code and stylesheet out of the production build.
 if (import.meta.env.DEV) {
+  const { mountDevelopmentLevelLauncher } = await import(
+    './dev/DevelopmentLauncher'
+  );
   mountDevelopmentLevelLauncher();
 }
 

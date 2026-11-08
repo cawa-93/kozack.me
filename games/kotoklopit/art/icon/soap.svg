@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/soap — мило: плаский широкий бірюзовий брусок-«подушечка» (висота ≈ половина ширини, круглі кути) зі світлою верхньою гранню й утисненим овалом, на ньому шапка білої піни, над нею — дві великі блакитні бульбашки. Гігієна (HUD) і запас засобів гігієни. Ревізія іконок 2026-11-03 (доручення автора: «зрозумілі для людини й розбірливі в малому масштабі»), art/STYLE.md (іконки, еталони F1 icon/kibble і icon/heart).
+size 64×64; pivot (32, 32) — центр; points: —. Без станів і шарів: один кадр у готових кольорах; контур — LINE (силует 6, низ 8,5, внутрішні 3,5).
+Брусок — не пляшка шампуню (icon/shampoo) і не каністра (icon/detergent); піна лежить шапкою на брусці, а не всередині, тож брусок не читається мискою з водою (icon/water-bowl). Бульбашки — glassHi з контуром 3,5 і цяткою paper, ≥ 9 одиниць: не розчиняються в папері бабла й паперовому кружечку HUD на темній панелі.
+-->
+<defs>
+<clipPath id="icon-soap-bar"><path d="M8.6 41.4Q8.4 32.6 17.4 32.4Q32 31.6 46.6 32.4Q55.6 32.6 55.4 41.4L55.2 47.6Q55 54.8 46.6 54.8Q32 55.6 17.4 54.8Q9 54.8 8.8 47.6Z"/></clipPath>
+<clipPath id="icon-soap-foam"><path d="M13.4 37.4Q10.8 33.4 14.4 30.6Q14.6 25.4 19.8 25.6Q22.4 20.6 27.8 22.6Q32.6 21.6 33.8 26.2Q38.6 27.2 37.4 32Q39.2 36.4 35 37.8Q24.2 40.2 13.4 37.4Z"/></clipPath>
+</defs>
+<g id="p-bar">
+<path d="M8.6 41.4Q8.4 32.6 17.4 32.4Q32 31.6 46.6 32.4Q55.6 32.6 55.4 41.4L55.2 47.6Q55 54.8 46.6 54.8Q32 55.6 17.4 54.8Q9 54.8 8.8 47.6Z" fill="#5f9089"/>
+<path d="M8.6 41.4Q8.4 32.6 17.4 32.4Q32 31.6 46.6 32.4Q55.6 32.6 55.4 41.4Q32 47.8 8.6 41.4Z" fill="#8bb3aa"/>
+<path d="M0 50.5Q16 51.5 32 50.5Q48 49.5 64 50.5L64 64L0 64Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-soap-bar)"/>
+<path d="M20 38.2A12 3.6 0 1 0 44 38.2A12 3.6 0 1 0 20 38.2Z" fill="none" stroke="#5f9089" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M9.6 42Q32 48.4 54.4 42" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8.6 41.4Q8.4 32.6 17.4 32.4Q32 31.6 46.6 32.4Q55.6 32.6 55.4 41.4L55.2 47.6Q55 54.8 46.6 54.8Q32 55.6 17.4 54.8Q9 54.8 8.8 47.6Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17.4 54.8Q32 55.6 46.6 54.8" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-foam">
+<path d="M13.4 37.4Q10.8 33.4 14.4 30.6Q14.6 25.4 19.8 25.6Q22.4 20.6 27.8 22.6Q32.6 21.6 33.8 26.2Q38.6 27.2 37.4 32Q39.2 36.4 35 37.8Q24.2 40.2 13.4 37.4Z" fill="#f2e7d0"/>
+<path d="M0 34Q20 37 40 33L40 64L0 64Z" fill="#3f2541" fill-opacity="0.16" clip-path="url(#icon-soap-foam)"/>
+<path d="M13.4 37.4Q10.8 33.4 14.4 30.6Q14.6 25.4 19.8 25.6Q22.4 20.6 27.8 22.6Q32.6 21.6 33.8 26.2Q38.6 27.2 37.4 32Q39.2 36.4 35 37.8Q24.2 40.2 13.4 37.4Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-bubbles">
+<path d="M37.4 21A6.2 6.2 0 1 0 49.8 21A6.2 6.2 0 1 0 37.4 21Z" fill="#d4e3dc"/>
+<path d="M39.63 18.89A1.86 1.86 0 1 0 43.35 18.89A1.86 1.86 0 1 0 39.63 18.89Z" fill="#f2e7d0"/>
+<path d="M37.4 21A6.2 6.2 0 1 0 49.8 21A6.2 6.2 0 1 0 37.4 21Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M45.8 10.8A4.8 4.8 0 1 0 55.4 10.8A4.8 4.8 0 1 0 45.8 10.8Z" fill="#d4e3dc"/>
+<path d="M47.53 9.17A1.44 1.44 0 1 0 50.41 9.17A1.44 1.44 0 1 0 47.53 9.17Z" fill="#f2e7d0"/>
+<path d="M45.8 10.8A4.8 4.8 0 1 0 55.4 10.8A4.8 4.8 0 1 0 45.8 10.8Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

@@ -1,0 +1,199 @@
+// Полотна частин кота (крок 16, F5): спільні для основи (A7), варіантів і накладок (A8) — накладка лежить у тому самому
+// полотні й з тим самим pivot, що частина, тож компонувальник складає їх піксель у піксель. Без Phaser і DOM.
+//
+// Кіт дивиться праворуч (ліворуч — віддзеркалення), дорослий стоїть ≈ 56 одиниць до кінчиків вух (контракт хвилі 1);
+// голова велика — манера F1 («великі голови котів»). Pivot — суглоб, яким частина кріпиться до кістки (F4a): тулуб —
+// середина таза, голова — шия, вухо — середина основи, морда — під носом, лапа — плече чи стегно, хвіст — корінь; очі —
+// між очима, рот — під носом. Точки (`points`) — підказка скелету (`CAT_FIT`): де на частині кріпляться інші (`neck`,
+// `neck-base`, `shoulder-far`/`-near`, `hip-far`/`-near`, `tail`, `back`; на голові — `ear-far`/`-near`, `eyes`, `muzzle`,
+// `mouth`, `top`), `<назва>-back` — те саме місце в ракурсі back. Кошеня — ті самі кадри з поправками пропорцій скелета
+// (`RigDef.proportions.kitten`), окремих кадрів немає.
+//
+// Частини основи (A7: тулуби трьох статур, голова, очі, рот, довгий хвіст; вуха, морда й лапи `normal` — еталони F1b
+// `art/cat/…`, `art/STYLE.md`, розділ 13) — полотна намальованих SVG: арт головний, а `tests/art.test.ts` звіряє viewBox
+// із записом. Полотна тулуба, голови й довгого хвоста A7 розширив під пасма довгої шерсті (`fluff`), тулуба — ще й донизу
+// під живіт вагітної (`cat/belly/*`, A8): точки відносно pivot ті самі, що в еталона, тож скелет стоїть так само. Решта
+// варіантів (вуха, морди, лапи, хвости) — полотна SVG пакета A8a.
+
+import type { Shape } from "../../../../sim/types";
+import type { ArtPoint } from "../../types";
+import type { Geometry } from "./geometry";
+
+/** Частина: полотно, pivot і точки кріплення. */
+export interface Part extends Geometry {
+  points?: Readonly<Record<string, ArtPoint>>;
+}
+
+/**
+ * Тулуби статур (§9.10) — A7: звичайна — еталон F1b з полотном під пасма й живіт вагітної; струнка — довша й тонша, з
+ * підтягнутим животом; кремезна — коротша й глибша, з широкими грудьми. Pivot — центр таза; суглоби лап на тій самій
+ * висоті відносно таза (лапи ті самі й стоять на підлозі), уздовж тіла — свої; шия й корінь хвоста — свої.
+ */
+const BODIES: Record<Shape["build"], Part> = {
+  slim: {
+    size: { w: 72, h: 46 },
+    pivot: { x: 23, y: 22 },
+    points: {
+      neck: { x: 48.1, y: 14.3 },
+      "neck-back": { x: 51.4, y: 12 },
+      "neck-base": { x: 43.7, y: 15.9 },
+      "neck-base-back": { x: 47, y: 13.5 },
+      "shoulder-far": { x: 54.6, y: 20 },
+      "shoulder-far-back": { x: 48.6, y: 20 },
+      "shoulder-near": { x: 48.6, y: 23.5 },
+      "shoulder-near-back": { x: 54.6, y: 23.5 },
+      "hip-far": { x: 25.8, y: 20 },
+      "hip-far-back": { x: 19.8, y: 20 },
+      "hip-near": { x: 19.8, y: 23.5 },
+      "hip-near-back": { x: 25.8, y: 23.5 },
+      tail: { x: 13.2, y: 15.1 },
+      "tail-back": { x: 14.3, y: 14.3 },
+      back: { x: 35, y: 12 },
+      "back-back": { x: 32.8, y: 10.4 },
+    },
+  },
+  normal: {
+    size: { w: 70, h: 48 },
+    pivot: { x: 23, y: 24 },
+    points: {
+      neck: { x: 47, y: 15 },
+      "neck-back": { x: 50, y: 12 },
+      "neck-base": { x: 43, y: 17 },
+      "neck-base-back": { x: 46, y: 14 },
+      "shoulder-far": { x: 53, y: 22 },
+      "shoulder-far-back": { x: 47.5, y: 22 },
+      "shoulder-near": { x: 47.5, y: 25.5 },
+      "shoulder-near-back": { x: 53, y: 25.5 },
+      "hip-far": { x: 26.5, y: 22 },
+      "hip-far-back": { x: 21, y: 22 },
+      "hip-near": { x: 21, y: 25.5 },
+      "hip-near-back": { x: 26.5, y: 25.5 },
+      tail: { x: 15, y: 16 },
+      "tail-back": { x: 16, y: 15 },
+      back: { x: 35, y: 12 },
+      "back-back": { x: 33, y: 10 },
+    },
+  },
+  stocky: {
+    size: { w: 69, h: 50 },
+    pivot: { x: 21, y: 26 },
+    points: {
+      neck: { x: 44.1, y: 15.7 },
+      "neck-back": { x: 46.9, y: 12.1 },
+      "neck-base": { x: 40.4, y: 18.1 },
+      "neck-base-back": { x: 43.2, y: 14.5 },
+      "shoulder-far": { x: 49.7, y: 24 },
+      "shoulder-far-back": { x: 44.6, y: 24 },
+      "shoulder-near": { x: 44.6, y: 27.5 },
+      "shoulder-near-back": { x: 49.7, y: 27.5 },
+      "hip-far": { x: 25.1, y: 24 },
+      "hip-far-back": { x: 20, y: 24 },
+      "hip-near": { x: 20, y: 27.5 },
+      "hip-near-back": { x: 25.1, y: 27.5 },
+      tail: { x: 14.4, y: 16.9 },
+      "tail-back": { x: 15.3, y: 15.7 },
+      back: { x: 33, y: 12.1 },
+      "back-back": { x: 31.1, y: 9.7 },
+    },
+  },
+};
+
+/** Тулуб статури. */
+export function catBody(build: Shape["build"]): Part {
+  return BODIES[build];
+}
+
+/**
+ * Голова — еталон F1b, полотно A7 — донизу із запасом під «комір» довгої шерсті (пасма під щелепою); pivot і ширина — як в
+ * еталона (накладки голови лягають без зсуву, лише полотно вище: 43 замість 38). pivot — шия; `top` — над вухами (вуха —
+ * окремі частини), тож навмисно поза полотном.
+ */
+export const CAT_HEAD: Part = {
+  size: { w: 47, h: 43 },
+  pivot: { x: 15, y: 27 },
+  points: {
+    "ear-far": { x: 29.5, y: 10 },
+    "ear-far-back": { x: 14.5, y: 11 },
+    "ear-near": { x: 14.5, y: 11.5 },
+    "ear-near-back": { x: 29, y: 10.5 },
+    eyes: { x: 26, y: 18.6 },
+    muzzle: { x: 27.8, y: 24.4 },
+    mouth: { x: 27.8, y: 25.8 },
+    top: { x: 22, y: -6 },
+  },
+};
+
+/** Звичайне вухо — еталон F1b; pivot — середина основи. */
+const EAR_NORMAL: Part = { size: { w: 30, h: 27 }, pivot: { x: 15, y: 18 } };
+
+/**
+ * Вуха (§9.10): звичайні, великі (орієнтальні), висловухі (складені вперед), керл (загнуті назад), з китичками. Варіанти —
+ * полотна SVG пакета A8a (`art/cat/ear/<варіант>/*.svg`); pivot — середина основи, як у звичайного, тож вухо будь-якого
+ * варіанта стає в ті самі точки `ear-*` голови.
+ */
+export const CAT_EARS: Record<Shape["ears"], Part> = {
+  normal: EAR_NORMAL,
+  large: { size: { w: 36, h: 33 }, pivot: { x: 18, y: 24 } },
+  folded: { size: { w: 30, h: 25 }, pivot: { x: 15, y: 16 } },
+  curled: { size: { w: 33, h: 33 }, pivot: { x: 18, y: 24 } },
+  tufted: { size: { w: 35, h: 38 }, pivot: { x: 18, y: 29 } },
+};
+
+/** Звичайна морда — еталон F1b; pivot — під носом, `mouth` — куди стає рот. */
+const MUZZLE_NORMAL: Part = { size: { w: 35, h: 16 }, pivot: { x: 17, y: 8 }, points: { mouth: { x: 17, y: 9.4 } } };
+
+/**
+ * Морди (§9.10): звичайна, кирпата (перська), видовжена (сіамська). Варіанти — полотна SVG пакета A8a: pivot — там само,
+ * що в звичайної (точка `muzzle` голови), а `mouth` — під носом свого варіанта: у кирпатої ніс короткий, між нижніми
+ * краями очей, і рот на висоті звичайного, на 0,8 лівіше (вище не можна — «ω» і щелепа «няв» залізли б на очі); у
+ * видовженої ніс на кінці клина, праворуч від дальнього ока, — рот на 8,3 правіше й на 0,4 нижче, на шерсті клина.
+ */
+export const CAT_MUZZLES: Record<Shape["muzzle"], Part> = {
+  normal: MUZZLE_NORMAL,
+  flat: { size: { w: 34, h: 18 }, pivot: { x: 18, y: 8 }, points: { mouth: { x: 17.2, y: 9.4 } } },
+  long: { size: { w: 35, h: 24 }, pivot: { x: 11, y: 10 }, points: { mouth: { x: 19.3, y: 11.8 } } },
+};
+
+/** Очі обидва разом (у ¾ видно обидва) — еталон F1b, стани A7; pivot — між очима; полотно вміщує круглі очі й сльози. */
+export const CAT_EYES: Part = { size: { w: 31, h: 25 }, pivot: { x: 16, y: 11 } };
+/** Рот — еталон F1b, стани A7; pivot — під носом, полотно вміщує позіх (щелепа найнижче) і шипіння (найширше). */
+export const CAT_MOUTH: Part = { size: { w: 26, h: 27 }, pivot: { x: 14, y: 7 } };
+
+/** Наскільки коротші лапи манчкіна: на стільки ж скелет опускає тіло (`short-legs`, F4a). */
+const SHORT_LEGS = 7;
+
+/**
+ * Передні лапи (§9.10): звичайні — еталон F1b, короткі (манчкін, SVG пакета A8a) — на `SHORT_LEGS` коротші: верх той
+ * самий, нижче живота одразу лапка; pivot — плече, `paw` — подушечка.
+ */
+export const CAT_FRONT_LEGS: Record<Shape["legs"], Part> = {
+  normal: { size: { w: 27, h: 41 }, pivot: { x: 12, y: 14 }, points: { paw: { x: 14, y: 34.5 } } },
+  short: { size: { w: 27, h: 41 - SHORT_LEGS }, pivot: { x: 12, y: 14 }, points: { paw: { x: 14, y: 34.5 - SHORT_LEGS } } },
+};
+
+/** Задні лапи зі стегном; pivot — стегно. */
+export const CAT_BACK_LEGS: Record<Shape["legs"], Part> = {
+  normal: { size: { w: 28, h: 42 }, pivot: { x: 13, y: 15 }, points: { paw: { x: 14, y: 35.5 } } },
+  short: { size: { w: 28, h: 42 - SHORT_LEGS }, pivot: { x: 13, y: 15 }, points: { paw: { x: 14, y: 35.5 - SHORT_LEGS } } },
+};
+
+/**
+ * Довгий хвіст — еталон F1b, полотно A7 — із запасом під «пір'їну» довгої шерсті: у вихідній позі дугою вгору від кореня
+ * (pivot), `tip` — кінчик.
+ */
+const TAIL_LONG_DRAWN: Part = {
+  size: { w: 48, h: 53 },
+  pivot: { x: 30, y: 41 },
+  points: { tip: { x: 25.6, y: 14.6 }, "tip-back": { x: 35.8, y: 16.4 } },
+};
+
+/**
+ * Хвости (§9.10; «none» — слот порожній): довгий, короткий, пухнастий, бобтейл-помпон; pivot — корінь. Варіанти — полотна
+ * SVG пакета A8a (з пасмами довгої шерсті `fluff` за краєм), `tip` / `tip-back` — кінчик (у помпона — його верх).
+ */
+export const CAT_TAILS: Record<Exclude<Shape["tail"], "none">, Part> = {
+  long: TAIL_LONG_DRAWN,
+  short: { size: { w: 37, h: 42 }, pivot: { x: 23, y: 30 }, points: { tip: { x: 13.2, y: 15.2 }, "tip-back": { x: 24.2, y: 13.4 } } },
+  fluffy: { size: { w: 55, h: 58 }, pivot: { x: 32, y: 45 }, points: { tip: { x: 28.6, y: 16.2 }, "tip-back": { x: 38.4, y: 17.6 } } },
+  bobtail: { size: { w: 37, h: 34 }, pivot: { x: 22, y: 22 }, points: { tip: { x: 18.4, y: 10.8 }, "tip-back": { x: 21, y: 10.2 } } },
+};

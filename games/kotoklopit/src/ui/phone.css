@@ -1,0 +1,292 @@
+/* Телефон (§6.4, «Телефон — смартфон набік»): корпус і екран замість паперової картки, `.card-phone`. Кольори — з
+   `art/palette.ts`: корпус dark / darkHi, екран enamelHi, лінза teal / tealHi, плитки застосунків — барвисті сім'ї.
+
+   Порядок стилів у збірці не гарантований (phone.css підключає `cards.ts`, overlay.css — `overlay.ts`), тож правила тут
+   конкретніші за правила overlay.css (`.overlay .card.card-phone …`), а не пізніші. */
+
+/* Корпус — рамка картки (border), екран — її середина (padding-box), що прокручується. Тло рамки не прокручується разом із
+   вмістом, тож камера й динамік на лівому короткому боці — шари тла. Кути екрана прямі: радіус корпусу не більший за коротші
+   боки рамки. Телефон однакового розміру на всіх вкладках: вкладки не їдуть з-під пальця ні вбік, ні вгору-вниз. */
+.overlay .card.card-phone {
+  --case: #4b4146;
+  --case-hi: #6d6266;
+  --screen: #f2e9d4;
+  --lens: var(--teal);
+  --lens-hi: #8bb3aa;
+  --teal: #5f9089;
+  --green: #7e9662;
+  --blue: #6c84a3;
+  --plum: #8b5d78;
+  --mustard: #d4a54c;
+  /* Поле `.overlay` (overlay.css): від нього хрестик рахує правий бік корпусу. */
+  --overlay-pad: 16px;
+  --phone-width: 860px;
+  --phone-height: 600px;
+  /* Рамка: довгі боки, короткий бік із камерою (ліворуч) і з кнопкою-хрестиком (праворуч). */
+  --bezel: 14px;
+  --bezel-cam: 28px;
+  --bezel-key: 50px;
+  --screen-pad: 10px;
+  /* Висота рядка стану: під ним липнуть вкладки. */
+  --status: 24px;
+  --outline: 3px;
+  --drop: 6px;
+  --radius: 28px;
+  display: flex;
+  flex-direction: column;
+  width: min(var(--phone-width), 100%);
+  height: min(var(--phone-height), 100%);
+  padding: 0 var(--screen-pad);
+  border: solid transparent;
+  border-width: var(--bezel) var(--bezel-key) var(--bezel) var(--bezel-cam);
+  border-image: none;
+  border-radius: var(--radius);
+  background:
+    radial-gradient(circle closest-side, var(--lens-hi) 0 24%, var(--lens) 32% 50%, var(--ink) 58% 90%, transparent) calc(var(--bezel-cam) / 2 - 6px) calc(50% - 27px) / 12px 12px no-repeat border-box,
+    radial-gradient(closest-side, var(--ink) 0 80%, transparent) calc(var(--bezel-cam) / 2 - 2.5px) 50% / 5px 32px no-repeat border-box,
+    linear-gradient(var(--case-hi), var(--case-hi)) 0 0 / 100% 3px no-repeat border-box,
+    linear-gradient(var(--screen), var(--screen)) padding-box,
+    var(--case) border-box;
+  /* Контур чорнилом і тінь — тінями рамки: `filter` картки зробив би її блоком-контейнером для хрестика (нижче). */
+  filter: none;
+  box-shadow:
+    0 0 0 var(--outline) var(--ink),
+    0 var(--drop) 0 var(--outline) var(--shade-base);
+  scrollbar-color: var(--grey) transparent;
+}
+
+/* Вміст екрана — стовпцем: смуга кошика стоїть унизу екрана, навіть коли товарів мало. Нічого не стискається. */
+.overlay .card.card-phone > * {
+  flex: none;
+}
+
+/* Хрестик — кругла кнопка на корпусі праворуч, посередині короткого боку (як кнопка «Додому»): не прокручується й не займає
+   екрана. Екран, що прокручується, не обтинає його лише тому, що блок-контейнер хрестика — `.overlay`: у картки немає ні
+   `position`, ні `filter`. Тож місце рахується від поля `.overlay` і ширини телефона — телефон посередині і вшир, і по висоті. */
+.overlay .card.card-phone > .card-close {
+  position: absolute;
+  top: 50%;
+  left: calc(50% + min(var(--phone-width), 100% - 2 * var(--overlay-pad)) / 2 - var(--bezel-key) / 2);
+  float: none;
+  margin: 0;
+  translate: -50% -50%;
+}
+
+/* Рядок стану (`phonebar.ts`): годинник гри ліворуч, зв'язок і батарея праворуч. У картці він після вкладок (їх `Overlay`
+   ставить перед тілом), а на екрані — над ними (`order`); липне до верху екрана, вкладки — під ним. Шрифт — звичайний
+   жирний, як у рядку стану справжнього телефона. */
+.overlay .card.card-phone > .phone-status {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  order: -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  height: var(--status);
+  margin: 0 calc(-1 * var(--screen-pad));
+  padding: 3px 14px 0;
+  background: var(--screen);
+  color: var(--ink);
+  font: 600 13px/1 system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.overlay .card.card-phone .phone-status-icons {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* Зв'язок — чотири стовпчики, що ростуть праворуч. */
+.overlay .card.card-phone .phone-signal {
+  width: 15px;
+  height: 11px;
+  background:
+    linear-gradient(var(--ink), var(--ink)) 0 100% / 3px 35% no-repeat,
+    linear-gradient(var(--ink), var(--ink)) 33.3% 100% / 3px 57% no-repeat,
+    linear-gradient(var(--ink), var(--ink)) 66.7% 100% / 3px 78% no-repeat,
+    linear-gradient(var(--ink), var(--ink)) 100% 100% / 3px 100% no-repeat;
+}
+
+/* Батарея — контур із зеленим зарядом і «носиком» праворуч. */
+.overlay .card.card-phone .phone-battery {
+  position: relative;
+  box-sizing: border-box;
+  width: 23px;
+  height: 12px;
+  margin-right: 3px;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: linear-gradient(var(--green), var(--green)) 1px 50% / 70% calc(100% - 2px) no-repeat;
+}
+
+.overlay .card.card-phone .phone-battery::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -5px;
+  width: 3px;
+  height: 5px;
+  border-radius: 0 2px 2px 0;
+  background: var(--ink);
+  translate: 0 -50%;
+}
+
+/* Вкладки липнуть до верху екрана під рядком стану на всю його ширину; тонка тінь під ними — межа, під яку йде каталог. */
+.overlay .card.card-phone > .card-tabbar {
+  top: var(--status);
+  margin: 0 calc(-1 * var(--screen-pad)) 8px;
+  padding: 4px var(--screen-pad) 6px;
+  background: var(--screen);
+  box-shadow: 0 2px 0 var(--shade-soft);
+}
+
+.overlay .card.card-phone > .card-tabbar::before {
+  content: none;
+}
+
+/* Поле 3 px — під рамку фокуса: рядок, що прокручується вбік, обтинає все за своїм краєм. */
+.overlay .card.card-phone > .card-tabbar > .card-tabs {
+  gap: 6px;
+  margin: 0;
+  padding: 3px;
+}
+
+/* Вкладка — застосунок: кольорова плитка з іконкою й назва поруч; відкрита — на світлій підкладці з контуром. */
+.overlay .card.card-phone .card-tab,
+.overlay .card.card-phone .card-tab.active {
+  --app: var(--orange);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 3px 13px 3px 3px;
+  border: 0;
+  border-image: none;
+  border-radius: 12px;
+  background: none;
+  color: var(--ink-soft);
+}
+
+.overlay .card.card-phone .card-tab.active {
+  background: var(--enamel);
+  box-shadow: inset 0 0 0 2px var(--ink);
+  color: var(--ink);
+}
+
+/* Плитка: у вкладки з іконкою (`🛒`, `🏠`, `🐱` — `glyphs.ts`) нею стає сама іконка, у вкладки без неї — `::before`. Окремими
+   правилами: браузер без `:has()` відкинув би спільне правило цілком, а так лишаються хоча б плитки з іконками. */
+.overlay .card.card-phone .card-tab > .glyph {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background-color: var(--app);
+  box-shadow: inset 0 -3px 0 var(--shade-base);
+}
+
+.overlay .card.card-phone .card-tab:not(:has(> .glyph))::before {
+  content: "";
+  box-sizing: border-box;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background-color: var(--app);
+  box-shadow: inset 0 -3px 0 var(--shade-base);
+}
+
+/* Колір плитки — за місцем вкладки (`PHONE_TABS` у `cards.ts`: Магазин, Речі, [Коти], [Альбом], Гра; Коти й Альбом
+   бувають не завжди). Коти — третя з іконкою, Альбом — посередині без іконки. Кольори — так, щоб іконка на плитці читалася:
+   гірчичний кошик на бірюзовому, рудий кіт на синьому. */
+.overlay .card.card-phone .card-tab:first-child {
+  --app: var(--teal);
+}
+
+.overlay .card.card-phone .card-tab:nth-child(2) {
+  --app: var(--green);
+}
+
+.overlay .card.card-phone .card-tab:nth-child(3):has(> .glyph) {
+  --app: var(--blue);
+}
+
+/* Альбом: фото з сонцем і пагорбом (чорнило, папір, зелений, гірчичний) на сливовій плитці. */
+.overlay .card.card-phone .card-tab:not(:has(> .glyph)):not(:last-child)::before {
+  background:
+    radial-gradient(circle closest-side, var(--mustard) 0 80%, transparent) calc(50% + 4px) calc(50% - 2px) / 6px 6px no-repeat,
+    linear-gradient(var(--green), var(--green)) 50% calc(50% + 4px) / 16px 4px no-repeat,
+    linear-gradient(var(--paper), var(--paper)) 50% 50% / 16px 12px no-repeat,
+    linear-gradient(var(--ink), var(--ink)) 50% 50% / 20px 16px no-repeat,
+    var(--plum);
+}
+
+/* Гра: гральний кубик (папір, три крапки чорнилом) на гірчичній плитці. */
+.overlay .card.card-phone .card-tab:last-child:not(:has(> .glyph))::before {
+  background:
+    radial-gradient(circle closest-side, var(--ink) 0 75%, transparent) calc(50% - 4px) calc(50% - 4px) / 4px 4px no-repeat,
+    radial-gradient(circle closest-side, var(--ink) 0 75%, transparent) 50% 50% / 4px 4px no-repeat,
+    radial-gradient(circle closest-side, var(--ink) 0 75%, transparent) calc(50% + 4px) calc(50% + 4px) / 4px 4px no-repeat,
+    linear-gradient(var(--paper), var(--paper)) 50% 50% / 14px 14px no-repeat,
+    linear-gradient(var(--ink), var(--ink)) 50% 50% / 18px 18px no-repeat,
+    var(--mustard);
+}
+
+/* Смуга кошика — низ екрана на всю його ширину, на кольорі екрана; тонка тінь над нею — межа каталогу. */
+.overlay .card.card-phone > .shop-bar {
+  bottom: 0;
+  margin: auto calc(-1 * var(--screen-pad)) 0;
+  padding: 8px var(--screen-pad);
+  background: var(--screen);
+  box-shadow: 0 -2px 0 var(--shade-soft);
+}
+
+/* Телефон набік (низький екран): тонша рамка й поле `.overlay`, як у решти карток (overlay.css). */
+@media (max-height: 420px) {
+  .overlay .card.card-phone {
+    --overlay-pad: 8px;
+    --bezel: 5px;
+    --bezel-cam: 24px;
+    --bezel-key: 46px;
+    --screen-pad: 8px;
+    --status: 17px;
+    --outline: 2px;
+    --drop: 3px;
+    --radius: 22px;
+  }
+
+  .overlay .card.card-phone > .phone-status {
+    padding-top: 2px;
+    font-size: 12px;
+  }
+
+  /* Вкладки й рядок стану — не вищі, ніж були вкладки паперової картки: вкладка «Гра» вміщується без прокрутки. */
+  .overlay .card.card-phone > .card-tabbar {
+    margin-bottom: 0;
+    padding: 0 var(--screen-pad) 2px;
+  }
+
+  /* Відступ під вкладками — полем першого елемента вмісту (у картці він одразу за рядком стану), а не вкладок: «Гра» з
+     полем 4 px над першим рядком і так вміщується впритул. */
+  .overlay .card.card-phone > .phone-status + * {
+    margin-top: 4px;
+  }
+
+  .overlay .card.card-phone .card-tab,
+  .overlay .card.card-phone .card-tab.active {
+    min-height: 38px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+
+  .overlay .card.card-phone > .shop-bar {
+    padding: 6px var(--screen-pad);
+  }
+}

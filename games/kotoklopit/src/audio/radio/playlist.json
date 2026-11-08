@@ -1,0 +1,2262 @@
+{
+  "base": "https://kotoklopit-music.kozackunisoft.workers.dev/music/",
+  "tracks": {
+    "b4acfe87f58f-m48": {
+      "artist": "boringXtreme",
+      "title": "I",
+      "frames": 5849
+    },
+    "d250c1b80411-m48": {
+      "artist": "boringXtreme",
+      "title": "Solace in Imaginary Places",
+      "frames": 4909
+    },
+    "966d82e65b5e-m48": {
+      "artist": "boringXtreme",
+      "title": "Timewarp",
+      "frames": 10235
+    },
+    "65feca79ec32-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Hold Me, Love Me",
+      "frames": 11262
+    },
+    "f836a65f9d0c-m48": {
+      "artist": "Bryan Teoh",
+      "title": "I Guess What I'm Trying to Say",
+      "frames": 6292
+    },
+    "4fb04327dfa8-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Isolation Waltz",
+      "frames": 8449
+    },
+    "f81ff8af1417-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Neptunian Princess",
+      "frames": 5130
+    },
+    "48ea5f463fea-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Planeteer Reaction",
+      "frames": 10342
+    },
+    "39e0543fbeb0-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Slice of Life",
+      "frames": 5809
+    },
+    "989363a9d03c-m48": {
+      "artist": "dogsounds",
+      "title": "A Waltz For Naseem",
+      "frames": 8910
+    },
+    "c61d4307bb40-m48": {
+      "artist": "dogsounds",
+      "title": "dream freedom",
+      "frames": 14853
+    },
+    "1259304bc5af-m48": {
+      "artist": "dogsounds",
+      "title": "sa mo do do",
+      "frames": 8744
+    },
+    "4f7112d7ebca-m48": {
+      "artist": "Dom Raven",
+      "title": "Rain - remastered",
+      "frames": 8142
+    },
+    "bf77b5624d36-m48": {
+      "artist": "Frank Nora",
+      "title": "Ambient B Eastern Thought",
+      "frames": 8101
+    },
+    "bab7ba07e854-m48": {
+      "artist": "Frank Nora",
+      "title": "Ambient C Motion",
+      "frames": 8751
+    },
+    "12dff34a4110-m48": {
+      "artist": "Frank Nora",
+      "title": "Ambient D Edges",
+      "frames": 8733
+    },
+    "29e47b1d0782-m48": {
+      "artist": "Frank Nora",
+      "title": "Ambient D Wooden Blocks",
+      "frames": 8933
+    },
+    "e7a845a20d9a-m48": {
+      "artist": "Frank Nora",
+      "title": "Ambient E Singing Bells",
+      "frames": 6773
+    },
+    "e4f1d18f6dac-m48": {
+      "artist": "Frank Nora",
+      "title": "Ambient F Swirl Noise",
+      "frames": 5342
+    },
+    "49e186f02151-m48": {
+      "artist": "Frank Nora",
+      "title": "Ambient G Glowing",
+      "frames": 6566
+    },
+    "74cd2a16366f-m48": {
+      "artist": "Frank Nora",
+      "title": "Ambient I Tibet Groove",
+      "frames": 5833
+    },
+    "da821fc6a629-m48": {
+      "artist": "Frank Nora",
+      "title": "Ambient J Thoughtful",
+      "frames": 5174
+    },
+    "fbdcc610eb0c-m48": {
+      "artist": "Frank Nora",
+      "title": "Ambient K Slow Go",
+      "frames": 7130
+    },
+    "1c2dbbb6768e-m48": {
+      "artist": "Frank Nora",
+      "title": "Ambient L Delicate",
+      "frames": 8714
+    },
+    "bc3706cf00b7-m48": {
+      "artist": "Frank Nora",
+      "title": "Ambient M Squee Bell",
+      "frames": 8024
+    },
+    "a5c614e80c00-m48": {
+      "artist": "Frank Nora",
+      "title": "Ambient N Vibe Train",
+      "frames": 6702
+    },
+    "981c0021cebc-m48": {
+      "artist": "Frank Nora",
+      "title": "Ambient O Sub Plucker",
+      "frames": 4945
+    },
+    "84aa6f22bc8f-m48": {
+      "artist": "Frank Nora",
+      "title": "Ambient Q Chime Song",
+      "frames": 8333
+    },
+    "f9dfd0624557-m48": {
+      "artist": "Frank Nora",
+      "title": "Chill A",
+      "frames": 7311
+    },
+    "eb8b2c3b7064-m48": {
+      "artist": "Frank Nora",
+      "title": "Chill Air",
+      "frames": 8802
+    },
+    "46bf3a9752cf-m48": {
+      "artist": "Frank Nora",
+      "title": "Chill Awash",
+      "frames": 7018
+    },
+    "0a2f3ef08e80-m48": {
+      "artist": "Frank Nora",
+      "title": "Chill Beat",
+      "frames": 6213
+    },
+    "a55bae170c4b-m48": {
+      "artist": "Frank Nora",
+      "title": "Chill Bells",
+      "frames": 8147
+    },
+    "0d396d06727c-m48": {
+      "artist": "Frank Nora",
+      "title": "Chill Breathe",
+      "frames": 8462
+    },
+    "87155aff0f90-m48": {
+      "artist": "Frank Nora",
+      "title": "Chill C",
+      "frames": 8389
+    },
+    "106b6dcfe95e-m48": {
+      "artist": "Frank Nora",
+      "title": "Chill China Love",
+      "frames": 5827
+    },
+    "8283f84919a7-m48": {
+      "artist": "Frank Nora",
+      "title": "Chill Cool NIght",
+      "frames": 7365
+    },
+    "2c9bc73f9933-m48": {
+      "artist": "Frank Nora",
+      "title": "Chill Deep",
+      "frames": 7022
+    },
+    "38bf8dc3f36a-m48": {
+      "artist": "Frank Nora",
+      "title": "Chill Denoumont",
+      "frames": 5752
+    },
+    "8153819606cc-m48": {
+      "artist": "Frank Nora",
+      "title": "Chill Float",
+      "frames": 8570
+    },
+    "eb2fc75eb3b2-m48": {
+      "artist": "Frank Nora",
+      "title": "Chill Openness",
+      "frames": 8364
+    },
+    "e285838c2b80-m48": {
+      "artist": "Frank Nora",
+      "title": "Chill Soft",
+      "frames": 5573
+    },
+    "e0329b0508fc-m48": {
+      "artist": "Frank Nora",
+      "title": "Chill Urban",
+      "frames": 7557
+    },
+    "cc9885923520-m48": {
+      "artist": "Frank Nora",
+      "title": "Chillectro",
+      "frames": 13862
+    },
+    "1041460ec0b1-m48": {
+      "artist": "Frank Nora",
+      "title": "Electro Chill A",
+      "frames": 8745
+    },
+    "c31e1700e931-m48": {
+      "artist": "Frank Nora",
+      "title": "Electro Chill C",
+      "frames": 8700
+    },
+    "08c3a0246bd9-m48": {
+      "artist": "Frank Nora",
+      "title": "Electro Chill D",
+      "frames": 5875
+    },
+    "d77d9480948f-m48": {
+      "artist": "Frank Nora",
+      "title": "Electro Chill E",
+      "frames": 5243
+    },
+    "8c5a28aa3cd1-m48": {
+      "artist": "Frank Nora",
+      "title": "Electro Chill F",
+      "frames": 8748
+    },
+    "602544f90528-m48": {
+      "artist": "Frank Nora",
+      "title": "Electro Chill G",
+      "frames": 7559
+    },
+    "42ebb6199248-m48": {
+      "artist": "Frank Nora",
+      "title": "Electro Softie",
+      "frames": 6252
+    },
+    "001394e78e1f-m48": {
+      "artist": "Frank Nora",
+      "title": "Latinish",
+      "frames": 6002
+    },
+    "510f0470199d-m48": {
+      "artist": "Frank Nora",
+      "title": "MC Ballad A",
+      "frames": 8832
+    },
+    "c616f879c345-m48": {
+      "artist": "Frank Nora",
+      "title": "MC Ballad C",
+      "frames": 6959
+    },
+    "e61f923cfc0b-m48": {
+      "artist": "Frank Nora",
+      "title": "MC Ballad D",
+      "frames": 5004
+    },
+    "0b4046aab9e0-m48": {
+      "artist": "Frank Nora",
+      "title": "MC Ballad E",
+      "frames": 8226
+    },
+    "7531576b9660-m48": {
+      "artist": "Frank Nora",
+      "title": "MC Ballad F Chuffy",
+      "frames": 5709
+    },
+    "a232bbbb73c0-m48": {
+      "artist": "Frank Nora",
+      "title": "MC Ballad G",
+      "frames": 7069
+    },
+    "508cbce11ffb-m48": {
+      "artist": "Frank Nora",
+      "title": "MC Ballad H",
+      "frames": 5064
+    },
+    "634c00fb621f-m48": {
+      "artist": "Frank Nora",
+      "title": "MC Ballad I",
+      "frames": 4957
+    },
+    "bc4cffafc2bd-m48": {
+      "artist": "Frank Nora",
+      "title": "MC Ballad J",
+      "frames": 5823
+    },
+    "0a4488d2cef3-m48": {
+      "artist": "Frank Nora",
+      "title": "MC Ballad O",
+      "frames": 6222
+    },
+    "a1e8d1272290-m48": {
+      "artist": "Frank Nora",
+      "title": "MC Ballad R",
+      "frames": 5083
+    },
+    "128d769045fd-m48": {
+      "artist": "Frank Nora",
+      "title": "MC Ballad S Early Eighties",
+      "frames": 7026
+    },
+    "58bdf85431d5-m48": {
+      "artist": "Frank Nora",
+      "title": "MC Ballad T",
+      "frames": 7360
+    },
+    "6f7d75fc67fa-m48": {
+      "artist": "Frank Nora",
+      "title": "MC Ballad U Outside",
+      "frames": 6377
+    },
+    "a310372edfc9-m48": {
+      "artist": "Frank Nora",
+      "title": "MC Ballad W",
+      "frames": 7293
+    },
+    "4fb6169ab057-m48": {
+      "artist": "Frank Nora",
+      "title": "MC Ballad X",
+      "frames": 7199
+    },
+    "a05ebd2125da-m48": {
+      "artist": "Frank Nora",
+      "title": "MC Ballad Y",
+      "frames": 6960
+    },
+    "0e1fb02c16d4-m48": {
+      "artist": "Frank Nora",
+      "title": "New Age C Chimer",
+      "frames": 8157
+    },
+    "695f31e6b01c-m48": {
+      "artist": "Frank Nora",
+      "title": "New Age D Detective",
+      "frames": 6374
+    },
+    "1bd3af227814-m48": {
+      "artist": "Frank Nora",
+      "title": "New Age E Aspire",
+      "frames": 6193
+    },
+    "23088e9f914d-m48": {
+      "artist": "Frank Nora",
+      "title": "New Age F Bender",
+      "frames": 5004
+    },
+    "ba81fb0fd246-m48": {
+      "artist": "Frank Nora",
+      "title": "New Age G Awful",
+      "frames": 5345
+    },
+    "d9e225a82a42-m48": {
+      "artist": "Frank Nora",
+      "title": "New Age H Backer Ice",
+      "frames": 6011
+    },
+    "996186a7cc47-m48": {
+      "artist": "Frank Nora",
+      "title": "New Age I Dissonant",
+      "frames": 8846
+    },
+    "10ca4fbceed6-m48": {
+      "artist": "Frank Nora",
+      "title": "New Age J Promise",
+      "frames": 8905
+    },
+    "855687d0a196-m48": {
+      "artist": "Frank Nora",
+      "title": "New Age L Wood Synth",
+      "frames": 5044
+    },
+    "8340cc97c16a-m48": {
+      "artist": "Frank Nora",
+      "title": "New Age N Mysterion",
+      "frames": 5169
+    },
+    "b29343a0572a-m48": {
+      "artist": "Frank Nora",
+      "title": "New Age P Space Kudzu",
+      "frames": 7367
+    },
+    "51c49779b547-m48": {
+      "artist": "Frank Nora",
+      "title": "New Age R Water Shine",
+      "frames": 7438
+    },
+    "a4e73e3d4657-m48": {
+      "artist": "Frank Nora",
+      "title": "New Age S Path to Light",
+      "frames": 6189
+    },
+    "8069e220e24e-m48": {
+      "artist": "Frank Nora",
+      "title": "Soft Urban A",
+      "frames": 7197
+    },
+    "f54bcab36738-m48": {
+      "artist": "*imp*",
+      "title": "Depressor Superchill",
+      "frames": 9839
+    },
+    "5a802128c7ce-m48": {
+      "artist": "*imp*",
+      "title": "Germ Factory",
+      "frames": 10409
+    },
+    "a063b2d3dfd7-m48": {
+      "artist": "*imp*",
+      "title": "Light Infusor",
+      "frames": 9073
+    },
+    "4458ab6e810e-m48": {
+      "artist": "*imp*",
+      "title": "Mysterions",
+      "frames": 20085
+    },
+    "99f6a96d0293-m48": {
+      "artist": "*imp*",
+      "title": "Post-Operative Dream",
+      "frames": 13156
+    },
+    "23ab016e75ea-m48": {
+      "artist": "Jason Shaw",
+      "title": "Rubix Cube",
+      "frames": 9156
+    },
+    "291d19c592e7-m48": {
+      "artist": "Jason Shaw",
+      "title": "Triangle",
+      "frames": 9119
+    },
+    "24b57eccefa2-m48": {
+      "artist": "Knight of Fire",
+      "title": "Freezing Ivory",
+      "frames": 6721
+    },
+    "346fcdfbd427-m48": {
+      "artist": "Knight of Fire",
+      "title": "Global Resonance",
+      "frames": 9172
+    },
+    "723ed9a5b2f8-m48": {
+      "artist": "Knight of Fire",
+      "title": "Hope in the Sight of Fear",
+      "frames": 12547
+    },
+    "aff9df1e4a4f-m48": {
+      "artist": "Knight of Fire",
+      "title": "Peace in Sunlight",
+      "frames": 5995
+    },
+    "4ad316a0dd02-m48": {
+      "artist": "Phase Shift",
+      "title": "Enigmatic",
+      "frames": 7945
+    },
+    "f087318d48e2-m48": {
+      "artist": "Phase Shift",
+      "title": "Forest Night",
+      "frames": 5900
+    },
+    "e663ab0b1a77-m48": {
+      "artist": "Phase Shift",
+      "title": "Shine",
+      "frames": 5731
+    },
+    "590bb9833cfb-m48": {
+      "artist": "statusq",
+      "title": "3 am West End",
+      "frames": 12131
+    },
+    "f89cc281a304-m48": {
+      "artist": "dogsounds",
+      "title": "K's Theme",
+      "frames": 9163
+    },
+    "d393507cfb57-m48": {
+      "artist": "dogsounds",
+      "title": "kokarrah dawn",
+      "frames": 11462
+    },
+    "82b1662a32f0-m48": {
+      "artist": "dogsounds",
+      "title": "Kokoarrah Dusk",
+      "frames": 7884
+    },
+    "c6765fba10c0-m48": {
+      "artist": "dogsounds",
+      "title": "russian microtheme",
+      "frames": 8241
+    },
+    "763da985109d-m48": {
+      "artist": "Dom Raven",
+      "title": "Rain",
+      "frames": 8001
+    },
+    "0e7275e8f9d7-m48": {
+      "artist": "Frank Nora",
+      "title": "Acid Beat",
+      "frames": 14804
+    },
+    "c4925c5a267f-m48": {
+      "artist": "Frank Nora",
+      "title": "Blipotron",
+      "frames": 13845
+    },
+    "f3320aafa11b-m48": {
+      "artist": "Frank Nora",
+      "title": "Electro Shaker Heaven",
+      "frames": 6209
+    },
+    "a4ff0d3818d3-m48": {
+      "artist": "Frank Nora",
+      "title": "ElectroFreak",
+      "frames": 11957
+    },
+    "fa914a2e601a-m48": {
+      "artist": "Frank Nora",
+      "title": "ElectroLush",
+      "frames": 12440
+    },
+    "fe99ffb23ce4-m48": {
+      "artist": "Frank Nora",
+      "title": "Electronic A Groove Out",
+      "frames": 6021
+    },
+    "3d203e47a110-m48": {
+      "artist": "Frank Nora",
+      "title": "Electronic B Demo Button",
+      "frames": 8683
+    },
+    "69afcee30481-m48": {
+      "artist": "Frank Nora",
+      "title": "Electronic C Squee Crash",
+      "frames": 8761
+    },
+    "805dfcef9910-m48": {
+      "artist": "Frank Nora",
+      "title": "Electronic E System is Down",
+      "frames": 8595
+    },
+    "6781b4f2da24-m48": {
+      "artist": "Frank Nora",
+      "title": "Electronic G Percussive Party",
+      "frames": 8087
+    },
+    "f362554fb68e-m48": {
+      "artist": "Frank Nora",
+      "title": "Electronic H Organizer",
+      "frames": 6304
+    },
+    "0c4bfb6239bd-m48": {
+      "artist": "Frank Nora",
+      "title": "Electronic I Crazy Fun",
+      "frames": 7660
+    },
+    "8b656857714a-m48": {
+      "artist": "Frank Nora",
+      "title": "Electronic J Flattened Funk",
+      "frames": 6803
+    },
+    "a63043ad846d-m48": {
+      "artist": "Frank Nora",
+      "title": "Electronic K Deep Nyah",
+      "frames": 8777
+    },
+    "08d1be3f0069-m48": {
+      "artist": "Frank Nora",
+      "title": "Electronic L Discoed",
+      "frames": 8405
+    },
+    "df0ea43cc91b-m48": {
+      "artist": "Frank Nora",
+      "title": "Electronic M TechWeather",
+      "frames": 6126
+    },
+    "a0c3833d7dfa-m48": {
+      "artist": "Frank Nora",
+      "title": "Electronic N Weirgroove",
+      "frames": 8901
+    },
+    "8a3a0e5a44ae-m48": {
+      "artist": "Frank Nora",
+      "title": "Electronic P Disco Accordion",
+      "frames": 6742
+    },
+    "50869b5ee115-m48": {
+      "artist": "Frank Nora",
+      "title": "Electronic Q 80s Incarnate",
+      "frames": 6016
+    },
+    "4c8159bdb687-m48": {
+      "artist": "Frank Nora",
+      "title": "ElectroShuffle Dark",
+      "frames": 8567
+    },
+    "7e838d49b543-m48": {
+      "artist": "Frank Nora",
+      "title": "Flat Straight",
+      "frames": 5102
+    },
+    "198537c5a395-m48": {
+      "artist": "Frank Nora",
+      "title": "Hip Hop A Outside",
+      "frames": 8583
+    },
+    "c732b3bc9bc6-m48": {
+      "artist": "Frank Nora",
+      "title": "Hip Hop B Thick Beat",
+      "frames": 7148
+    },
+    "b247ffe5b275-m48": {
+      "artist": "Frank Nora",
+      "title": "Hip Hop C Wind UP",
+      "frames": 6836
+    },
+    "cf43afc32ea2-m48": {
+      "artist": "Frank Nora",
+      "title": "Hip Hop Corp",
+      "frames": 5653
+    },
+    "b50b4aab02cf-m48": {
+      "artist": "Frank Nora",
+      "title": "Hip Hop D Ungood",
+      "frames": 8671
+    },
+    "ec4c093d8451-m48": {
+      "artist": "Frank Nora",
+      "title": "Hip Hop Dark Shot",
+      "frames": 5113
+    },
+    "78846c78e6bb-m48": {
+      "artist": "Frank Nora",
+      "title": "Hip Hop Epics",
+      "frames": 8791
+    },
+    "7d07c7f4c9a9-m48": {
+      "artist": "Frank Nora",
+      "title": "Hip Hop Interrupt",
+      "frames": 5716
+    },
+    "e0f0ee307ace-m48": {
+      "artist": "Frank Nora",
+      "title": "Hip Hop Lost in Thought",
+      "frames": 6126
+    },
+    "42933762af89-m48": {
+      "artist": "Frank Nora",
+      "title": "Hip Hop Outside",
+      "frames": 8583
+    },
+    "65ed99571045-m48": {
+      "artist": "Frank Nora",
+      "title": "Montageur",
+      "frames": 12612
+    },
+    "bc0bf43eaa5d-m48": {
+      "artist": "Frank Nora",
+      "title": "Octave Jumper",
+      "frames": 11201
+    },
+    "62e632437b68-m48": {
+      "artist": "Frank Nora",
+      "title": "Ragga B ElectroIsland",
+      "frames": 7234
+    },
+    "ecf7f4d95183-m48": {
+      "artist": "Frank Nora",
+      "title": "Ragga E Harsh Love Theme",
+      "frames": 7335
+    },
+    "9ed08f3e6d79-m48": {
+      "artist": "Frank Nora",
+      "title": "Ragga F Disjoint",
+      "frames": 7332
+    },
+    "c4fd1649dc00-m48": {
+      "artist": "Frank Nora",
+      "title": "Ragga H Funky",
+      "frames": 6075
+    },
+    "ef9f2333a635-m48": {
+      "artist": "Frank Nora",
+      "title": "Ragga I Fast Bubble",
+      "frames": 5050
+    },
+    "b65b071bfcec-m48": {
+      "artist": "Frank Nora",
+      "title": "Ragga J Groundlink",
+      "frames": 6075
+    },
+    "7ff0ef8c4b11-m48": {
+      "artist": "Frank Nora",
+      "title": "Ragga K Hyperaccordion",
+      "frames": 8566
+    },
+    "a892b6be1df2-m48": {
+      "artist": "Frank Nora",
+      "title": "Ragga L Cool Island",
+      "frames": 5007
+    },
+    "501ad71a6328-m48": {
+      "artist": "Frank Nora",
+      "title": "Ragga M Stomp Buzz",
+      "frames": 7510
+    },
+    "99a897aab00f-m48": {
+      "artist": "Frank Nora",
+      "title": "Ragga N Atonal Island",
+      "frames": 6076
+    },
+    "0b7ea2437282-m48": {
+      "artist": "Frank Nora",
+      "title": "Ragga O Slick Bass",
+      "frames": 6219
+    },
+    "42f14e6768d0-m48": {
+      "artist": "Frank Nora",
+      "title": "Ragga P Space Palm",
+      "frames": 8477
+    },
+    "89b22d496e16-m48": {
+      "artist": "Frank Nora",
+      "title": "Ragga Q Party Chill",
+      "frames": 8779
+    },
+    "0976aba07ad6-m48": {
+      "artist": "Frank Nora",
+      "title": "Ragga R Spaceship Colada",
+      "frames": 8905
+    },
+    "87d1099e12fa-m48": {
+      "artist": "Frank Nora",
+      "title": "Rap Bad Brass Groove",
+      "frames": 6359
+    },
+    "659dc27943b5-m48": {
+      "artist": "Frank Nora",
+      "title": "Rap Chill",
+      "frames": 6100
+    },
+    "3074ee347d48-m48": {
+      "artist": "Frank Nora",
+      "title": "Rap Deep Groove",
+      "frames": 5038
+    },
+    "1ff3259edd0b-m48": {
+      "artist": "Frank Nora",
+      "title": "Rap Disjunct",
+      "frames": 5577
+    },
+    "9e5182810e24-m48": {
+      "artist": "Frank Nora",
+      "title": "Rap Fingered",
+      "frames": 6173
+    },
+    "cae594f56b69-m48": {
+      "artist": "Frank Nora",
+      "title": "Rap Funk",
+      "frames": 6009
+    },
+    "1dcdb9cd8613-m48": {
+      "artist": "Frank Nora",
+      "title": "Rap Light and Heavy",
+      "frames": 7586
+    },
+    "cf859b052bc3-m48": {
+      "artist": "Frank Nora",
+      "title": "Rap Lop-a-dop",
+      "frames": 8829
+    },
+    "90cc3c6d8e9a-m48": {
+      "artist": "Frank Nora",
+      "title": "Rap Low Down",
+      "frames": 8250
+    },
+    "6f44b448110d-m48": {
+      "artist": "Frank Nora",
+      "title": "Rap with Metals",
+      "frames": 8623
+    },
+    "eadc312d61c0-m48": {
+      "artist": "Frank Nora",
+      "title": "Raveminimal",
+      "frames": 14709
+    },
+    "a0a0927fb525-m48": {
+      "artist": "Frank Nora",
+      "title": "Reggae Remix A",
+      "frames": 8746
+    },
+    "15ae401affca-m48": {
+      "artist": "Frank Nora",
+      "title": "Relentless",
+      "frames": 12237
+    },
+    "728af9e42893-m48": {
+      "artist": "Frank Nora",
+      "title": "RnB Blipstorm",
+      "frames": 8700
+    },
+    "09f45544394c-m48": {
+      "artist": "Frank Nora",
+      "title": "Space Rap",
+      "frames": 5226
+    },
+    "bc90ad4c680d-m48": {
+      "artist": "Frank Nora",
+      "title": "Squanch",
+      "frames": 12489
+    },
+    "c5f36f75b2f6-m48": {
+      "artist": "Frank Nora",
+      "title": "Super Snare",
+      "frames": 8473
+    },
+    "d2b8b87b65fc-m48": {
+      "artist": "Frank Nora",
+      "title": "Twister",
+      "frames": 13173
+    },
+    "ce5ac2cf39a3-m48": {
+      "artist": "Frank Nora",
+      "title": "Urban Awful",
+      "frames": 8093
+    },
+    "6bc4c130db6a-m48": {
+      "artist": "Frank Nora",
+      "title": "Urban Brastard",
+      "frames": 8091
+    },
+    "11f627607c8d-m48": {
+      "artist": "Frank Nora",
+      "title": "Urban Confused Mystery",
+      "frames": 6915
+    },
+    "db9b757518a8-m48": {
+      "artist": "Frank Nora",
+      "title": "Urban Cool Trip",
+      "frames": 8903
+    },
+    "dec4539e87b1-m48": {
+      "artist": "Frank Nora",
+      "title": "Urban Funk B",
+      "frames": 5066
+    },
+    "d70b086ec1f7-m48": {
+      "artist": "Frank Nora",
+      "title": "Urban Hooter",
+      "frames": 8325
+    },
+    "03dec2ceab13-m48": {
+      "artist": "Frank Nora",
+      "title": "Urban Mixer",
+      "frames": 8197
+    },
+    "337180f2345a-m48": {
+      "artist": "Frank Nora",
+      "title": "Urban No Glue",
+      "frames": 6178
+    },
+    "a59bd4d7a746-m48": {
+      "artist": "Frank Nora",
+      "title": "Urban Sad Demo",
+      "frames": 8496
+    },
+    "13318dfbf990-m48": {
+      "artist": "Frank Nora",
+      "title": "Urban Scour",
+      "frames": 7368
+    },
+    "330fe5b6b0f7-m48": {
+      "artist": "Frank Nora",
+      "title": "Urban Soft Groove",
+      "frames": 7363
+    },
+    "17f84fb09ca7-m48": {
+      "artist": "*imp*",
+      "title": "When Trees Complain",
+      "frames": 7333
+    },
+    "c18c76c3bcba-m48": {
+      "artist": "lost misfit",
+      "title": "experimental 02",
+      "frames": 16318
+    },
+    "8d0755a9119a-m48": {
+      "artist": "Alpha Hydrae",
+      "title": "HashiandKiku",
+      "frames": 6497
+    },
+    "3d0715a8be00-m48": {
+      "artist": "Alpha Hydrae",
+      "title": "Keratine, rust and a clear soul",
+      "frames": 12481
+    },
+    "4c6ce84e61ca-m48": {
+      "artist": "Alpha Hydrae",
+      "title": "Paix",
+      "frames": 8668
+    },
+    "952d1617808a-m48": {
+      "artist": "Alpha Hydrae",
+      "title": "To be like a chased rabbit",
+      "frames": 13251
+    },
+    "d6ceeaf68cee-m48": {
+      "artist": "Alpha Hydrae",
+      "title": "ZREM",
+      "frames": 7493
+    },
+    "070be8edc624-m48": {
+      "artist": "Arthur Fordsworthy",
+      "title": "Downy Feathers",
+      "frames": 5749
+    },
+    "91d6243c7e53-m48": {
+      "artist": "Brian Boyko",
+      "title": "Ambush in Rattlesnake Gulch",
+      "frames": 25520
+    },
+    "ccd01716658e-m48": {
+      "artist": "Brian Boyko",
+      "title": "Born Barnstomers",
+      "frames": 17545
+    },
+    "2659c428ed3c-m48": {
+      "artist": "Brian Boyko",
+      "title": "Circumspection",
+      "frames": 12855
+    },
+    "33aaf61223a8-m48": {
+      "artist": "Brian Boyko",
+      "title": "City Slickers",
+      "frames": 11366
+    },
+    "41711b6e83ab-m48": {
+      "artist": "Brian Boyko",
+      "title": "Connection",
+      "frames": 14668
+    },
+    "64c44ed756bc-m48": {
+      "artist": "Brian Boyko",
+      "title": "Folk Song",
+      "frames": 7669
+    },
+    "d96d17e36461-m48": {
+      "artist": "Brian Boyko",
+      "title": "Groovin",
+      "frames": 10001
+    },
+    "74a867379ea3-m48": {
+      "artist": "Brian Boyko",
+      "title": "Long Trail",
+      "frames": 9526
+    },
+    "1b77a5980e31-m48": {
+      "artist": "Brian Boyko",
+      "title": "Miranda",
+      "frames": 12224
+    },
+    "bfcf28187212-m48": {
+      "artist": "Brian Boyko",
+      "title": "Orchestral Mix",
+      "frames": 10085
+    },
+    "8f8ff32f7b52-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Alls Fair In Love",
+      "frames": 9869
+    },
+    "5da633e89e8d-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Bar Brawl",
+      "frames": 5107
+    },
+    "fac095f68050-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Downtown Boogie",
+      "frames": 5722
+    },
+    "00082677a2ca-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Drop Point",
+      "frames": 7600
+    },
+    "3e9faa496e47-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Finally See The Light",
+      "frames": 8332
+    },
+    "4031356b83cb-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Fright Night Twist",
+      "frames": 7322
+    },
+    "dd20cb51c948-m48": {
+      "artist": "Bryan Teoh",
+      "title": "From Page to Practice",
+      "frames": 5626
+    },
+    "5101fa0a410c-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Go On Without Me",
+      "frames": 7989
+    },
+    "7bc328be13de-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Going Bananas",
+      "frames": 5728
+    },
+    "0844e8cb7f10-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Gotta Keep On Movin",
+      "frames": 5886
+    },
+    "c87d50579aa1-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Hold on a Sec",
+      "frames": 5171
+    },
+    "d9d592d5bc2b-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Honor Bound",
+      "frames": 7069
+    },
+    "916e736efa3c-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Inventing Flight",
+      "frames": 5841
+    },
+    "ff0ffc4c4c55-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Lucky Break",
+      "frames": 11795
+    },
+    "bd4edf542d48-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Managing Mischief",
+      "frames": 6723
+    },
+    "696d1e335deb-m48": {
+      "artist": "Bryan Teoh",
+      "title": "My Giant Bunny Friend",
+      "frames": 6753
+    },
+    "b82e8b44ce3d-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Patron Saint of Heists",
+      "frames": 7683
+    },
+    "9199da36aefb-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Soundtrack From the Starcourt Mall",
+      "frames": 9059
+    },
+    "cb6e536674d7-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Spring Chicken",
+      "frames": 6945
+    },
+    "f33874ce6030-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Take the Ride",
+      "frames": 10776
+    },
+    "63236bb0ea47-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Trip Up North",
+      "frames": 6951
+    },
+    "de261ef809e9-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Wakka Wakka",
+      "frames": 4947
+    },
+    "7f60746f882a-m48": {
+      "artist": "DimensionBucket",
+      "title": "The Walrus and the Carpenter",
+      "frames": 5074
+    },
+    "7ce583b4240a-m48": {
+      "artist": "dogsounds",
+      "title": "Brandenburg Concerto III, Allegro I",
+      "frames": 12456
+    },
+    "e2ec8c10426b-m48": {
+      "artist": "dogsounds",
+      "title": "Moogalicious",
+      "frames": 10893
+    },
+    "861aaa77b72f-m48": {
+      "artist": "dogsounds",
+      "title": "Sinfonia to Cantata 29",
+      "frames": 8345
+    },
+    "9d8e2d99d882-m48": {
+      "artist": "Frank Nora",
+      "title": "Count Bass",
+      "frames": 8194
+    },
+    "4b4601cb9ffa-m48": {
+      "artist": "Hussalonia",
+      "title": "Like Tetanus In A Wound",
+      "frames": 5639
+    },
+    "adc8bc7aa8d1-m48": {
+      "artist": "Hussalonia",
+      "title": "Meaning Isn't Based On The Importance Of Being, But On The Relationships In Between.",
+      "frames": 5560
+    },
+    "72e2f9a8dd23-m48": {
+      "artist": "Hussalonia",
+      "title": "There's More Than That To Being Poor.",
+      "frames": 6119
+    },
+    "0c4cd2114ab9-m48": {
+      "artist": "Hussalonia",
+      "title": "This Song Won't Sell A Thing.",
+      "frames": 10352
+    },
+    "712a6cf5518d-m48": {
+      "artist": "*imp*",
+      "title": "Acoustic Shifter",
+      "frames": 6982
+    },
+    "890ef7ccc4e1-m48": {
+      "artist": "*imp*",
+      "title": "Fractal Planetoid",
+      "frames": 9822
+    },
+    "6690e19b0ca7-m48": {
+      "artist": "*imp*",
+      "title": "Hilary's Walk in the Woods",
+      "frames": 7493
+    },
+    "8f40f3f857df-m48": {
+      "artist": "*imp*",
+      "title": "Island Mystery",
+      "frames": 8137
+    },
+    "41571dce6482-m48": {
+      "artist": "*imp*",
+      "title": "Your Sparking Rubber Soul",
+      "frames": 9617
+    },
+    "349390689b28-m48": {
+      "artist": "James Anderson",
+      "title": "Goldcrest",
+      "frames": 5648
+    },
+    "258ef431414a-m48": {
+      "artist": "Jason Shaw",
+      "title": "Alison",
+      "frames": 7316
+    },
+    "39972674cb80-m48": {
+      "artist": "Jason Shaw",
+      "title": "Bird in Hand",
+      "frames": 7011
+    },
+    "afc2546a4e9d-m48": {
+      "artist": "Jason Shaw",
+      "title": "Feel Good Feel",
+      "frames": 6167
+    },
+    "de0dc7fc73e8-m48": {
+      "artist": "Jason Shaw",
+      "title": "River Meditation",
+      "frames": 6886
+    },
+    "a3414aff0a2c-m48": {
+      "artist": "Jason Shaw",
+      "title": "Summer Sidewalk",
+      "frames": 6171
+    },
+    "86d94f67b4df-m48": {
+      "artist": "Knight of Fire",
+      "title": "Proper Timing",
+      "frames": 8157
+    },
+    "9eea9ffcdebe-m48": {
+      "artist": "Magdalen",
+      "title": "A Wormhole in the Top of the World",
+      "frames": 5358
+    },
+    "fdebadf8aef3-m48": {
+      "artist": "Magdalen",
+      "title": "Apart",
+      "frames": 5985
+    },
+    "bff0b06fe018-m48": {
+      "artist": "Magdalen",
+      "title": "Automatic",
+      "frames": 6489
+    },
+    "e0b61717543b-m48": {
+      "artist": "Magdalen",
+      "title": "Blue Day Creature",
+      "frames": 7438
+    },
+    "8cb8041a1060-m48": {
+      "artist": "boringXtreme",
+      "title": "The Aquatic Wombat Becomes a Butterfly",
+      "frames": 9681
+    },
+    "58d5914e0809-m48": {
+      "artist": "Frank Nora",
+      "title": "Drum n Bass A Squish",
+      "frames": 14670
+    },
+    "08e8822289d0-m48": {
+      "artist": "Frank Nora",
+      "title": "Drum n Bass B Drive",
+      "frames": 12557
+    },
+    "7f02a95d9efc-m48": {
+      "artist": "Frank Nora",
+      "title": "Drum n Bass C Super Shaker",
+      "frames": 10980
+    },
+    "d80762b644ea-m48": {
+      "artist": "Frank Nora",
+      "title": "Drum n Bass D Coexistant",
+      "frames": 13543
+    },
+    "5c8d38d03272-m48": {
+      "artist": "Frank Nora",
+      "title": "Drum n Bass E Energy",
+      "frames": 14786
+    },
+    "8955227330ed-m48": {
+      "artist": "Frank Nora",
+      "title": "Drum n Bass F Plausible",
+      "frames": 11228
+    },
+    "cc3ac97f7bf4-m48": {
+      "artist": "Frank Nora",
+      "title": "Drum n Bass G Terrible",
+      "frames": 11157
+    },
+    "1099059c233b-m48": {
+      "artist": "Frank Nora",
+      "title": "Drum n Bass H Stutter",
+      "frames": 15036
+    },
+    "a96b85ec7102-m48": {
+      "artist": "Frank Nora",
+      "title": "Drum n Bass I Almost Awesome",
+      "frames": 12286
+    },
+    "83aef675ff23-m48": {
+      "artist": "Frank Nora",
+      "title": "Drum n Bass J Hit Me",
+      "frames": 11203
+    },
+    "ca973169e39b-m48": {
+      "artist": "Frank Nora",
+      "title": "Drum n Bass K Megatrack",
+      "frames": 14978
+    },
+    "9b05d918f76d-m48": {
+      "artist": "Frank Nora",
+      "title": "Electro DnB A",
+      "frames": 12458
+    },
+    "dec5bb871114-m48": {
+      "artist": "Frank Nora",
+      "title": "Electro DnB B Chaos",
+      "frames": 12235
+    },
+    "9c0f75a11363-m48": {
+      "artist": "Frank Nora",
+      "title": "Electro DnB C",
+      "frames": 12336
+    },
+    "10b58088ba48-m48": {
+      "artist": "Frank Nora",
+      "title": "Electro DnB Decent",
+      "frames": 13348
+    },
+    "56a071907ab2-m48": {
+      "artist": "Frank Nora",
+      "title": "Electro DnB Quirk",
+      "frames": 15070
+    },
+    "b857b4a0670d-m48": {
+      "artist": "Frank Nora",
+      "title": "House A Square",
+      "frames": 13738
+    },
+    "bc614d8a6f3d-m48": {
+      "artist": "Frank Nora",
+      "title": "House B Hard Off",
+      "frames": 11383
+    },
+    "6de3ac5bd928-m48": {
+      "artist": "Frank Nora",
+      "title": "House C Lighter than Snare",
+      "frames": 13041
+    },
+    "278c43495a7a-m48": {
+      "artist": "Frank Nora",
+      "title": "House D Reasonably Cool",
+      "frames": 12531
+    },
+    "6c5a5536ede2-m48": {
+      "artist": "Frank Nora",
+      "title": "House E Watery Groove",
+      "frames": 12373
+    },
+    "50cab6dcc170-m48": {
+      "artist": "Frank Nora",
+      "title": "House F Boochee",
+      "frames": 11270
+    },
+    "70504b15e594-m48": {
+      "artist": "Frank Nora",
+      "title": "House G Room to Breathe",
+      "frames": 13141
+    },
+    "3f31060a4bd6-m48": {
+      "artist": "Frank Nora",
+      "title": "House H The Builder",
+      "frames": 13570
+    },
+    "3d79dafa80cb-m48": {
+      "artist": "Frank Nora",
+      "title": "House I Aquabeat",
+      "frames": 10940
+    },
+    "34afb0351956-m48": {
+      "artist": "Frank Nora",
+      "title": "House J Grindstone",
+      "frames": 10965
+    },
+    "23af460d8818-m48": {
+      "artist": "Frank Nora",
+      "title": "House K Annoy",
+      "frames": 15009
+    },
+    "9d28e086298c-m48": {
+      "artist": "Frank Nora",
+      "title": "Jungle A",
+      "frames": 5662
+    },
+    "64398f86034f-m48": {
+      "artist": "Frank Nora",
+      "title": "Jungle B",
+      "frames": 6695
+    },
+    "59cbd1c1bb91-m48": {
+      "artist": "Frank Nora",
+      "title": "Jungle Edge",
+      "frames": 13862
+    },
+    "75e893f5d189-m48": {
+      "artist": "Frank Nora",
+      "title": "Jungle Frentic",
+      "frames": 15109
+    },
+    "dfd0d34a86e5-m48": {
+      "artist": "Frank Nora",
+      "title": "Jungle Party",
+      "frames": 12782
+    },
+    "4154be67c7d9-m48": {
+      "artist": "Frank Nora",
+      "title": "Jungle Space",
+      "frames": 14932
+    },
+    "a68b99043254-m48": {
+      "artist": "Frank Nora",
+      "title": "JungleShine",
+      "frames": 13319
+    },
+    "cc0c0b93295a-m48": {
+      "artist": "Frank Nora",
+      "title": "Tech A Cool",
+      "frames": 12229
+    },
+    "ac8bf343203a-m48": {
+      "artist": "Frank Nora",
+      "title": "Tech B Jab",
+      "frames": 13479
+    },
+    "a6889f5a16a0-m48": {
+      "artist": "Frank Nora",
+      "title": "Tech C Eyepoke",
+      "frames": 11000
+    },
+    "b2f147bb713a-m48": {
+      "artist": "Frank Nora",
+      "title": "Tech D Acidic",
+      "frames": 10866
+    },
+    "23644beb9f1b-m48": {
+      "artist": "Frank Nora",
+      "title": "Tech E Thumper",
+      "frames": 10776
+    },
+    "4a55bc1276f3-m48": {
+      "artist": "Frank Nora",
+      "title": "Tech F Grind",
+      "frames": 13409
+    },
+    "c9d277e7fc83-m48": {
+      "artist": "Frank Nora",
+      "title": "Tech G Disorient",
+      "frames": 13716
+    },
+    "8f7c38afe8a1-m48": {
+      "artist": "Frank Nora",
+      "title": "Tech H Divorce",
+      "frames": 14871
+    },
+    "76c54e5fe163-m48": {
+      "artist": "Frank Nora",
+      "title": "Tech I Gunshot",
+      "frames": 10907
+    },
+    "47ae9dec65b1-m48": {
+      "artist": "Frank Nora",
+      "title": "Tech J Spacebend",
+      "frames": 15114
+    },
+    "418ea1a64b28-m48": {
+      "artist": "Frank Nora",
+      "title": "Tech K YouTurn",
+      "frames": 12580
+    },
+    "dd548800ccec-m48": {
+      "artist": "Frank Nora",
+      "title": "Trance A Metal Rush",
+      "frames": 12277
+    },
+    "ee9b15cb5dae-m48": {
+      "artist": "Frank Nora",
+      "title": "Trance B Clunk",
+      "frames": 12407
+    },
+    "c497008d2a6a-m48": {
+      "artist": "Frank Nora",
+      "title": "Trance C Bright Blip",
+      "frames": 13865
+    },
+    "f436d572ebe5-m48": {
+      "artist": "Frank Nora",
+      "title": "Trance D Base Dance",
+      "frames": 13714
+    },
+    "da0863d3955c-m48": {
+      "artist": "Frank Nora",
+      "title": "Trance E Frantic Bomb",
+      "frames": 14815
+    },
+    "52b27ad9c121-m48": {
+      "artist": "Frank Nora",
+      "title": "Trance F Trade Pep",
+      "frames": 13230
+    },
+    "ad9054698edd-m48": {
+      "artist": "Frank Nora",
+      "title": "Trance G Dampen",
+      "frames": 13263
+    },
+    "e1e6c51ca2a8-m48": {
+      "artist": "Frank Nora",
+      "title": "Trance H Jumper",
+      "frames": 12394
+    },
+    "fb860da8282f-m48": {
+      "artist": "Frank Nora",
+      "title": "Trance I Pickitah Motion",
+      "frames": 11090
+    },
+    "6eab629cf6ba-m48": {
+      "artist": "Frank Nora",
+      "title": "Trance J Sweeper",
+      "frames": 13859
+    },
+    "dad088a1ee46-m48": {
+      "artist": "Frank Nora",
+      "title": "Trance K Space Trance",
+      "frames": 10894
+    },
+    "d6364ccc8c64-m48": {
+      "artist": "Frank Nora",
+      "title": "Trance L Pickitah Motion",
+      "frames": 11090
+    },
+    "4a5f8b055faa-m48": {
+      "artist": "lost misfit",
+      "title": "experimental 01",
+      "frames": 12746
+    },
+    "5f94b115467d-m48": {
+      "artist": "Splintered Gypsy",
+      "title": "Mana",
+      "frames": 8855
+    },
+    "1dbf93061d4e-m48": {
+      "artist": "Splintered Gypsy",
+      "title": "Rebel",
+      "frames": 8619
+    },
+    "e7142152e339-m48": {
+      "artist": "Thundermine",
+      "title": "Distant Star",
+      "frames": 6887
+    },
+    "7e3cdcd186af-m48": {
+      "artist": "Thundermine",
+      "title": "Spring - Remastered",
+      "frames": 9452
+    },
+    "324c5dfb1665-m48": {
+      "artist": "Alpha Hydrae",
+      "title": "All you need is noise",
+      "frames": 16583
+    },
+    "99c569b76ab3-m48": {
+      "artist": "Arthur Fordsworthy",
+      "title": "Last Call",
+      "frames": 5926
+    },
+    "abcd8c1a2a7f-m48": {
+      "artist": "boringXtreme",
+      "title": "Electroscat Trippityglitchhop",
+      "frames": 7775
+    },
+    "58a32388fdb9-m48": {
+      "artist": "Brian Boyko",
+      "title": "Nightshift",
+      "frames": 13937
+    },
+    "1f0fb7f9ba96-m48": {
+      "artist": "Bryan Teoh",
+      "title": "Mysterious Lights",
+      "frames": 7358
+    },
+    "9add2b15c365-m48": {
+      "artist": "dogsounds",
+      "title": "Requiem: Titanic",
+      "frames": 16703
+    },
+    "c88b470398b4-m48": {
+      "artist": "Frank Nora",
+      "title": "A Terrible Sounding Piece of Music",
+      "frames": 6202
+    },
+    "e7613b5a57dc-m48": {
+      "artist": "Frank Nora",
+      "title": "Chaoserate",
+      "frames": 11157
+    },
+    "db3b4c688aa8-m48": {
+      "artist": "Frank Nora",
+      "title": "Light and Lush",
+      "frames": 8500
+    },
+    "ba42a40d9d42-m48": {
+      "artist": "Frank Nora",
+      "title": "Terrible Electronic",
+      "frames": 11483
+    },
+    "3561793507fe-m48": {
+      "artist": "Hussalonia",
+      "title": "FOAF",
+      "frames": 10001
+    },
+    "fe881dd765ce-m48": {
+      "artist": "Hussalonia",
+      "title": "NITL",
+      "frames": 7479
+    },
+    "e1f4fdfdce8e-m48": {
+      "artist": "Hussalonia",
+      "title": "RBTL",
+      "frames": 12502
+    },
+    "8daf31d76323-m48": {
+      "artist": "Hussalonia",
+      "title": "TLDR",
+      "frames": 15001
+    },
+    "1fb2586c5a82-m48": {
+      "artist": "Hussalonia",
+      "title": "TTYL",
+      "frames": 4984
+    },
+    "d5fef56bf6af-m48": {
+      "artist": "*imp*",
+      "title": "Analogue Brainworm",
+      "frames": 5946
+    },
+    "554c5e98c2a6-m48": {
+      "artist": "*imp*",
+      "title": "Native Dream",
+      "frames": 5002
+    },
+    "89388d56a9b7-m48": {
+      "artist": "*imp*",
+      "title": "Radio Ghost",
+      "frames": 7313
+    },
+    "90294940f670-m48": {
+      "artist": "*imp*",
+      "title": "Rip in the Wide Sky",
+      "frames": 9913
+    },
+    "a007b437a62f-m48": {
+      "artist": "*imp*",
+      "title": "Sublimination Groove",
+      "frames": 5498
+    },
+    "8b09698772e0-m48": {
+      "artist": "*imp*",
+      "title": "Waiting on Platform 9",
+      "frames": 8004
+    },
+    "0a561bf84625-m48": {
+      "artist": "Knight of Fire",
+      "title": "Freezing Winds",
+      "frames": 6076
+    },
+    "cc4e904ecff3-m48": {
+      "artist": "Knight of Fire",
+      "title": "Subterranians",
+      "frames": 11166
+    },
+    "c66ba2179f33-m48": {
+      "artist": "lost misfit",
+      "title": "thunder storm",
+      "frames": 16976
+    },
+    "68297fe872aa-m48": {
+      "artist": "Magdalen",
+      "title": "Dynamo",
+      "frames": 7421
+    },
+    "9a153bd013b2-m48": {
+      "artist": "Magdalen",
+      "title": "Grain of Sand",
+      "frames": 7542
+    },
+    "7839a84a4d7e-m48": {
+      "artist": "Magdalen",
+      "title": "Once in the Crash",
+      "frames": 6370
+    },
+    "7d6e4e5f5c30-m48": {
+      "artist": "Magdalen",
+      "title": "Psychobabble",
+      "frames": 7099
+    },
+    "1c61a5f34e6a-m48": {
+      "artist": "Magdalen",
+      "title": "That Way",
+      "frames": 6175
+    },
+    "331c104fc8dc-m48": {
+      "artist": "Magdalen",
+      "title": "The Honeycomb",
+      "frames": 6966
+    },
+    "cf3049b2d18c-m48": {
+      "artist": "Magdalen",
+      "title": "The Mysterious Body",
+      "frames": 8881
+    },
+    "d737f9b91318-m48": {
+      "artist": "Magdalen",
+      "title": "The Star Said",
+      "frames": 6544
+    },
+    "f3b56f9c3993-m48": {
+      "artist": "Magdalen",
+      "title": "We're on the Other Side Now",
+      "frames": 8481
+    },
+    "e4dffff52a0c-m48": {
+      "artist": "Magdalen",
+      "title": "Where",
+      "frames": 8790
+    },
+    "f28a232d2d82-m48": {
+      "artist": "Magdalen",
+      "title": "White Eyes",
+      "frames": 7629
+    },
+    "8f1c6484895c-m48": {
+      "artist": "Manny the Martyr",
+      "title": "30 Seconds (Live)",
+      "frames": 10878
+    },
+    "a5ed01a3717c-m48": {
+      "artist": "Manny the Martyr",
+      "title": "Aydagee (Live)",
+      "frames": 10029
+    },
+    "8713f838b71d-m48": {
+      "artist": "Manny the Martyr",
+      "title": "Bougyman (Live)",
+      "frames": 8816
+    },
+    "d2b2ee1cf4f2-m48": {
+      "artist": "Manny the Martyr",
+      "title": "Brighter Sun",
+      "frames": 12595
+    },
+    "b03b0c3f7cae-m48": {
+      "artist": "Manny the Martyr",
+      "title": "DDJ",
+      "frames": 11939
+    },
+    "b094bdbc63c8-m48": {
+      "artist": "Manny the Martyr",
+      "title": "Hit the Brink",
+      "frames": 11786
+    },
+    "fc4ed0f9b86d-m48": {
+      "artist": "Manny the Martyr",
+      "title": "It's Alright",
+      "frames": 9380
+    },
+    "4fb1ec2e03b8-m48": {
+      "artist": "Mustard Seed Faith Media",
+      "title": "Edgar's Bells",
+      "frames": 11297
+    },
+    "370f7ec086cb-m48": {
+      "artist": "Mustard Seed Faith Media",
+      "title": "Edgar's Bells - Movement 4 Iron",
+      "frames": 5176
+    },
+    "0796da6d0061-m48": {
+      "artist": "Severed Personality",
+      "title": "Abstract Anxiety",
+      "frames": 10934
+    },
+    "5643d4e062c6-m48": {
+      "artist": "Splintered Gypsy",
+      "title": "Aphrodite",
+      "frames": 8063
+    },
+    "8393be8ec3a9-m48": {
+      "artist": "Splintered Gypsy",
+      "title": "Aphrodite (Mix 2 Chirpless)",
+      "frames": 8064
+    },
+    "b79bed1a36aa-m48": {
+      "artist": "Splintered Gypsy",
+      "title": "Ares",
+      "frames": 8180
+    },
+    "28e61a095b09-m48": {
+      "artist": "Splintered Gypsy",
+      "title": "Artemis",
+      "frames": 9155
+    },
+    "dfae5d2e1e75-m48": {
+      "artist": "Splintered Gypsy",
+      "title": "Bipolarcaps",
+      "frames": 8254
+    },
+    "9b9e98dc53cb-m48": {
+      "artist": "Splintered Gypsy",
+      "title": "Hades",
+      "frames": 10717
+    },
+    "f94119fe2652-m48": {
+      "artist": "Splintered Gypsy",
+      "title": "Mangler (Feat. DJ Kaos)",
+      "frames": 8999
+    },
+    "3e85df6d8912-m48": {
+      "artist": "Splintered Gypsy",
+      "title": "Mannequins",
+      "frames": 11592
+    },
+    "df11b2672425-m48": {
+      "artist": "White Flag Agenda",
+      "title": "Faux Pas (Bitter Endings)",
+      "frames": 7442
+    },
+    "7eb2b410ae8a-m48": {
+      "artist": "White Flag Agenda",
+      "title": "Monster",
+      "frames": 10048
+    },
+    "16a6ec25ac8e-m48": {
+      "artist": "White Flag Agenda",
+      "title": "Reference",
+      "frames": 9253
+    },
+    "ea6f6d6afc37-m48": {
+      "artist": "White Flag Agenda",
+      "title": "Reject",
+      "frames": 8498
+    }
+  },
+  "stations": [
+    {
+      "id": "mur",
+      "frequency": "88,2",
+      "tracks": [
+        "b4acfe87f58f-m48",
+        "d250c1b80411-m48",
+        "966d82e65b5e-m48",
+        "65feca79ec32-m48",
+        "f836a65f9d0c-m48",
+        "4fb04327dfa8-m48",
+        "f81ff8af1417-m48",
+        "48ea5f463fea-m48",
+        "39e0543fbeb0-m48",
+        "989363a9d03c-m48",
+        "c61d4307bb40-m48",
+        "1259304bc5af-m48",
+        "4f7112d7ebca-m48",
+        "bf77b5624d36-m48",
+        "bab7ba07e854-m48",
+        "12dff34a4110-m48",
+        "29e47b1d0782-m48",
+        "e7a845a20d9a-m48",
+        "e4f1d18f6dac-m48",
+        "49e186f02151-m48",
+        "74cd2a16366f-m48",
+        "da821fc6a629-m48",
+        "fbdcc610eb0c-m48",
+        "1c2dbbb6768e-m48",
+        "bc3706cf00b7-m48",
+        "a5c614e80c00-m48",
+        "981c0021cebc-m48",
+        "84aa6f22bc8f-m48",
+        "f9dfd0624557-m48",
+        "eb8b2c3b7064-m48",
+        "46bf3a9752cf-m48",
+        "0a2f3ef08e80-m48",
+        "a55bae170c4b-m48",
+        "0d396d06727c-m48",
+        "87155aff0f90-m48",
+        "106b6dcfe95e-m48",
+        "8283f84919a7-m48",
+        "2c9bc73f9933-m48",
+        "38bf8dc3f36a-m48",
+        "8153819606cc-m48",
+        "eb2fc75eb3b2-m48",
+        "e285838c2b80-m48",
+        "e0329b0508fc-m48",
+        "cc9885923520-m48",
+        "1041460ec0b1-m48",
+        "c31e1700e931-m48",
+        "08c3a0246bd9-m48",
+        "d77d9480948f-m48",
+        "8c5a28aa3cd1-m48",
+        "602544f90528-m48",
+        "42ebb6199248-m48",
+        "001394e78e1f-m48",
+        "510f0470199d-m48",
+        "c616f879c345-m48",
+        "e61f923cfc0b-m48",
+        "0b4046aab9e0-m48",
+        "7531576b9660-m48",
+        "a232bbbb73c0-m48",
+        "508cbce11ffb-m48",
+        "634c00fb621f-m48",
+        "bc4cffafc2bd-m48",
+        "0a4488d2cef3-m48",
+        "a1e8d1272290-m48",
+        "128d769045fd-m48",
+        "58bdf85431d5-m48",
+        "6f7d75fc67fa-m48",
+        "a310372edfc9-m48",
+        "4fb6169ab057-m48",
+        "a05ebd2125da-m48",
+        "0e1fb02c16d4-m48",
+        "695f31e6b01c-m48",
+        "1bd3af227814-m48",
+        "23088e9f914d-m48",
+        "ba81fb0fd246-m48",
+        "d9e225a82a42-m48",
+        "996186a7cc47-m48",
+        "10ca4fbceed6-m48",
+        "855687d0a196-m48",
+        "8340cc97c16a-m48",
+        "b29343a0572a-m48",
+        "51c49779b547-m48",
+        "a4e73e3d4657-m48",
+        "8069e220e24e-m48",
+        "f54bcab36738-m48",
+        "5a802128c7ce-m48",
+        "a063b2d3dfd7-m48",
+        "4458ab6e810e-m48",
+        "99f6a96d0293-m48",
+        "23ab016e75ea-m48",
+        "291d19c592e7-m48",
+        "24b57eccefa2-m48",
+        "346fcdfbd427-m48",
+        "723ed9a5b2f8-m48",
+        "aff9df1e4a4f-m48",
+        "4ad316a0dd02-m48",
+        "f087318d48e2-m48",
+        "e663ab0b1a77-m48",
+        "590bb9833cfb-m48"
+      ]
+    },
+    {
+      "id": "khvostobit",
+      "frequency": "93,5",
+      "tracks": [
+        "f89cc281a304-m48",
+        "d393507cfb57-m48",
+        "82b1662a32f0-m48",
+        "c6765fba10c0-m48",
+        "763da985109d-m48",
+        "0e7275e8f9d7-m48",
+        "c4925c5a267f-m48",
+        "f3320aafa11b-m48",
+        "a4ff0d3818d3-m48",
+        "fa914a2e601a-m48",
+        "fe99ffb23ce4-m48",
+        "3d203e47a110-m48",
+        "69afcee30481-m48",
+        "805dfcef9910-m48",
+        "6781b4f2da24-m48",
+        "f362554fb68e-m48",
+        "0c4bfb6239bd-m48",
+        "8b656857714a-m48",
+        "a63043ad846d-m48",
+        "08d1be3f0069-m48",
+        "df0ea43cc91b-m48",
+        "a0c3833d7dfa-m48",
+        "8a3a0e5a44ae-m48",
+        "50869b5ee115-m48",
+        "4c8159bdb687-m48",
+        "7e838d49b543-m48",
+        "198537c5a395-m48",
+        "c732b3bc9bc6-m48",
+        "b247ffe5b275-m48",
+        "cf43afc32ea2-m48",
+        "b50b4aab02cf-m48",
+        "ec4c093d8451-m48",
+        "78846c78e6bb-m48",
+        "7d07c7f4c9a9-m48",
+        "e0f0ee307ace-m48",
+        "42933762af89-m48",
+        "65ed99571045-m48",
+        "bc0bf43eaa5d-m48",
+        "62e632437b68-m48",
+        "ecf7f4d95183-m48",
+        "9ed08f3e6d79-m48",
+        "c4fd1649dc00-m48",
+        "ef9f2333a635-m48",
+        "b65b071bfcec-m48",
+        "7ff0ef8c4b11-m48",
+        "a892b6be1df2-m48",
+        "501ad71a6328-m48",
+        "99a897aab00f-m48",
+        "0b7ea2437282-m48",
+        "42f14e6768d0-m48",
+        "89b22d496e16-m48",
+        "0976aba07ad6-m48",
+        "87d1099e12fa-m48",
+        "659dc27943b5-m48",
+        "3074ee347d48-m48",
+        "1ff3259edd0b-m48",
+        "9e5182810e24-m48",
+        "cae594f56b69-m48",
+        "1dcdb9cd8613-m48",
+        "cf859b052bc3-m48",
+        "90cc3c6d8e9a-m48",
+        "6f44b448110d-m48",
+        "eadc312d61c0-m48",
+        "a0a0927fb525-m48",
+        "15ae401affca-m48",
+        "728af9e42893-m48",
+        "09f45544394c-m48",
+        "bc90ad4c680d-m48",
+        "c5f36f75b2f6-m48",
+        "d2b8b87b65fc-m48",
+        "ce5ac2cf39a3-m48",
+        "6bc4c130db6a-m48",
+        "11f627607c8d-m48",
+        "db9b757518a8-m48",
+        "dec4539e87b1-m48",
+        "d70b086ec1f7-m48",
+        "03dec2ceab13-m48",
+        "337180f2345a-m48",
+        "a59bd4d7a746-m48",
+        "13318dfbf990-m48",
+        "330fe5b6b0f7-m48",
+        "17f84fb09ca7-m48",
+        "c18c76c3bcba-m48"
+      ]
+    },
+    {
+      "id": "retro",
+      "frequency": "97,1",
+      "tracks": [
+        "8d0755a9119a-m48",
+        "3d0715a8be00-m48",
+        "4c6ce84e61ca-m48",
+        "952d1617808a-m48",
+        "d6ceeaf68cee-m48",
+        "070be8edc624-m48",
+        "91d6243c7e53-m48",
+        "ccd01716658e-m48",
+        "2659c428ed3c-m48",
+        "33aaf61223a8-m48",
+        "41711b6e83ab-m48",
+        "64c44ed756bc-m48",
+        "d96d17e36461-m48",
+        "74a867379ea3-m48",
+        "1b77a5980e31-m48",
+        "bfcf28187212-m48",
+        "8f8ff32f7b52-m48",
+        "5da633e89e8d-m48",
+        "fac095f68050-m48",
+        "00082677a2ca-m48",
+        "3e9faa496e47-m48",
+        "4031356b83cb-m48",
+        "dd20cb51c948-m48",
+        "5101fa0a410c-m48",
+        "7bc328be13de-m48",
+        "0844e8cb7f10-m48",
+        "65feca79ec32-m48",
+        "c87d50579aa1-m48",
+        "d9d592d5bc2b-m48",
+        "916e736efa3c-m48",
+        "4fb04327dfa8-m48",
+        "ff0ffc4c4c55-m48",
+        "bd4edf542d48-m48",
+        "696d1e335deb-m48",
+        "b82e8b44ce3d-m48",
+        "39e0543fbeb0-m48",
+        "9199da36aefb-m48",
+        "cb6e536674d7-m48",
+        "f33874ce6030-m48",
+        "63236bb0ea47-m48",
+        "de261ef809e9-m48",
+        "7f60746f882a-m48",
+        "7ce583b4240a-m48",
+        "e2ec8c10426b-m48",
+        "861aaa77b72f-m48",
+        "9d8e2d99d882-m48",
+        "001394e78e1f-m48",
+        "62e632437b68-m48",
+        "ecf7f4d95183-m48",
+        "9ed08f3e6d79-m48",
+        "c4fd1649dc00-m48",
+        "ef9f2333a635-m48",
+        "b65b071bfcec-m48",
+        "7ff0ef8c4b11-m48",
+        "a892b6be1df2-m48",
+        "501ad71a6328-m48",
+        "99a897aab00f-m48",
+        "0b7ea2437282-m48",
+        "42f14e6768d0-m48",
+        "89b22d496e16-m48",
+        "0976aba07ad6-m48",
+        "a0a0927fb525-m48",
+        "4b4601cb9ffa-m48",
+        "adc8bc7aa8d1-m48",
+        "72e2f9a8dd23-m48",
+        "0c4cd2114ab9-m48",
+        "712a6cf5518d-m48",
+        "890ef7ccc4e1-m48",
+        "6690e19b0ca7-m48",
+        "8f40f3f857df-m48",
+        "41571dce6482-m48",
+        "349390689b28-m48",
+        "258ef431414a-m48",
+        "39972674cb80-m48",
+        "afc2546a4e9d-m48",
+        "de0dc7fc73e8-m48",
+        "23ab016e75ea-m48",
+        "a3414aff0a2c-m48",
+        "291d19c592e7-m48",
+        "86d94f67b4df-m48",
+        "9eea9ffcdebe-m48",
+        "fdebadf8aef3-m48",
+        "bff0b06fe018-m48",
+        "e0b61717543b-m48",
+        "4ad316a0dd02-m48",
+        "f087318d48e2-m48",
+        "e663ab0b1a77-m48"
+      ]
+    },
+    {
+      "id": "zumi",
+      "frequency": "101,8",
+      "tracks": [
+        "8cb8041a1060-m48",
+        "58d5914e0809-m48",
+        "08e8822289d0-m48",
+        "7f02a95d9efc-m48",
+        "d80762b644ea-m48",
+        "5c8d38d03272-m48",
+        "8955227330ed-m48",
+        "cc3ac97f7bf4-m48",
+        "1099059c233b-m48",
+        "a96b85ec7102-m48",
+        "83aef675ff23-m48",
+        "ca973169e39b-m48",
+        "9b05d918f76d-m48",
+        "dec5bb871114-m48",
+        "9c0f75a11363-m48",
+        "10b58088ba48-m48",
+        "56a071907ab2-m48",
+        "b857b4a0670d-m48",
+        "bc614d8a6f3d-m48",
+        "6de3ac5bd928-m48",
+        "278c43495a7a-m48",
+        "6c5a5536ede2-m48",
+        "50cab6dcc170-m48",
+        "70504b15e594-m48",
+        "3f31060a4bd6-m48",
+        "3d79dafa80cb-m48",
+        "34afb0351956-m48",
+        "23af460d8818-m48",
+        "9d28e086298c-m48",
+        "64398f86034f-m48",
+        "59cbd1c1bb91-m48",
+        "75e893f5d189-m48",
+        "dfd0d34a86e5-m48",
+        "4154be67c7d9-m48",
+        "a68b99043254-m48",
+        "cc0c0b93295a-m48",
+        "ac8bf343203a-m48",
+        "a6889f5a16a0-m48",
+        "b2f147bb713a-m48",
+        "23644beb9f1b-m48",
+        "4a55bc1276f3-m48",
+        "c9d277e7fc83-m48",
+        "8f7c38afe8a1-m48",
+        "76c54e5fe163-m48",
+        "47ae9dec65b1-m48",
+        "418ea1a64b28-m48",
+        "dd548800ccec-m48",
+        "ee9b15cb5dae-m48",
+        "c497008d2a6a-m48",
+        "f436d572ebe5-m48",
+        "da0863d3955c-m48",
+        "52b27ad9c121-m48",
+        "ad9054698edd-m48",
+        "e1e6c51ca2a8-m48",
+        "fb860da8282f-m48",
+        "6eab629cf6ba-m48",
+        "dad088a1ee46-m48",
+        "d6364ccc8c64-m48",
+        "4a5f8b055faa-m48",
+        "5f94b115467d-m48",
+        "1dbf93061d4e-m48",
+        "e7142152e339-m48",
+        "7e3cdcd186af-m48"
+      ]
+    },
+    {
+      "id": "berezen",
+      "frequency": "105,4",
+      "tracks": [
+        "324c5dfb1665-m48",
+        "8d0755a9119a-m48",
+        "4c6ce84e61ca-m48",
+        "952d1617808a-m48",
+        "d6ceeaf68cee-m48",
+        "99c569b76ab3-m48",
+        "abcd8c1a2a7f-m48",
+        "33aaf61223a8-m48",
+        "41711b6e83ab-m48",
+        "58a32388fdb9-m48",
+        "00082677a2ca-m48",
+        "1f0fb7f9ba96-m48",
+        "9add2b15c365-m48",
+        "c88b470398b4-m48",
+        "e7613b5a57dc-m48",
+        "db3b4c688aa8-m48",
+        "ba42a40d9d42-m48",
+        "3561793507fe-m48",
+        "4b4601cb9ffa-m48",
+        "adc8bc7aa8d1-m48",
+        "fe881dd765ce-m48",
+        "e1f4fdfdce8e-m48",
+        "72e2f9a8dd23-m48",
+        "0c4cd2114ab9-m48",
+        "8daf31d76323-m48",
+        "1fb2586c5a82-m48",
+        "d5fef56bf6af-m48",
+        "554c5e98c2a6-m48",
+        "89388d56a9b7-m48",
+        "90294940f670-m48",
+        "a007b437a62f-m48",
+        "8b09698772e0-m48",
+        "258ef431414a-m48",
+        "0a561bf84625-m48",
+        "86d94f67b4df-m48",
+        "cc4e904ecff3-m48",
+        "c66ba2179f33-m48",
+        "9eea9ffcdebe-m48",
+        "fdebadf8aef3-m48",
+        "bff0b06fe018-m48",
+        "e0b61717543b-m48",
+        "68297fe872aa-m48",
+        "9a153bd013b2-m48",
+        "7839a84a4d7e-m48",
+        "7d6e4e5f5c30-m48",
+        "1c61a5f34e6a-m48",
+        "331c104fc8dc-m48",
+        "cf3049b2d18c-m48",
+        "d737f9b91318-m48",
+        "f3b56f9c3993-m48",
+        "e4dffff52a0c-m48",
+        "f28a232d2d82-m48",
+        "8f1c6484895c-m48",
+        "a5ed01a3717c-m48",
+        "8713f838b71d-m48",
+        "d2b2ee1cf4f2-m48",
+        "b03b0c3f7cae-m48",
+        "b094bdbc63c8-m48",
+        "fc4ed0f9b86d-m48",
+        "4fb1ec2e03b8-m48",
+        "370f7ec086cb-m48",
+        "0796da6d0061-m48",
+        "5643d4e062c6-m48",
+        "8393be8ec3a9-m48",
+        "b79bed1a36aa-m48",
+        "28e61a095b09-m48",
+        "dfae5d2e1e75-m48",
+        "9b9e98dc53cb-m48",
+        "f94119fe2652-m48",
+        "3e85df6d8912-m48",
+        "df11b2672425-m48",
+        "7eb2b410ae8a-m48",
+        "16a6ec25ac8e-m48",
+        "ea6f6d6afc37-m48"
+      ]
+    }
+  ]
+}

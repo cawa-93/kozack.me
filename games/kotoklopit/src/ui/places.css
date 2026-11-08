@@ -1,0 +1,304 @@
+/* Картки на місці (§8.5, «Оформлення поїздок»): вивіска й колір пункту, `.card-place` і `.card-place-<пункт>`.
+
+   Папір, рамка й розміри картки — як у звичайної (`overlay.css`, `cardsize.ts`): вивіска — це заголовок картки, дощечка
+   кольору даху пункту (`DESTINATION_ROOFS`, `src/view/racelook.ts`) з іконкою на паперовій табличці, як на даху будівлі біля
+   парковки. Деталі пунктів — лише градієнти й псевдоелементи, без картинок і анімацій: картку малюють раз. Кольори — токени
+   `art/palette.ts`. Розміри деталей біля літер — в em: на низькому екрані заголовок менший, і вони з ним. */
+
+.card-place {
+  /* Дощечка — колір даху; світлий верхній край; літери — чорнило на світлих, папір на темних (plum, red). */
+  --place: var(--grey);
+  --place-hi: var(--grey-hi);
+  --place-text: var(--ink);
+  /* Шви, хрестик, слід лапи — той самий колір із чорнилом. */
+  --place-lo: color-mix(in srgb, var(--place), var(--ink) 30%);
+  /* Контур, тінь і поля дощечки; на низькому екрані — менші (нижче), а пункти додають до полів своє (calc). */
+  --sign-line: 3px;
+  --sign-lift: 4px;
+  --sign-top: 2px;
+  --sign-bottom: 4px;
+  --sign-left: 6px;
+  --sign-right: 16px;
+}
+
+/* Вивіска поруч із приміткою праворуч (`.card-head`): поле під рядком — із запасом на тінь дощечки. */
+.card-place .card-head {
+  margin-bottom: 12px;
+}
+
+.card-place .card-title {
+  position: relative;
+  box-sizing: border-box;
+  width: fit-content;
+  max-width: 100%;
+  padding: var(--sign-top) var(--sign-right) var(--sign-bottom) var(--sign-left);
+  border: var(--sign-line) solid var(--ink);
+  border-radius: 10px;
+  background: var(--place);
+  box-shadow:
+    inset 0 var(--sign-lift) 0 var(--place-hi),
+    0 var(--sign-lift) 0 var(--shade-base);
+  color: var(--place-text);
+}
+
+/* Іконка пункту — на паперовій табличці з чорнильним контуром, як на даху будівлі. Від'ємні поля не дають їй розсунути рядок. */
+.card-place .card-title .name-icon {
+  box-sizing: border-box;
+  width: 1.25em;
+  height: 1.25em;
+  margin: -0.2em 0.3em -0.12em 0;
+  padding: 0.07em;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  background: var(--paper);
+}
+
+/* --- Магазин: смугаста маркіза з фестонами на всю ширину над вивіскою; фестони звисають на її верхній край. Плитка — дві
+   смуги з їхніми фестонами, а `round` підганяє її під ширину: смуги й фестони збігаються й закінчуються цілими. --------- */
+.card-place-shop {
+  --place: #d9843f; /* orange */
+  --place-hi: #eaa967; /* orangeHi */
+  --awning-stripe: 18px;
+  --awning-body: 10px;
+}
+
+.card-place-shop .card-head::before {
+  --fringe: calc(var(--awning-stripe) / 2);
+  --tile: calc(var(--awning-stripe) * 2) var(--fringe);
+  content: "";
+  position: relative;
+  z-index: 1;
+  order: -1;
+  flex: 0 0 100%;
+  height: calc(var(--sign-line) + var(--awning-body) + var(--fringe));
+  margin-bottom: calc(-1 * var(--sign-lift));
+  background:
+    radial-gradient(circle at 25% 0, var(--place) calc(var(--fringe) - 2.5px), var(--ink) calc(var(--fringe) - 2px) calc(var(--fringe) - 0.5px), transparent var(--fringe))
+      0 100% / var(--tile) round no-repeat,
+    radial-gradient(circle at 75% 0, var(--paper) calc(var(--fringe) - 2.5px), var(--ink) calc(var(--fringe) - 2px) calc(var(--fringe) - 0.5px), transparent var(--fringe))
+      0 100% / var(--tile) round no-repeat,
+    linear-gradient(var(--ink) 0 0) 0 0 / 100% var(--sign-line) no-repeat,
+    linear-gradient(var(--ink) 0 0) 0 0 / var(--sign-line) calc(100% - var(--fringe)) no-repeat,
+    linear-gradient(var(--ink) 0 0) 100% 0 / var(--sign-line) calc(100% - var(--fringe)) no-repeat,
+    linear-gradient(90deg, var(--place) 50%, var(--paper) 0) 0 0 / calc(var(--awning-stripe) * 2) calc(100% - var(--fringe)) round no-repeat;
+}
+
+/* --- Ветеринар і лікар: клініка — круглий паперовий значок із хрестиком кольору пункту праворуч на вивісці. Хрестик не
+   червоний на білому: це захищена емблема Червоного Хреста. -------------------------------------------------------------- */
+.card-place-vet {
+  --place: #5f9089; /* teal */
+  --place-hi: #8bb3aa; /* tealHi */
+}
+
+.card-place-doctor {
+  --place: #6c84a3; /* blue */
+  --place-hi: #94a8c0; /* blueHi */
+  --place-lo: #52677f; /* blueLo */
+}
+
+.card-place-vet .card-title::after,
+.card-place-doctor .card-title::after {
+  content: "";
+  display: inline-block;
+  box-sizing: border-box;
+  width: 1.05em;
+  height: 1.05em;
+  margin: -0.2em -0.2em -0.1em 0.35em;
+  vertical-align: middle;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background:
+    linear-gradient(var(--place-lo) 0 0) 50% / 24% 66% no-repeat,
+    linear-gradient(var(--place-lo) 0 0) 50% / 66% 24% no-repeat,
+    var(--paper);
+}
+
+/* --- Притулок: тепла дерев'яна дощечка, прибита цвяхами по кутах, трохи навскіс; праворуч — випалений слід лапи. ------- */
+.card-place-shelter {
+  --place: #d4a54c; /* mustard */
+  --place-hi: #e8c47d; /* mustardHi */
+  --nail: radial-gradient(circle, var(--ink) 0 2px, transparent 2.5px);
+  --grain: color-mix(in srgb, var(--place-lo) 45%, transparent);
+}
+
+.card-place-shelter .card-title {
+  padding-left: calc(var(--sign-left) + 7px);
+  transform: rotate(-1.2deg);
+  background:
+    var(--nail) left 3px top 5px / 6px 6px no-repeat,
+    var(--nail) left 3px bottom 3px / 6px 6px no-repeat,
+    var(--nail) right 3px top 5px / 6px 6px no-repeat,
+    var(--nail) right 3px bottom 3px / 6px 6px no-repeat,
+    /* Волокна дерева — бліді, щоб не різати літер. */
+    linear-gradient(transparent 22%, var(--grain) 0 calc(22% + 1.5px), transparent 0 80%, var(--grain) 0 calc(80% + 1.5px), transparent 0),
+    var(--place);
+}
+
+/* Слід лапи: подушечка й чотири пальці. */
+.card-place-shelter .card-title::after {
+  content: "";
+  display: inline-block;
+  width: 0.8em;
+  height: 0.8em;
+  margin: 0 -0.15em 0 0.3em;
+  vertical-align: -0.05em;
+  background:
+    radial-gradient(ellipse 30% 25% at 50% 70%, var(--place-lo) 96%, transparent),
+    radial-gradient(circle at 15% 42%, var(--place-lo) 0 11%, transparent 12.5%),
+    radial-gradient(circle at 37% 18%, var(--place-lo) 0 11%, transparent 12.5%),
+    radial-gradient(circle at 63% 18%, var(--place-lo) 0 11%, transparent 12.5%),
+    radial-gradient(circle at 85% 42%, var(--place-lo) 0 11%, transparent 12.5%);
+}
+
+/* --- Розплідник: охайна вивіска — папір на сливовому, тонка золота рамка всередині, з полями довкола іконки. ------------- */
+.card-place-breeder {
+  --place: #8b5d78; /* plum */
+  --place-hi: #a97d96; /* plumHi */
+  --place-text: var(--paper);
+}
+
+.card-place-breeder .card-title {
+  padding: calc(var(--sign-top) + 3px) calc(var(--sign-right) + 2px) calc(var(--sign-bottom) + 3px) calc(var(--sign-left) + 3px);
+  box-shadow:
+    inset 0 0 0 3px var(--place),
+    inset 0 0 0 5px #f3d27a /* highlight */,
+    0 var(--sign-lift) 0 var(--shade-base);
+  text-shadow: 0 2px 0 var(--ink);
+}
+
+/* --- Грумер: пастельна вивіска, з-за правого краю здіймаються мильні бульбашки. ----------------------------------------- */
+.card-place-groomer {
+  --place: #d99a93; /* pink */
+  --place-hi: #ecbcb2; /* pinkHi */
+}
+
+.card-place-groomer .card-title {
+  margin-right: 1.1em;
+}
+
+/* Бульбашка: напівпрозоре скло з чорнильним кільцем і паперовим відблиском; велика заходить на край вивіски. */
+.card-place-groomer .card-title::after {
+  --glass: color-mix(in srgb, #d4e3dc /* glassHi */ 75%, transparent);
+  --ring: 0.05em;
+  content: "";
+  position: absolute;
+  top: -0.15em;
+  left: calc(100% - 0.45em);
+  width: 1.5em;
+  height: 1.7em;
+  background:
+    radial-gradient(circle at 0.43em 0.36em, var(--paper) 0 0.08em, transparent 0.1em),
+    radial-gradient(circle at 0.55em 0.48em, var(--glass) 0 0.3em, var(--ink) calc(0.3em + 0.5px) calc(0.3em + var(--ring)), transparent calc(0.3em + var(--ring) + 0.5px)),
+    radial-gradient(circle at 1.12em 1.02em, var(--paper) 0 0.05em, transparent 0.07em),
+    radial-gradient(circle at 1.17em 1.07em, var(--glass) 0 0.16em, var(--ink) calc(0.16em + 0.5px) calc(0.16em + var(--ring)), transparent calc(0.16em + var(--ring) + 0.5px)),
+    radial-gradient(circle at 1.25em 0.22em, var(--glass) 0 0.07em, var(--ink) calc(0.07em + 0.5px) calc(0.07em + var(--ring)), transparent calc(0.07em + var(--ring) + 0.5px)),
+    radial-gradient(circle at 0.8em 1.5em, var(--glass) 0 0.07em, var(--ink) calc(0.07em + 0.5px) calc(0.07em + var(--ring)), transparent calc(0.07em + var(--ring) + 0.5px));
+}
+
+/* --- Виставка: розетка зі стрічками на правому краю вивіски. ---------------------------------------------------------- */
+.card-place-show {
+  --place: #c4524b; /* red */
+  --place-hi: #dc7c69; /* redHi */
+  --place-lo: #963b3a; /* redLo */
+  --place-text: var(--paper);
+}
+
+.card-place-show .card-title {
+  margin-right: 0.8em;
+  padding-right: calc(var(--sign-right) + 0.5em);
+  text-shadow: 0 2px 0 var(--ink);
+}
+
+/* Розетка: плісе (конічний градієнт) і золота середина з чорнильним кільцем. */
+.card-place-show .card-title::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -0.8em;
+  width: 1.45em;
+  height: 1.45em;
+  border-radius: 50%;
+  transform: translateY(-58%);
+  background:
+    radial-gradient(circle, #f3d27a /* highlight */ 0 26%, var(--ink) 27% 34%, transparent 35%),
+    repeating-conic-gradient(var(--place) 0 15deg, var(--place-hi) 15deg 30deg);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+
+/* Стрічки розетки з вирізом на кінцях — під нею. */
+.card-place-show .card-title::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -0.52em;
+  width: 0.9em;
+  height: 1.2em;
+  background: linear-gradient(90deg, var(--place-lo) 50%, var(--place) 0);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 75% 82%, 50% 100%, 50% 0, 50% 100%, 25% 82%, 0 100%);
+}
+
+/* --- Офіс: строга сіра металева табличка, прикручена гвинтами по кутах; колір даху — смужка внизу. ----------------------- */
+.card-place-office {
+  --place: #c39a66; /* cardboard */
+  --place-hi: #d8b783; /* cardboardHi */
+  /* Гвинт — шліц і голівка, кожен у своєму квадратику біля кута (--screw-box); нижні — над смужкою (--band). */
+  --screw-box: 8px;
+  --band: 5px;
+  --slot: radial-gradient(ellipse calc(var(--screw-box) / 3) 0.9px, var(--grey-lo) 95%, transparent);
+  --screw: radial-gradient(circle, var(--grey-hi) 0 calc(var(--screw-box) / 4), var(--grey-lo) calc(var(--screw-box) / 4 + 0.5px) calc(var(--screw-box) / 2 - 0.5px), transparent calc(var(--screw-box) / 2));
+}
+
+.card-place-office .card-title {
+  --top: top 3px;
+  --bottom: bottom calc(var(--band) + 3px);
+  --box: var(--screw-box) var(--screw-box) no-repeat;
+  padding: var(--sign-top) calc(var(--sign-right) + 4px) calc(var(--sign-bottom) + 2px) calc(var(--sign-left) + var(--screw-box) + 1px);
+  border-radius: 4px;
+  background:
+    var(--slot) left 3px var(--top) / var(--box),
+    var(--screw) left 3px var(--top) / var(--box),
+    var(--slot) left 3px var(--bottom) / var(--box),
+    var(--screw) left 3px var(--bottom) / var(--box),
+    var(--slot) right 3px var(--top) / var(--box),
+    var(--screw) right 3px var(--top) / var(--box),
+    var(--slot) right 3px var(--bottom) / var(--box),
+    var(--screw) right 3px var(--bottom) / var(--box),
+    linear-gradient(var(--place) 0 0) 0 100% / 100% var(--band) no-repeat,
+    linear-gradient(#cdc6be /* greyHi */, #a69f9b /* grey */);
+  box-shadow: 0 var(--sign-lift) 0 var(--shade-base);
+}
+
+/* Низький екран (телефон набік): тонші контури, менші поля й маркіза — висота тут найдорожча. */
+@media (max-height: 420px) {
+  .card-place {
+    --sign-line: 2px;
+    --sign-lift: 3px;
+    --sign-top: 0px;
+    --sign-bottom: 2px;
+    --sign-left: 4px;
+    --sign-right: 12px;
+  }
+
+  .card-place .card-head {
+    margin-bottom: 6px;
+  }
+
+  .card-place .card-title {
+    border-radius: 8px;
+  }
+
+  .card-place .card-title .name-icon {
+    border-width: 1.5px;
+    border-radius: 6px;
+  }
+
+  .card-place-shop {
+    --awning-stripe: 14px;
+    --awning-body: 5px;
+  }
+
+  .card-place-office {
+    --screw-box: 6px;
+    --band: 4px;
+  }
+}

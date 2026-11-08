@@ -1,0 +1,251 @@
+{
+  "originals": {
+    "gs-clicking": {
+      "file": "commons/Clicking_(Gravity_Sound).wav",
+      "url": "https://commons.wikimedia.org/wiki/File:Clicking_(Gravity_Sound).wav",
+      "title": "Clicking (Gravity Sound)",
+      "author": "Gravity Sound",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sha256": "b842d3fa69ae25ebaf685a292ee331ea76a2ab7525a78bec06928e84ed3fd71d"
+    },
+    "gs-bump-2": {
+      "file": "commons/Bump_2_(Gravity_Sound).wav",
+      "url": "https://commons.wikimedia.org/wiki/File:Bump_2_(Gravity_Sound).wav",
+      "title": "Bump 2 (Gravity Sound)",
+      "author": "Gravity Sound",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sha256": "3cd5983e315b98b1f932b360b0792953f5998068a1c53636630bfe8046310356"
+    },
+    "gs-bump-3": {
+      "file": "commons/Bump_3_(Gravity_Sound).wav",
+      "url": "https://commons.wikimedia.org/wiki/File:Bump_3_(Gravity_Sound).wav",
+      "title": "Bump 3 (Gravity Sound)",
+      "author": "Gravity Sound",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sha256": "573023feca1186aab24f642fb57065b892057fed79b6c7c60e78cf3f9dd5eedf"
+    },
+    "gs-can-hits-1": {
+      "file": "commons/Can_hits_1_(Gravity_Sound).mp3",
+      "url": "https://commons.wikimedia.org/wiki/File:Can_hits_1_(Gravity_Sound).mp3",
+      "title": "Can hits 1 (Gravity Sound)",
+      "author": "Gravity Sound",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sha256": "63554e13069dede872ea606ea3b7a5649f7a1ff786847069c81298f89986863d"
+    },
+    "gs-complete": {
+      "file": "commons/Complete_(Gravity_Sound).mp3",
+      "url": "https://commons.wikimedia.org/wiki/File:Complete_(Gravity_Sound).mp3",
+      "title": "Complete (Gravity Sound)",
+      "author": "Gravity Sound",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sha256": "242350ceea37a5cf8048a8fdffc27d5594e19c6991e9963f693d6fb3d7b397c8"
+    },
+    "koshi": {
+      "file": "commons/Windglockenspiel.Koshi.ogg",
+      "url": "https://commons.wikimedia.org/wiki/File:Windglockenspiel.Koshi.ogg",
+      "title": "Windglockenspiel.Koshi",
+      "author": "Membeth",
+      "license": "CC0-1.0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sha256": "1f8b33ad604ef9ff5ba1ad901401b6d182f9db94e28f62a5ed930ff2f281b741"
+    },
+    "piano-error": {
+      "file": "commons/Som_de_Erro.ogg",
+      "url": "https://commons.wikimedia.org/wiki/File:Som_de_Erro.ogg",
+      "title": "Som de Erro",
+      "author": "Rafael Tavares Juliani",
+      "license": "CC0-1.0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sha256": "660682ebcef9b9a4c0464c1ec3208c6f10b7c7b7e7411f0c03341e1e36056a96"
+    },
+    "fs-impact": {
+      "file": "freesound/749465__audiopapkin__sound-design-elements-impact-sfx-ps-001.wav",
+      "url": "https://freesound.org/people/AudioPapkin/sounds/749465/",
+      "title": "Sound Design Elements Impact SFX PS 001",
+      "author": "AudioPapkin",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "ee1fd66ef27ea1a9c557848918aec67637ab5a35d31fa5dccec507e607c230ab"
+    },
+    "fs-ui-03": {
+      "file": "freesound/380292__rhodesmas__ui-03.wav",
+      "url": "https://freesound.org/people/rhodesmas/sounds/380292/",
+      "title": "UI 03",
+      "author": "rhodesmas",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "sha256": "4639d12d7d03a76fbf94404ed1cadbc5724f761bb18a863ed632d6debe108f35"
+    },
+    "fs-pop": {
+      "file": "freesound/692109__samuel54tw__pop-videogame-sound.flac",
+      "url": "https://freesound.org/people/Samuel54tw/sounds/692109/",
+      "title": "Pop (Videogame sound)",
+      "author": "Samuel54tw",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "e77bde67201d7371b63920cd8a743bbff166190ade46f7b5570a1fc347fa39e1"
+    },
+    "fs-ping": {
+      "file": "freesound/266742__n_audioman__ping12.wav",
+      "url": "https://freesound.org/people/n_audioman/sounds/266742/",
+      "title": "Ping12.wav",
+      "author": "n_audioman",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "b377ec31a600974a937ec965c19c41a156d9ed8e5e39941f99ab5e9afb51775b"
+    },
+    "fs-coins": {
+      "file": "freesound/336571__anthousai__coins-05.wav",
+      "url": "https://freesound.org/people/Anthousai/sounds/336571/",
+      "title": "coins 05.wav",
+      "author": "Anthousai",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "3fe86fa6597cd1f86572bd249010d3d2aad7b141e213e5a5668966fd75f104b6"
+    },
+    "fs-bird-chirps": {
+      "file": "freesound/184870__keweldog__bird-chirps5.wav",
+      "url": "https://freesound.org/people/keweldog/sounds/184870/",
+      "title": "bird chirps5.wav",
+      "author": "keweldog",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "161af60d39ea99c0601992c8639db6a339a34356febf87572e7b14b7e5f91e36"
+    }
+  },
+  "files": {
+    "open": {
+      "from": "fs-pop",
+      "start": 0.035,
+      "fadeOut": 0.03,
+      "note": "Картка відкрилась: «поп»"
+    },
+    "close": {
+      "from": "fs-pop",
+      "start": 0.035,
+      "filter": "asetrate=35280,aresample=48000",
+      "fadeOut": 0.03,
+      "note": "Картка закрилась: той самий «поп», що й відкриття, нижче"
+    },
+    "click-1": {
+      "from": "gs-clicking",
+      "start": 0.112,
+      "end": 0.172,
+      "fadeOut": 0.025,
+      "note": "Кнопка: один клац"
+    },
+    "click-2": {
+      "from": "gs-clicking",
+      "start": 0.243,
+      "end": 0.303,
+      "fadeOut": 0.025,
+      "note": "Кнопка: інший клац"
+    },
+    "click-3": {
+      "from": "gs-clicking",
+      "start": 1.495,
+      "end": 1.555,
+      "fadeOut": 0.025,
+      "note": "Кнопка: ще один клац"
+    },
+    "tab": {
+      "from": "fs-ui-03",
+      "fadeOut": 0.03,
+      "note": "Вкладка: короткий м'який клац"
+    },
+    "refused-1": {
+      "from": "gs-bump-2",
+      "start": 0.115,
+      "end": 0.32,
+      "fadeOut": 0.06,
+      "note": "Відмова: тихий глухий «бум»"
+    },
+    "refused-2": {
+      "from": "gs-bump-3",
+      "start": 0.14,
+      "end": 0.33,
+      "fadeOut": 0.06,
+      "note": "Відмова: інший «бум»"
+    },
+    "empty-1": {
+      "from": "gs-can-hits-1",
+      "start": 4.315,
+      "end": 4.47,
+      "fadeOut": 0.05,
+      "note": "Порожньо: стук по порожній банці"
+    },
+    "empty-2": {
+      "from": "gs-can-hits-1",
+      "start": 4.69,
+      "end": 4.84,
+      "fadeOut": 0.05,
+      "note": "Порожньо: інший стук"
+    },
+    "notify": {
+      "from": "fs-ping",
+      "end": 0.05,
+      "fadeOut": 0.01,
+      "note": "Телефон: сповіщення про рису кота — короткий «пінг»"
+    },
+    "ordered": {
+      "from": "gs-complete",
+      "fadeOut": 0.2,
+      "note": "Замовлення оплачено: «дінь-дон»"
+    },
+    "bought": {
+      "from": "fs-coins",
+      "start": 0.03,
+      "end": 0.45,
+      "fadeOut": 0.08,
+      "note": "Купівля на місці: монети"
+    },
+    "retired": {
+      "from": "koshi",
+      "start": 39.66,
+      "end": 42.4,
+      "fadeIn": 0.01,
+      "fadeOut": 1,
+      "note": "Кінець гри — пенсія: дзвіночки, яскравіше й довше"
+    },
+    "low-stat": {
+      "from": "piano-error",
+      "fadeOut": 0.1,
+      "note": "Шкала впала нижче LOW_STAT: дві ноти піаніно вниз"
+    },
+    "end": {
+      "from": "fs-impact",
+      "start": 0.3,
+      "end": 3.2,
+      "fadeIn": 0.01,
+      "fadeOut": 1.2,
+      "note": "Кінець гри (показник, виселення): глухий удар, що довго згасає"
+    },
+    "morning-1": {
+      "from": "fs-bird-chirps",
+      "fadeIn": 0.02,
+      "fadeOut": 0.4,
+      "filter": "asplit[n0][s0];[n0]atrim=1.82:2.0,asetpts=PTS-STARTPTS[n];[s0]atrim=0.42:2.6,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,highpass=f=1000,highpass=f=1000,asendcmd=c='0.0 afftdn sn start;0.13 afftdn sn stop',afftdn=nr=10:nf=-57,atrim=start=0.205,asetpts=PTS-STARTPTS",
+      "note": "Титулка ранку: вільшанка співає вранці. Гул транспорту нижче 1 кГц зрізано, шум парку — з профілем із паузи між трелями",
+      "level": -2
+    },
+    "morning-2": {
+      "from": "fs-bird-chirps",
+      "fadeIn": 0.02,
+      "fadeOut": 0.4,
+      "filter": "asplit[n0][s0];[n0]atrim=9.25:9.45,asetpts=PTS-STARTPTS[n];[s0]atrim=7.74:9.5,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,highpass=f=1000,highpass=f=1000,asendcmd=c='0.0 afftdn sn start;0.15 afftdn sn stop',afftdn=nr=10:nf=-57,atrim=start=0.225,asetpts=PTS-STARTPTS",
+      "note": "Титулка ранку: інша фраза того самого птаха"
+    },
+    "morning-3": {
+      "from": "fs-bird-chirps",
+      "fadeIn": 0.02,
+      "fadeOut": 0.4,
+      "filter": "asplit[n0][s0];[n0]atrim=14.78:14.98,asetpts=PTS-STARTPTS[n];[s0]atrim=13.86:15.6,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,highpass=f=1000,highpass=f=1000,asendcmd=c='0.0 afftdn sn start;0.15 afftdn sn stop',afftdn=nr=10:nf=-57,atrim=start=0.225,asetpts=PTS-STARTPTS",
+      "note": "Титулка ранку: ще одна фраза"
+    }
+  }
+}

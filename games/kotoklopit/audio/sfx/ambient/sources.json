@@ -1,0 +1,291 @@
+{
+  "originals": {
+    "tdc-hammer-drill": {
+      "file": "archive/Designers-Choice-Collection-Tools/TOOLPowr-Samsung_Galaxy_Smartphone_CU_Drill_Hammer_Start_Run_Stop_Various_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Tools",
+      "title": "The Designer's Choice UCS Collection - TOOLS — TOOLS/POWER/TOOLPowr-Samsung Galaxy Smartphone, CU_Drill, Hammer, Start, Run, Stop, Various_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "ffe6e3c506acca16c125822cdba4552c175e64fd43ce0487d6b807431b0083dc"
+    },
+    "tdc-cordless-drill": {
+      "file": "archive/Designers-Choice-Collection-Tools/TOOLPowr-Samsung_Galaxy_Smartphone_CU_Cordless_Drill_Driver_Start_Run_Stop_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Tools",
+      "title": "The Designer's Choice UCS Collection - TOOLS — TOOLS/POWER/TOOLPowr-Samsung Galaxy Smartphone, CU_Cordless Drill Driver, Start, Run, Stop_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "2533daec940b8edf475c26919287374205e254e463b62a8db4b479473195d319"
+    },
+    "tdc-hammer-distant": {
+      "file": "archive/Designers-Choice-Collection-Tools/TOOLHand-Distant_Hammer_Hammering_Nail_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Tools",
+      "title": "The Designer's Choice UCS Collection - TOOLS — TOOLS/HAND/TOOLHand-Distant_Hammer, Hammering Nail_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "8bc76c93bbef91fa4f1324f062e36e4eb2bae9c421e5ad8a8b644b26f6a00cb3"
+    },
+    "tdc-hammer": {
+      "file": "archive/Designers-Choice-Collection-Tools/TOOLHand-Samsung_Galaxy_Smartphone_Hammer_Hammering_A_Nail_Pounding_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Tools",
+      "title": "The Designer's Choice UCS Collection - TOOLS — TOOLS/HAND/TOOLHand-Samsung Galaxy Smartphone_Hammer, Hammering A Nail, Pounding_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "10183d72bdb1f8d825f5f755d4ab111abec1b7b918da6bb82d546c23c60b1a24"
+    },
+    "tdc-sander-distant": {
+      "file": "archive/Designers-Choice-Collection-Tools/TOOLPowr-Distant_Sander_Sanding_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Tools",
+      "title": "The Designer's Choice UCS Collection - TOOLS — TOOLS/POWER/TOOLPowr-Distant_Sander Sanding_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "551f7c6b1a71c31cf8dad303088383bfe558c13d0c31902174409a38d8abb148"
+    },
+    "cusack-sparrows": {
+      "file": "archive/aporee_71117_82942/0181311sparrowscrowamongstvastappartmentblocksmaybeairconedit.mp3",
+      "url": "https://archive.org/details/aporee_71117_82942",
+      "title": "Sparrows in the spacious gardens and play areas surrounded by huge DDR apartment blocks, Berlin, Germany - Sparrows in the spacious gardens and play areas surrounded by huge DDR apartment blocks — 0181311sparrowscrowamongstvastappartmentblocksmaybeairconedit.mp3",
+      "author": "Peter Cusack",
+      "license": "PD",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
+      "sha256": "3380f02d937852d0fa9ca4ce2bcde6a674bc749c232ad4aef26cdeef439e9d51"
+    },
+    "cusack-city-roar": {
+      "file": "archive/aporee_66535_76933/2502050713firstlightsirengoshawkcrowplaneedit.mp3",
+      "url": "https://archive.org/details/aporee_66535_76933",
+      "title": "Fauler See woodland, audio stream, early February, Hansastraße 182, 13088 Berlin, Germany - First light of the day, Berlin city roar, a goshawk calls — 2502050713firstlightsirengoshawkcrowplaneedit.mp3",
+      "author": "Peter Cusack",
+      "license": "PD",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
+      "sha256": "506c84f2c0fa74fff400e81678ee666ba5e00be219e0714f24b1af347ec2252b"
+    },
+    "lens-courtyard": {
+      "file": "archive/aporee_71364_83257/AMBUrbnResidentialCourtyardKhrushchyovkaQuietEveningFootsteps.mp3",
+      "url": "https://archive.org/details/aporee_71364_83257",
+      "title": "Fili-Davydkovo, Moscow, Russia - Quiet courtyard — AMBUrbnResidentialCourtyardKhrushchyovkaQuietEveningFootsteps.mp3",
+      "author": "Pasha Lens",
+      "license": "PD",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
+      "sha256": "d87978b862a0891a7e81d3fd5f6fbefc41311848f9803690b4f2a8f76737c758"
+    },
+    "alpatraz-rain": {
+      "file": "archive/aporee_49111_55962/2004291221aporee.mp3",
+      "url": "https://archive.org/details/aporee_49111_55962",
+      "title": "Schlögelgasse 7, 8010 Graz, Österreich - rain in April — 2004291221aporee.mp3",
+      "author": "alpatraz",
+      "license": "PD",
+      "licenseUrl": "http://creativecommons.org/publicdomain/mark/1.0/",
+      "sha256": "15e11b9d8c8f596d4d106b8c3c91b9c6a22035595ccedfcf3bd7cc772a4cdeeb"
+    },
+    "brush-cicadas": {
+      "file": "archive/Cicadas20130622/cicadas_2013_0622.mp3",
+      "url": "https://archive.org/details/Cicadas20130622",
+      "title": "Cicadas 2013 0622 — cicadas 2013_0622.mp3",
+      "author": "Joe Brush",
+      "license": "PD",
+      "licenseUrl": "http://creativecommons.org/publicdomain/mark/1.0/",
+      "sha256": "22c963176ab6ecb4a1cd28b45a26269a1e03f123909d34d036d47beb1624639a"
+    },
+    "tdc-blizzard": {
+      "file": "archive/Designers-Choice-Collection-Wind/WINDTurb-CU_Blizzard_Old_Recording_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Wind",
+      "title": "The Designer's Choice UCS Collection - WIND — WIND/TURBULENT/WINDTurb-CU_Blizzard, Old Recording_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "e3fa7ce426e4019978e2b692a2e95d72442bdf32d53d0280a57757b370291195"
+    },
+    "laag-festival": {
+      "file": "archive/aporee_29165_33563/placechaixartrock.mp3",
+      "url": "https://archive.org/details/aporee_29165_33563",
+      "title": "Saint-Brieuc, France - art rock fest human crowd — placechaixartrock.mp3",
+      "author": "laag (radio aporee)",
+      "license": "PD",
+      "licenseUrl": "http://creativecommons.org/publicdomain/mark/1.0/",
+      "sha256": "644f0e907c6e9788fd9d92de423c530245797dcdde2f9007e828fe7d3987aead"
+    },
+    "tdc-walla": {
+      "file": "archive/Designers-Choice-Collection-Ambiences/AMBRest-Samsung_Galaxy_Smartphone_CU_Restaurant_Or_Bar_Walla_The_Designer_s_Choice_GNRL1.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Ambiences",
+      "title": "The Designer's Choice UCS Collection - AMBIENCES — AMBIENCES/RESTAURANT & BAR/AMBRest-Samsung Galaxy Smartphone, CU_Restaurant Or Bar Walla_The Designer's Choice_GNRL1.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "8b20d907acb73b141f1a1937c48d43bae1d37bfcffe6678332890154fb0eae08"
+    },
+    "tdc-fridge": {
+      "file": "archive/Designers-Choice-Collection-Machines/MACHAppl-Blue_Snowball_Microphone_Frigidaire_Mini_Fridge_Or_Cooler_Turn_On_Run_Off_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Machines",
+      "title": "The Designer's Choice UCS Collection - MACHINES — MACHINES/APPLIANCE/MACHAppl-Blue Snowball Microphone_Frigidaire Mini Fridge Or Cooler, Turn On, Run, Off_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "76ccbfecd3d309483109ef9746bd3f0779babb009674a0fc3c1811761912b641"
+    }
+  },
+  "files": {
+    "birds-loop": {
+      "from": "cusack-sparrows",
+      "start": 110,
+      "end": 117.3,
+      "loop": true,
+      "filter": "highpass=f=250,highpass=f=250",
+      "note": "Горобці у дворі між багатоповерхівками, місто далеко; гул низів зрізано"
+    },
+    "city-loop": {
+      "from": "cusack-city-roar",
+      "start": 85,
+      "end": 92.3,
+      "loop": true,
+      "filter": "highpass=f=100,highpass=f=100",
+      "note": "Рівний далекий гул Берліна з парку; вітер у мікрофоні зрізано"
+    },
+    "evening-loop": {
+      "from": "lens-courtyard",
+      "start": 24,
+      "end": 31.3,
+      "loop": true,
+      "filter": "highpass=f=60,lowpass=f=4000",
+      "note": "Тихий двір хрущовок увечері, ледь чутне місто; шипіння запису зрізано"
+    },
+    "rain-loop": {
+      "from": "alpatraz-rain",
+      "start": 17.4,
+      "end": 24.7,
+      "loop": true,
+      "filter": "highpass=f=120",
+      "note": "Рівний дощ у двір, з балкона"
+    },
+    "cicadas-loop": {
+      "from": "brush-cicadas",
+      "start": 173.4,
+      "end": 180.7,
+      "loop": true,
+      "filter": "highpass=f=400,highpass=f=400",
+      "note": "Хор цикад і цвіркунів; вітер у мікрофоні зрізано"
+    },
+    "wind-loop": {
+      "from": "tdc-blizzard",
+      "start": 30.8,
+      "end": 38.1,
+      "loop": true,
+      "filter": "highpass=f=150,lowpass=f=3000",
+      "note": "Хуртовина, рівно; приглушено, як за склом"
+    },
+    "festival-loop": {
+      "from": "laag-festival",
+      "start": 33.4,
+      "end": 40.7,
+      "loop": true,
+      "filter": "highpass=f=120,lowpass=f=1200,lowpass=f=1200",
+      "note": "Гомін юрби на нічному фестивалі, приглушено й далеко: мова нерозбірлива"
+    },
+    "party-loop": {
+      "from": "tdc-walla",
+      "start": 46.6,
+      "end": 54.9,
+      "loop": true,
+      "filter": "highpass=f=60,equalizer=f=64:t=q:w=8:g=-24,equalizer=f=76:t=q:w=8:g=-24,lowpass=f=900,lowpass=f=900",
+      "note": "Гамір багатьох гостей — за стіною; гул залу 64 і 76 Гц вирізано"
+    },
+    "fridge-loop": {
+      "from": "tdc-fridge",
+      "start": 36,
+      "end": 43.3,
+      "loop": true,
+      "filter": "highpass=f=80,lowpass=f=1000,lowpass=f=1000",
+      "note": "Рівне гудіння маленького холодильника; писк вентилятора біля 2 кГц зрізано"
+    },
+    "drill-1": {
+      "from": "tdc-hammer-drill",
+      "start": 16.75,
+      "end": 19.1,
+      "filter": "lowpass=f=900,lowpass=f=900",
+      "fadeIn": 0.03,
+      "fadeOut": 0.2,
+      "note": "Перфоратор: розгін, свердлить, стоп — за стіною"
+    },
+    "drill-2": {
+      "from": "tdc-hammer-drill",
+      "start": 19.75,
+      "end": 20.9,
+      "level": -4.7,
+      "filter": "lowpass=f=900,lowpass=f=900",
+      "fadeIn": 0.03,
+      "fadeOut": 0.12,
+      "note": "Перфоратор: короткий уривок — за стіною"
+    },
+    "drill-3": {
+      "from": "tdc-cordless-drill",
+      "start": 6.4,
+      "end": 8.9,
+      "level": -4.4,
+      "filter": "lowpass=f=900,lowpass=f=900",
+      "fadeIn": 0.15,
+      "fadeOut": 0.2,
+      "note": "Акумуляторний дриль: крутить і стає — за стіною"
+    },
+    "hammer-1": {
+      "from": "tdc-hammer",
+      "start": 1.02,
+      "end": 2.2,
+      "level": -4.6,
+      "filter": "lowpass=f=900,lowpass=f=900",
+      "fadeIn": 0.005,
+      "fadeOut": 0.15,
+      "note": "Три удари молотком — за стіною"
+    },
+    "hammer-2": {
+      "from": "tdc-hammer",
+      "start": 3,
+      "end": 4.5,
+      "filter": "lowpass=f=900,lowpass=f=900",
+      "fadeIn": 0.005,
+      "fadeOut": 0.2,
+      "note": "Чотири удари молотком — за стіною"
+    },
+    "hammer-3": {
+      "from": "tdc-hammer",
+      "start": 24.4,
+      "end": 26.25,
+      "level": -2.9,
+      "filter": "lowpass=f=900,lowpass=f=900",
+      "fadeIn": 0.01,
+      "fadeOut": 0.12,
+      "note": "Наживляє цвях і б'є — за стіною"
+    },
+    "stairwell-1": {
+      "from": "tdc-hammer-drill",
+      "start": 21.25,
+      "end": 23.4,
+      "level": -4.9,
+      "filter": "highpass=f=150,lowpass=f=900,lowpass=f=900,aecho=0.8:0.5:45|110|190:0.35|0.25|0.15",
+      "fadeIn": 0.12,
+      "fadeOut": 0.35,
+      "note": "Перфоратор у під'їзді: далеко, за дверима, з луною"
+    },
+    "stairwell-2": {
+      "from": "tdc-sander-distant",
+      "start": 9,
+      "end": 10.9,
+      "level": -6.6,
+      "filter": "highpass=f=150,lowpass=f=1500,aecho=0.8:0.5:45|110|190:0.35|0.25|0.15",
+      "fadeIn": 0.15,
+      "fadeOut": 0.4,
+      "note": "Скрегіт шліфування в під'їзді, з луною"
+    },
+    "stairwell-3": {
+      "from": "tdc-hammer-distant",
+      "start": 5.95,
+      "end": 7.6,
+      "filter": "highpass=f=120,lowpass=f=1200,aecho=0.8:0.5:45|110|190:0.35|0.25|0.15",
+      "fadeIn": 0.005,
+      "fadeOut": 0.3,
+      "note": "Стукіт молотка в під'їзді, з луною"
+    }
+  }
+}

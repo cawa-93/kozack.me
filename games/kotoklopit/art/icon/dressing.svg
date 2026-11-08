@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/dressing — запас «Пластир і бинт»: рулон білого бинта лежить на боці, хвіст розмотано вниз-праворуч, на рулоні — червоний хрестик.
+size 64×64; pivot (32, 32) — центр; points немає. Без станів і шарів: один кадр у готових кольорах; контур — LINE (силует 6, низ 8,5, внутрішні 3,5).
+Силует — рулон (торець-еліпс зі спіраллю ліворуч) і широка стрічка-хвіст із сіткою марлі; від icon/bandage (лише пластир навскіс — травма) відрізняє рулон, від туалетного паперу — хрестик і марля. Головне (торець і хвіст) — поза правим верхнім кутом під плашку «0».
+-->
+<defs>
+<clipPath id="icon-dressing-tail"><path d="M20 35C20.4 49.4 34 56.4 54 54.4Q57 47.6 55 41C47 43.4 41.4 42 40.4 35Z"/></clipPath>
+<clipPath id="icon-dressing-roll"><path d="M19 7.6Q30 6.8 41 7.6C46.2 7.6 50.4 14.2 50.4 22.2C50.4 30.2 46.2 36.8 41 36.8Q30 37.6 19 36.8C13.8 36.8 9.6 30.2 9.6 22.2C9.6 14.2 13.8 7.6 19 7.6Z"/></clipPath>
+</defs>
+<g id="p-tail">
+<path d="M20 35C20.4 49.4 34 56.4 54 54.4Q57 47.6 55 41C47 43.4 41.4 42 40.4 35Z" fill="#f2e9d4"/>
+<path d="M18 35L42 35L42.6 41.4Q30 44 18 41Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-dressing-tail)"/>
+<path d="M24 60L46 36M36 62L58 38M18 44L40 62M28 38L56 60" fill="none" stroke="#bfb093" stroke-width="2.5" stroke-linecap="round" clip-path="url(#icon-dressing-tail)"/>
+<path d="M20 35C20.4 49.4 34 56.4 54 54.4Q57 47.6 55 41C47 43.4 41.4 42 40.4 35" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M21.6 45C26 52 36 55.8 54 54.4" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-roll">
+<path d="M19 7.6Q30 6.8 41 7.6C46.2 7.6 50.4 14.2 50.4 22.2C50.4 30.2 46.2 36.8 41 36.8Q30 37.6 19 36.8C13.8 36.8 9.6 30.2 9.6 22.2C9.6 14.2 13.8 7.6 19 7.6Z" fill="#f2e9d4"/>
+<path d="M35.6 15.4Q38.2 15 40.6 15.4L40.8 19.6L45 19.8Q45.4 22.4 45 24.8L40.8 25L40.6 29.2Q38.2 29.6 35.6 29.2L35.4 25L31.2 24.8Q30.8 22.4 31.2 19.8L35.4 19.6Z" fill="#c4524b"/>
+<path d="M6 24Q30 28 54 23.4L54 40L6 40Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-dressing-roll)"/>
+<path d="M19 7.6C24.2 7.6 28.4 14.2 28.4 22.2C28.4 30.2 24.2 36.8 19 36.8C13.8 36.8 9.6 30.2 9.6 22.2C9.6 14.2 13.8 7.6 19 7.6Z" fill="#e0d4b9"/>
+<path d="M19 30.4C15.8 30.4 13.6 26.6 13.6 22.2C13.6 17.4 16 13.6 19.2 13.6C22.2 13.6 24.4 17.2 24.4 21.6C24.4 25 22.8 27.4 20.4 27.4C18.4 27.4 17.4 25.2 17.6 22.6" fill="none" stroke="#bfb093" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M35.6 15.4Q38.2 15 40.6 15.4L40.8 19.6L45 19.8Q45.4 22.4 45 24.8L40.8 25L40.6 29.2Q38.2 29.6 35.6 29.2L35.4 25L31.2 24.8Q30.8 22.4 31.2 19.8L35.4 19.6Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M19 7.6C24.2 7.6 28.4 14.2 28.4 22.2C28.4 30.2 24.2 36.8 19 36.8" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M19 7.6Q30 6.8 41 7.6C46.2 7.6 50.4 14.2 50.4 22.2C50.4 30.2 46.2 36.8 41 36.8Q30 37.6 19 36.8C13.8 36.8 9.6 30.2 9.6 22.2C9.6 14.2 13.8 7.6 19 7.6Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M10.4 28.6C12 33.6 15.2 36.8 19 36.8" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

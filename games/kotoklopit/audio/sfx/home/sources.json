@@ -1,0 +1,575 @@
+{
+  "originals": {
+    "fridge": {
+      "file": "archive/Designers-Choice-Collection-Doors/DOORAppl-Samsung_Galaxy_Smartphone_Refrigerator_Open_Close_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Doors",
+      "title": "The Designer's Choice UCS Collection - DOORS — DOORS/APPLIANCE/DOORAppl-Samsung Galaxy Smartphone_Refrigerator, Open, Close_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "d386060929ecacde150014c410d6b6fe8090b62d2a8b749e2bb1ea46521a660f"
+    },
+    "cabinet": {
+      "file": "archive/Designers-Choice-Collection-Doors/DOORCab-Samsung_Galaxy_Smartphone_CU_Bathroom_Cabinet_Close_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Doors",
+      "title": "The Designer's Choice UCS Collection - DOORS — DOORS/CABINET/DOORCab-Samsung Galaxy Smartphone, CU_Bathroom Cabinet, Close_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "ccb4a3ae951327447975d2dc6123370f2780555736442895d25a60a80bfd67d0"
+    },
+    "washer-door": {
+      "file": "archive/Designers-Choice-Collection-Doors/DOORAppl-Samsung_Galaxy_Smartphone_CU_Washing_Machine_Doors_Open_Close_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Doors",
+      "title": "The Designer's Choice UCS Collection - DOORS — DOORS/APPLIANCE/DOORAppl-Samsung Galaxy Smartphone, CU_Washing Machine Doors, Open, Close_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "48f19f5a20b3b33d660e34907ab93d3796efe023812aa6c8c4cc8ddb864b877a"
+    },
+    "pet-gate": {
+      "file": "archive/Designers-Choice-Collection-Doors/DOORGate-Samsung_Galaxy_Smartphone_CU_Pet_Open_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Doors",
+      "title": "The Designer's Choice UCS Collection - DOORS — DOORS/GATE/DOORGate-Samsung Galaxy Smartphone, CU_Pet, Open_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "705c147ebe7959933f860cb2a437eeab5c3a880f34dc2a53dcac2e72f087cb24"
+    },
+    "trash-lid": {
+      "file": "archive/Designers-Choice-Collection-Doors/DOORMisc-Samsung_Galaxy_Smartphone_CU_7_Eleven-Trash_Can_Lid_Open_Close_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Doors",
+      "title": "The Designer's Choice UCS Collection - DOORS — DOORS/MISC/DOORMisc-Samsung Galaxy Smartphone, CU_7 Eleven-Trash Can Lid, Open, Close_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "42279f3b21d61d8688ca294f536a16d4fe0a0c8df26f32b19b9d5ade189f0924"
+    },
+    "door-lock": {
+      "file": "archive/Designers-Choice-Collection-Doors/DOORHdwr-Samsung_Galaxy_Smartphone_CU_Door_Lock_Locking_Unlocking_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Doors",
+      "title": "The Designer's Choice UCS Collection - DOORS — DOORS/HARDWARE/DOORHdwr-Samsung Galaxy Smartphone, CU_Door Lock, Locking, Unlocking_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "abdec4b407df701a577307ccc3bb952ac11a61d9710d3e8f4ee87cd9deb02827"
+    },
+    "front-door": {
+      "file": "archive/Designers-Choice-Collection-Doors/DOORWood-Samsung_Galaxy_Smartphone_CU_French_Double_Door_Open_Close_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Doors",
+      "title": "The Designer's Choice UCS Collection - DOORS — DOORS/WOOD/DOORWood-Samsung Galaxy Smartphone, CU_French Double Door, Open, Close_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "347d9f3e3f97288032654e53486dd7304d92c2628c9f52969c45c2d92fe85a6b"
+    },
+    "vacuum": {
+      "file": "archive/Designers-Choice-Collection-Machines/MACHAppl-Samsung_Galaxy_Smartphone_CU_Bissell_FeatherWeight_Vacuum_Turn_On_Run_Off_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Machines",
+      "title": "The Designer's Choice UCS Collection - MACHINES — MACHINES/APPLIANCE/MACHAppl-Samsung Galaxy Smartphone, CU_Bissell FeatherWeight Vacuum Turn On, Run, Off_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "a937f2413fc2f5f7242a906c454d8251b07feb1f04fb78df52384030028a31f4"
+    },
+    "microwave": {
+      "file": "archive/Designers-Choice-Collection-Machines/MACHAppl-Samsung_Galaxy_Smartphone_Microwave_Press_Buttons_Start_Run_Stop_Beeping_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Machines",
+      "title": "The Designer's Choice UCS Collection - MACHINES — MACHINES/APPLIANCE/MACHAppl-Samsung Galaxy Smartphone_Microwave, Press Buttons, Start, Run, Stop, Beeping_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "c10fc96cd7301ede3e6d91c2f670480b86faf4267b0d12245c0853f6309ad4ae"
+    },
+    "dryer": {
+      "file": "archive/Designers-Choice-Collection-Machines/MACHAppl-Samsung_Galaxy_Smartphone_CU_Dryer_Running_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Machines",
+      "title": "The Designer's Choice UCS Collection - MACHINES — MACHINES/APPLIANCE/MACHAppl-Samsung Galaxy Smartphone, CU_Dryer, Running_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "cd5439d62d385e15a255ddf23f64f09d0be245fc6d27417ce71ce9ed22dc8e59"
+    },
+    "timer": {
+      "file": "archive/Designers-Choice-Collection-Bells/BELLHand-Blue_Snowball_Microphone_CU_Timer_Ding_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Bells",
+      "title": "The Designer's Choice UCS Collection - BELLS — BELLS/HANDBELL/BELLHand-Blue Snowball Microphone, CU_Timer Ding_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "413f16f11ab303f39980f157e461729d4939e3415c0ff2f4af3ba3b7c58872f9"
+    },
+    "doorbell": {
+      "file": "archive/Designers-Choice-Collection-Bells/BELLDoor-Samsung_Galaxy_Smartphone_Doorbell_Single_Ring_The_Designer_s_Choice_GNRL1.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Bells",
+      "title": "The Designer's Choice UCS Collection - BELLS — BELLS/DOORBELL/BELLDoor-Samsung Galaxy Smartphone_Doorbell, Single Ring_The Designer's Choice_GNRL1.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "e4630da39a9c30dcda43735f956c382121f4df225bb76fb5492f8aac5c95cfa3"
+    },
+    "beep-high": {
+      "file": "archive/Designers-Choice-Collection-Beeps/BEEP-Blue_Snowball_Microphone_High_Pitched_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Beeps",
+      "title": "The Designer's Choice UCS Collection - BEEPS — BEEPS/GENERAL/BEEP-Blue Snowball Microphone_High Pitched_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "bf6c7bf5db8dd3f77195e7df38646b92127a7cde0c0bcb72e7266d672d6dcafc"
+    },
+    "beep-low": {
+      "file": "archive/Designers-Choice-Collection-Beeps/BEEP-Blue_Snowball_Microphone_Low_Pitched_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Beeps",
+      "title": "The Designer's Choice UCS Collection - BEEPS — BEEPS/GENERAL/BEEP-Blue Snowball Microphone_Low Pitched_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "e61dbc257fa821a0ce8ff52f0b6b8735f14191ca8481835499d8944eca081103"
+    },
+    "bowl": {
+      "file": "archive/Designers-Choice-Collection-Ceramics/CERMHndl-Blue_Snowball_Microphone_CU_Bowl_Ceramic_Pick_Up_Put_Down_The_Designer_s_Choice_GNRL2.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Ceramics",
+      "title": "The Designer's Choice UCS Collection - CERAMICS — CERAMICS/HANDLE/CERMHndl-Blue Snowball Microphone, CU_Bowl, Ceramic, Pick Up, Put Down_The Designer's Choice_GNRL2.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "145c2e33de735ac5d5f7838a5b68c0ed9646411348e49eb0564c546df60ed17f"
+    },
+    "paint-can": {
+      "file": "archive/Designers-Choice-Collection-Objects/OBJHsehld-Samsung_Galaxy_Smartphone_CU_Paint_Can_Lift_Set_Down_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Objects",
+      "title": "The Designer's Choice UCS Collection - OBJECTS — OBJECTS/HOUSEHOLD/OBJHsehld-Samsung Galaxy Smartphone, CU_Paint Can, Lift, Set Down_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "df31f7f825a8bd2f3844918f779512ed634a0d05defaf30a54fca414299aa74a"
+    },
+    "toolbox": {
+      "file": "archive/Designers-Choice-Collection-Objects/OBJCont-Samsung_Galaxy_Smartphone_CU_Toolbox_Unlatch_Open_Close_Latch_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Objects",
+      "title": "The Designer's Choice UCS Collection - OBJECTS — OBJECTS/CONTAINER/OBJCont-Samsung Galaxy Smartphone, CU_Toolbox, Unlatch, Open, Close, Latch_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "e3358e1391fa3b95ee975b0f6731cc7f51945e4b6c96588e9a19fbdfa49abab1"
+    },
+    "pillow": {
+      "file": "archive/Designers-Choice-Collection-Objects/OBJFurn-Blue_Snowball_Microphone_MCU_Pillow_Fluff_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Objects",
+      "title": "The Designer's Choice UCS Collection - OBJECTS — OBJECTS/FURNITURE/OBJFurn-Blue Snowball Microphone, MCU_Pillow, Fluff_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "f16397020ee91a0820000e33cdb15881194c41892f2d350fe439126f19428a61"
+    },
+    "newspaper": {
+      "file": "archive/Designers-Choice-Collection-Paper/PAPRHndl-Samsung_Galaxy_Smartphone_MCU_Newspaper_Page_Flip_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Paper",
+      "title": "The Designer's Choice UCS Collection - PAPER — PAPER/HANDLE/PAPRHndl-Samsung Galaxy Smartphone, MCU_Newspaper, Page Flip_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "f23768671051071ca1d1b903bfd54fce2597164a38cca0e3c8579fed34b6a222"
+    },
+    "cauldron": {
+      "file": "archive/Designers-Choice-Collection-Water/WATRBubl-Samsung_Galaxy_Smartphone_CU_Large_Cauldron_Small_Bubbles_Nicholas_Judy_TDC.mp3",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Water",
+      "title": "The Designer's Choice UCS Collection - WATER — WATER/BUBBLES/WATRBubl-Samsung Galaxy Smartphone, CU_Large Cauldron, Small Bubbles_Nicholas Judy_TDC.mp3",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "cd34ede371ba92ffe837606be4c6ab22f227817d0b5059447b2a36c726aab2e5"
+    },
+    "fireworks": {
+      "file": "archive/Designers-Choice-Collection-Fireworks/FRWKComr-Samsung_Galaxy_Smartphone_CU_Firework_Explosions_X4_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Fireworks",
+      "title": "The Designer's Choice UCS Collection - FIREWORKS — FIREWORKS/COMMERCIAL/FRWKComr-Samsung Galaxy Smartphone, CU_Firework, Explosions, X4_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "3d6d3dad01bf3c5b5a3e2a0bb11ae71f385095f66875458138611b34f2ca2c35"
+    },
+    "washer-mid": {
+      "file": "commons/Washing_machine_mid_program.ogg",
+      "url": "https://commons.wikimedia.org/wiki/File:Washing_machine_mid_program.ogg",
+      "title": "Washing machine mid program",
+      "author": "ezwa (PDSounds)",
+      "license": "PD",
+      "licenseUrl": "https://commons.wikimedia.org/wiki/File:Washing_machine_mid_program.ogg",
+      "sha256": "62e3ebf15099a5dd30399cfa897003a026b319417a63e5c4529d0fc88ff55aa6"
+    },
+    "washer-spin": {
+      "file": "commons/Washing_machine_last_spin.ogg",
+      "url": "https://commons.wikimedia.org/wiki/File:Washing_machine_last_spin.ogg",
+      "title": "Washing machine last spin",
+      "author": "ezwa (PDSounds)",
+      "license": "PD",
+      "licenseUrl": "https://commons.wikimedia.org/wiki/File:Washing_machine_last_spin.ogg",
+      "sha256": "f8076157448f2542eb97027840487e51ac100f5e9e66b99aa4a4932f08a76888"
+    },
+    "frying": {
+      "file": "commons/Frying_fries_going_in_and_out_of_oil.ogg",
+      "url": "https://commons.wikimedia.org/wiki/File:Frying_fries_going_in_and_out_of_oil.ogg",
+      "title": "Frying fries going in and out of oil",
+      "author": "ezwa (PDSounds)",
+      "license": "PD",
+      "licenseUrl": "https://commons.wikimedia.org/wiki/File:Frying_fries_going_in_and_out_of_oil.ogg",
+      "sha256": "7f933637d2e180cee3ac286e311a9de7e83ff2436950e5b03106bc5438a4ed6b"
+    },
+    "fs-fly": {
+      "file": "freesound/571077__trp__180724-house-fly-close-buzzing-event.flac",
+      "url": "https://freesound.org/people/TRP/sounds/571077/",
+      "title": "180724 House fly, close buzzing event",
+      "author": "TRP",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "c4fd7c9eb16247caf21ea63f3dd77b5a317ead77e18021a249b30429c110ad28"
+    },
+    "fs-roomba": {
+      "file": "freesound/495547__ilsehimschoot__sound-of-roomba-robot-vacuum-cleaner-cleaning-and-entering-the-battery-station.wav",
+      "url": "https://freesound.org/people/IlseHimschoot/sounds/495547/",
+      "title": "Sound of Roomba robot vacuum cleaner cleaning and entering the battery station",
+      "author": "IlseHimschoot",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "be8762ce1389787ee60d99bcd5a22fce5f5fcb21bd6ec04938ed02d23e06c0d8"
+    },
+    "fs-party": {
+      "file": "freesound/480724__craigsmith__r08-14-dinner-party-or-restaurant.wav",
+      "url": "https://freesound.org/people/craigsmith/sounds/480724/",
+      "title": "R08-14-Dinner Party or Restaurant",
+      "author": "craigsmith",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "c9a90349d47f1c9caa65f303b7040995e3f016090804ef744b5ddd898ab6ba14"
+    },
+    "fs-tape": {
+      "file": "freesound/267712__weejee_vdh__ripping-off-tape.wav",
+      "url": "https://freesound.org/people/WeeJee_vdH/sounds/267712/",
+      "title": "Ripping Off Tape",
+      "author": "WeeJee_vdH",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "a4b33c156b83df9689d2e9a775bef5906a9626f1c611165b8e34b5b1414c711c"
+    },
+    "fs-crack": {
+      "file": "freesound/665085__sunflora__cracking.mp3",
+      "url": "https://freesound.org/people/sunflora/sounds/665085/",
+      "title": "cracking.mp3",
+      "author": "sunflora",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "741539648172dc1ea718fe3da7595441610381fc501936a886f7027edb1fb6a6"
+    },
+    "fs-cat-kick": {
+      "file": "freesound/258260__lostphosphene__cat-kick-1.aiff",
+      "url": "https://freesound.org/people/lostphosphene/sounds/258260/",
+      "title": "Cat Kick 1.aif",
+      "author": "lostphosphene",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "sha256": "b6e917a1a5c9c930ef6b596923c0e28faad64324e8465fb09a94c185b118db28"
+    },
+    "fs-put-down": {
+      "file": "freesound/792930__qubodup__put-down-item.wav",
+      "url": "https://freesound.org/people/qubodup/sounds/792930/",
+      "title": "Put down item",
+      "author": "qubodup",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "bd3db46685774feb205969adfa90dafd22eee042d9cd4f1b66d26e11bbe63ea5"
+    },
+    "fs-box-open": {
+      "file": "freesound/364740__newagesoup__open-cardboard-box-compartment.wav",
+      "url": "https://freesound.org/people/newagesoup/sounds/364740/",
+      "title": "open-cardboard-box-compartment.wav",
+      "author": "newagesoup",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "fc8857287922619592f46e69b6430ef995259969f4752c304f5accdfab81852a"
+    }
+  },
+  "files": {
+    "fridge-close-1": {
+      "from": "fridge",
+      "fadeOut": 0.1,
+      "note": "Холодильник зачинили: глухий стук дверцят",
+      "filter": "asplit[n0][s0];[n0]atrim=3.6:4.3,asetpts=PTS-STARTPTS[n];[s0]atrim=7.62:8.225,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,equalizer=f=97.0:t=q:w=8:g=-24,equalizer=f=214.0:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.65 afftdn sn stop',afftdn=nr=12:nf=-48,atrim=start=0.725,asetpts=PTS-STARTPTS"
+    },
+    "fridge-close-2": {
+      "from": "fridge",
+      "fadeOut": 0.1,
+      "filter": "asplit[n0][s0];[n0]atrim=29.8:30.3,asetpts=PTS-STARTPTS[n];[s0]atrim=12.44:13.045,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,asendcmd=c='0.0 afftdn sn start;0.45 afftdn sn stop',afftdn=nr=10:nf=-53,atrim=start=0.525,asetpts=PTS-STARTPTS"
+    },
+    "cabinet-1": {
+      "from": "cabinet",
+      "start": 0.33,
+      "end": 0.85,
+      "fadeOut": 0.08,
+      "note": "Дверцята шафки з кормом і бака"
+    },
+    "cabinet-2": {
+      "from": "cabinet",
+      "start": 3.47,
+      "end": 4,
+      "fadeOut": 0.08
+    },
+    "cabinet-3": {
+      "from": "cabinet",
+      "start": 10.8,
+      "end": 11.32,
+      "fadeOut": 0.08
+    },
+    "dish-pick-1": {
+      "from": "bowl",
+      "fadeOut": 0.08,
+      "note": "Тихо взяти страву з плити, столу чи поверхні",
+      "filter": "asplit[n0][s0];[n0]atrim=10.85:11.75,asetpts=PTS-STARTPTS[n];[s0]atrim=10.3:10.775,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,asendcmd=c='0.0 afftdn sn start;0.85 afftdn sn stop',afftdn=nr=12:nf=-56,atrim=start=0.925,asetpts=PTS-STARTPTS"
+    },
+    "dish-pick-2": {
+      "from": "bowl",
+      "fadeOut": 0.08,
+      "filter": "asplit[n0][s0];[n0]atrim=13.0:14.0,asetpts=PTS-STARTPTS[n];[s0]atrim=16.82:17.275,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,asendcmd=c='0.0 afftdn sn start;0.95 afftdn sn stop',afftdn=nr=10:nf=-56,atrim=start=1.025,asetpts=PTS-STARTPTS"
+    },
+    "dish-pick-3": {
+      "from": "bowl",
+      "start": 23.1,
+      "end": 23.5,
+      "fadeOut": 0.08
+    },
+    "dish-put-1": {
+      "from": "bowl",
+      "start": 32.86,
+      "end": 33.4,
+      "fadeOut": 0.08,
+      "note": "Тихо поставити страву: без перевантажених ударів оригіналу"
+    },
+    "dish-put-2": {
+      "from": "bowl",
+      "start": 39.76,
+      "end": 40.25,
+      "fadeOut": 0.08
+    },
+    "trash": {
+      "from": "trash-lid",
+      "end": 1.86,
+      "fadeOut": 0.08,
+      "note": "Кришка смітника: відкрили, кинули, закрили"
+    },
+    "unpack-1": {
+      "from": "fs-box-open",
+      "start": 0.2,
+      "end": 0.72,
+      "fadeOut": 0.1,
+      "note": "Розпакування: відкрили картонну коробку"
+    },
+    "parcel": {
+      "from": "fs-put-down",
+      "note": "Поставили важку річ: посилка, річ котячого кутка, запас у сховищі"
+    },
+    "door": {
+      "from": "front-door",
+      "end": 0.8,
+      "fadeOut": 0.12,
+      "note": "Вхідні двері відчинили"
+    },
+    "lock": {
+      "from": "door-lock",
+      "start": 1.18,
+      "end": 1.6,
+      "fadeOut": 0.06,
+      "note": "Замок вхідних дверей"
+    },
+    "doorbell": {
+      "from": "doorbell",
+      "end": 1.4,
+      "fadeOut": 0.45,
+      "note": "Дзвінок у двері: «дінь-дон», коротко згасає"
+    },
+    "knock": {
+      "from": "fs-cat-kick",
+      "fadeOut": 0.02,
+      "note": "один короткий удар; мама стукає тричі (src/audio/sfx/home/cues.ts)"
+    },
+    "carrier": {
+      "from": "pet-gate",
+      "end": 0.8,
+      "fadeOut": 0.1,
+      "note": "Дверцята переноски відчинили"
+    },
+    "timer": {
+      "from": "timer",
+      "end": 0.51,
+      "fadeOut": 0.05,
+      "note": "Страва готова: дзвіночок кухонного таймера"
+    },
+    "burnt": {
+      "from": "frying",
+      "start": 2.38,
+      "end": 3.8,
+      "filter": "highpass=f=300",
+      "fadeOut": 0.4,
+      "note": "Страва підгоріла: шипіння олії (картопля пірнає у фритюр), удар кошика нижче 300 Гц зрізано"
+    },
+    "stove-loop": {
+      "from": "cauldron",
+      "start": 15,
+      "end": 21,
+      "loop": true,
+      "filter": "highpass=f=120",
+      "note": "Каструля булькає на плиті"
+    },
+    "washer-close": {
+      "from": "washer-door",
+      "end": 0.5,
+      "fadeOut": 0.08,
+      "note": "Дверцята пральної машини: прання запустили"
+    },
+    "washer-open": {
+      "from": "washer-door",
+      "start": 8,
+      "end": 8.6,
+      "fadeOut": 0.08,
+      "note": "Дверцята пральної: кота вигнали з барабана"
+    },
+    "washer-done": {
+      "from": "microwave",
+      "start": 18.05,
+      "end": 19.75,
+      "filter": "highpass=f=300",
+      "fadeOut": 0.1,
+      "note": "Прання скінчилося: два сигнали (гул мікрохвильовки зрізано)"
+    },
+    "wash-loop": {
+      "from": "washer-mid",
+      "start": 16.2,
+      "end": 22.2,
+      "loop": true,
+      "filter": "highpass=f=100,lowpass=f=5000",
+      "note": "Пральна пере: барабан посеред прання; тихий запис, шум нижче 100 Гц і вище 5 кГц зрізано"
+    },
+    "spin-start": {
+      "from": "dryer",
+      "end": 1.3,
+      "filter": "asetrate=55125,highpass=f=90",
+      "fadeOut": 0.25,
+      "note": "Віджим починається: барабан розганяється (той самий пришвидшений барабан, 0–1,3 с оригіналу)"
+    },
+    "spin-loop": {
+      "from": "washer-spin",
+      "start": 11.6,
+      "end": 16.9,
+      "loop": true,
+      "filter": "highpass=f=180,highpass=f=180",
+      "note": "Віджим пральної: гул і свист мотора; бас нижче 180 Гц зрізано, щоб віджим було чути й на динаміку телефона"
+    },
+    "hung": {
+      "from": "pillow",
+      "fadeOut": 0.15,
+      "note": "Випране розвісили: струснули тканину",
+      "filter": "asplit[n0][s0];[n0]atrim=10.3:11.3,asetpts=PTS-STARTPTS[n];[s0]atrim=8.3:9.125,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,equalizer=f=72.0:t=q:w=8:g=-24,equalizer=f=118.0:t=q:w=8:g=-24,equalizer=f=165.0:t=q:w=8:g=-24,equalizer=f=269.5:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.95 afftdn sn stop',afftdn=nr=15:nf=-50,atrim=start=1.025,asetpts=PTS-STARTPTS"
+    },
+    "vacuum-on": {
+      "from": "vacuum",
+      "end": 1.5,
+      "fadeOut": 0.3,
+      "note": "Пилосос увімкнули"
+    },
+    "vacuum-loop": {
+      "from": "vacuum",
+      "loop": true,
+      "note": "Вертикальний пилосос гуде",
+      "filter": "asplit[n0][s0];[n0]atrim=32.35:33.35,asetpts=PTS-STARTPTS[n];[s0]atrim=7.5:13.525,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,equalizer=f=380.5:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.95 afftdn sn stop',afftdn=nr=12:nf=-36,atrim=start=1.025,asetpts=PTS-STARTPTS"
+    },
+    "vacuum-off": {
+      "from": "vacuum",
+      "start": 30.6,
+      "end": 32.6,
+      "fadeOut": 0.8,
+      "note": "Пилосос вимкнули: мотор стихає"
+    },
+    "robot-loop": {
+      "from": "fs-roomba",
+      "start": 8.75,
+      "end": 14.5,
+      "loop": true,
+      "filter": "lowpass=f=6000",
+      "note": "Робот-пилосос їде: рівний відрізок без ударів об меблі"
+    },
+    "beep-high": {
+      "from": "beep-high",
+      "end": 0.3,
+      "fadeOut": 0.05,
+      "note": "Робот повернувся на базу: перший сигнал"
+    },
+    "beep-low": {
+      "from": "beep-low",
+      "end": 0.4,
+      "fadeOut": 0.05,
+      "note": "Робот повернувся на базу: другий сигнал"
+    },
+    "broke-1": {
+      "from": "fs-crack",
+      "start": 0.03,
+      "end": 0.36,
+      "fadeOut": 0.08,
+      "note": "Річ зламалась: тріск"
+    },
+    "broke-2": {
+      "from": "fs-crack",
+      "start": 0.36,
+      "end": 0.652,
+      "fadeOut": 0.06
+    },
+    "wire": {
+      "from": "fs-tape",
+      "start": 0.72,
+      "end": 1.55,
+      "fadeOut": 0.05,
+      "note": "Дріт замотали: стрічку відривають від рулону"
+    },
+    "flies-loop": {
+      "from": "fs-fly",
+      "start": 3.9,
+      "end": 6.9,
+      "loop": true,
+      "filter": "highpass=f=120",
+      "note": "муха дзижчить"
+    },
+    "guests": {
+      "from": "fs-party",
+      "start": 1,
+      "end": 3.6,
+      "filter": "lowpass=f=1800",
+      "fadeIn": 0.3,
+      "fadeOut": 0.6,
+      "note": "Гості: нерозбірливий гамір, приглушений, як із передпокою"
+    },
+    "papers": {
+      "from": "newspaper",
+      "end": 1.2,
+      "fadeOut": 0.15,
+      "note": "Представник ОСББ гортає папери"
+    },
+    "vet-case": {
+      "from": "toolbox",
+      "end": 0.62,
+      "fadeOut": 0.08,
+      "note": "Ветеринарка відкриває валізку"
+    },
+    "bucket": {
+      "from": "paint-can",
+      "start": 2.75,
+      "end": 3.4,
+      "fadeOut": 0.1,
+      "note": "Прибиральниця ставить відро"
+    },
+    "fireworks": {
+      "from": "fireworks",
+      "end": 5.2,
+      "filter": "lowpass=f=700,aecho=0.8:0.7:120|260:0.35|0.2",
+      "fadeOut": 0.8,
+      "note": "Далекі феєрверки: приглушені вибухи з відлунням"
+    }
+  }
+}

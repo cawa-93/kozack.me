@@ -1,0 +1,181 @@
+{
+  "originals": {
+    "fs-car-door": {
+      "file": "freesound/424031__mandymatz__car-door-slam.wav",
+      "url": "https://freesound.org/people/mandymatz/sounds/424031/",
+      "title": "Car Door Slam",
+      "author": "mandymatz",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "8c249584717591ce00142a0fc68e3b47aa0a561eea7cbdeca5b7ba06db766e14"
+    },
+    "fs-handbrake": {
+      "file": "freesound/173007__ninebilly__handbrake.wav",
+      "url": "https://freesound.org/people/ninebilly/sounds/173007/",
+      "title": "Handbrake.wav",
+      "author": "ninebilly",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "7302ba88d585dadea3684e4a5e75170cb392af71766406a0053c31fdcd3bd461"
+    },
+    "fs-horn-quick": {
+      "file": "freesound/340905__passairmangrace__carhorn_quick_stereo_bip.wav",
+      "url": "https://freesound.org/people/passAirmangrace/sounds/340905/",
+      "title": "CarHorn_Quick_stereo_bip.wav",
+      "author": "passAirmangrace",
+      "license": "CC-BY-3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "sha256": "e42973906bc5806350536d680b9272f73eb56218aea11160e745ebbc72e3724a"
+    },
+    "fs-horn-high": {
+      "file": "freesound/721413__fartmuffin__honk-honk-high-pitched-car-horn.mp3",
+      "url": "https://freesound.org/people/FartMuffin/sounds/721413/",
+      "title": "Honk Honk High Pitched Car Horn",
+      "author": "FartMuffin",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "a19736959c407ecad89cca952daa54b3dce689c36c4de984ef2dff5a1619ba33"
+    },
+    "fs-horn-old": {
+      "file": "freesound/848271__timoschmied__honk-old-car.wav",
+      "url": "https://freesound.org/people/TimoSchmied/sounds/848271/",
+      "title": "Honk (old car)",
+      "author": "TimoSchmied",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "sha256": "4dc1340c479ee330040ad604c6668bdbfd07f7d7ac3133469231bdbab1d9888a"
+    },
+    "fs-engine": {
+      "file": "freesound/592404__dan_audiofile__fr-engine-start-stop-exhaust.wav",
+      "url": "https://freesound.org/people/Dan_AudioFile/sounds/592404/",
+      "title": "FR- engine, start, stop, exhaust.wav",
+      "author": "Dan_AudioFile",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "sha256": "850239c5796bb0420e1682194d31e9a2f6e8fc8f0a08eeb92a3264bc4df623b7"
+    },
+    "fs-revs": {
+      "file": "freesound/592409__dan_audiofile__fr-car-engine-start-revs-engine.wav",
+      "url": "https://freesound.org/people/Dan_AudioFile/sounds/592409/",
+      "title": "FR- Car engine, start, revs, Engine.wav",
+      "author": "Dan_AudioFile",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "sha256": "2a8c264216e2484db2fb71d4155fa4e752cd61eda76fdda60a16d8fa4cd8b038"
+    },
+    "fs-crash": {
+      "file": "freesound/807437__logicogonist__car-crash-long-1.wav",
+      "url": "https://freesound.org/people/Logicogonist/sounds/807437/",
+      "title": "car crash long 1",
+      "author": "Logicogonist, squareal",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "eb18f9c0a27f4b2e6d54386affbe122cf74d91a69078bf5c6000fc420476f555"
+    },
+    "fs-renault-ramp": {
+      "file": "freesound/425846__soundholder__renault-master-f3500-dci135-engine-rpm-ramp-2-mono.wav",
+      "url": "https://freesound.org/people/Soundholder/sounds/425846/",
+      "title": "Renault Master F3500 dCi135 Engine RPM Ramp 2 Mono.wav",
+      "author": "Soundholder",
+      "license": "CC-BY-3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "sha256": "859156521b08388ae55a14d4424458cdbf7c828a3aaa24af9918a6cf86a100e5"
+    }
+  },
+  "files": {
+    "car-door-1": {
+      "from": "fs-car-door",
+      "start": 0,
+      "end": 0.17,
+      "fadeOut": 0.02,
+      "note": "дверцята авто зачинили"
+    },
+    "handbrake-1": {
+      "from": "fs-handbrake",
+      "start": 0.09,
+      "end": 0.5,
+      "fadeOut": 0.06,
+      "note": "ручне гальмо: тріскачка"
+    },
+    "horn-1": {
+      "from": "fs-horn-quick",
+      "start": 0.18,
+      "end": 0.46,
+      "fadeIn": 0.005,
+      "fadeOut": 0.06,
+      "note": "короткий гудок; шум салону перед ним відрізано"
+    },
+    "horn-2": {
+      "from": "fs-horn-high",
+      "start": 0.49,
+      "end": 0.82,
+      "fadeOut": 0.05,
+      "note": "високий гудок вантажівки, один із двох"
+    },
+    "horn-3": {
+      "from": "fs-horn-old",
+      "start": 0.06,
+      "end": 0.5,
+      "fadeOut": 0.1,
+      "note": "старий клаксон із луною"
+    },
+    "engine-start-1": {
+      "from": "fs-engine",
+      "start": 8.62,
+      "end": 9.35,
+      "fadeIn": 0.02,
+      "fadeOut": 0.12,
+      "note": "кінець роботи стартера й мотор підхопив"
+    },
+    "engine-stop-1": {
+      "from": "fs-engine",
+      "fadeIn": 0.05,
+      "fadeOut": 0.08,
+      "note": "мотор глухне",
+      "filter": "asplit[n0][s0];[n0]atrim=32.95:33.95,asetpts=PTS-STARTPTS[n];[s0]atrim=18.5:19.075,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,asendcmd=c='0.0 afftdn sn start;0.95 afftdn sn stop',afftdn=nr=12:nf=-48,atrim=start=1.025,asetpts=PTS-STARTPTS"
+    },
+    "rev-1": {
+      "from": "fs-revs",
+      "start": 28.25,
+      "end": 28.85,
+      "fadeIn": 0.03,
+      "fadeOut": 0.2,
+      "note": "газування: «вррум» з холостих"
+    },
+    "rev-2": {
+      "from": "fs-revs",
+      "start": 33.25,
+      "end": 33.85,
+      "fadeIn": 0.03,
+      "fadeOut": 0.2
+    },
+    "rev-3": {
+      "from": "fs-revs",
+      "start": 35.38,
+      "end": 35.98,
+      "fadeIn": 0.03,
+      "fadeOut": 0.2
+    },
+    "crash-1": {
+      "from": "fs-crash",
+      "start": 0,
+      "end": 0.95,
+      "fadeOut": 0.1,
+      "note": "удар і уламки; переробка Car Crash (squareal, CC0)"
+    },
+    "engine-loop": {
+      "from": "fs-renault-ramp",
+      "start": 0.4,
+      "end": 1.8,
+      "loop": true,
+      "note": "Холості (≈46,5 Гц, `ENGINE.idleHz`): з високими обертами їх змішує сцена гонки за швидкістю"
+    },
+    "engine-high": {
+      "from": "fs-renault-ramp",
+      "start": 6.9,
+      "end": 8.9,
+      "loop": true,
+      "note": "Високі оберти (≈141 Гц, `ENGINE.highHz`) — той самий мотор на «полиці» розгону"
+    }
+  }
+}

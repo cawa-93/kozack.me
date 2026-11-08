@@ -1,0 +1,399 @@
+/* Каталог звуків (`sounds.html`): смуга з фільтрами згори, під нею групи й картки звуків. Тло й текст — як у галереї арту. */
+
+:root {
+  --bg: #2b2530;
+  --panel: #352d3b;
+  --panel-hi: #403646;
+  --line: #4d4157;
+  --text: #f3e9dc;
+  --muted: #b5a6b2;
+  --accent: #e8b04a;
+  --ok: #7cc48a;
+  --replace: #e8b04a;
+  --delete: #e57373;
+  --stale: #a99be0;
+  --bar-h: 120px;
+  color-scheme: dark;
+}
+
+html {
+  scroll-padding-top: calc(var(--bar-h) + 8px);
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.45 system-ui, "Segoe UI", sans-serif;
+}
+
+a {
+  color: #9fc3ec;
+}
+
+/* Класи з власним display (позначки варіантів) інакше перебивають атрибут hidden. */
+[hidden] {
+  display: none !important;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+.s-bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 10px 16px 8px;
+  background: #1f1a24;
+  border-bottom: 1px solid var(--line);
+}
+
+.s-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  max-width: 960px;
+  margin: 0 auto 6px;
+}
+
+.s-bar h1 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.s-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  flex: 1;
+}
+
+.s-nav a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.s-nav a:hover {
+  text-decoration: underline;
+}
+
+.s-count {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.s-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.s-button,
+.s-chip,
+.s-decision {
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  cursor: pointer;
+}
+
+.s-button:hover,
+.s-chip:hover,
+.s-decision:hover {
+  background: var(--panel-hi);
+}
+
+.s-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.s-chip[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: #4a3d2c;
+}
+
+.s-store {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.s-store.is-warning {
+  color: var(--replace);
+}
+
+.s-keys {
+  max-width: 960px;
+  margin: 0 auto;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* На телефоні шапка висока: вона лишається вгорі сторінки, а не їде слідом. */
+@media (max-width: 700px) {
+  .s-bar {
+    position: static;
+  }
+
+  .s-keys {
+    display: none;
+  }
+}
+
+.s-main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 8px 16px 64px;
+}
+
+.s-group > h2 {
+  margin: 28px 0 4px;
+  font-size: 22px;
+}
+
+.s-section > h3 {
+  margin: 18px 0 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.s-card {
+  margin: 0 0 10px;
+  padding: 10px 12px 10px 14px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  scroll-margin-top: calc(var(--bar-h) + 8px);
+}
+
+.s-card:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.s-card[data-status="ok"] {
+  border-left-color: var(--ok);
+}
+
+.s-card[data-status="replace"] {
+  border-left-color: var(--replace);
+}
+
+.s-card[data-status="delete"] {
+  border-left-color: var(--delete);
+}
+
+.s-card[data-status="stale"] {
+  border-left-color: var(--stale);
+}
+
+/* Рішення змінилось і картка вже не з цього фільтра: вона зникне, коли фільтр оберуть знову. */
+.s-card.is-out {
+  opacity: 0.45;
+}
+
+.s-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.s-titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.s-titles h4 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.s-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.s-meta code {
+  color: var(--text);
+  font-size: 12px;
+}
+
+.s-tag {
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--panel-hi);
+}
+
+.s-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #3d3560;
+  color: var(--stale);
+  font-size: 12px;
+}
+
+.s-when {
+  margin: 6px 0 4px;
+}
+
+.s-play {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--panel-hi);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.s-play:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.s-play:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.s-play.is-playing {
+  border-color: var(--accent);
+  background: #5a4a2c;
+}
+
+.s-files {
+  margin: 4px 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.s-file {
+  padding: 4px 0;
+  border-top: 1px dashed #43394b;
+}
+
+.s-file-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+
+.s-file .s-play {
+  width: 26px;
+  height: 26px;
+  font-size: 10px;
+}
+
+.s-fname {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 13px;
+}
+
+.s-dur,
+.s-note {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.s-src,
+.s-shared {
+  margin-left: 36px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.s-shared {
+  color: var(--replace);
+}
+
+.s-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #4a3d2c;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.s-decide {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.s-decision[aria-pressed="true"].s-ok {
+  border-color: var(--ok);
+  background: #2f4a35;
+}
+
+.s-decision[aria-pressed="true"].s-replace {
+  border-color: var(--replace);
+  background: #4f4026;
+}
+
+.s-decision[aria-pressed="true"].s-delete {
+  border-color: var(--delete);
+  background: #552f33;
+}
+
+.s-decision.is-stale {
+  border-style: dashed;
+  opacity: 0.75;
+}
+
+.s-link {
+  margin-left: auto;
+  padding: 2px 4px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.s-link:hover {
+  color: var(--text);
+}
+
+.s-comment {
+  display: none;
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #2a2330;
+  color: var(--text);
+  font: inherit;
+  resize: vertical;
+}
+
+.s-card.has-comment .s-comment {
+  display: block;
+}
+
+.s-card.has-comment .s-link {
+  display: none;
+}

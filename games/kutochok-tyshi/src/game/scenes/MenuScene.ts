@@ -28,14 +28,14 @@ export class MenuScene extends Phaser.Scene {
 
   init(): void {
     this.#starting = false;
-    this.#developmentLaunch = resolveDevelopmentLaunch(
-      import.meta.env.DEV,
-      window.location.search,
-    );
+    // The ternary lets the production build drop the resolver entirely.
+    this.#developmentLaunch = import.meta.env.DEV
+      ? resolveDevelopmentLaunch(true, window.location.search)
+      : null;
   }
 
   preload(): void {
-    if (this.#developmentLaunch !== null) {
+    if (import.meta.env.DEV && this.#developmentLaunch !== null) {
       return;
     }
     this.load.image(MENU_BACKGROUND_KEY, MENU_BACKGROUND_SOURCE);
@@ -48,7 +48,7 @@ export class MenuScene extends Phaser.Scene {
       setGameEffectsVolume(this, 0);
     }
 
-    if (this.#developmentLaunch !== null) {
+    if (import.meta.env.DEV && this.#developmentLaunch !== null) {
       const sceneData: GameSceneData = {
         developmentRun: true,
         initialLevelNumber: this.#developmentLaunch.initialLevelNumber,

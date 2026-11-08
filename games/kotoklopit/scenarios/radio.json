@@ -1,0 +1,26 @@
+{
+ "name": "Радіо",
+ "description": "Понеділок першого тижня, 10:00. Персонаж стоїть перед радіо у вітальні: дія відкриває картку (§8.10).",
+ "game": {
+  "address": "she",
+  "difficulty": "normal",
+  "seed": 5
+ },
+ "state": {
+  "day": 0,
+  "minute": 600,
+  "modifiers": {
+   "day": null
+  },
+  "character": {
+   "body": {
+    "x": 2.35,
+    "y": 6.5,
+    "facing": {
+     "x": -1,
+     "y": 0
+    }
+   }
+  }
+ }
+}

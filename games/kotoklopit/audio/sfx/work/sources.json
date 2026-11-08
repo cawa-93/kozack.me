@@ -1,0 +1,233 @@
+{
+  "originals": {
+    "gs-notification-3": {
+      "file": "commons/Notification_3_(Gravity_Sound).wav",
+      "url": "https://commons.wikimedia.org/wiki/File:Notification_3_(Gravity_Sound).wav",
+      "title": "Notification 3 (Gravity Sound)",
+      "author": "Gravity Sound",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sha256": "642ad5c4b1aac7a03da3e69dd7bcbc9b8cc70195cce267d8f7d5258148bc13bc"
+    },
+    "gs-error-3": {
+      "file": "commons/Error_3_(Gravity_Sound).wav",
+      "url": "https://commons.wikimedia.org/wiki/File:Error_3_(Gravity_Sound).wav",
+      "title": "Error 3 (Gravity Sound)",
+      "author": "Gravity Sound",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sha256": "ec67344672fedfb82aeb8d887f375d2314bded452c777db951627b4891086383"
+    },
+    "gs-coins-5": {
+      "file": "commons/Coins_5_(Gravity_Sound).mp3",
+      "url": "https://commons.wikimedia.org/wiki/File:Coins_5_(Gravity_Sound).mp3",
+      "title": "Coins 5 (Gravity Sound)",
+      "author": "Gravity Sound",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sha256": "891c0ae28d75aa1eadf68e94b813a50394a7d2961d7ca8ddade99b86e19529f2"
+    },
+    "us-ringback": {
+      "file": "commons/US_ringback_tone.ogg",
+      "url": "https://commons.wikimedia.org/wiki/File:US_ringback_tone.ogg",
+      "title": "US ringback tone",
+      "author": "Edokter",
+      "license": "CC0-1.0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sha256": "2413fface19bac7f777f9fbfce5f8d78666f54c4b530de6b28b0622113aa04f0"
+    },
+    "retro-error": {
+      "file": "commons/Erro_efeito_sonoro_retrô.oga",
+      "url": "https://commons.wikimedia.org/wiki/File:Erro_efeito_sonoro_retr%C3%B4.oga",
+      "title": "Erro efeito sonoro retrô",
+      "author": "Rafaeljuliani",
+      "license": "CC0-1.0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sha256": "7eaa7da8ace47d4bdac6bf51439bab6a467196de4a0ea9057d9f2c0f359882b6"
+    },
+    "gs-accept": {
+      "file": "commons/Accept_(Gravity_Sound).wav",
+      "url": "https://commons.wikimedia.org/wiki/File:Accept_(Gravity_Sound).wav",
+      "title": "Accept (Gravity Sound)",
+      "author": "Gravity Sound",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sha256": "48e2aee2a5923d35faed75d3a9c65457acaf0579dcc5466a12ba28523980e441"
+    },
+    "phone-ae80": {
+      "file": "archive/yellow-ae-80/Blue_AE80.mp3",
+      "url": "https://archive.org/details/yellow-ae-80",
+      "title": "Automatic Electric (AE) Telephone Ringing — Blue_AE80.mp3",
+      "author": "Cloud16 Films",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "sha256": "1fe20a40f789959f718931473c6090757c661ce2cb7c01788deea07f64b7d3be"
+    },
+    "fs-key-click": {
+      "file": "freesound/679319__gamer500__keyboard-click.wav",
+      "url": "https://freesound.org/people/gamer500/sounds/679319/",
+      "title": "keyboard click",
+      "author": "gamer500",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "3c5b4fce6c50309c4e5f1601b5469805f00f2ef2e77799e92ef18391866ad7b3"
+    },
+    "fs-mouse-clicks": {
+      "file": "freesound/643560__el_boss__corsair-m65-rgb-mouse-click-sound.wav",
+      "url": "https://freesound.org/people/el_boss/sounds/643560/",
+      "title": "Corsair M65 RGB Mouse Click Sound",
+      "author": "el_boss",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "3c5d6abe2b0912ac973975efc12bfa8acc686ff2161a6716efff1c207be44795"
+    },
+    "fs-mmh": {
+      "file": "freesound/557374__valentinpetiteau__voice_man_mmh_calling_closed-mouth.wav",
+      "url": "https://freesound.org/people/ValentinPetiteau/sounds/557374/",
+      "title": "Voice_Man_mmh_calling_closed-mouth.wav",
+      "author": "ValentinPetiteau",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "8099bb6b19f01573353506cfaba18df7ad303df659c79c6131fe9b29191958b8"
+    },
+    "fs-hey": {
+      "file": "freesound/469162__hawkeye_sprout__stand-out-calling-02.wav",
+      "url": "https://freesound.org/people/Hawkeye_Sprout/sounds/469162/",
+      "title": "Stand out (calling 02).wav",
+      "author": "Hawkeye_Sprout",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "sha256": "f6ebe2f52686ca6f261f2e88e022395cd9e9b3fa937e88d6ee143a83af188b13"
+    },
+    "fs-level-up": {
+      "file": "freesound/646114__crunchymaniac__level-up.mp3",
+      "url": "https://freesound.org/people/crunchymaniac/sounds/646114/",
+      "title": "Level-Up.mp3",
+      "author": "crunchymaniac",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "ebe442e0a19c8d188235e681887797ab72a2634bd92e7b9b48ee5b9bde9e58b4"
+    }
+  },
+  "files": {
+    "work-start": {
+      "from": "gs-notification-3",
+      "fadeOut": 0.05,
+      "note": "Сів за комп'ютер: м'який подвійний сигнал"
+    },
+    "key-1": {
+      "from": "fs-key-click",
+      "fadeOut": 0.01,
+      "note": "одна клавіша; набір складає src/audio/sfx/work/typing.ts"
+    },
+    "call": {
+      "from": "us-ringback",
+      "start": 0,
+      "end": 1.3,
+      "fadeIn": 0.02,
+      "fadeOut": 0.3,
+      "note": "Летучка чи нарада почалась: гудок виклику"
+    },
+    "call-ok": {
+      "from": "gs-accept",
+      "fadeOut": 0.04,
+      "note": "Був на дзвінку: короткий сигнал завершення"
+    },
+    "rejected": {
+      "from": "gs-error-3",
+      "start": 0,
+      "end": 0.46,
+      "fadeOut": 0.05,
+      "note": "Відмова після вакансії: подвійне дзижчання"
+    },
+    "career-up": {
+      "from": "fs-level-up",
+      "end": 2.1,
+      "fadeOut": 0.3,
+      "note": "Підвищення чи нова робота: «level up»"
+    },
+    "career-down": {
+      "from": "retro-error",
+      "fadeOut": 0.08,
+      "note": "Пониження чи звільнення: сумне «ні»"
+    },
+    "vacation-pay": {
+      "from": "gs-coins-5",
+      "start": 0.02,
+      "end": 1.25,
+      "fadeOut": 0.3,
+      "note": "Відпускні: пригорща монет"
+    },
+    "ring": {
+      "from": "phone-ae80",
+      "start": 0.15,
+      "end": 4.75,
+      "filter": "highpass=f=150,highpass=f=150",
+      "loop": true,
+      "note": "Мама дзвонить: дзвінок дискового телефона петлею — трель 2,6 с і тиша; гул кімнати нижче 150 Гц зрізано"
+    },
+    "talk-1": {
+      "from": "fs-mmh",
+      "start": 0.33,
+      "end": 0.82,
+      "fadeIn": 0.01,
+      "fadeOut": 0.05,
+      "filter": "highpass=f=200,lowpass=f=4000",
+      "note": "безсловесна фраза колеги на дзвінку; частоти звужено, як із динаміка"
+    },
+    "talk-2": {
+      "from": "fs-mmh",
+      "start": 3.89,
+      "end": 4.3,
+      "fadeIn": 0.01,
+      "fadeOut": 0.05,
+      "filter": "highpass=f=200,lowpass=f=4000"
+    },
+    "talk-3": {
+      "from": "fs-mmh",
+      "start": 6.91,
+      "end": 7.38,
+      "fadeIn": 0.01,
+      "fadeOut": 0.05,
+      "filter": "highpass=f=200,lowpass=f=4000"
+    },
+    "talk-4": {
+      "from": "fs-mmh",
+      "start": 9.31,
+      "end": 10.13,
+      "fadeIn": 0.01,
+      "fadeOut": 0.05,
+      "filter": "highpass=f=200,lowpass=f=4000"
+    },
+    "talk-5": {
+      "from": "fs-hey",
+      "start": 0.05,
+      "end": 0.83,
+      "fadeIn": 0.01,
+      "fadeOut": 0.05,
+      "filter": "highpass=f=200,lowpass=f=4000"
+    },
+    "talk-6": {
+      "from": "fs-hey",
+      "start": 0.9,
+      "end": 1.7,
+      "fadeIn": 0.01,
+      "fadeOut": 0.05,
+      "filter": "highpass=f=200,lowpass=f=4000"
+    },
+    "mouse-1": {
+      "from": "fs-mouse-clicks",
+      "start": 2.345,
+      "end": 2.5,
+      "fadeOut": 0.02,
+      "note": "клік миші: натиснув і відпустив"
+    },
+    "mouse-2": {
+      "from": "fs-mouse-clicks",
+      "start": 9.075,
+      "end": 9.2,
+      "fadeOut": 0.02,
+      "note": "клік миші: натиснув і відпустив"
+    }
+  }
+}

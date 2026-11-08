@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 97 115" width="97" height="115">
+<!-- item/broom/back — віник у руках персонажа, ракурс back (GAME_DESIGN §8.7 «Віник і пилосос у руках»); art/STYLE.md.
+size 97×115; pivot (12.5, 25.5) — хват держака (гніздо held); points: brush-back (61.5, 75.2) — середина віника на підлозі (ззаду він далі від камери — вище на екрані). Полотно, pivot і точки — як в item/vacuum.
+Без станів і шарів, LINE_RIG. Віник іде від камери, совок висить на держаку. Тінь — лише під віником.
+-->
+<g id="p-shadow">
+<path d="M47 73Q59 69 75 77Q78 80 73 82Q60 84 49 78Q44 75 47 73Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="p-pan">
+<path d="M27.8 45.5L26 39.5" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M23.4 47.4Q28.6 45.1 34.6 47.3Q36.1 47.9 36.6 49.5L41.2 62.6Q41.8 64.6 39.8 65.1Q29.1 67.8 18.2 64.9Q16.2 64.3 16.9 62.4L21.6 49.2Q22.2 47.9 23.4 47.4Z" fill="#5f9089"/>
+<path d="M23.4 47.4Q28.6 45.1 34.6 47.3Q36.1 47.9 36.6 49.5L37.8 52.9Q28.6 49.5 20 53.3L21.6 49.2Q22.2 47.9 23.4 47.4Z" fill="#8bb3aa"/>
+<path d="M23.4 47.4Q28.6 45.1 34.6 47.3Q36.1 47.9 36.6 49.5L41.2 62.6Q41.8 64.6 39.8 65.1Q29.1 67.8 18.2 64.9Q16.2 64.3 16.9 62.4L21.6 49.2Q22.2 47.9 23.4 47.4Z" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-handle">
+<path d="M10.3 18.6L50.4 59.6L46.6 63.2L6.5 22.2Q5.6 20.3 7.1 18.9Q8.9 17.4 10.3 18.6Z" fill="#9a6a47"/>
+<path d="M9.8 20.6L45 56.5" fill="none" stroke="#b98b60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M10.3 18.6L50.4 59.6L46.6 63.2L6.5 22.2Q5.6 20.3 7.1 18.9Q8.9 17.4 10.3 18.6Z" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-bristle">
+<path d="M52.8 57.3Q63 65.5 72.4 76.8Q73.4 79.2 70.6 79.6Q68 79.4 66.8 80.8Q64 79.4 61.4 80.6Q58.6 78.6 56 79Q53.6 77 50.8 76.6Q48.4 76 48 73.6Q46.4 69.6 44.2 65.5Z" fill="#c9a872"/>
+<path d="M52.8 57.3Q58 61.5 62 65.8Q54 72.4 47.2 71.6Q46 68.4 44.2 65.5Z" fill="#ddc391"/>
+<path d="M56 69.5L67 78M54 71.5L61 79M51.5 72.5L55.5 77.8" fill="none" stroke="#a5844f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M52.8 57.3Q63 65.5 72.4 76.8Q73.4 79.2 70.6 79.6Q68 79.4 66.8 80.8Q64 79.4 61.4 80.6Q58.6 78.6 56 79Q53.6 77 50.8 76.6Q48.4 76 48 73.6Q46.4 69.6 44.2 65.5Z" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M70.6 79.6Q68 79.4 66.8 80.8Q64 79.4 61.4 80.6Q58.6 78.6 56 79Q53.6 77 50.8 76.6" fill="none" stroke="#2e1f29" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-bind">
+<path d="M50.8 54.4L55.6 59.4L46.2 68.4L41.4 63.4Z" fill="#c4524b"/>
+<path d="M50.6 57.2L44 63.6" fill="none" stroke="#dc7c69" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M50.8 54.4L55.6 59.4L46.2 68.4L41.4 63.4Z" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

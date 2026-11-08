@@ -1,0 +1,223 @@
+/* Картка радіо (§8.10): корпус приймача замість паперової картки. Кольори — з `art/palette.ts`, як на малюнку `env/radio`. */
+
+.card.card-radio {
+  --teal: #5f9089;
+  --teal-hi: #8bb3aa;
+  --dark: #4b4146;
+  --wood: #9a6a47;
+  --wood-hi: #b98b60;
+  --red: #c4524b;
+  --lit: #f3d27a;
+  --dial-off: #bfb093;
+  position: relative;
+  width: min(600px, 100%);
+  padding: 12px 14px 14px;
+  border: 5px solid var(--ink);
+  border-image: none;
+  border-radius: 22px;
+  background: var(--teal);
+  box-shadow: inset 0 5px 0 var(--teal-hi);
+}
+
+/* Плаваючий хрестик звузив би всю сітку радіо, тож він стоїть поверх, над вільним місцем біля шкали. */
+.card-radio .card-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  float: none;
+  margin: 0;
+}
+
+.radio {
+  display: grid;
+  gap: 8px;
+  font-family: var(--hand);
+}
+
+.radio-face {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 12px;
+  margin-right: 40px;
+}
+
+/* Екран із хвилями: той самий, що на приймачі в квартирі (`env/radio`). */
+.radio-screen {
+  position: relative;
+  overflow: hidden;
+  border: 3px solid var(--ink);
+  border-radius: 10px;
+  background: var(--dark);
+}
+
+.radio.on .radio-screen {
+  background: var(--ink);
+}
+
+/* Кожна хвиля — плитка 120 × 52 по колу: рух лише `transform`, тож перемальовувати нічого. */
+.radio-wave {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: none;
+  width: calc(100% + 120px);
+  background: 0 50% / 120px 100% repeat-x;
+  animation: radio-wave 2.4s linear infinite;
+}
+
+.radio.on .radio-wave {
+  display: block;
+}
+
+.radio-wave.a {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 52'%3E%3Cpath d='M0 26Q15 6 30 26T60 26T90 26T120 26' fill='none' stroke='%23f3d27a' stroke-width='3'/%3E%3C/svg%3E");
+}
+
+.radio-wave.b {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 52'%3E%3Cpath d='M0 26Q30 46 60 26T120 26' fill='none' stroke='%238bb3aa' stroke-width='3'/%3E%3C/svg%3E");
+  animation-duration: 3.2s;
+  animation-direction: reverse;
+}
+
+.radio-wave.c {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 52'%3E%3Cpath d='M0 26Q10 14 20 26T40 26T60 26T80 26T100 26T120 26' fill='none' stroke='%23ecbcb2' stroke-width='3'/%3E%3C/svg%3E");
+  animation-duration: 1.7s;
+}
+
+@keyframes radio-wave {
+  to {
+    transform: translateX(-120px);
+  }
+}
+
+/* Шкала частот зі стрілкою: на вимкненому радіо темна. */
+.radio-dial {
+  position: relative;
+  height: 58px;
+  overflow: hidden;
+  border: 3px solid var(--ink);
+  border-radius: 10px;
+  background: var(--dial-off);
+  transition: background 0.25s;
+}
+
+.radio.on .radio-dial {
+  background: var(--lit);
+}
+
+.radio-needle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  margin-left: -2px;
+  background: var(--red);
+  transition: left 0.3s ease;
+}
+
+.radio-mark {
+  position: absolute;
+  bottom: 3px;
+  color: var(--ink);
+  font-size: 12px;
+  transform: translateX(-50%);
+}
+
+.radio-tagline {
+  margin: 0;
+  color: var(--paper);
+  font-size: 16px;
+  text-align: center;
+}
+
+.radio-stations {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.radio-station,
+.radio-power {
+  min-height: 44px;
+  padding: 3px 5px;
+  border: 3px solid var(--ink);
+  border-radius: 10px;
+  background: var(--wood);
+  box-shadow: inset 0 3px 0 var(--wood-hi);
+  color: var(--paper);
+  font: 400 16px/1.05 var(--hand);
+  cursor: pointer;
+}
+
+.radio-station:active,
+.radio-power:active {
+  translate: 0 1px;
+}
+
+/* Обрана станція натиснута, як клавіша приймача. */
+.radio-station.active {
+  background: var(--paper);
+  box-shadow: inset 0 3px 0 var(--dial-off);
+  color: var(--ink);
+}
+
+.radio-controls {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.radio-power {
+  padding-inline: 14px;
+}
+
+.radio-volume-box {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+  color: var(--paper);
+  font-size: 16px;
+}
+
+.radio-volume {
+  width: 100%;
+  min-height: 32px;
+  accent-color: var(--lit);
+  cursor: pointer;
+}
+
+@media (max-height: 420px) {
+  .card.card-radio {
+    padding: 8px 12px 10px;
+  }
+
+  .radio {
+    gap: 5px;
+  }
+
+  .radio-dial {
+    height: 42px;
+  }
+}
+
+@media (max-width: 520px) {
+  .radio-face {
+    grid-template-columns: 84px 1fr;
+  }
+
+  .radio-stations {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radio-needle,
+  .radio-dial {
+    transition: none;
+  }
+
+  .radio-wave {
+    animation: none;
+  }
+}

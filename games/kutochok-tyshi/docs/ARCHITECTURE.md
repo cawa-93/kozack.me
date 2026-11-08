@@ -498,8 +498,9 @@ skipping directly to a late level cannot pollute normal player progress.
 
 `DevelopmentLaunch` strictly parses one `devLevel` query value as a positive
 safe integer. `DevelopmentLauncher` mounts a small DOM form only under
-`import.meta.env.DEV`, while `MenuScene` uses the same resolver to skip directly
-to `GameScene`. `GameScene.init` applies a second compile-time development guard
+`import.meta.env.DEV`; `main.ts` loads it, with its own stylesheet, by a dynamic
+import, so the production build contains neither. `MenuScene` uses the same
+resolver, also only under that guard, to skip directly to `GameScene`. `GameScene.init` applies a second compile-time development guard
 before forwarding the requested number and fixed 1,000-coin diagnostic bonus to
 `GameSimulation`; production scene data cannot enable this path. The simulation
 adds that bonus to the ordinary 20-coin fresh-run balance.

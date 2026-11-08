@@ -3,3 +3,8 @@
 /.astro/
 /games/*/node_modules/
 /public/games/
+/games/*/audio-library/
+/games/*/sfx-library/
+/games/*/cloudflare-music/public/music/
+/games/*/cloudflare-music/playlist.json
+.wrangler/

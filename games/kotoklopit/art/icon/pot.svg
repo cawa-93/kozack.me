@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/pot — каструля з парою під кришкою: плита варить. Пакет A11a, art/STYLE.md (іконки, еталони F1 icon/kibble і icon/heart).
+size 64×64; pivot (32, 32) — центр; points немає. Без станів і шарів: один кадр у готових кольорах; контур — LINE (силует 6, низ 8,5, внутрішні 3,5).
+Висока каструля з ручками й кришкою — не пласка тарілка (icon/meal); пара світла — не чорний дим пригорілого (icon/smoke).
+-->
+<defs><clipPath id="icon-pot-body"><path d="M12.4 34.6Q32 35.8 51.6 34.6Q52.4 45 50.4 51Q49.4 54.8 45 54.8Q32 55.2 19 54.8Q14.6 54.8 13.6 51Q11.6 45 12.4 34.6Z"/></clipPath><clipPath id="icon-pot-lid"><path d="M12.8 31.6Q14.6 21.4 32 21.2Q49.4 21.4 51.2 31.6Q32 30.4 12.8 31.6Z"/></clipPath></defs>
+<g id="p-steam">
+<path d="M23.4 21.4Q20.2 18.2 22.8 15Q25.2 11.8 22.4 8.2" fill="none" stroke="#6b5263" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M41.6 21.4Q38.6 18.6 41 15.8Q43.2 13.2 40.8 10.4" fill="none" stroke="#6b5263" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-handles">
+<path d="M6.6 37.4Q6.8 35.2 10 35.2L12 35.4L12.2 41.6L10 41.6Q6.8 41.6 6.6 39.4Z" fill="#4b4146"/>
+<path d="M6.6 37.4Q6.8 35.2 10 35.2L12 35.4L12.2 41.6L10 41.6Q6.8 41.6 6.6 39.4Z" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M57.4 37.4Q57.2 35.2 54 35.2L52 35.4L51.8 41.6L54 41.6Q57.2 41.6 57.4 39.4Z" fill="#4b4146"/>
+<path d="M57.4 37.4Q57.2 35.2 54 35.2L52 35.4L51.8 41.6L54 41.6Q57.2 41.6 57.4 39.4Z" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-pot">
+<path d="M12.4 34.6Q32 35.8 51.6 34.6Q52.4 45 50.4 51Q49.4 54.8 45 54.8Q32 55.2 19 54.8Q14.6 54.8 13.6 51Q11.6 45 12.4 34.6Z" fill="#a69f9b"/>
+<path d="M4 36L60 36L60 40Q32 41.6 4 40Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-pot-body)"/>
+<path d="M4 47.4Q18 50 32 48.8Q46 47.6 60 49.4L60 60L4 60Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-pot-body)"/>
+<path d="M12.4 34.6Q32 35.8 51.6 34.6Q52.4 45 50.4 51Q49.4 54.8 45 54.8Q32 55.2 19 54.8Q14.6 54.8 13.6 51Q11.6 45 12.4 34.6Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11.3 51.25L11.23 52.58L11.7 54.07L12.59 55.52L13.85 56.76L15.34 57.66L16.88 58.23L18.31 58.53L19.49 58.68L20.52 58.82L21.57 58.95L22.61 59.06L23.65 59.17L24.69 59.26L25.73 59.33L26.78 59.4L27.82 59.45L28.87 59.5L29.91 59.53L30.96 59.54L32 59.55L33.04 59.54L34.09 59.53L35.13 59.5L36.18 59.45L37.22 59.4L38.27 59.33L39.31 59.26L40.35 59.17L41.39 59.06L42.43 58.95L43.48 58.82L44.51 58.68L45.69 58.53L47.12 58.23L48.66 57.66L50.15 56.76L51.41 55.52L52.3 54.07L52.77 52.58L52.7 51.25L48.5 49.95L47.86 50.61L47.44 50.99L47.07 51.22L46.72 51.32L46.33 51.38L45.85 51.39L45.2 51.37L44.3 51.31L43.27 51.26L42.25 51.22L41.22 51.19L40.19 51.16L39.17 51.13L38.14 51.11L37.12 51.09L36.1 51.08L35.07 51.06L34.05 51.06L33.02 51.05L32 51.05L30.98 51.05L29.95 51.06L28.93 51.06L27.9 51.08L26.88 51.09L25.86 51.11L24.83 51.13L23.81 51.16L22.78 51.19L21.75 51.22L20.73 51.26L19.7 51.31L18.8 51.37L18.15 51.39L17.67 51.38L17.28 51.32L16.93 51.22L16.56 50.99L16.14 50.61L15.5 49.95Z" fill="#2e1f29"/>
+</g>
+<g id="p-lip">
+<path d="M10.2 31.4Q32 30 53.8 31.4L54.2 35.4Q32 36.8 9.8 35.4Z" fill="#cdc6be"/>
+<path d="M10.2 31.4Q32 30 53.8 31.4L54.2 35.4Q32 36.8 9.8 35.4Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-lid">
+<path d="M12.8 31.6Q14.6 21.4 32 21.2Q49.4 21.4 51.2 31.6Q32 30.4 12.8 31.6Z" fill="#cdc6be"/>
+<path d="M4 28Q32 25.6 60 28L60 34L4 34Z" fill="#3f2541" fill-opacity="0.16" clip-path="url(#icon-pot-lid)"/>
+<path d="M12.8 31.6Q14.6 21.4 32 21.2Q49.4 21.4 51.2 31.6Q32 30.4 12.8 31.6Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M28 21.8Q27.6 16.4 32 16.2Q36.4 16.4 36 21.8Z" fill="#4b4146"/>
+<path d="M28 21.8Q27.6 16.4 32 16.2Q36.4 16.4 36 21.8Z" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

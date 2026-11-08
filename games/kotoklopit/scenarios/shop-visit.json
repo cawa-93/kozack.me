@@ -1,0 +1,53 @@
+{
+ "name": "У магазині",
+ "description": "Субота першого тижня, 11:00. Персонажка щойно доїхала до магазину: за карткою магазину — парковка біля будівлі з вітриною на табличці, а не квартира (§8.5 «На місці — кадр парковки»). 400 грошей — на дві оплати: кадр парковки стоїть, поки купуєте; «Додому» — машина виїжджає з парковки в дорогу додому.",
+ "game": {
+  "address": "she",
+  "difficulty": "normal",
+  "seed": 31
+ },
+ "state": {
+  "day": 5,
+  "minute": 660,
+  "modifiers": {
+   "day": null
+  },
+  "character": {
+   "money": 400,
+   "stats": {
+    "satiety": 80,
+    "hygiene": 80,
+    "sanity": 55
+   },
+   "body": {
+    "x": 10.5,
+    "y": 10.45,
+    "facing": {
+     "x": 0,
+     "y": 1
+    }
+   },
+   "held": null
+  },
+  "trip": {
+   "destination": "shop",
+   "phase": "visit",
+   "cat": null,
+   "riders": [],
+   "race": {
+    "road": 45,
+    "done": 45,
+    "minutes": 16,
+    "lane": 2,
+    "targetLane": 2,
+    "speed": 3,
+    "cars": [],
+    "spawned": 50,
+    "rng": 20261102
+   },
+   "losses": [],
+   "visit": 30,
+   "seed": 41023
+  }
+ }
+}

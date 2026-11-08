@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 246" width="340" height="246">
+<!-- env/wall/inner/col12-y1 — низька внутрішня стіна: клітинки x 12–12, y 1–4, висота 66. Пакет A1b, за еталоном F1 (art/STYLE.md, §11 «Внутрішні стіни», «Передні плінтуси»).
+size 340×246; pivot (266, 76) — верхня вершина ромба першої клітинки (12, 1) на підлозі; points — немає.
+Кришка — cut; видима грань до кімнати — оздоблення тієї кімнати з плінтусом 15; контур: силует outer, ребра inner, низ heavy.
+Лицьова грань x = 13 — до кухні: шпалери wallKitchen з ромбиками wallKitchenLo (як еталон F1), плінтус 15; «історія» — паперовий календар із червоною шапкою між холодильником і столом (y ≈ 2,5). Дальній край (y = 1) упирається в задню стіну кухні — лінія inner; ближній (y = 5) стикується зі стіною row5-x12 без контуру й на 0,03 клітинки заходить під неї.
+Без станів і шарів.
+-->
+<g id="p-face">
+<path d="M330 108L72.1 237L72.1 171L330 42Z" fill="#ccb27c"/>
+<path d="M318.4 81.9L321.8 85.7L319 89.3L315.8 85.8ZM317.5 53.7L320.9 58L318.2 62.1L314.3 57.6ZM299 78.1L301.5 82.3L298.9 87.1L295.7 82.4ZM277.5 103.7L280.9 107.6L277.9 112.3L274.8 107.4ZM275.5 73L278.8 77.8L275.8 82.4L272.7 77.2ZM254.5 100.2L257.2 103.7L254.2 107.1L251.5 103.7ZM211.3 120.2L214.9 125L211.5 129.1L207.9 124.7ZM190.8 146.2L193.4 150L190.4 154.3L188 150.2ZM191.3 118L194.4 121.8L191.5 125.8L188.9 122.1ZM169.3 142.2L172.9 146.8L169.4 151.2L166.2 146.8ZM149.4 166.5L152.8 170.9L149.9 174.2L146.7 170.3ZM149.8 138.1L152.2 141.4L150 145.4L147.2 141.9ZM126.7 162.2L129.4 166L126.6 170L124.3 166.4ZM106.6 187.7L109.4 191.1L106.8 194.4L104.3 191.2ZM107.3 159.3L110.4 163.3L107.6 167.1L104.3 163.6ZM83.2 183.6L86.2 187.7L83.8 192.5L80.2 187.9Z" fill="#b19563"/>
+<path d="M221.2 146.4Q221.7 122.9 221.3 99.4" fill="none" stroke="#b19563" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M125.2 194.4Q125.8 170.9 125.3 147.4" fill="none" stroke="#b19563" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M241 128.5L223.1 137.4L223.1 106.4L241 97.5Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M243 125.5Q234 131.2 225 134.5L225 103.5L243 94.5Z" fill="#f2e7d0"/>
+<path d="M243 102.5L225 111.5L225 103.5L243 94.5Z" fill="#c4524b"/>
+<path d="M241 120.5L227 127.5M241 114.5L227 121.5M241 108.5L227 115.5M236.6 124.7L236.6 108.7M231.4 127.3L231.4 111.3" fill="none" stroke="#6b5263" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M232.6 117.4C232.6 118.9 231.1 120.2 229.2 120.2C227.3 120.2 225.8 118.9 225.8 117.4C225.8 115.9 227.3 114.6 229.2 114.6C231.1 114.6 232.6 115.9 232.6 117.4Z" fill="none" stroke="#c4524b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M243 125.5Q234 131.2 225 134.5L225 103.5L243 94.5Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M235.6 97.5C235.6 98.4 234.9 99.1 234 99.1C233.1 99.1 232.4 98.4 232.4 97.5C232.4 96.6 233.1 95.9 234 95.9C234.9 95.9 235.6 96.6 235.6 97.5Z" fill="#2e1f29"/>
+<path d="M330 108L72.1 237L72.1 222L330 93Z" fill="#9a6a47"/>
+<path d="M330 95.5L72.1 224.5L72.1 222L330 93Z" fill="#b98b60"/>
+<path d="M330 93Q200.9 157.2 72.1 222" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-cap">
+<path d="M266 10L330 42L72.1 171L8.1 139Z" fill="#65505d"/>
+</g>
+<g id="p-ink">
+<path d="M10 138Q137.2 72.4 266 10" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M266 10Q298.3 25.3 330 42Q330.5 75 330 108" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M330 42Q202.6 107.3 74 170" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M74 236Q201.7 171.4 330 108" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

@@ -1,0 +1,237 @@
+/* «Куди поїхати?» (§8.5, «Оформлення поїздок»): паперова мапа міста з шпильками пунктів, `.card-map`.
+
+   Мапа — контейнер, і все на ній — у `cqw` (сота частка ширини мапи): вона масштабується як малюнок, тож розкладка шпильок
+   (`src/ui/tripmap.ts`, там і розміри, які сюди ставить `destinationCard` змінними `--map-h`, `--pin-h`, `--pin-w` тощо) тримається
+   на будь-якому екрані. Кольори — з `art/palette.ts`; колір пункту `--roof` — дах його будівлі (`DESTINATION_ROOFS`). */
+
+/* Картка завширшки з мапу. */
+.card.card-map {
+  width: fit-content;
+  max-width: 100%;
+}
+
+/* Мапа — найбільша, що вміщується на екран разом із заголовком: `--frame-x`, `--frame-y` — поля екрана, рамка картки, поля мапи під
+   її рамку й (по висоті) рядок заголовка, а з причиною над мапою — ще її рядок. */
+.tripmap {
+  --frame-x: 92px;
+  --frame-y: 132px;
+  --highlight: #f3d27a;
+  --street: #f2e9d4;
+  position: relative;
+  container-type: inline-size;
+  clear: both;
+  width: min(920px, calc(100vw - var(--frame-x)), calc((100vh - var(--frame-y)) * 100 / var(--map-h)));
+  width: min(920px, calc(100vw - var(--frame-x)), calc((100dvh - var(--frame-y)) * 100 / var(--map-h)));
+  aspect-ratio: 100 / var(--map-h);
+  margin: 2px 3px 3px;
+  overflow: hidden;
+  border-radius: 10px;
+  /* Згини паперу — дві вертикальні складки й одна горизонтальна, під ними — квартали, парк і річка з мостами. */
+  background:
+    linear-gradient(90deg, transparent calc(33.3% - 1px), var(--shade-soft) 33.3%, transparent calc(33.3% + 2px)),
+    linear-gradient(90deg, transparent calc(66.6% - 1px), var(--shade-soft) 66.6%, transparent calc(66.6% + 2px)),
+    linear-gradient(transparent calc(50% - 1px), var(--shade-soft) 50%, transparent calc(50% + 2px)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 38' preserveAspectRatio='none'%3E%3Cpath d='M-1 -1h4.75v7.1h-4.75zM4.35 -1h8.75v7.1h-8.75zM-1 7.9h14.1v4.6h-14.1zM-1 13.1h14.1v4.6h-14.1zM-1 20.3h5.75v9.8h-5.75zM5.35 20.3h7.75v9.8h-7.75zM-1 31.9h14.1v2.25h-14.1zM-1 34.75h14.1v4.25h-14.1zM14.9 -1h16.2v4.25h-16.2zM14.9 3.85h16.2v2.25h-16.2zM14.9 7.9h5.8v9.8h-5.8zM21.3 7.9h9.8v9.8h-9.8zM14.9 31.9h6.8v7.1h-6.8zM22.3 31.9h8.8v7.1h-8.8zM32.9 -1h9.6v7.1h-9.6zM43.1 -1h5.6v7.1h-5.6zM32.9 7.9h15.8v5.6h-15.8zM32.9 14.1h15.8v3.6h-15.8zM32.9 20.3h5.6v9.8h-5.6zM39.1 20.3h9.6v9.8h-9.6zM32.9 31.9h15.8v3.25h-15.8zM32.9 35.75h15.8v3.25h-15.8zM51.3 -1h15.8v2.25h-15.8zM51.3 1.85h15.8v4.25h-15.8zM51.3 7.9h9.6v9.8h-9.6zM61.5 7.9h5.6v9.8h-5.6zM51.3 20.3h15.8v5.6h-15.8zM51.3 26.5h15.8v3.6h-15.8zM51.3 31.9h5.6v7.1h-5.6zM57.5 31.9h9.6v7.1h-9.6zM68.9 -1h8.8v7.1h-8.8zM78.3 -1h6.8v7.1h-6.8zM68.9 7.9h16.2v3.6h-16.2zM68.9 12.1h16.2v5.6h-16.2zM68.9 20.3h9.8v9.8h-9.8zM79.3 20.3h5.8v9.8h-5.8zM68.9 31.9h16.2v4.25h-16.2zM68.9 36.75h16.2v2.25h-16.2zM86.9 -1h14.1v3.25h-14.1zM86.9 2.85h14.1v3.25h-14.1zM86.9 7.9h7.75v9.8h-7.75zM95.25 7.9h5.75v9.8h-5.75zM86.9 20.3h14.1v3.6h-14.1zM86.9 24.5h14.1v5.6h-14.1zM86.9 31.9h8.75v7.1h-8.75zM96.25 31.9h4.75v7.1h-4.75z' fill='%23e0d4b9' stroke='%23bfb093' stroke-width='.18'/%3E%3Crect x='14.9' y='20.3' width='16.2' height='9.8' rx='.9' fill='%23a2b584' stroke='%237e9662' stroke-width='.18'/%3E%3Cellipse cx='24' cy='25.4' rx='3.4' ry='1.9' fill='%23a8c4c4' stroke='%237e9662' stroke-width='.18'/%3E%3Cg fill='%237e9662'%3E%3Ccircle cx='17.5' cy='22.6' r='1'/%3E%3Ccircle cx='21' cy='27.6' r='1'/%3E%3Ccircle cx='27.8' cy='22.4' r='1'/%3E%3Ccircle cx='29' cy='27.9' r='1'/%3E%3Ccircle cx='16.6' cy='28.2' r='1'/%3E%3C/g%3E%3Cpath d='M80.5-1C74 9 85 22 76.5 39' fill='none' stroke='%23a8c4c4' stroke-width='3.2'/%3E%3Cpath d='M80.5-1C74 9 85 22 76.5 39' fill='none' stroke='%23d4e3dc' stroke-width='.5' stroke-dasharray='2 3'/%3E%3Cg fill='%23f2e9d4'%3E%3Crect x='70' y='6.1' width='16' height='1.8'/%3E%3Crect x='70' y='17.7' width='16' height='2.6'/%3E%3Crect x='70' y='30.1' width='16' height='1.8'/%3E%3C/g%3E%3C/svg%3E")
+      0 0 / 100% 100%,
+    var(--street);
+  /* Рамка — тінню, а не border: інакше `cqw` (ширина вмісту) розійшовся б із тим, від чого рахують `left` і `top`. */
+  box-shadow: 0 0 0 3px var(--ink), 0 6px 0 3px var(--shade-base);
+}
+
+/* Причина «для всіх» (кіт на руках, §8.5) — рядок над мапою, тож мапа нижча. */
+.card-map:has(> .card-text) .tripmap {
+  --frame-y: 168px;
+}
+
+/* Дорога від дому до шпильки — пунктир кольору пункту на світлій вулиці. Лівий край — у домі, решту повертає `rotate`. */
+.tripmap-road {
+  position: absolute;
+  height: 1.5cqw;
+  border-radius: 1cqw;
+  transform-origin: 0 50%;
+  translate: 0 -50%;
+  background:
+    repeating-linear-gradient(90deg, var(--roof) 0 1.8cqw, transparent 0 2.8cqw) 0 50% / 100% 0.7cqw no-repeat,
+    var(--street);
+  box-shadow: 0 0 0 0.2cqw var(--ink-soft);
+}
+
+.tripmap-road.off {
+  opacity: 0.4;
+  filter: grayscale(1);
+}
+
+/* Дім — гліф дому (§11.4, як на табличці парковки свого будинку) у колі кольору дерева, як дах його будинку (§8.5 «Виїзд із дому»). */
+.tripmap-home {
+  position: absolute;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: calc(var(--home) * 1cqw);
+  height: calc(var(--home) * 1cqw);
+  border: 0.7cqw solid #9a6a47;
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: 0 0 0 0.3cqw var(--ink), 0 0.5cqw 0 0.3cqw var(--shade-base);
+  font-size: 3.6cqw;
+  line-height: 1;
+}
+
+.tripmap-home .glyph {
+  vertical-align: 0;
+}
+
+/* Шпилька — кнопка: голівка кольору пункту з іконкою (§11.4 «Іконка біля назви») і табличка з назвою й часом. Голівка — там, де
+   кінчається дорога; табличка — від дому (`.east` — праворуч, `.west` — ліворуч). Ширина не більша за оцінку розкладки: назва, що
+   не вміщується, обрізається, а не налазить на сусідню шпильку. */
+.tripmap-pin {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  max-width: calc(var(--pin-w) * 1cqw);
+  height: calc(var(--pin-h) * 1cqw);
+  margin: 0;
+  padding: 0 0 0 calc(var(--inset) * 1cqw);
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tripmap-pin.west {
+  flex-direction: row-reverse;
+  padding: 0 calc(var(--inset) * 1cqw) 0 0;
+}
+
+.tripmap-head {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  flex: none;
+  place-items: center;
+  box-sizing: border-box;
+  width: calc(var(--head) * 1cqw);
+  height: calc(var(--head) * 1cqw);
+  border: 0.75cqw solid var(--roof);
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: 0 0 0 0.25cqw var(--ink), 0 0.45cqw 0 0.25cqw var(--shade-base);
+}
+
+.tripmap-head .name-icon {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+/* Табличка заходить під голівку на `--tuck`; її поля, рамка й голівка разом — `TRIP_MAP.pin.chrome` (`tripmap.ts`). */
+.tripmap-label {
+  display: grid;
+  min-width: 0;
+  box-sizing: border-box;
+  margin: 0 0 0 calc(var(--tuck) * -1cqw);
+  padding: 0.3cqw 0.8cqw 0.3cqw calc((var(--tuck) + 0.5) * 1cqw);
+  border: 0.25cqw solid var(--ink);
+  border-radius: 1cqw;
+  background: var(--paper);
+  box-shadow: 0 0.45cqw 0 var(--shade-soft);
+  transition: background-color 0.12s;
+}
+
+.tripmap-pin.west .tripmap-label {
+  margin: 0 calc(var(--tuck) * -1cqw) 0 0;
+  padding: 0.3cqw calc((var(--tuck) + 0.5) * 1cqw) 0.3cqw 0.8cqw;
+}
+
+.tripmap-name {
+  overflow: hidden;
+  font: 400 calc(var(--name) * 1cqw) / 1.1 var(--hand);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tripmap-time,
+.tripmap-why {
+  overflow: hidden;
+  color: var(--ink-soft);
+  font: 400 calc(var(--time) * 1cqw) / 1.2 system-ui, sans-serif;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Причина, чому туди не можна, — дрібно під назвою; довга переноситься. */
+.tripmap-why {
+  font-size: calc((var(--time) - 0.25) * 1cqw);
+  line-height: 1.15;
+  white-space: normal;
+}
+
+.tripmap-time .glyph {
+  margin-right: 0.15em;
+}
+
+/* Підсвітка — під мишею й у фокусі клавіатури; на дотик її немає: «наведення» там лишалося б після дотику. Рамка фокуса — на
+   табличці: кнопка без тла, і її прямокутник довкола голівки й таблички по кутах порожній. */
+.tripmap-pin:focus-visible {
+  outline: none;
+}
+
+.tripmap-pin:focus-visible .tripmap-label {
+  outline: 3px solid var(--orange);
+  outline-offset: 1px;
+  background: var(--highlight);
+}
+
+@media (hover: hover) {
+  .tripmap-pin:hover:not(:disabled) .tripmap-label {
+    background: var(--highlight);
+  }
+}
+
+.tripmap-pin:active:not(:disabled) {
+  translate: 0 0.3cqw;
+}
+
+/* Недоступний пункт — блідий і не натискається. Папір таблички й голівки лишається непрозорим: крізь них не проступають квартали. */
+.tripmap-pin:disabled {
+  filter: grayscale(1);
+  cursor: default;
+}
+
+.tripmap-pin:disabled .tripmap-head {
+  border-color: var(--grey-hi);
+  box-shadow: 0 0 0 0.25cqw var(--grey);
+}
+
+.tripmap-pin:disabled .tripmap-label {
+  border-color: var(--grey);
+  box-shadow: none;
+}
+
+.tripmap-pin:disabled .tripmap-head > *,
+.tripmap-pin:disabled .tripmap-label > * {
+  opacity: 0.5;
+}
+
+@media (max-height: 420px) {
+  .tripmap {
+    --frame-x: 64px;
+    --frame-y: 94px;
+  }
+
+  .card-map:has(> .card-text) .tripmap {
+    --frame-y: 120px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tripmap-label {
+    transition: none;
+  }
+}

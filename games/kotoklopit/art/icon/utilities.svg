@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/utilities — квитанція за комунальні: паперова смужка із зубчастим низом, на ній будиночок і рядок суми.
+size 64×64; pivot (32, 32) — центр; points: —. Без станів і шарів: один кадр у готових кольорах; контур — LINE (силует 6, внутрішні 3,5).
+Планові комунальні на панелі (UTILITIES_ICON, symbols.ts) і біля «Комунальні» у вкладці «Речі». Будиночок великий: на панелі іконка ≈ 18 px.
+-->
+<defs><clipPath id="icon-utilities-in"><path d="M16.5 9Q32 7.8 47.5 9Q48.6 30 48 53.5L41.8 48.4L35.8 53.8L29.6 48.4L23.4 53.8L16.4 48.8Q15.6 30 16.5 9Z"/></clipPath></defs>
+<g id="p-body">
+<path d="M16.5 9Q32 7.8 47.5 9Q48.6 30 48 53.5L41.8 48.4L35.8 53.8L29.6 48.4L23.4 53.8L16.4 48.8Q15.6 30 16.5 9Z" fill="#f2e9d4"/>
+<g clip-path="url(#icon-utilities-in)"><path d="M0 43Q32 47 64 43L64 64L0 64Z" fill="#3f2541" fill-opacity="0.16"/></g>
+</g>
+<g id="p-house">
+<path d="M24.6 25.5L39.4 25.5L39.4 36.4L24.6 36.4Z" fill="#b98b60"/>
+<path d="M32 13.6L43.6 25.6L20.4 25.6Z" fill="#c4524b"/>
+<path d="M24.6 25.5L24.6 36.4L39.4 36.4L39.4 25.5M32 13.6L43.6 25.6L20.4 25.6Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-line">
+<path d="M23 43.4Q32 42.6 41 43.4" fill="none" stroke="#6b5263" stroke-width="3.5" stroke-linecap="round"/>
+</g>
+<g id="p-ink">
+<path d="M16.5 9Q32 7.8 47.5 9Q48.6 30 48 53.5L41.8 48.4L35.8 53.8L29.6 48.4L23.4 53.8L16.4 48.8Q15.6 30 16.5 9Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

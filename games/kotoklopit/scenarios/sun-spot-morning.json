@@ -1,0 +1,16 @@
+{
+ "name": "Сонячна пляма вранці",
+ "description": "Вівторок першого тижня, 07:30 (§8.9, «Теплолюбність»). Теплолюб спить у спальні просто в смузі сонця з вікна.",
+ "game": { "address": "she", "difficulty": "normal", "seed": 13 },
+ "state": {
+  "day": 1,
+  "minute": 450,
+  "modifiers": { "day": null },
+  "character": { "body": { "x": 3.5, "y": 2.5, "facing": { "x": 0.7071, "y": 0.7071 } } }
+ },
+ "cats": [
+  { "source": "shelter", "ageWeeks": 40, "name": "Сонечко", "sex": "female", "arrivedDay": -5, "x": 5.2, "y": 3.05,
+    "traits": [{ "group": "warmth", "level": 2, "seen": 0, "known": false }],
+    "act": { "kind": "sleep", "target": null, "goal": null, "minutes": 300, "elapsed": 0 } }
+ ]
+}

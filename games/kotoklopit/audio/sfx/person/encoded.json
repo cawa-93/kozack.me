@@ -1,0 +1,186 @@
+{
+  "dash-1": {
+    "hash": "a1abdedc5f026c29",
+    "seconds": 0.4
+  },
+  "dash-2": {
+    "hash": "26e049adc52a9043",
+    "seconds": 0.45
+  },
+  "dash-3": {
+    "hash": "dc9c10268e8eca67",
+    "seconds": 0.49
+  },
+  "dash-4": {
+    "hash": "1bb2864563b11cc1",
+    "seconds": 0.45
+  },
+  "fall-1": {
+    "hash": "b8cbc761f9370c0d",
+    "seconds": 0.72
+  },
+  "knock-1": {
+    "hash": "1d3c0d72c9b74451",
+    "seconds": 0.120833
+  },
+  "gasp-he-1": {
+    "hash": "c30575b1f6e9af0d",
+    "seconds": 0.37
+  },
+  "gasp-she-1": {
+    "hash": "4bcb877c9e154040",
+    "seconds": 0.330375
+  },
+  "gasp-he-2": {
+    "hash": "078334471a8b6deb",
+    "seconds": 0.39
+  },
+  "gasp-she-2": {
+    "hash": "c39f5c38533e2f98",
+    "seconds": 0.348021
+  },
+  "gasp-he-3": {
+    "hash": "51bf4957a619f016",
+    "seconds": 0.34
+  },
+  "gasp-she-3": {
+    "hash": "f7b6484019254586",
+    "seconds": 0.304021
+  },
+  "swallow": {
+    "hash": "f8c7b30cc4a5f2d4",
+    "seconds": 0.37
+  },
+  "plate-1": {
+    "hash": "e087bacb1d711c09",
+    "seconds": 0.4
+  },
+  "plate-2": {
+    "hash": "fbf71fd73c5d4a05",
+    "seconds": 0.4
+  },
+  "shower-loop": {
+    "hash": "571adc3879664497",
+    "seconds": 5.7,
+    "loop": {
+      "start": 0.1,
+      "end": 5.8
+    }
+  },
+  "shower-off": {
+    "hash": "742f5b25b5391301",
+    "seconds": 1.5
+  },
+  "splash-loop": {
+    "hash": "5bcfbeeef6c5a2b0",
+    "seconds": 6,
+    "loop": {
+      "start": 0.1,
+      "end": 6.1
+    }
+  },
+  "litter-pour": {
+    "hash": "33d003607e083de4",
+    "seconds": 1.1
+  },
+  "sweep-1": {
+    "hash": "922c293bfc96cf88",
+    "seconds": 0.89
+  },
+  "sweep-2": {
+    "hash": "f57203b05b770ffe",
+    "seconds": 1.06
+  },
+  "kibble-1": {
+    "hash": "420842a67930f182",
+    "seconds": 0.65
+  },
+  "water-1": {
+    "hash": "29c1aa44e25ccd39",
+    "seconds": 0.58
+  },
+  "buckle-1": {
+    "hash": "c2d6955648772e29",
+    "seconds": 0.35
+  },
+  "buckle-2": {
+    "hash": "38b9af2d057ee6e9",
+    "seconds": 0.25
+  },
+  "bell": {
+    "hash": "69b9d909d3f0e39b",
+    "seconds": 0.57
+  },
+  "pills-1": {
+    "hash": "df1641ab54b9b0b7",
+    "seconds": 0.7
+  },
+  "pills-2": {
+    "hash": "f40eeee81b6b4c25",
+    "seconds": 0.65
+  },
+  "sneeze-he": {
+    "hash": "d29b67c7a67db473",
+    "seconds": 1.41
+  },
+  "sneeze-she": {
+    "hash": "12d1ae5eb78f3b28",
+    "seconds": 0.39
+  },
+  "yawn-she-1": {
+    "hash": "23ee829fdde25f19",
+    "seconds": 2.34
+  },
+  "yawn-she-2": {
+    "hash": "9500464eaa4388fc",
+    "seconds": 1.9
+  },
+  "yawn-she-3": {
+    "hash": "37a296f4d6132869",
+    "seconds": 2.85
+  },
+  "yawn-he-1": {
+    "hash": "3e2006ab484dd0c8",
+    "seconds": 1.78
+  },
+  "sigh-he": {
+    "hash": "a86482e0dd06d282",
+    "seconds": 1.75
+  },
+  "sigh-she": {
+    "hash": "17d5e55f03ec7277",
+    "seconds": 1.561979
+  },
+  "blanket-1": {
+    "hash": "977525894bef6500",
+    "seconds": 0.6
+  },
+  "blanket-2": {
+    "hash": "f0b43bc23d50b0ba",
+    "seconds": 0.57
+  },
+  "water-tank": {
+    "hash": "afd7fc4063218908",
+    "seconds": 1.11
+  },
+  "fall-2": {
+    "hash": "3869fcaf00446701",
+    "seconds": 0.63
+  },
+  "plaster-1": {
+    "hash": "d0a971cb03c7d80f",
+    "seconds": 0.27
+  },
+  "bandage-1": {
+    "hash": "16f22138c903ed89",
+    "seconds": 0.38
+  },
+  "bandage-tear-1": {
+    "hash": "63d13eede6083faf",
+    "seconds": 0.315
+  },
+  "bandage-tear-2": {
+    "hash": "734774f3e42284b0",
+    "seconds": 0.34
+  }
+}

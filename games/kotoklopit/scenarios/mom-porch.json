@@ -1,0 +1,18 @@
+{
+  "name": "Гостинці від мами під дверима",
+  "description": "Субота першого тижня, 20:30, «Мамині гостинці» (рішення автора 2026-10-26): мама не застала персонажа й лишила пакет під дверима. Одразу — повідомлення «Гостинці від мами», а пакет — у ящиках біля входу; зблизька над ящиками — судочок і «2». Дія біля ящиків — судочки летять у холодильник, над ним — «2», на холодильнику стоїть судочок. «Гризун» («Гризіння» +2) може прогризти пакет, поки його не розпакували, — тоді одного судочка немає. Перший шлях (мама застала вдома) — сценарій mom-visit.",
+  "game": { "address": "she", "difficulty": "normal", "seed": 17 },
+  "state": {
+    "day": 5,
+    "minute": 1230,
+    "modifiers": { "day": "mom-food" },
+    "today": { "mom": { "at": 723, "porch": true } },
+    "character": { "body": { "x": 12.5, "y": 8.6, "facing": { "x": 0, "y": 1 } } },
+    "home": { "supplies": { "catFood": { "cheap": 20, "premium": 0 }, "litter": { "cheap": 6, "premium": 0 } } }
+  },
+  "cats": [
+    { "source": "shelter", "ageWeeks": 30, "name": "Гризун", "sex": "male", "arrivedDay": -10, "x": 9.5, "y": 8.5, "needs": { "hunger": 10, "attention": 10, "play": 10, "fatigue": 10 },
+      "act": { "kind": "idle", "target": null, "goal": null, "minutes": 5, "elapsed": 0 },
+      "traits": [{ "group": "chewing", "level": 2, "seen": 0, "known": true }] }
+  ]
+}

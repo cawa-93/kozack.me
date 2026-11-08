@@ -1,0 +1,1495 @@
+/* =============================================================================================================
+   Картки поверх гри (крок 16, пакет A13, GRAPHICS_PLAN.md): папір, чорнильні рамки, кнопки-«клавіші», рукописні заголовки.
+
+   Картинки — SVG з art/ui/ напряму (Vite видає файл з хешем; вектор чіткий на будь-якій щільності), записи маніфесту
+   `src/view/art/manifest/a13-ui.ts`. Рамки, кнопки, вкладки, чипи, поля й смуга — «дев'ять частин» (border-image): зріз —
+   `points.slice` запису, а поле полотна 4,6 одиниці виносить за межі елемента `border-image-outset: 4px` (1 одиниця = 1 px).
+   Кольори — токени art/palette.ts.
+   ============================================================================================================= */
+
+/* Шрифт і токени палітри — спільні з титрами. */
+@import "./theme.css";
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  font: 16px/1.45 system-ui, sans-serif;
+  color: var(--ink);
+}
+
+/* Гра під карткою затемнена чорнилом палітри (титулка й кінець гри — `.cinematic`, нижче). */
+.overlay:not(.cinematic) {
+  background: var(--dim);
+}
+
+.overlay.solid:not(.cinematic) {
+  background: var(--dim-solid);
+}
+
+/* На місці (§8.5 «На місці — кадр парковки»): під карткою — кадр парковки, а не квартира, тож тло затемнене слабше — і коли
+   картка ліворуч, і коли посередині. */
+.overlay.away:not(.cinematic):not(.solid) {
+  background: var(--dim-away);
+}
+
+/* На місці картка ліворуч, коли праворуч від неї вміщається парковка пункту. Поле ліворуч і праворуч — не менше за виріз камери
+   телефона: картка не лягає під нього. Чи вміщається парковка, вирішує сцена дороги (`parkingLayout`), а не ширина екрана; правий
+   край картки вона рахує за тими самими числами (`src/ui/cardsize.ts`). */
+.overlay.aside:not(.cinematic):not(.solid) {
+  justify-content: flex-start;
+  padding-right: max(16px, env(safe-area-inset-right));
+  padding-left: max(16px, env(safe-area-inset-left));
+}
+
+.overlay[hidden] {
+  display: none;
+}
+
+/* Картка: папір із волокнами під чорнильною рамкою. Рамка — смуга 20 px (border), у ній кути й ребра рамки разом із
+   папером аж до чорнила, тож тло картки — лише під серединою (padding-box): інакше воно доходило б до краю border-box і
+   світлою облямівкою визирало б за чорнильний контур. Тінь — shade 0,3 під усім силуетом. Відступи разом із рамкою — 25/27/23
+   від краю. */
+.card {
+  box-sizing: border-box;
+  width: min(560px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 5px 7px 3px;
+  border: 20px solid transparent;
+  border-image: url("../../art/ui/frame/card.svg") 24 / 24px / 4px stretch;
+  background: var(--paper) var(--paper-tile) 0 0 / 256px 256px;
+  background-clip: padding-box;
+  background-origin: padding-box;
+  filter: drop-shadow(0 6px 0 var(--shade-base));
+  scrollbar-color: var(--ink-soft) transparent;
+  scrollbar-width: thin;
+}
+
+/* Риси кота (§9.9): назви-чипи-ярлички, під ними — опис тієї, на яку навели чи натиснули. */
+.traits {
+  margin-top: 6px;
+}
+
+.trait-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+}
+
+.trait {
+  padding: 2px 11px 5px;
+  border: 0 solid transparent;
+  border-image: url("../../art/ui/chip/normal.svg") 12 fill / 12px / 4px stretch;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink);
+  font: 400 17px/1.25 var(--hand);
+  cursor: pointer;
+}
+
+.trait.active {
+  border-image-source: url("../../art/ui/chip/active.svg");
+}
+
+.trait-about {
+  margin: 6px 0 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.trait-about:empty {
+  display: none;
+}
+
+/* Риси на темній титулці (прощання) — ті самі паперові чипи, посередині. */
+.title-screen .traits {
+  margin-top: 8px;
+}
+
+.title-screen .trait-row {
+  justify-content: center;
+}
+
+.title-screen .trait-about {
+  color: var(--grey-hi);
+}
+
+/* Хрестик у кутку: закриває картку, як Esc; липне до верху, коли вміст прокручують. Кругла паперова кнопка; «×» лишається
+   текстом для читача екрана, але його не видно. */
+.card-close {
+  position: sticky;
+  top: -3px;
+  z-index: 2;
+  float: right;
+  width: 40px;
+  height: 40px;
+  margin: -3px -7px 0 8px;
+  border: 0;
+  border-radius: 50%;
+  background: url("../../art/ui/close.svg") 0 0 / 40px 40px no-repeat;
+  color: transparent;
+  font: 700 0/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.card-close:active {
+  transform: translateY(2px);
+}
+
+/* Рядок вкладок липне до верху картки (телефон): те, що прокручується, ховається під ним, а не пропливає під хрестиком, —
+   там тиснули б «+» каталогу. Непрозорий папір — на всю ширину області прокрутки (і під хрестиком, що лежить вище) і трохи
+   вище й нижче: ширше за рядок — тінню (вона не додає прокрутки вбік), а clip-path не пускає її вниз на вміст. */
+.card-tabbar {
+  position: sticky;
+  top: -5px;
+  z-index: 1;
+  padding-bottom: 8px;
+}
+
+/* Поле під вкладками — полем рядка (папір під ним), а не полем вкладок: воно випало б за межі рядка, і крізь нього визирав
+   би вміст. */
+.card-tabbar > .card-tabs {
+  margin-bottom: 0;
+}
+
+.card-tabbar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--paper);
+  box-shadow: 0 0 0 64px var(--paper);
+  clip-path: inset(-5px -64px 0);
+}
+
+/* Вкладки (телефон): один компактний рядок угорі, прокручується вбік, якщо не вміщується; місце довкола — під поле полотна
+   (4 px), бо рядок, що прокручується, обтинає. */
+.card-tabs {
+  display: flex;
+  gap: 4px;
+  margin: -4px 44px 8px -4px;
+  padding: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.card-tab {
+  flex: none;
+  min-height: 38px;
+  padding: 5px 14px 7px;
+  border: 0 solid transparent;
+  border-image: url("../../art/ui/tab/normal.svg") 14 fill / 14px / 4px stretch;
+  border-radius: 10px;
+  background: none;
+  color: var(--ink);
+  font: 400 18px/1.2 var(--hand);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.card-tab.active {
+  padding: 4px 14px 8px;
+  border-image-source: url("../../art/ui/tab/active.svg");
+}
+
+.card-kicker {
+  margin: 0 0 4px;
+  color: var(--ink-soft);
+  font: 400 16px/1.2 var(--hand);
+  letter-spacing: 0.03em;
+}
+
+/* Годинник на місці (§8.5 «На місці — кадр парковки», `Card.awayClock`): останнім у примітці праворуч від заголовка картки
+   пункту — лише коли картка посередині (`.away` без `.aside`). Коли вона ліворуч, час показує напис над парковкою у вільній
+   смузі праворуч. */
+.card-clock {
+  display: none;
+}
+
+.overlay.away:not(.aside) .card-clock {
+  display: inline;
+}
+
+.card-title {
+  margin: 0 0 8px;
+  font: 400 31px/1.15 var(--hand);
+}
+
+/* Заголовок із приміткою праворуч (`Card.aside`, §8.5 «Картки поїздок без «Поїздка»», рішення автора 2026-11-03): один рядок,
+   примітка — дрібніше й сірим; не вміщається — переходить під заголовок, праворуч. Хрестик картки плаває праворуч, і рядок
+   стає поруч із ним (flex — свій контекст, плаваючий елемент не перекриває). */
+.card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 14px;
+  margin: 0 0 8px;
+}
+
+.card-head > .card-title {
+  margin: 0;
+}
+
+/* Частини примітки нерозривні, а між ними рядок може перенестися (flex-wrap): на вузькій картці (вікно стоячи) примітка з подією
+   дня, знижками й годинником інакше вилазила за край картки. */
+.card-aside {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin: 0 0 0 auto;
+  color: var(--ink-soft);
+  font: 400 18px/1.2 var(--hand);
+  text-align: right;
+}
+
+.card-aside-part {
+  white-space: nowrap;
+}
+
+.card-aside-part + .card-aside-part::before {
+  content: "·";
+  margin: 0 0.4em;
+}
+
+.card-text {
+  margin: 0 0 10px;
+}
+
+.card-note {
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--enamel);
+  font-size: 15px;
+}
+
+/* Кнопки завжди видно, навіть коли текст картки не вміщується на низькому екрані: липнуть до низу картки поверх того самого
+   паперу. */
+.card-actions {
+  position: sticky;
+  bottom: -3px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  margin: 14px -7px -3px;
+  padding: 10px 7px 3px;
+  background: var(--paper) var(--paper-tile) 0 0 / 256px 256px;
+}
+
+/* Кнопки дій праворуч (`Card.actionsEnd`): картка пункту на місці — «Додому» там само, де головна кнопка смуги кошика (рецензія
+   2026-11-03). */
+.card-actions.end {
+  justify-content: flex-end;
+}
+
+/* Кнопка — «клавіша»: верх і губа знизу; натиснута опускається на висоту губи (текст теж). */
+.button {
+  min-height: 46px;
+  padding: 6px 18px 14px;
+  border: 0 solid transparent;
+  border-image: url("../../art/ui/button/normal.svg") 16 fill / 16px / 4px stretch;
+  /* Заокруглення не видно (тла немає), але по ньому йде рамка фокусу. */
+  border-radius: 12px;
+  background: none;
+  color: var(--ink);
+  font: 400 19px/1.15 var(--hand);
+  font-synthesis: none;
+  cursor: pointer;
+}
+
+.button.primary {
+  border-image-source: url("../../art/ui/button/primary.svg");
+}
+
+.button:active:not(:disabled) {
+  padding: 10px 18px 10px;
+  border-image-source: url("../../art/ui/button/pressed.svg");
+}
+
+.button.primary:active:not(:disabled) {
+  border-image-source: url("../../art/ui/button/primary-pressed.svg");
+}
+
+/* Вимкнена кнопка — своя пласка сіра картинка, а не напівпрозорість. */
+.button:disabled {
+  padding: 8px 18px 12px;
+  border-image-source: url("../../art/ui/button/disabled.svg");
+  color: var(--ink-soft);
+  cursor: default;
+}
+
+/* Рамка фокуса — упритул до елемента: картка й рядок вкладок прокручуються й обтинають усе за своїм краєм, а місця там лише
+   на її товщину (під кнопками дій — 3 px, у рядку вкладок — 4 px). */
+.button:focus-visible,
+.card-tab:focus-visible,
+.trait:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 0;
+}
+
+/* Хрестик стоїть у самому куті картки, тож рамка — всередині нього, у порожньому полі картинки навколо кола. */
+.card-close:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: -3px;
+}
+
+/* Магазин, доставка, поїздки, речі. */
+.shop {
+  display: grid;
+  gap: 10px;
+  margin: 6px 0 4px;
+}
+
+.shop-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--enamel);
+  box-shadow: inset 0 -3px 0 var(--shade-soft);
+}
+
+/* Назва рядка — рукописним шрифтом карток, як назви товарів у каталозі (рішення автора 2026-11-03: «можливо змінити шрифт щоб
+   він відповідав стилю гри»): послуги у ветеринара й лікаря стоять в одній картці з ліками. Підпис під назвою — звичайним. */
+.shop-name {
+  font: 400 19px/1.25 var(--hand);
+}
+
+.shop-stock {
+  display: block;
+  color: var(--ink-soft);
+  font: 400 14px/1.3 system-ui, sans-serif;
+}
+
+/* Опис риси під чипами в рядку кота (притулок, розплідник: `traitChips` усередині `.shop-name`) — звичайним шрифтом, як підпис
+   під назвою, а не рукописним від назви: дрібний рукописний читається гірше (рецензія 2026-11-03). */
+.shop-name .trait-about {
+  font: 400 14px/1.3 system-ui, sans-serif;
+}
+
+@media (max-width: 520px) {
+  .shop-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .shop-name {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Рядок із двома кнопками (лікування, грумінг) — назва на всю ширину, кнопки під нею, кожна на пів рядка. Поруч із двома
+   широкими кнопками колонка назви стискалася до кількох літер: на телефоні «🕐 1 год» і ціни рвалися по рядках, а на десктопі
+   кнопки переносилися з «·» у кінці рядка (рецензія хвилі 3). */
+.shop-row:has(> .button ~ .button) {
+  grid-template-columns: 1fr 1fr;
+}
+
+.shop-row:has(> .button ~ .button) > .shop-name {
+  grid-column: 1 / -1;
+}
+
+/* Поля кнопок такого рядка вужчі (в усіх станах): «Звичайне лікування · 30 ₴» вміщується в пів картки одним рядком. */
+.shop-row:has(> .button ~ .button) > .button {
+  padding-right: 10px;
+  padding-left: 10px;
+}
+
+/* Шматок, який не рвуть: час «🕐 1 год» (гліф — рядковий блок, біля нього рядок рветься навіть через нерозривний пробіл). */
+.nowrap {
+  white-space: nowrap;
+}
+
+/* Створення персонажа (§5.1): редактор зовнішності з повзунками, портрет над вибором звертання, ім'я. Портрет — у
+   заглибленому віконці (без лінійки поля імені), повзунки — жолоб і «лапка». */
+.portrait {
+  display: block;
+  border: 6px solid transparent;
+  border-image: url("../../art/ui/well.svg") 16 fill / 16px / 4px stretch;
+}
+
+/* Картка кота (§9.7): портрет ліворуч, ім'я й те, що відомо, праворуч. Витягнута вшир: у знайомстві й у телефоні — одна. */
+.card:has(.cat-profile) {
+  width: min(820px, 100%);
+}
+
+.cat-profile {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--enamel);
+  box-shadow: inset 0 -3px 0 var(--shade-soft);
+}
+
+.cat-profile + .cat-profile {
+  margin-top: 10px;
+}
+
+.cat-profile-extra {
+  margin-top: 8px;
+}
+
+.cat-profile-extra:empty {
+  display: none;
+}
+
+.cat-profile .portrait {
+  flex: none;
+}
+
+.cat-profile-side {
+  flex: 1;
+  min-width: 0;
+}
+
+.cat-profile-facts {
+  margin-top: 10px;
+}
+
+.cat-profile-line {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
+.cat-profile-head {
+  font-weight: 600;
+}
+
+.address-portrait {
+  margin: 4px auto 8px;
+}
+
+.look-editor {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.look-editor .portrait {
+  flex: none;
+  position: sticky;
+  top: 0;
+}
+
+.look-sliders {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 2px 14px;
+}
+
+.look-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.look-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.look-label {
+  font: 400 17px/1.2 var(--hand);
+}
+
+.look-value {
+  color: var(--ink-soft);
+}
+
+.look-slider {
+  width: 100%;
+  height: 32px;
+  margin: 0;
+  background: none;
+  cursor: pointer;
+  appearance: none;
+}
+
+.look-slider::-webkit-slider-runnable-track {
+  height: 12px;
+  border: 0 solid transparent;
+  border-image: url("../../art/ui/slider/track.svg") 10 fill / 10px / 4px stretch;
+  background: none;
+}
+
+.look-slider::-moz-range-track {
+  height: 12px;
+  border: 0 solid transparent;
+  border-image: url("../../art/ui/slider/track.svg") 10 fill / 10px / 4px stretch;
+  background: none;
+}
+
+.look-slider::-webkit-slider-thumb {
+  width: 32px;
+  height: 32px;
+  margin-top: -10px;
+  border: 0;
+  background: url("../../art/ui/slider/thumb.svg") 0 0 / 32px 32px no-repeat;
+  appearance: none;
+}
+
+.look-slider::-moz-range-thumb {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 0;
+  background: url("../../art/ui/slider/thumb.svg") 0 0 / 32px 32px no-repeat;
+}
+
+.look-slider:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 2px;
+}
+
+/* Поле імені — заглиблене поле з лінійкою, ім'я пишеться рукописним шрифтом. Клас `button` у нього — від спільних правил
+   кнопок, але натискання його не «опускає». */
+.name-input {
+  width: 100%;
+  box-sizing: border-box;
+  cursor: text;
+}
+
+.button.name-input,
+.button.name-input:active {
+  min-height: 52px;
+  padding: 7px 16px 11px;
+  border: 0 solid transparent;
+  border-image: url("../../art/ui/input.svg") 16 fill / 16px / 4px stretch;
+  color: var(--ink);
+  font: 400 26px/1.2 var(--hand);
+}
+
+.button.name-input:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 4px;
+}
+
+@media (max-width: 420px) {
+  .cat-profile {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .cat-profile-side {
+    width: 100%;
+  }
+
+  .look-editor {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+/* Титулка дня (§4), як у кіно: темний екран, текст проявляється по черзі; вихід — текст гасне, потім із темряви
+   проявляється квартира. Темне — чорнило палітри, а не чорний: чорного в арті немає взагалі (art/STYLE.md §1), а на #000
+   чорнильні контури кнопок і чипів кінця гри давали брудний ореол. Вихід — те саме чорнило гасне до прозорого. */
+.overlay.cinematic {
+  padding: 0;
+  background: var(--ink);
+  transition: background-color 0.9s ease;
+}
+
+.overlay.cinematic.dawn {
+  background: rgb(46 31 41 / 0);
+}
+
+.title-screen {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: safe center;
+  gap: 1.2vh;
+  padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+  color: var(--paper);
+  text-align: center;
+  cursor: pointer;
+  transition: opacity 0.6s ease;
+}
+
+.title-screen > * {
+  opacity: 0;
+  animation: title-in 1.1s ease forwards;
+}
+
+.title-screen.all > * {
+  animation-delay: 0s !important;
+  animation-duration: 0.3s;
+}
+
+.title-screen.leaving {
+  opacity: 0;
+}
+
+.title-heading {
+  margin: 1.5vh 0 0;
+  font: 400 clamp(32px, 10vh, 68px) / 1.1 var(--hand);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  animation-name: title-heading-in;
+  animation-duration: 1.6s;
+}
+
+.title-block {
+  max-width: 620px;
+}
+
+.title-line {
+  margin: 0;
+  color: var(--grey-hi);
+  font-size: clamp(14px, 3.6vh, 18px);
+  line-height: 1.4;
+}
+
+.title-line.main {
+  color: var(--paper);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.title-block.single .title-line.main {
+  font-weight: 400;
+}
+
+.title-prompt {
+  margin: 2vh 0 0;
+  color: var(--grey);
+  font-family: var(--hand);
+  font-size: 16px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  animation: title-in 1.1s ease forwards, title-pulse 2.4s ease-in-out 1.2s infinite;
+}
+
+/* Екран кінця гри (§4.2): як титулка дня, але з часом, котами й кнопками. */
+.ending-screen {
+  cursor: default;
+}
+
+.ending-who {
+  margin: 0;
+  color: var(--grey);
+  font-family: var(--hand);
+  font-size: 16px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.ending-text {
+  max-width: 560px;
+  margin: 0;
+  color: var(--grey-hi);
+  font-size: clamp(14px, 3.4vh, 17px);
+  line-height: 1.5;
+}
+
+.ending-time {
+  width: min(520px, 100%);
+}
+
+/* Фінальна смуга часу: паперовий обідок із чорнилом; відрізки — усередині, у вмісті елемента (кольори частин — `cards.ts`). */
+.ending-bar {
+  display: flex;
+  height: 12px;
+  overflow: hidden;
+  border: 6px solid transparent;
+  border-image: url("../../art/ui/ending-bar.svg") 10 / 10px / 4px stretch;
+  background: var(--ink);
+  background-clip: padding-box;
+}
+
+.ending-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 16px;
+  margin-top: 10px;
+  color: var(--grey-hi);
+  font-size: 14px;
+}
+
+/* Іконки намальовані чорнилом — на темному їм потрібна світла підкладка; у легенді — колір частини смуги. */
+.ending-screen .glyph {
+  padding: 3px;
+  border-radius: 50%;
+  background: var(--part, #f3e9dc);
+}
+
+.ending-cats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  max-width: 620px;
+}
+
+.ending-cat {
+  padding: 2px 11px 5px;
+  border: 0 solid transparent;
+  border-image: url("../../art/ui/chip/normal.svg") 12 fill / 12px / 4px stretch;
+  color: var(--ink);
+  font: 400 17px/1.25 var(--hand);
+}
+
+.ending-cat small {
+  margin-left: 6px;
+  color: var(--ink-soft);
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+}
+
+/* Кнопки кінця гри — ті самі паперові «клавіші», що й у картках, просто на темному (без смуги паперу) і посередині. */
+.card-actions.ending-actions {
+  position: static;
+  justify-content: center;
+  margin: 2vh 0 0;
+  padding: 0;
+  background: none;
+}
+
+/* На чорнильному тлі чорнильний контур рамки кнопки зливається з тлом, і «клавіша» ставала пласкою плашкою з рискою губи
+   (рецензія хвилі 3). Паперова облямівка 2 px поза контуром — за обрисом самої картинки рамки (чотири тіні без розмиття), тож
+   кути збігаються з намальованими; губа знову читається низом клавіші. */
+.ending-actions > .button {
+  filter: drop-shadow(2px 0 0 var(--enamel)) drop-shadow(-2px 0 0 var(--enamel)) drop-shadow(0 2px 0 var(--enamel))
+    drop-shadow(0 -2px 0 var(--enamel));
+}
+
+@keyframes title-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes title-heading-in {
+  from {
+    opacity: 0;
+    letter-spacing: 0.5em;
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    letter-spacing: 0.18em;
+    filter: none;
+  }
+}
+
+@keyframes title-pulse {
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .title-screen > * {
+    animation-duration: 0.01s;
+  }
+}
+
+/* Універсальний магазин (§6.4): кожен варіант товару — своя картка в один рядок (рішення автора 2026-11-03, «Кожен товар у своїй
+   картці»): іконка товару, назва варіанта з підписом під нею, бірка знижки й ціна, «−», кількість, «+»; а внизу картки — смуга
+   кошика (рішення автора 2026-11-03, «Бірка знижки й кошик унизу»). Назви, ціни й кількість — рукописним шрифтом карток і
+   більші, ніж текст картки; підписи — звичайним шрифтом (дрібний рукописний читається гірше). */
+.shop-section {
+  margin: 8px 0 0;
+  color: var(--ink-soft);
+  font: 400 17px/1.2 var(--hand);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Картка варіанта: стовпці — іконка, назва (до двох рядків, з підписом під нею), бірка з ціною, «−», кількість, «+». Висота — від
+   кнопок «−» і «+» (40 px) з тонкими полями: на екрані якомога більше карток (рішення автора 2026-11-03, «Кожен товар у своїй
+   картці»); довга назва з підписом роблять вищою лише свою картку. */
+.shop-item {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto 40px 2.2ch 40px;
+  align-items: center;
+  column-gap: 8px;
+  padding: 3px 8px 5px;
+  border-radius: 12px;
+  background: var(--enamel);
+  box-shadow: inset 0 -3px 0 var(--shade-soft);
+}
+
+/* Іконка товару (§11.4 «Іконка біля назви») — окремим стовпцем, а не в рядку назви: назва у два рядки стоїть рівно біля неї. */
+.shop-icon .name-icon {
+  display: block;
+  width: 30px;
+  height: 30px;
+  margin: 0;
+}
+
+/* Назва у два рядки — збалансовано: рядки приблизно рівні, а не «Ароматний набір для / душу» чи «Міцна вудочка з / пір'ям»
+   (рецензія 2026-11-03, рішення виконавця). Слово через дефіс не рветься (`.nowrap`, `nameParts` у `shop.ts`). */
+.shop-item .shop-name {
+  font-size: 19px;
+  line-height: 1.08;
+  overflow-wrap: break-word;
+  text-wrap: balance;
+}
+
+.shop-item .shop-stock {
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+/* Бірка знижки й ціна: в одній колонці — поруч, бірка перед ціною (як у прикладі автора: «… −29% 11 ₴»). */
+.shop-cost {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+/* Бірка знижки «−X%»: червоний цінник із отвором (`art/ui/tag.svg`), трохи навскіс, як у супермаркеті; напис — паперовим
+   кольором праворуч від отвору. */
+.price-tag {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 4.5em;
+  height: 2.15em;
+  margin: -2px 2px 0 0;
+  padding: 0 0.25em 0.12em 1em;
+  background: url("../../art/ui/tag.svg") 0 0 / 100% 100% no-repeat;
+  color: var(--paper);
+  font: 400 15px/1 var(--hand);
+  white-space: nowrap;
+  transform: rotate(-6deg);
+}
+
+.shop-price {
+  font: 400 21px/1 var(--hand);
+  white-space: nowrap;
+  text-align: right;
+}
+
+/* Варіант, якого не взяти (§6.4: «у ящиках», «немає місця», «уже є», «уже їде»), — сіра вся картка, крім кнопок: назва, ціна,
+   іконка й бірка. Підпис, чому не взяти, лишається читким. */
+.shop-item.muted .shop-name,
+.shop-item.muted .shop-price {
+  color: var(--grey-lo);
+}
+
+.shop-item.muted .shop-icon,
+.shop-item.muted .price-tag {
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+
+.shop-count {
+  font: 400 23px/1 var(--hand);
+  text-align: center;
+}
+
+/* Варіант у кошику — кількість кольором кнопки «Купити», щоб видно було, що вже взято. */
+.shop-item.chosen .shop-count {
+  color: var(--orange);
+}
+
+/* Каталог (рецензія 2026-11-03, «ергономічніше» — рішення автора 2026-11-03): розкладку вирішує ширина самого списку (контейнер
+   `catalog`), а не екрана. Від 690 px (картка телефона, ширша нижче) — дві колонки карток, вужче — одна. */
+.shop:has(> .shop-item) {
+  container: catalog / inline-size;
+  grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
+  align-items: start;
+  gap: 6px;
+}
+
+.shop > .shop-section {
+  grid-column: 1 / -1;
+}
+
+/* У двох колонках дешевий варіант — ліворуч, дорогий — праворуч: рядок — один товар. Після товару з однією карткою (нашийник)
+   наступний товар — з нового рядка, а не навпіл між двома (у одній колонці правило нічого не змінює). */
+.shop-item.single + .shop-item {
+  grid-column-start: 1;
+}
+
+/* Дві колонки (телефон) і вузький список: бірка — над ціною, а не перед нею, — так назві лишається місце, і вона не ламається
+   на третій рядок. Бірка тут менша: разом із ціною вона не вища за кнопки «−» і «+». */
+@container catalog (min-width: 690px) or (max-width: 459px) {
+  .shop-item {
+    grid-template-columns: 28px minmax(0, 1fr) auto 40px 2.2ch 40px;
+    column-gap: 6px;
+    padding-right: 6px;
+  }
+
+  .shop-icon .name-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  /* Бірка з ціною трохи вищі за кнопки: від'ємні поля пускають їх у поля картки, і картка зі знижкою не вища за решту. */
+  .shop-cost {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0;
+    margin: -5px 0 -3px;
+  }
+
+  .shop-cost > .price-tag {
+    width: 4.3em;
+    height: 1.9em;
+    margin: -3px -3px 1px 0;
+    font-size: 14px;
+  }
+}
+
+/* Одна колонка (картка пункту на місці): бірка — перед ціною, а ціни однакової ширини (до «9999 ₴»), тож бірки всіх карток стоять
+   рівним стовпцем, а не зсуваються на 25 px слідом за шириною ціни — «13 ₴» чи «487 ₴» (рецензія 2026-11-03, рішення виконавця).
+   У двох колонках так не можна: ширша ціна звузила б назву, і та частіше йшла б на другий рядок. */
+@container catalog (min-width: 460px) and (max-width: 689px) {
+  .shop-price {
+    min-width: 3.4em;
+  }
+}
+
+/* Телефон (єдина картка з вкладками) — ширший (до 820 px): він посередині, обабіч нього й так порожньо, а товари магазину стають
+   у дві колонки (рецензія 2026-11-03). Ширший на всіх вкладках, а не лише в магазині: інакше картка, що посередині, звужувалася б
+   на інших вкладках, і рядок вкладок їхав би з-під пальця. Картки пункту на місці лишаються 560 px — праворуч від них парковка
+   (`src/ui/cardsize.ts`). */
+.card:has(> .card-tabbar) {
+  width: min(820px, 100%);
+}
+
+/* Кнопки меню гри (вкладка «Гра» телефона) — поруч, скільки вміщується, а не кожна на всю ширину ширшої картки. */
+.card:has(> .card-tabbar) .shop:has(> .button) {
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+/* Вкладка «Гра» телефона: хто грає, підказки керування, збереження; рядок про збереження — дрібний, під кнопками. */
+.game-player {
+  margin: 0 0 8px;
+  font: 400 19px / 1.2 var(--hand);
+}
+
+.game-note {
+  margin: 2px 0 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+/* Посилання на титри (§2.1) — окремим рядком під рискою в самому низу, дрібне й не яскраве. */
+.game-credits {
+  margin: 12px 0 0;
+  padding-top: 6px;
+  border-top: 1px solid var(--shade-soft);
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.game-credits a {
+  color: var(--ink-soft);
+  text-decoration-color: var(--grey);
+  text-underline-offset: 2px;
+}
+
+/* Повзунок «Звуки» (§11.4а). */
+.sound-volume-box {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+  margin: 4px 0 10px;
+  font-size: 16px;
+}
+
+.sound-volume {
+  width: 100%;
+  min-height: 32px;
+  cursor: pointer;
+}
+
+/* Підказки керування (§11.3а): іконка кнопки й призначення. Вдома — дві колонки, у гонці — одна, тож вони однієї висоти. */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 44px;
+  margin: 0 0 10px;
+}
+
+.controls-title {
+  margin: 0 0 4px;
+  color: var(--ink-soft);
+  font: 400 16px / 1.2 var(--hand);
+}
+
+.controls-list {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(3, auto);
+  gap: 5px 28px;
+  justify-items: start;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.control-icon {
+  display: inline-flex;
+  gap: 3px;
+}
+
+/* Клавіша: як кнопки гри — чорнильний контур і губа знизу. */
+.key {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 7px 1px;
+  border: 2px solid var(--ink);
+  border-bottom-width: 4px;
+  border-radius: 7px 6px 8px 6px;
+  background: var(--enamel);
+  color: var(--ink);
+  font: 400 15px / 1 var(--hand);
+}
+
+.control-art {
+  display: block;
+  width: 36px;
+  height: 36px;
+}
+
+.control-stack {
+  position: relative;
+  display: block;
+  width: 36px;
+  height: 36px;
+}
+
+.control-stack > .control-item {
+  position: absolute;
+  inset: 22%;
+  width: 56%;
+  height: 56%;
+}
+
+/* Ручка джойстика — у масштабі основи (68 із 148): відхилена туди, куди тягнути. */
+.control-knob {
+  position: absolute;
+  top: 27%;
+  left: 27%;
+  width: 46%;
+  height: 46%;
+}
+
+.control-knob.up {
+  transform: translateY(-46%);
+}
+
+.control-knob.down {
+  transform: translateY(46%);
+}
+
+.control-knob.left {
+  transform: translateX(-46%);
+}
+
+.control-knob.right {
+  transform: translateX(46%);
+}
+
+/* На титулці першого дня підказки в рядок, посередині; на чорнильному тлі чорнильний контур клавіші зливався б із ним. */
+.title-block:has(.controls) {
+  max-width: 780px;
+}
+
+.title-block .key {
+  border-color: var(--ink-soft);
+}
+
+.title-block .controls {
+  justify-content: center;
+  margin: 6px 0 0;
+}
+
+.title-block .controls-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 20px;
+}
+
+/* Іконка біля назви рядка (послуги, пункти, речі) — по висоті рядка назви: 1,6em від більшої рукописної назви були б завеликі. */
+.shop-name > .named > .name-icon {
+  width: 1.3em;
+  height: 1.3em;
+  margin: -0.15em 0.18em -0.1em 0;
+}
+
+/* Смуга кошика (рішення автора 2026-11-03): липне до низу картки на папері, як кнопки дій; ліворуч — «Очистити» іконкою (лише з
+   непорожнім кошиком, якнайдалі від головної кнопки — рецензія 2026-11-03), далі в заглибленому віконці (ui/well) — сума кошика
+   й гроші, праворуч — головна кнопка («Додому» / «Купити» / «Замовити»). Не вміщається в рядок — головна кнопка цілою
+   переходить нижче, праворуч. */
+.shop-bar {
+  position: sticky;
+  bottom: -3px;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin: 12px -7px -3px;
+  padding: 10px 7px 3px;
+  background: var(--paper) var(--paper-tile) 0 0 / 256px 256px;
+}
+
+.shop-sums {
+  flex: 1 1 220px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 14px;
+  box-sizing: border-box;
+  min-height: 46px;
+  padding: 6px 12px;
+  border: 0 solid transparent;
+  border-image: url("../../art/ui/well.svg") 16 fill / 16px / 4px stretch;
+  font: 400 20px/1.2 var(--hand);
+}
+
+.shop-total,
+.shop-money {
+  white-space: nowrap;
+}
+
+.shop-total.short {
+  color: var(--red-lo);
+}
+
+/* «Очистити»: гліф (1,15 em) трохи менший за висоту кнопки й посередині її верху (над губою): у 24 px червоний бейдж у куті гліфа
+   впирався в рамку кнопки (рецензія 2026-11-03). */
+.button.shop-clear {
+  font-size: 21px;
+  line-height: 1;
+}
+
+.button.shop-clear .glyph {
+  display: block;
+  margin: 1px auto 0;
+}
+
+.button.shop-pay {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* Степер «−» / «+»: ціла картинка зі знаком; знак-текст лишається для читача екрана. Перша кнопка картки — «−». Під палець
+   (рішення автора 2026-11-03: «Зроби інтерфейс магазину ергономічнишим»): було 44 px; на вигляд тепер 40 px, щоб на екрані
+   було більше карток (рішення виконавця за рішенням автора 2026-11-03, «Кожен товар у своїй картці»), а дотик кнопка ловить
+   у зоні 44 × 44 px (`::after` нижче). */
+.button.step,
+.button.step:active:not(:disabled),
+.button.step:disabled {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  border-image: none;
+  background: url("../../art/ui/button-step/plus.svg") 0 0 / 40px 40px no-repeat;
+  color: transparent;
+  font-size: 0;
+}
+
+.shop-item > .button.step:first-of-type {
+  background-image: url("../../art/ui/button-step/minus.svg");
+}
+
+/* Зона дотику степера — 44 × 44 px, як затверджені раніше 44 px під палець (рецензія 2026-11-03, рішення виконавця): прозора
+   смуга по 2 px навколо кнопки. Вона вміщається в поля картки (кнопка 40 px у картці 48 px) і в проміжки між стовпцями, тож
+   карток видно стільки ж, а дотики сусідніх кнопок не перекриваються. */
+.button.step {
+  position: relative;
+}
+
+.button.step::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+}
+
+.button.step:active:not(:disabled) {
+  transform: translateY(2px);
+}
+
+/* Вимкнений степер — своя пласка сіра картинка, як і вимкнена кнопка (не напівпрозорість). */
+.button.step:disabled {
+  background-image: url("../../art/ui/button-step/plus-disabled.svg");
+}
+
+.shop-item > .button.step:first-of-type:disabled {
+  background-image: url("../../art/ui/button-step/minus-disabled.svg");
+}
+
+/* Іконки інтерфейсу замість емодзі (§11.4): `<img>` із SVG усередині (`glyphs.ts`). */
+.glyph {
+  display: inline-block;
+  vertical-align: -0.2em;
+  line-height: 1;
+}
+
+/* Іконка біля назви (§11.4 «Іконка біля назви»): той самий малюнок, що в баблі, — без хмаринки й рамки, по висоті з рядком
+   назви (трохи вища за нього: дрібна іконка не впізнається) і з невеликим відступом до неї (`icons.ts`). Розмір — в em, тож
+   на низькому екрані вона менша разом із текстом. Від'ємні поля не дають їй розсунути рядок: ряд магазину на телефоні
+   лишається таким самим низьким. Іконку не відривають від слова за нею (`.named`). */
+.named {
+  white-space: nowrap;
+}
+
+.name-icon {
+  display: inline-block;
+  width: 1.6em;
+  height: 1.6em;
+  margin: -0.3em 0.2em -0.3em 0;
+  vertical-align: middle;
+}
+
+/* У заголовку картки (назва пункту поїздки, §11.4) шрифт і так великий: 1,6em дали б ≈ 50 px — іконка розпирала б рядок і
+   важила б більше за назву. Тут вона по висоті рядка заголовка (≈ 36 px, на низькому екрані ≈ 28 px), а від'ємні поля не дають
+   їй посунути рядок. */
+.card-title .name-icon {
+  width: 1.15em;
+  height: 1.15em;
+  margin: -0.1em 0.18em -0.05em 0;
+}
+
+/* На темній титулці чорнильний контур іконки зникає — їй потрібна світла підкладка, як гліфам на екрані кінця гри. */
+.title-screen .name-icon {
+  margin-right: 0.3em;
+  border-radius: 50%;
+  background: var(--paper);
+}
+
+/* Низький екран (телефон набік): тонша рамка й менші відступи — разом 15/21/17 від краю. */
+@media (max-height: 420px) {
+  .overlay {
+    padding: 8px;
+    font-size: 14px;
+    line-height: 1.35;
+  }
+
+  .overlay.aside:not(.cinematic):not(.solid) {
+    padding-right: max(8px, env(safe-area-inset-right));
+    padding-left: max(8px, env(safe-area-inset-left));
+  }
+
+  .card {
+    padding: 0 6px 2px;
+    border-width: 15px;
+    border-image-width: 18px;
+    border-image-outset: 3px;
+  }
+
+  .card-title {
+    margin-bottom: 4px;
+    font-size: 24px;
+  }
+
+  .card-head {
+    margin-bottom: 4px;
+  }
+
+  .card-aside {
+    font-size: 16px;
+  }
+
+  .card-text,
+  .card-note {
+    margin-bottom: 6px;
+  }
+
+  .card-note {
+    padding: 6px 10px;
+    font-size: 14px;
+  }
+
+  .card-close {
+    top: 0;
+    margin: 0 -6px 0 8px;
+  }
+
+  /* Під вкладками й між товарами — тісніше: на телефоні набік кожен піксель висоти — це товари (рецензія 2026-11-03). */
+  .card-tabbar {
+    top: 0;
+    padding-bottom: 2px;
+  }
+
+  .shop {
+    gap: 8px;
+  }
+
+  /* Керування, кнопки й рядок про збереження вміщуються на екран без прокрутки. */
+  .game-player {
+    margin: 4px 0;
+    font-size: 17px;
+  }
+
+  .game-credits {
+    margin-top: 6px;
+    padding-top: 4px;
+  }
+
+  .controls {
+    margin-bottom: 4px;
+  }
+
+  .controls-title {
+    margin-bottom: 2px;
+  }
+
+  .controls-list {
+    gap: 3px 24px;
+  }
+
+  .control-art,
+  .control-stack {
+    width: 30px;
+    height: 30px;
+  }
+
+  .key {
+    min-width: 26px;
+    height: 26px;
+  }
+
+  .shop-section {
+    margin-top: 2px;
+  }
+
+  .card-actions,
+  .shop-bar {
+    bottom: -2px;
+    margin: 8px -6px -2px;
+    padding: 8px 6px 2px;
+  }
+
+  .shop-sums {
+    min-height: 42px;
+    padding: 5px 10px;
+    font-size: 18px;
+  }
+
+  .shop-name {
+    font-size: 17px;
+  }
+
+  .shop-item .shop-name {
+    font-size: 18px;
+  }
+
+  /* Картки товарів — вужчі стовпці й поля: назві лишається місце (рішення автора 2026-11-03, «Кожен товар у своїй картці»). */
+  .shop-item {
+    grid-template-columns: 28px minmax(0, 1fr) auto 40px 2.2ch 40px;
+    column-gap: 6px;
+    padding-right: 6px;
+  }
+
+  .shop-icon .name-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .shop-price {
+    font-size: 19px;
+  }
+
+  .button {
+    min-height: 42px;
+    padding: 5px 16px 12px;
+    font-size: 18px;
+  }
+
+  .button:active:not(:disabled) {
+    padding: 9px 16px 8px;
+  }
+
+  .button:disabled {
+    padding: 7px 16px 10px;
+  }
+
+  /* Поле імені не «опускається» (правило вище для кнопок інакше перемогло б його). */
+  .button.name-input:active {
+    padding: 7px 16px 11px;
+  }
+
+  /* Редактор зовнішності (§5.1): у два стовпці дев'ять повзунків — п'ять рядів, і на телефоні набік останній («Взуття»)
+     ховався під кнопками; що картка прокручується, видно не було. Тут картка ширша, повзунки — у три стовпці (три ряди), а
+     портрет — не вищий, ніж лишає картка без прокрутки (`--look-chrome`: поля екрана, рамка, підзаголовок, заголовок,
+     кнопки й рамка портрета); вигляду він не міняє, лише масштаб. */
+  .card:has(.look-editor),
+  .card:has(.cat-profile) {
+    --look-chrome: 182px;
+    width: min(780px, 100%);
+  }
+
+  .look-sliders {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0 12px;
+  }
+
+  .look-editor .portrait {
+    max-height: calc(100vh - var(--look-chrome));
+    max-height: calc(100dvh - var(--look-chrome));
+    max-width: calc((100vh - var(--look-chrome)) * 13 / 22);
+    max-width: calc((100dvh - var(--look-chrome)) * 13 / 22);
+  }
+
+  /* Поля картки кота теж забирають висоту. */
+  .cat-profile .portrait {
+    max-height: calc(100dvh - var(--look-chrome) - 24px);
+    max-width: calc(100dvh - var(--look-chrome) - 24px);
+  }
+}
+
+/* Кнопки смуги кошика: вужчі поля, щоб суми з кнопками частіше вміщалися в рядок, і текст кнопки не ламається («Купити · 98 ₴»
+   цілим); «Очистити» — лише іконка, майже квадратна. Після правил вище (і для низького екрана): вага та сама, що в натиснутої й
+   вимкненої кнопки (тож поля не стрибають, коли тиснуть); верхнє й нижнє поля — їхні. */
+.shop-bar > .button.shop-pay,
+.shop-bar > .button.shop-pay:active:not(:disabled),
+.shop-bar > .button.shop-pay:disabled {
+  padding-right: 14px;
+  padding-left: 14px;
+}
+
+.shop-bar > .button.shop-clear,
+.shop-bar > .button.shop-clear:active:not(:disabled),
+.shop-bar > .button.shop-clear:disabled {
+  padding-right: 10px;
+  padding-left: 10px;
+}

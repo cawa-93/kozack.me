@@ -1,0 +1,13 @@
+{
+  "name": "Вечір, лампи вмикаються",
+  "description": "Середа першого тижня, 19:58 (§8.9 «День і ніч»): присмерк із теплим відтінком, низьке вечірнє сонце ще кладе смугу з вікна вітальні, і близько 20:00 самі плавно вмикаються лампи — спершу в спальні, потім у вітальні й на кухні, останньою у ванній (зсув по кімнатах), разом із ними бра. Персонаж на кухні, кіт у вітальні. Знімати з --ms 4000.",
+  "game": { "address": "she", "difficulty": "normal", "seed": 12 },
+  "state": {
+    "day": 2,
+    "minute": 1198,
+    "modifiers": { "day": null },
+    "character": { "stats": { "satiety": 60, "hygiene": 70, "sanity": 60 }, "body": { "x": 14.5, "y": 2.5, "facing": { "x": 0, "y": -1 } } },
+    "home": { "supplies": { "catFood": { "cheap": 20, "premium": 0 }, "litter": { "cheap": 6, "premium": 0 } } }
+  },
+  "cats": [{ "source": "shelter", "ageWeeks": 25, "name": "Рижик", "sex": "male", "arrivedDay": -5, "x": 4.2, "y": 8.4, "needs": { "hunger": 20, "attention": 30, "fatigue": 10 } }]
+}

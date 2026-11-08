@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 62" width="100" height="62">
+<!-- mess/carrier/cheap — уламки пластикової сірої переноски (§8.7): шматок стінки з щілинами, верх із ручкою, зігнуті дверцята з ґратками, скалки.
+size 100×62; pivot (50, 33) — точка підлоги під центром уламків; points: —.
+Без станів і шарів, LINE_RIG. Кольори й будова — з item/carrier/cheap, щоб читалося «це була саме ця переноска». «Історія»: скотч із тріщини.
+-->
+<defs>
+<clipPath id="mess-carrier-cheap-wall"><path d="M8 29L21 17L29 20L27 25L38 27L43 36L35 37L32 45L21 50L15 44L9 42Z"/></clipPath>
+<clipPath id="mess-carrier-cheap-top"><path d="M52 21L63 13L78 15L88 23L79 26L76 31L65 33L58 28Z"/></clipPath>
+</defs>
+<g id="p-shadow">
+<path d="M6 41C6 35 15 31 26 31C37 31 46 35 46 41C46 47 37 52 26 52C15 52 6 47 6 41Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M50 29C50 25 58 22 70 22C82 22 91 25 91 29C91 33 82 36 70 36C58 36 50 33 50 29Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M48 49C48 44 58 41 70 41C82 41 93 44 93 49C93 54 82 58 70 58C58 58 48 54 48 49Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="p-door">
+<path d="M52 45L68 36L90 46L74 56ZM59 45L68 40L83 46.4L74 51.8Z" fill="#6d6266" fill-rule="evenodd"/>
+<path d="M62.8 46.7L71.8 41.6M66.5 48.4L70 45.2L75.5 43.2M70.3 50.1L79.3 44.8M63.5 42.5L78.5 49.1" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M59 45L68 40L83 46.4L74 51.8Z" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M52 45L68 36L90 46L74 56Z" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-wall">
+<path d="M8 29L21 17L29 20L27 25L38 27L43 36L35 37L32 45L21 50L15 44L9 42Z" fill="#a69f9b"/>
+<g clip-path="url(#mess-carrier-cheap-wall)"><path d="M6 37Q20 40 34 47" fill="none" stroke="#716869" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 44L22 40L46 36L46 54L6 54Z" fill="#3f2541" fill-opacity="0.16"/></g>
+<path d="M12 33L18 28L23 33L17 38Z" fill="#f2e7d0"/>
+<path d="M12 33L18 28L23 33L17 38Z" fill="none" stroke="#6b5263" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17.6 29.6Q16.8 27.6 18.6 26.6L21.6 25Q23.6 24 24.6 26L25.6 28Q26.6 30 24.6 31L21.6 32.6Q19.6 33.6 18.6 31.6Z" fill="#4b4146"/>
+<path d="M26.6 36.6Q25.8 34.6 27.6 33.6L30.6 32Q32.6 31 33.6 33L34.6 35Q35.6 37 33.6 38L30.6 39.6Q28.6 40.6 27.6 38.6Z" fill="#4b4146"/>
+<path d="M17.6 29.6Q16.8 27.6 18.6 26.6L21.6 25Q23.6 24 24.6 26L25.6 28Q26.6 30 24.6 31L21.6 32.6Q19.6 33.6 18.6 31.6Z" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M26.6 36.6Q25.8 34.6 27.6 33.6L30.6 32Q32.6 31 33.6 33L34.6 35Q35.6 37 33.6 38L30.6 39.6Q28.6 40.6 27.6 38.6Z" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8 29L21 17L29 20L27 25L38 27L43 36L35 37L32 45L21 50L15 44L9 42Z" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-top">
+<path d="M52 21L63 13L78 15L88 23L79 26L76 31L65 33L58 28Z" fill="#cdc6be"/>
+<g clip-path="url(#mess-carrier-cheap-top)"><path d="M50 28L66 26L90 22L90 36L50 36Z" fill="#3f2541" fill-opacity="0.16"/></g>
+<path d="M52 21L63 13L78 15L88 23L79 26L76 31L65 33L58 28Z" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M60 21Q58 9 68 10Q75 10.5 77 16" fill="none" stroke="#2e1f29" stroke-width="6.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M60 21Q58 9 68 10Q75 10.5 77 16" fill="none" stroke="#cdc6be" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M56.4 21C56.4 19.9 58 19 60 19C62 19 63.6 19.9 63.6 21C63.6 22.1 62 23 60 23C58 23 56.4 22.1 56.4 21Z" fill="#a69f9b"/>
+<path d="M56.4 21C56.4 19.9 58 19 60 19C62 19 63.6 19.9 63.6 21C63.6 22.1 62 23 60 23C58 23 56.4 22.1 56.4 21Z" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-crumbs">
+<path d="M44 16L49 13L51 17L46 20Z" fill="#a69f9b"/>
+<path d="M44 16L49 13L51 17L46 20Z" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M42 47L47 45L48 49L44 51Z" fill="#cdc6be"/>
+<path d="M42 47L47 45L48 49L44 51Z" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M89 34L93 33L94 37L90 38Z" fill="#a69f9b"/>
+<path d="M89 34L93 33L94 37L90 38Z" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

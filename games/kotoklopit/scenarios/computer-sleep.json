@@ -1,0 +1,20 @@
+{
+  "name": "Кіт спить на комп'ютері",
+  "description": "Субота першого тижня, 15:00. Теплолюбна Грілка спить на теплому комп'ютері (§9.12 «Сон на комп'ютері», [Уточнено] 2026-11-03): лягла на правій половині стола, але лежить саме на клавіатурі — сісти за комп'ютер не можна, доки її не забрати. Персонаж стоїть ліворуч від стола: підійти до нього й натиснути дію — відмова «кіт на комп'ютері»; погладити — Грілка прокидається й сідає на клавіатуру, з неї не злазить.",
+  "game": { "address": "he", "difficulty": "normal", "seed": 22 },
+  "state": {
+    "day": 5,
+    "minute": 900,
+    "modifiers": { "day": null },
+    "character": {
+      "stats": { "satiety": 70, "hygiene": 70, "sanity": 70 },
+      "body": { "x": 5.6, "y": 7.6, "facing": { "x": 1, "y": -0.5 } }
+    }
+  },
+  "cats": [
+    { "source": "shelter", "ageWeeks": 40, "name": "Грілка", "sex": "female", "arrivedDay": -10, "x": 7.5, "y": 6.5, "facing": -1,
+      "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 10, "attention": 10, "fatigue": 85 },
+      "act": { "kind": "sleep", "target": null, "goal": null, "minutes": 180, "elapsed": 0 },
+      "traits": [{ "group": "warmth", "level": 2, "seen": 0, "known": true }] }
+  ]
+}

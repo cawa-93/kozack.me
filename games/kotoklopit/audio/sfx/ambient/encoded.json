@@ -1,0 +1,110 @@
+{
+  "birds-loop": {
+    "hash": "e9e7c441b7a4dc7c",
+    "seconds": 7,
+    "loop": {
+      "start": 0.1,
+      "end": 7.1
+    }
+  },
+  "city-loop": {
+    "hash": "2444a1723ec1159c",
+    "seconds": 7,
+    "loop": {
+      "start": 0.1,
+      "end": 7.1
+    }
+  },
+  "evening-loop": {
+    "hash": "e884d773be8720fc",
+    "seconds": 7,
+    "loop": {
+      "start": 0.1,
+      "end": 7.1
+    }
+  },
+  "rain-loop": {
+    "hash": "85e3682d6f4c9e3b",
+    "seconds": 7,
+    "loop": {
+      "start": 0.1,
+      "end": 7.1
+    }
+  },
+  "cicadas-loop": {
+    "hash": "8aa730ec10906ba4",
+    "seconds": 7,
+    "loop": {
+      "start": 0.1,
+      "end": 7.1
+    }
+  },
+  "wind-loop": {
+    "hash": "90235bf67035a723",
+    "seconds": 7,
+    "loop": {
+      "start": 0.1,
+      "end": 7.1
+    }
+  },
+  "festival-loop": {
+    "hash": "4b97f4361d193dbc",
+    "seconds": 7,
+    "loop": {
+      "start": 0.1,
+      "end": 7.1
+    }
+  },
+  "party-loop": {
+    "hash": "49cdcbc7f96c8976",
+    "seconds": 8,
+    "loop": {
+      "start": 0.1,
+      "end": 8.1
+    }
+  },
+  "fridge-loop": {
+    "hash": "adc2c18c1c58524a",
+    "seconds": 7,
+    "loop": {
+      "start": 0.1,
+      "end": 7.1
+    }
+  },
+  "drill-1": {
+    "hash": "1c98abfe212ac4f5",
+    "seconds": 2.35
+  },
+  "drill-2": {
+    "hash": "26896c8744f76ce4",
+    "seconds": 1.15
+  },
+  "drill-3": {
+    "hash": "174778c834310967",
+    "seconds": 2.5
+  },
+  "hammer-1": {
+    "hash": "59affe3840c37fd6",
+    "seconds": 1.18
+  },
+  "hammer-2": {
+    "hash": "c031b1dc59a94fc5",
+    "seconds": 1.5
+  },
+  "hammer-3": {
+    "hash": "d700997fb54f5a62",
+    "seconds": 1.85
+  },
+  "stairwell-1": {
+    "hash": "3fbbf3b4a5ace9ba",
+    "seconds": 2.34
+  },
+  "stairwell-2": {
+    "hash": "5e24d4182325691a",
+    "seconds": 2.09
+  },
+  "stairwell-3": {
+    "hash": "67a0f5e20faa01f1",
+    "seconds": 1.84
+  }
+}

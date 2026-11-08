@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 200" width="144" height="200">
+<!-- env/radio — тумбочка з приймачем у задньому куті вітальні, впритул до обох стін (клітинка 1, 6; слід 1 × 1; кришка приймача 78, антена до ≈ 112), §8.10.
+size 144×200; pivot (72, 152) — точка підлоги під центром сліду; points: —.
+Екран темний; коли радіо грає, поверх нього — накладка env/radio/waves. Фасад — на грані +x. Історія: сліди кігтів на боці тумбочки.
+Без шарів: один кадр у готових кольорах.
+-->
+<g id="p-shadow">
+<path d="M19.1 161.8Q13.1 162.2 18.5 164.9L66.6 189Q72 191.7 77.6 189.5L125.3 170.8Q130.9 168.6 126.5 164.5L121.1 159.3Q116.8 155.2 110.8 155.6Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="p-cabinet">
+<path d="M68.4 83.1Q72 81.3 75.6 83.1L126.7 108.6Q130.2 110.4 130.2 114.4L130.2 146.4Q130.2 150.4 126.7 152.2L75.6 177.7Q72 179.5 68.4 177.7L17.3 152.2Q13.8 150.4 13.8 146.4L13.8 114.4Q13.8 110.4 17.3 108.6Z" fill="#9a6a47"/>
+<path d="M69.3 82.6Q72 81.3 74.7 82.6L127.6 109.1Q130.2 110.4 127.6 111.7L74.7 138.2Q72 139.5 69.3 138.2L16.4 111.7Q13.8 110.4 16.4 109.1Z" fill="#b98b60"/>
+<path d="M13.8 113.4Q13.8 110.4 16.4 111.7L69.3 138.2Q72 139.5 72 142.5L72 176.5Q72 179.5 69.3 178.2L16.4 151.7Q13.8 150.4 13.8 147.4Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M72 169.7Q72 166.7 74.7 165.4L127.6 138.9Q130.2 137.6 130.2 140.6L130.2 147.4Q130.2 150.4 127.6 151.7L74.7 178.2Q72 179.5 72 176.5Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M77.8 146Q77.8 143 80.5 141.7L121.7 121.1Q124.4 119.7 124.4 122.7L124.4 143.9Q124.4 146.9 121.7 148.3L80.5 168.9Q77.8 170.2 77.8 167.2Z" fill="none" stroke="#6d4a35" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M81.6 153.1A3.2 3.4 0 1 0 88 153.1A3.2 3.4 0 1 0 81.6 153.1Z" fill="#d4a54c"/>
+<path d="M81.6 153.1A3.2 3.4 0 1 0 88 153.1A3.2 3.4 0 1 0 81.6 153.1Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M62.7 145.3L55.7 159.4" fill="none" stroke="#6d4a35" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M56.3 139.7L49.3 155.4" fill="none" stroke="#6d4a35" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M49.3 137.8L42.9 150.6" fill="none" stroke="#6d4a35" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M26.7 111.6Q24 113 26.7 114.3L59.1 130.5Q61.8 131.8 64.4 130.5L107.1 109.2Q109.8 107.8 107.1 106.5L104.8 105.3Q102.1 104 99.4 105.3L62.5 123.8Q59.8 125.1 57.2 123.8L32.4 111.4Q29.8 110.1 27.1 111.4Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M13.8 110.4L72 139.5L130.2 110.4" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M72 139.5L72 179.5" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M68.4 83.1Q72 81.3 75.6 83.1L126.7 108.6Q130.2 110.4 130.2 114.4L130.2 146.4Q130.2 150.4 126.7 152.2L75.6 177.7Q72 179.5 68.4 177.7L17.3 152.2Q13.8 150.4 13.8 146.4L13.8 114.4Q13.8 110.4 17.3 108.6Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M13.8 150.4L72 179.5L130.2 150.4" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-antenna">
+<path d="M72 58.1L87 22.1" fill="none" stroke="#2e1f29" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M72 58.1L87 22.1" fill="none" stroke="#cdc6be" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M83.4 22.1A3.6 3.6 0 1 0 90.6 22.1A3.6 3.6 0 1 0 83.4 22.1Z" fill="#cdc6be"/>
+<path d="M83.4 22.1A3.6 3.6 0 1 0 90.6 22.1A3.6 3.6 0 1 0 83.4 22.1Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-radio">
+<path d="M66.6 53.6Q72 51 77.4 53.6L96.7 63.3Q102.1 66 102.1 72L102.1 98Q102.1 104 96.7 106.7L65.2 122.4Q59.8 125.1 54.5 122.4L35.1 112.8Q29.8 110.1 29.8 104.1L29.8 78.1Q29.8 72.1 35.1 69.4Z" fill="#5f9089"/>
+<path d="M67.5 53.2Q72 51 76.5 53.2L97.6 63.8Q102.1 66 97.6 68.2L64.3 84.9Q59.8 87.1 55.4 84.9L34.2 74.3Q29.8 72.1 34.2 69.8Z" fill="#8bb3aa"/>
+<path d="M29.8 76.1Q29.8 72.1 33.3 73.9L56.3 85.3Q59.8 87.1 59.8 91.1L59.8 121.1Q59.8 125.1 56.3 123.3L33.3 111.9Q29.8 110.1 29.8 106.1Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M59.8 120.5Q59.8 117.5 62.5 116.2L99.4 97.7Q102.1 96.4 102.1 99.4L102.1 101Q102.1 104 99.4 105.3L62.5 123.8Q59.8 125.1 59.8 122.1Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M89.4 88.3L99.1 83.4" fill="none" stroke="#4b4146" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M89.4 84.5L99.1 79.6" fill="none" stroke="#4b4146" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M89.4 80.7L99.1 75.8" fill="none" stroke="#4b4146" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M62.4 94.6Q62.4 91.6 65.1 90.2L83.3 81.1Q86 79.7 86 82.7L86 101.4Q86 104.4 83.3 105.8L65.1 114.9Q62.4 116.3 62.4 113.3Z" fill="#4b4146"/>
+<path d="M65.8 94.8L72.5 91.4" fill="none" stroke="#6d6266" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-radio-lines">
+<path d="M62.4 94.6Q62.4 91.6 65.1 90.2L83.3 81.1Q86 79.7 86 82.7L86 101.4Q86 104.4 83.3 105.8L65.1 114.9Q62.4 116.3 62.4 113.3Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M86.9 98.5A3.4 3.8 0 1 0 93.7 98.5A3.4 3.8 0 1 0 86.9 98.5Z" fill="#e0d4b9"/>
+<path d="M86.9 98.5A3.4 3.8 0 1 0 93.7 98.5A3.4 3.8 0 1 0 86.9 98.5Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M93.6 95.1A3.4 3.8 0 1 0 100.4 95.1A3.4 3.8 0 1 0 93.6 95.1Z" fill="#e0d4b9"/>
+<path d="M93.6 95.1A3.4 3.8 0 1 0 100.4 95.1A3.4 3.8 0 1 0 93.6 95.1Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M29.8 72.1L59.8 87.1L102.1 66" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M59.8 87.1L59.8 125.1" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M66.6 53.6Q72 51 77.4 53.6L96.7 63.3Q102.1 66 102.1 72L102.1 98Q102.1 104 96.7 106.7L65.2 122.4Q59.8 125.1 54.5 122.4L35.1 112.8Q29.8 110.1 29.8 104.1L29.8 78.1Q29.8 72.1 35.1 69.4Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M29.8 110.1L59.8 125.1L102.1 104" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

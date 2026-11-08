@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 46 66" width="46" height="66">
+<!-- env/candle-shelf/left — настінна поличка зі свічкою на задній стіні x = 0 (лице x = 1), лише в день відключення (§4.1 «Планове відключення», рішення автора 2026-11-03: «Настінні полички»). Спальня й вітальня (CANDLE_SHELVES у src/view/decor.ts). Свій малюнок, не дзеркало env/candle-shelf/back (art/STYLE.md §10).
+size 46×66; pivot (16.5, 36.5) — точка на лиці стіни під серединою дошки, на висоті верху дошки (CANDLE_SHELVES[].z); points: flame (21.5, 13.5) — середина полум'я, на 23 над верхом дошки.
+Дерев'яна дошка 0,3 × 0,19 клітинки завтовшки 5 на двох латунних кутниках (mustard, гвинти ink), тінь під дошкою на стіні — base. Синє емальоване блюдце Ø 0,18 і свічка-стовпчик Ø 0,1 заввишки 17, обгоріла навскіс.
+Історія: підтік воску по боці свічки (enamelHi з краєм inkSoft).
+Стани: st-out — погашена, загнутий ґніт; st-lit — язичок полум'я orange з серцевиною mustardHi (сяйво — код, BACKDROP.glow). Контур LINE_RIG: річ 20–40 (art/STYLE.md §5). Без шарів.
+-->
+<g id="p-shadow">
+<path d="M25.5 37L6.9 46.3Q8.1 48.3 8.2 50.7L24.8 44.3L25.5 37Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="p-brackets">
+<path d="M24.8 37.3L19.7 39.9L19.7 52.9L24.8 50.3L24.8 37.3Z" fill="#d4a54c"/>
+<path d="M19.7 51.9L28 44.1L25.1 42.6L19.7 46.4L19.7 51.9Z" fill="#d4a54c"/>
+<path d="M24.8 37.3L19.7 39.9L19.7 52.9L24.8 50.3L24.8 37.3Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M19.7 51.9L28 44.1L25.1 42.6L19.7 46.4L19.7 51.9Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M21.2 48.1A1.1 1.1 0 0 0 23.4 48.1A1.1 1.1 0 0 0 21.2 48.1Z" fill="#2e1f29"/>
+<path d="M12.7 43.4L7.5 46L7.5 59L12.7 56.4L12.7 43.4Z" fill="#d4a54c"/>
+<path d="M7.5 58L15.9 50.1L13 48.7L7.5 52.5L7.5 58Z" fill="#d4a54c"/>
+<path d="M12.7 43.4L7.5 46L7.5 59L12.7 56.4L12.7 43.4Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7.5 58L15.9 50.1L13 48.7L7.5 52.5L7.5 58Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M9 54.2A1.1 1.1 0 0 0 11.2 54.2A1.1 1.1 0 0 0 9 54.2Z" fill="#2e1f29"/>
+</g>
+<g id="p-board">
+<path d="M6.9 41.3L19.1 47.4L19.1 52.4L6.9 46.3L6.9 41.3Z" fill="#9a6a47"/>
+<path d="M38.3 37.8Q28.8 42.8 19.1 47.4L19.1 52.4Q28.5 47.2 38.3 42.8L38.3 37.8Z" fill="#9a6a47"/>
+<path d="M26.1 31.7Q16.4 36.2 6.9 41.3Q13.2 44 19.1 47.4Q28.5 42.3 38.3 37.8Q32.4 34.4 26.1 31.7Z" fill="#b98b60"/>
+<path d="M38.3 41.2L19.1 50.8L19.1 52.4L38.3 42.8L38.3 41.2Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M26.4 33.8Q24.8 34.8 23 35.3" fill="none" stroke="#6d4a35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M28.3 41.1Q23.8 43.2 19.6 45.7" fill="none" stroke="#6d4a35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M38.3 37.8Q28.8 42.8 19.1 47.4L6.9 41.3" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M19.1 47.4L19.1 52.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M26.1 31.7Q16.4 36.2 6.9 41.3L6.9 46.3L19.1 52.4Q28.5 47.2 38.3 42.8L38.3 37.8L26.1 31.7Z" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-saucer">
+<path d="M13.7 39.9A8.7 4.6 0 0 0 31.2 39.9A8.7 4.6 0 0 0 13.7 39.9Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M13.5 36.5A8.1 4.1 0 0 0 29.8 36.5L29.2 39.1A7.5 3.8 0 0 1 14.1 39.1Z" fill="#6c84a3"/>
+<path d="M13.5 36.5A8.1 4.1 0 0 0 29.8 36.5A8.1 4.1 0 0 0 13.5 36.5Z" fill="#94a8c0"/>
+<path d="M15.9 36.3A5.7 3 0 0 0 27.4 36.3A5.7 3 0 0 0 15.9 36.3Z" fill="none" stroke="#6c84a3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M13.5 36.5A8.1 4.1 0 0 0 29.8 36.5A8.1 4.1 0 0 0 13.5 36.5Z" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M13.5 36.5L14.1 39.1A7.5 3.8 0 0 0 29.2 39.1L29.8 36.5" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-candle">
+<path d="M17.3 19.3Q17 27.2 17.3 35.7A4.3 2.2 0 0 0 26 35.7Q26.3 27.2 26 18.1A4.3 2.2 0 0 0 17.3 19.3Z" fill="#f2e7d0"/>
+<path d="M22.9 19.7L26 18.3Q26.3 27.2 26 35.7A4.3 2.2 0 0 1 22.9 37.7Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M17.3 19.3A4.3 2.2 0 0 1 26 18.1A4.3 2.2 0 0 1 17.3 19.3Z" fill="#f2e9d4"/>
+<path d="M19.2 19.3A2.4 1.2 0 0 0 24 19.3A2.4 1.2 0 0 0 19.2 19.3Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M17.7 19.9Q16.7 23.7 17.6 27.3Q19.2 28.1 19 25.2Q18.9 21.7 17.7 19.9Z" fill="#f2e9d4"/>
+<path d="M17.7 19.9Q16.7 23.7 17.6 27.3Q19.2 28.1 19 25.2Q18.9 21.7 17.7 19.9Z" fill="none" stroke="#6b5263" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17.3 19.3A4.3 2.2 0 0 1 26 18.1A4.3 2.2 0 0 1 17.3 19.3Z" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17.3 19.3Q17 27.2 17.3 35.7A4.3 2.2 0 0 0 26 35.7Q26.3 27.2 26 18.1" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-wick-out" class="st-out">
+<path d="M21.8 19.1L21.6 16.5Q21.2 15.3 20 15.2" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-flame" class="st-lit">
+<path d="M21.8 19.1L21.7 16.9" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M21.8 17.7C18.2 17.5 17.6 13.8 19.2 11.9Q20.6 10.5 21.4 7.2Q22.3 10.1 23.9 11.1C25.9 13.1 25.7 17.5 21.8 17.7Z" fill="#d9843f"/>
+<path d="M21.8 17C19.8 16.8 19.8 13.4 21.7 10.7C23.7 13.4 23.8 16.8 21.8 17Z" fill="#e8c47d"/>
+<path d="M21.8 17.7C18.2 17.5 17.6 13.8 19.2 11.9Q20.6 10.5 21.4 7.2Q22.3 10.1 23.9 11.1C25.9 13.1 25.7 17.5 21.8 17.7Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 148 148" width="148" height="148">
+<!-- ui/touch/stick-base — основа джойстика (touch.ts, радіус 70): під лівим пальцем; і в гонці.
+size 148×148; pivot (74, 74) — центр; без points.
+Коло paper з контуром ink (5, низ 7), внутрішнє коло enamelLo і чотири шеврони inkSoft (куди тягнути). Малюється
+непрозорим: напівпрозорість дає код.
+-->
+<defs><clipPath id="ui-touch-stick-base-in"><path d="M74 4.8C112.31 4.8 143.4 35.8 143.4 74C143.4 112.25 112.31 143.3 74 143.3C35.86 143.3 4.9 112.25 4.9 74C4.9 35.8 35.86 4.8 74 4.8Z"/></clipPath></defs>
+<g id="p-disc">
+<path d="M74 6.2C111.54 6.2 142 36.57 142 74C142 111.48 111.54 141.9 74 141.9C36.63 141.9 6.3 111.48 6.3 74C6.3 36.57 36.63 6.2 74 6.2Z" fill="#f2e7d0"/>
+<g clip-path="url(#ui-touch-stick-base-in)"><path d="M0 112Q74 124 148 112L148 148L0 148Z" fill="#3f2541" fill-opacity="0.16"/></g>
+</g>
+<g id="p-detail">
+<path d="M74 38C94.09 38 110.4 54.13 110.4 74C110.4 93.98 94.09 110.2 74 110.2C54.24 110.2 38.2 93.98 38.2 74C38.2 54.13 54.24 38 74 38Z" fill="none" stroke="#bfb093" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M80 24L74 18L68 24M68 124L74 130L80 124M24 68L18 74L24 80M124 80L130 74L124 68" fill="none" stroke="#6b5263" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-ink">
+<path d="M74 4.8C112.31 4.8 143.4 35.8 143.4 74C143.4 112.25 112.31 143.3 74 143.3C35.86 143.3 4.9 112.25 4.9 74C4.9 35.8 35.86 4.8 74 4.8ZM74 9.8C109 9.8 137.4 38.11 137.4 73C137.4 107.94 109 136.3 74 136.3C39.17 136.3 10.9 107.94 10.9 73C10.9 38.11 39.17 9.8 74 9.8Z" fill="#2e1f29" fill-rule="evenodd"/>
+</g>
+</svg>

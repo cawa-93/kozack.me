@@ -1,0 +1,345 @@
+// Що показує персонаж нового вигляду (крок 16, T2) — чисті правила без Phaser для `iso/person.ts`: кадр очей за тим, наскільки
+// вони заплющені, поправки вигляду поверх анімації, річ у гнізді рук (і коли вона там з'являється чи зникає в разовій справі),
+// телефон біля вуха, чи анімація сама хилить голову, у якому гнізді кіт (на руках чи на колінах), де кіт, якого беруть на руки
+// чи опускають, чи брати накладку рук, порядок шматків персонажа в його проміжку глибини, масштаб тіні й темп ходи (у такт
+// тому, як персонаж іде на екрані). Перевіряє `tests/isoperson.test.ts`.
+
+import type { GameEvent } from "../../sim/events";
+import type { CleaningTool, Item, PlacedItem } from "../../sim/types";
+import { PERSON_CONTACT_MS, PERSON_ONE_SHOT_MS, PERSON_OWN_ARMS, type PersonAnimId } from "../anim/ids";
+import { heldThing } from "../anim/personanim";
+import type { ArtView } from "../art/types";
+import { PERSON_PICKUP_GRAB_MS, PERSON_PUTDOWN_RELEASE_MS, personCatLift, personGaitSpeed, type PersonGait } from "../rig/anims/person/move";
+import type { PERSON_RIG } from "../rig/defs/person";
+import type { AnimOf } from "../rig/types";
+import type { Point } from "../world/part";
+import { ISO_DEPTH_SLOT } from "./depth";
+import { dishFrame, feederFrame, placedFrame, type IsoFrame } from "./looks";
+import { NO_EXTRAS, type MixExtras } from "./personmix";
+
+type PersonAnim = AnimOf<typeof PERSON_RIG>;
+
+/**
+ * Що в проміжку глибини персонажа (`ISO_DEPTH_SLOT` 0,01) над його точкою, знизу догори: тінь, кіт на руках у ракурсі `back`
+ * (за тулубом), сам персонаж, рука, що гладить (коли кіт за персонажем), спинка стільця, на якому він сидить (`seatSpot`,
+ * `placeAbove("person", backrest)`), кіт на руках у ракурсі `front` (перед ним), запах.
+ * Кіт на руках — точка кота в реєстрі над точкою персонажа (`placeAbove("person", hands.depth − глибина персонажа)`), а свої
+ * шматки кіт кладе ще вище за неї, до `CARGO_PIECES` (T1: тінь +0,001, тіло +0,002, очі з-під меблів +0,003), тож проміжки
+ * кота ззаду й спереду — від `cargoBack` і `cargoFront` на `CARGO_PIECES` угору. Старий кіт кладе себе через
+ * `placeAbove("person")` (пів проміжку) — теж перед персонажем.
+ */
+export const PERSON_DEPTH = { shadow: 0.0002, cargoBack: 0.0004, body: 0.004, reach: 0.0045, backrest: 0.0048, cargoFront: 0.005, smell: 0.009 } as const;
+
+/** Скільки глибини над своєю точкою займають шматки кота (`PERSON_DEPTH`). */
+export const CARGO_PIECES = 0.0035;
+
+/**
+ * Глибина руки, що гладить (`iso/person.ts`): над персонажем, а кіт перед ним (ближче до камери) — над котом, у верху його
+ * проміжку (`catDepth` — глибина точки кота в реєстрі; NaN чи null — кота в реєстрі немає). Так долоня лежить на спинці
+ * кота, а не ховається під ним, і рука не лягає на меблі, що стоять перед обома.
+ */
+export function reachDepth(personDepth: number, catDepth: number | null): number {
+  const over = catDepth !== null && Number.isFinite(catDepth) ? catDepth + ISO_DEPTH_SLOT * 0.95 : -Infinity;
+  return Math.max(personDepth + PERSON_DEPTH.reach, over);
+}
+
+/**
+ * Глибина точки кота на руках чи на колінах (`PersonPart.hands.depth`): за персонажем у ракурсі `back`, перед ним — у `front`
+ * (шматки кота — до `CARGO_PIECES` над нею).
+ */
+export function cargoDepth(personDepth: number, back: boolean): number {
+  return personDepth + (back ? PERSON_DEPTH.cargoBack : PERSON_DEPTH.cargoFront);
+}
+
+/**
+ * Наскільки заплющені очі (`PersonAnimParams.eyes`) — напівзаплющені й заплющені (`person/eyes`: `half`, `closed`). Засинаючи
+ * (очі — поступ засинання), заплющує зовсім раніше, ніж обертається до ліжка й падає на нього (`SLEEP_TURN` у
+ * `personspot.ts`): заплющені очі видно, поки він ще лицем до кімнати.
+ */
+export const EYES = { half: 0.2, closed: 0.45 } as const;
+
+/**
+ * Кадр очей за тим, наскільки вони заплющені (0–1: засинання, сонний увечері, виснажений; §8.8, §6.5); null — як в анімації
+ * (розплющені). Сонний увечері (0,35) і виснажений (0,25) — напівзаплющені, засинаючи — заплющує зовсім.
+ */
+export function eyesFrame(eyes: number): "half" | "closed" | null {
+  if (eyes >= EYES.closed) return "closed";
+  if (eyes >= EYES.half) return "half";
+  return null;
+}
+
+/** Голова хилиться, засинаючи (§8.8): градуси вперед наприкінці засинання, якщо анімація сама її не хилить. */
+export const SLEEP_DROOP = 18;
+
+/** Чи анімація сама хилить голову: є поворот голови чи шиї в будь-якому ракурсі. */
+export function movesHead(anim: PersonAnim): boolean {
+  const bones = [anim.bones, anim.views?.front?.bones, anim.views?.back?.bones];
+  return bones.some((b) => Boolean(b?.head?.rot?.length) || Boolean(b?.neck?.rot?.length));
+}
+
+/** Поправки вигляду за (очі, схована рука, голова хилиться): їх лише дванадцять. */
+const EXTRAS = new Map<string, MixExtras>();
+
+/**
+ * Поправки вигляду поверх анімації (`mixAnims`): кадр очей (`eyesFrame`), схована ближня рука (її показує рука, що гладить) і
+ * голова, що хилиться, засинаючи. Ті самі входи — той самий незмінний об'єкт (ключ кешу `mixAnims` рахується раз на об'єкт),
+ * без поправок — `NO_EXTRAS`.
+ */
+export function personExtras(eyes: "half" | "closed" | null, hideNearArm: boolean, droop: boolean): MixExtras {
+  if (eyes === null && !hideNearArm && !droop) return NO_EXTRAS;
+  const key = `${eyes ?? ""}|${hideNearArm ? 1 : 0}|${droop ? 1 : 0}`;
+  let extras = EXTRAS.get(key);
+  if (!extras) {
+    extras = Object.freeze({
+      ...(eyes ? { frames: Object.freeze({ eyes }) } : {}),
+      ...(hideNearArm ? { hidden: Object.freeze(["arm-near"]) } : {}),
+      ...(droop ? { ramp: Object.freeze({ head: SLEEP_DROOP }) } : {}),
+    });
+    EXTRAS.set(key, extras);
+  }
+  return extras;
+}
+
+/**
+ * Анімації, які самі ведуть руки, — накладки рук (`carry`, `holdCat`) не беруть: вудочка (іграшку в руці веде `rod`; з
+ * накладкою «несе» рука з вудочкою злітала б над головою), бере й опускає кота (N4a) і всі справи (N4b: «бере» закінчується
+ * позою «несе», «кладе» з неї починається, купаючи, кота тримає сама `bath`) — `PERSON_OWN_ARMS` з `anim/ids.ts`.
+ */
+export const OWN_ARMS: ReadonlySet<PersonAnimId> = PERSON_OWN_ARMS;
+
+/**
+ * Накладка рук до анімації `anim` — основної чи разової (відмова, вкусили, спіткнувся з котом чи річчю в руках: тіло реагує,
+ * руки тримають): та, що дає `personAnim` за тим, що в руках, якщо анімація не веде руки сама (`OWN_ARMS`).
+ */
+export function armsOverlay(anim: PersonAnimId, overlay: PersonAnimId | null): PersonAnimId | null {
+  return overlay !== null && !OWN_ARMS.has(anim) ? overlay : null;
+}
+
+/** Ширина тіні під ногами за статурою (`BUILDS`: струнка, звичайна, кремезна). */
+export const SHADOW_WIDTH = [0.9, 1, 1.15] as const;
+
+/**
+ * Масштаб тіні під ногами (`fx/shadow/person`): базовий масштаб кадру (`addArt`: 1 одиниця арту = 1 px світу за будь-якої
+ * роздільності кадру), ширший чи вужчий за статурою. Саме базовий × статура: кадр із роздільністю 2 має базовий 0,5, і тінь
+ * без нього стала б удвічі більшою. Пише в `out` і повертає його.
+ */
+export function shadowScale(base: { x: number; y: number }, build: number, out = { x: 0, y: 0 }): { x: number; y: number } {
+  const n = SHADOW_WIDTH.length;
+  const k = SHADOW_WIDTH[((Math.trunc(build) % n) + n) % n] ?? 1;
+  out.x = base.x * k;
+  out.y = base.y;
+  return out;
+}
+
+/** Анімації, у яких персонаж сидить (робота, нарада, їжа за столом): кіт тоді — на колінах. */
+const SITTING: ReadonlySet<PersonAnimId> = new Set<PersonAnimId>(["work", "meeting", "eat"]);
+
+/** Гніздо кота біля персонажа (`PersonPart.hands`): сидячи — коліна (`lap`), інакше — руки (`arms`). */
+export function catSocket(anim: PersonAnimId): "lap" | "arms" {
+  return SITTING.has(anim) ? "lap" : "arms";
+}
+
+/**
+ * Телефон біля вуха (`phone`, N4b: дзвонить мама, руки порожні): кадр телефона з кухонної стільниці (A6
+ * `mess/trinket/phone`), у стані `fallen` — навскіс і зі світним екраном, тож у руці його видно як телефон, а не як темну
+ * плитку; менший (на стільниці його намальовано більшим, ніж у руці, щоб читався з кімнати). Кулак біля вуха закрив би його
+ * цілком, тож телефон зсунуто від кулака до щоки й униз, нижче ока (`shift`, одиниці кадру від pivot: у цій анімації кисть
+ * повернута догори дриґом, тож +x кадру — до обличчя, +y — до підборіддя): він визирає з-під руки на щоці. Ззаду (гніздо за
+ * головою) телефона, як і належить, не видно.
+ */
+export const PHONE_HELD = { frame: { id: "mess/trinket/phone", state: "fallen" } as IsoFrame, scale: 0.62, shift: { x: 9, y: 8 } } as const;
+
+/**
+ * Вертикальний пилосос у руках (рішення автора 2026-11-02, GAME_DESIGN §8.7, «Пилосос у руках»): кадр A5 `item/vacuum` —
+ * pivot у хваті ручки (гніздо `held`, кулак накладки `holdVacuum`), щітка на підлозі попереду. Єдина річ у руках із
+ * ракурсами (`front`, `back`): кадр — того ракурсу, в якому персонаж (`heldView`), інакше ззаду щітка «висіла» б над підлогою.
+ */
+export const VACUUM_HELD = { frame: { id: "item/vacuum", state: null } as IsoFrame, scale: 1 } as const;
+/** Віник у руках (§8.7): той самий контракт, що в `VACUUM_HELD`. */
+export const BROOM_HELD = { frame: { id: "item/broom", state: null } as IsoFrame, scale: 1 } as const;
+
+/** Річ котячого кутка в руках (§8.7): той самий кадр, що на підлозі; велику несуть меншою, інакше вона закрила б персонажа. */
+const THING_HELD: Record<PlacedItem["kind"], number> = { bowl: 1, water: 1, litter: 0.62, house: 0.55, scratcher: 0.5 };
+
+/** Кадри пилу з-під віника (`fx/sweep-dust`) і скільки триває кожен, мс. */
+const SWEEP_DUST = { frames: ["a", "b", "c"], ms: 170 } as const;
+
+/** Кадр пилу з-під віника в мить `time`, мс. */
+export function sweepDustState(time: number): (typeof SWEEP_DUST.frames)[number] {
+  return SWEEP_DUST.frames[Math.floor(time / SWEEP_DUST.ms) % SWEEP_DUST.frames.length] ?? "a";
+}
+
+/** Що в гнізді рук: гніздо, кадр, масштаб відносно звичайного (1 — як намальовано) і зсув кадру від гнізда. */
+export interface HeldFrame {
+  socket: "held" | "rod";
+  frame: IsoFrame;
+  scale: number;
+  /** Точка кадру (одиниці від pivot), що лягає в гніздо; немає — pivot. */
+  shift?: { readonly x: number; readonly y: number };
+}
+
+/**
+ * Річ у руках (`Item`, §8.4) — кадр і гніздо скелета: страва, мамин судочок, сира порція (`held`, кадри `item/dish/*`), совок
+ * корму (`held`, `item/scoop` з видом корму), вудочка (`rod`, `item/toy/<якість>` у стані «в руці»), вертикальний пилосос
+ * чи віник (`held`, `VACUUM_HELD`, `BROOM_HELD` за `tool`; кадр — з ракурсом персонажа, `heldView`), річ котячого кутка (`held`,
+ * миска з годівницею — кадром годівниці); з порожніми руками в анімації телефону (`anim` — `phone`) —
+ * телефон біля вуха (`PHONE_HELD`). Кіт і порожні руки — null: кота малює частина котів (у точці `hands`).
+ */
+export function heldFrame(item: Item | null, anim: PersonAnimId | null = null, tool: CleaningTool = "broom"): HeldFrame | null {
+  if (item === null) {
+    if (anim === "phone") return { socket: "held", frame: PHONE_HELD.frame, scale: PHONE_HELD.scale, shift: PHONE_HELD.shift };
+    return null;
+  }
+  if (heldThing(item) === "cat") return null;
+  switch (item.kind) {
+    case "toy":
+      return { socket: "rod", frame: { id: `item/toy/${item.toy.quality}`, state: "hand" }, scale: 1 };
+    case "catfood":
+      return { socket: "held", frame: { id: "item/scoop", state: item.sterile ? "sterile" : item.quality }, scale: 1 };
+    case "raw":
+    case "meal":
+    case "burnt":
+      return { socket: "held", frame: dishFrame(item), scale: 1 };
+    case "vacuum":
+      return tool === "vacuum" ? { socket: "held", frame: VACUUM_HELD.frame, scale: VACUUM_HELD.scale } : { socket: "held", frame: BROOM_HELD.frame, scale: BROOM_HELD.scale };
+    case "thing":
+      return { socket: "held", frame: item.feeder ? feederFrame(item.feeder) : placedFrame(item.item), scale: THING_HELD[item.item.kind] };
+    default:
+      return null;
+  }
+}
+
+/**
+ * Що показати в руках у мить `elapsed` (мс від початку) разової справи `shot`: до миті дотику (`PERSON_CONTACT_MS`: рука
+ * торкається речі — «бере» з полиці, «кладе» на стіл, «викидає», «миски» — висипав корм) — те, що було в руках до події
+ * (`before`), з неї — те, що в руках зараз (`now`). Подія приходить на початку анімації, коли в стані гри річ уже взято чи
+ * покладено: інакше рука тягнеться до полиці вже з річчю, а кладе — порожньою. Без разової з дотиком — `now`.
+ */
+export function shownHeld(before: Item | null, now: Item | null, shot: PersonAnimId | null, elapsed: number): Item | null {
+  if (shot === null || !(shot in PERSON_CONTACT_MS)) return now;
+  return elapsed < PERSON_CONTACT_MS[shot as keyof typeof PERSON_CONTACT_MS] ? before : now;
+}
+
+/**
+ * Ракурс кадру речі в гнізді рук: запис із ракурсами (`views` маніфесту — пилосос `item/vacuum`) — той, у якому персонаж
+ * (`view`), бо щітка лежить на підлозі, а підлога попереду в ¾ спереду нижче на екрані, ніж у ¾ ззаду; без ракурсів — null
+ * (один кадр на обидва).
+ */
+export function heldView(views: readonly ArtView[] | undefined, view: ArtView): ArtView | null {
+  return views?.includes(view) === true ? view : null;
+}
+
+// --- Кіт, якого беруть на руки й опускають ---------------------------------------------------------
+
+/** Плавно 0…1 (smoothstep). */
+function smooth(x: number): number {
+  const c = Math.max(0, Math.min(1, x));
+  return c * c * (3 - 2 * c);
+}
+
+/**
+ * Який кіт у разовій «бере на руки» чи «опускає» (`personEventAnim`): узяв на руки, опустив, кіт зістрибнув із рук від м'яти;
+ * інша подія — null.
+ */
+export function liftedCat(event: GameEvent): number | null {
+  return event.type === "picked-up" || event.type === "put-down" || event.type === "catnip" ? event.cat : null;
+}
+
+/**
+ * Ваги кота біля рук у мить `t` (мс) разової `pickUp` чи `putDown` (контракт N4a): `w` — наскільки кіт у руках
+ * (`personCatLift`), `grip` — наскільки його місце на підлозі під кистями (`personCatGrip`), а не там, де він стоїть сам.
+ * Бере: поки персонаж присідає й тягнеться до кота, той підсувається під кисті (до миті «підхопив»), далі йде вгору з руками.
+ * Опускає: кіт іде з рук на підлогу під кистями (до миті «відпустив»), далі відходить туди, де стоятиме сам (`putDownCat` у
+ * симі ставить його на 0,6 клітинки попереду), — щоб, коли разова скінчиться, частина котів малювала його там само.
+ */
+export function liftWeights(anim: "pickUp" | "putDown", t: number, out = { w: 0, grip: 0 }): { w: number; grip: number } {
+  out.w = personCatLift(anim, t);
+  if (anim === "pickUp") out.grip = smooth(t / PERSON_PICKUP_GRAB_MS);
+  else out.grip = 1 - smooth((t - PERSON_PUTDOWN_RELEASE_MS) / (PERSON_ONE_SHOT_MS.putDown - PERSON_PUTDOWN_RELEASE_MS));
+  return out;
+}
+
+/**
+ * Де корінь кота, якого беруть на руки чи опускають (частина котів, `cats.ts`), px світу: місце на підлозі — lerp(`own` —
+ * там, де кіт стоїть сам; під кистями — `at` мінус `pet`, зсув його спинки від кореня, `grip`), а корінь — lerp(місце на
+ * підлозі, `hands` — гніздо рук, `w`). Пише в `root` і `ground` (місце на підлозі: там тінь).
+ */
+export function liftedRoot(
+  own: Point,
+  lift: { readonly w: number; readonly grip: number; readonly at: Point },
+  pet: Point,
+  hands: Point,
+  root: Point,
+  ground: Point,
+): void {
+  ground.x = own.x + (lift.at.x - pet.x - own.x) * lift.grip;
+  ground.y = own.y + (lift.at.y - pet.y - own.y) * lift.grip;
+  root.x = ground.x + (hands.x - ground.x) * lift.w;
+  root.y = ground.y + (hands.y - ground.y) * lift.w;
+}
+
+// --- Темп ходи ----------------------------------------------------------------------------------
+//
+// Цикли ходи N4a (`walk`, `dash`, `limp`, `trudge`, `dizzy`) підібрано під номінальну швидкість уздовж осі клітинки (256
+// одиниць арту за секунду по горизонталі). Персонаж, що йде вбік екрана, проходить 362 — і з темпом 1 опорна стопа ковзала б
+// уперед на ≈ 30 % кроку. Тож годинник анімацій на ході йде з темпом `personGaitSpeed` (контракт N4a) зі швидкості ніг на
+// екрані, як у котів (`gaitRate`, `iso/catplay.ts`).
+
+/** Анімації ходи персонажа (N4a): у них стопи йдуть по підлозі. */
+const PERSON_GAITS: ReadonlySet<PersonAnimId> = new Set<PersonGait>(["walk", "dash", "limp", "trudge", "dizzy"]);
+
+/** За скільки мс згладжена швидкість доходить до нової на ≈ 63 %: кадри й кроки сима нерівні, і темп не має смикатися. */
+export const PACE_SMOOTH_MS = 80;
+/**
+ * Далі за це (одиниці арту) за кадр — персонажа переставили (сценарій, новий день), а не він пройшов: такий кадр швидкості не
+ * змінює. Ривок (×3 до ходи, ≈ 860 одиниць за секунду) за найдовший кадр вигляду (250 мс) проходить ≈ 215.
+ */
+export const PACE_TELEPORT = 320;
+/**
+ * Найменший темп ходи, поки персонаж іде (кнопку руху натиснуто): уперся в стіну чи щойно рушив — ноги переступають
+ * повільно, а не завмирають посеред кроку.
+ */
+export const GAIT_MIN_RATE = 0.3;
+
+/** Що вигляд пам'ятає між кадрами для темпу ходи: де були ноги (px світу) і згладжена швидкість на екрані (одиниць за секунду). */
+export interface PersonPace {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  /** Чи є минула точка (перший кадр і після `reset` — немає: стоїть). */
+  known: boolean;
+}
+
+/** Нова пам'ять темпу: стоїть, минулої точки немає. */
+export function newPace(): PersonPace {
+  return { x: 0, y: 0, vx: 0, vy: 0, known: false };
+}
+
+/**
+ * Згладжена швидкість ніг на екрані цього кадру (`PACE_SMOOTH_MS`): ноги тепер у (`x`, `y`) px світу, кадр — `seconds`.
+ * Пише в `pace` (той самий об'єкт — щокадру нічого не створюється); переставленого персонажа (`PACE_TELEPORT`) не рахує.
+ */
+export function nextPace(pace: PersonPace, x: number, y: number, seconds: number): PersonPace {
+  const dx = x - pace.x;
+  const dy = y - pace.y;
+  const known = pace.known;
+  pace.x = x;
+  pace.y = y;
+  pace.known = true;
+  if (!known || !(seconds > 0) || Math.hypot(dx, dy) > PACE_TELEPORT) return pace;
+  const k = 1 - Math.exp((-seconds * 1000) / PACE_SMOOTH_MS);
+  pace.vx += (dx / seconds - pace.vx) * k;
+  pace.vy += (dy / seconds - pace.vy) * k;
+  return pace;
+}
+
+/**
+ * Темп годинника анімацій: хода (`walk`, `dash`, `limp`, `trudge`, `dizzy`), поки персонаж іде (`moving`), — у такт його
+ * швидкості на екрані (`personGaitSpeed` N4a), не нижче `GAIT_MIN_RATE`; решта — 1 (стоїть, справи, разові, паморочиться
+ * оглушений на місці).
+ */
+export function gaitRate(anim: PersonAnimId, moving: boolean, pace: PersonPace): number {
+  if (!moving || !PERSON_GAITS.has(anim)) return 1;
+  return Math.max(GAIT_MIN_RATE, personGaitSpeed(anim as PersonGait, pace.vx, pace.vy));
+}

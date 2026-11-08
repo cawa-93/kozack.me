@@ -1,0 +1,10 @@
+{
+  "static": {
+    "hash": "bfbe38b919e44012",
+    "seconds": 5.7,
+    "loop": {
+      "start": 0.1,
+      "end": 5.8
+    }
+  }
+}

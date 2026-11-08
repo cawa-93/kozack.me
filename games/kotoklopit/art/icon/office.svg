@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/office — офіс: дві вежі — висока світла й нижча сіра попереду праворуч — із синіми вікнами рядами. Іконки пунктів поїздок (GAME_DESIGN §11.4 «Іконка біля назви», §8.5 «На місці — кадр парковки»), art/STYLE.md (іконки).
+size 64×64; pivot (32, 32) — центр; points: —. Без станів і шарів: один кадр у готових кольорах; контур — LINE (силует 6, низ 8,5, внутрішні 3,5).
+Біля «Офіс» у «Куди поїхати?», у заголовку картки пункту й на табличці на даху (DESTINATION_ICONS, symbols.ts). Висока будівля з вікнами — не магазин store (низька вітрина з навісом), не відеодзвінок camera і не резюме cv-rejected; не шафа no-room.
+-->
+<defs>
+<clipPath id="icon-office-tall"><path d="M12.4 11Q24 10.4 35.6 11Q36.2 33 35.6 54.8Q24 55.4 12.4 54.8Q11.8 33 12.4 11Z"/></clipPath>
+<clipPath id="icon-office-low"><path d="M33.6 24.6Q42.6 24 51.6 24.6Q52.2 40 51.6 54.8Q42.6 55.4 33.6 54.8Q33 40 33.6 24.6Z"/></clipPath>
+</defs>
+<g id="p-tall">
+<path d="M12.4 11Q24 10.4 35.6 11Q36.2 33 35.6 54.8Q24 55.4 12.4 54.8Q11.8 33 12.4 11Z" fill="#cdc6be"/>
+<path d="M16.4 15.4L22.4 15.2L22.4 19.8L16.4 20ZM25 15.4L31 15.2L31 19.8L25 20ZM16.4 22.8L22.4 22.6L22.4 27.2L16.4 27.4ZM25 22.8L31 22.6L31 27.2L25 27.4ZM16.4 30.2L22.4 30L22.4 34.6L16.4 34.8ZM25 30.2L31 30L31 34.6L25 34.8ZM16.4 37.6L22.4 37.4L22.4 42L16.4 42.2ZM25 37.6L31 37.4L31 42L25 42.2ZM16.4 45L22.4 44.8L22.4 49.4L16.4 49.6ZM25 45L31 44.8L31 49.4L25 49.6Z" fill="#6c84a3"/>
+<path d="M0 46Q24 45 48 46.4L48 64L0 64Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-office-tall)"/>
+<path d="M21.6 5.6L26.4 5.6L26.4 11L21.6 11Z" fill="#a69f9b"/>
+<path d="M21.6 10.6L21.6 6.4Q24 5.8 26.4 6.4L26.4 10.6" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M12.4 11Q24 10.4 35.6 11Q36.2 33 35.6 54.8Q24 55.4 12.4 54.8Q11.8 33 12.4 11Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-low">
+<path d="M33.6 24.6Q42.6 24 51.6 24.6Q52.2 40 51.6 54.8Q42.6 55.4 33.6 54.8Q33 40 33.6 24.6Z" fill="#a69f9b"/>
+<path d="M37.6 29.4L42.4 29.2L42.4 33.8L37.6 34ZM44.8 29.4L49.6 29.2L49.6 33.8L44.8 34ZM37.6 36.8L42.4 36.6L42.4 41.2L37.6 41.4ZM44.8 36.8L49.6 36.6L49.6 41.2L44.8 41.4ZM37.6 44.2L42.4 44L42.4 48.6L37.6 48.8ZM44.8 44.2L49.6 44L49.6 48.6L44.8 48.8Z" fill="#52677f"/>
+<path d="M30 46.4Q42 45.4 56 46.6L56 64L30 64Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-office-low)"/>
+<path d="M33.6 24.6Q42.6 24 51.6 24.6Q52.2 40 51.6 54.8Q42.6 55.4 33.6 54.8Q33 40 33.6 24.6Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-bottom">
+<path d="M12.4 54.8Q32 55.6 51.6 54.8" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

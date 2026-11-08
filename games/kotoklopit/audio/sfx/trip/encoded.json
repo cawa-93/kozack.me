@@ -1,0 +1,62 @@
+{
+  "car-door-1": {
+    "hash": "341968253031d797",
+    "seconds": 0.17
+  },
+  "handbrake-1": {
+    "hash": "5001d1d86efeecb4",
+    "seconds": 0.41
+  },
+  "horn-1": {
+    "hash": "dc908928cfd5b4e4",
+    "seconds": 0.28
+  },
+  "horn-2": {
+    "hash": "29d2c4c0d7de87da",
+    "seconds": 0.326
+  },
+  "horn-3": {
+    "hash": "438a7c5d333629fd",
+    "seconds": 0.44
+  },
+  "engine-start-1": {
+    "hash": "bcc01bd171ee7b5c",
+    "seconds": 0.73
+  },
+  "engine-stop-1": {
+    "hash": "8606fefb2dc8b885",
+    "seconds": 0.55
+  },
+  "rev-1": {
+    "hash": "b29b90b173cf136c",
+    "seconds": 0.6
+  },
+  "rev-2": {
+    "hash": "bd570ab73e91c48b",
+    "seconds": 0.6
+  },
+  "rev-3": {
+    "hash": "a35e9ca2796ad3ef",
+    "seconds": 0.6
+  },
+  "crash-1": {
+    "hash": "74fc7914d0c25ef3",
+    "seconds": 0.95
+  },
+  "engine-loop": {
+    "hash": "a606b7c39eeb108d",
+    "seconds": 1.1,
+    "loop": {
+      "start": 0.1,
+      "end": 1.2
+    }
+  },
+  "engine-high": {
+    "hash": "139b2c53df7d7e3b",
+    "seconds": 1.7,
+    "loop": {
+      "start": 0.1,
+      "end": 1.8
+    }
+  }
+}

@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 144" width="144" height="144">
+<!-- env/trace/boxes-chewed/front — котячий слід «погризений клапан коробки» (§9.12, «Котячі сліди в квартирі»): накладка на env/boxes/front.
+size 144×144; pivot (72, 104) — той самий, що в env/boxes/front і env/boxes; points: —.
+Стани — ті самі, що в купи (st-pile-1…4). Той самий зубчастий надгриз лівого переднього клапана, що й env/trace/boxes-chewed (з контуром
+клапана поверх, обтятим рамкою довкола надгризу), але на кадрі передніх стінок, який у грі лягає поверх кота у верхній коробці: без цієї частини
+надгриз ховався б під клапаном. Тут надгриз обтятий по самому клапану: його верх, що заходить на внутрішню стінку коробки за котом,
+лишається лише в env/trace/boxes-chewed, тож не лягає на кота (у старому env/boxes/front ця латка висіла над котом). Без накладки
+клапани цілі. Без шарів.
+-->
+<defs>
+<clipPath id="env-trace-boxes-chewed-front-flap-1"><path d="M30.3 45.6L26.8 39.7Q25.8 38 27.6 38.8Q47.3 46.7 66.4 56Q68.2 56.8 69 58.6L72.7 66.8L30.3 45.6Z"/></clipPath>
+<clipPath id="env-trace-boxes-chewed-front-flap-2"><path d="M41.2 48L38.7 43.8Q37.6 42.1 39.5 42.9Q52.1 47.2 64 53.1Q65.9 53.8 66.7 55.7L69.5 62.1L41.2 48Z"/></clipPath>
+<clipPath id="env-trace-boxes-chewed-front-flap-3"><path d="M40.1 47L37.8 43.4Q36.7 41.7 38.6 42.5Q52.4 47.5 65.5 53.9Q67.4 54.7 68.2 56.5L70.7 62.3L40.1 47Z"/></clipPath>
+<clipPath id="env-trace-boxes-chewed-front-flap-4"><path d="M41.7 47.2L39.4 43.6Q38.4 41.9 40.2 42.7Q50.8 46 60.7 50.9Q62.5 51.6 63.3 53.4L65.8 59.3L41.7 47.2Z"/></clipPath>
+<clipPath id="env-trace-boxes-chewed-front-1"><path d="M41.5 43.7L58.7 43.7L58.7 53.9L41.5 53.9Z"/></clipPath>
+<clipPath id="env-trace-boxes-chewed-front-2"><path d="M45.6 44L62.8 44L62.8 54.2L45.6 54.2Z"/></clipPath>
+<clipPath id="env-trace-boxes-chewed-front-3"><path d="M46 44.2L63.2 44.2L63.2 54.4L46 54.4Z"/></clipPath>
+<clipPath id="env-trace-boxes-chewed-front-4"><path d="M45.7 41.7L59.2 41.7L59.2 52.9L45.7 52.9Z"/></clipPath>
+</defs>
+<g id="p-chewed-1" class="st-pile-1">
+<g clip-path="url(#env-trace-boxes-chewed-front-flap-1)">
+<path d="M43.1 46.3L46.1 51.3L48.1 47.3L51.1 52.3L53.1 48.3L56.1 51.3L57.1 45.3Z" fill="#a07a4c"/>
+</g>
+<g clip-path="url(#env-trace-boxes-chewed-front-1)">
+<path d="M30.3 45.6L26.8 39.7Q25.8 38 27.6 38.8Q47.3 46.7 66.4 56Q68.2 56.8 69 58.6L72.7 66.8L30.3 45.6Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+<g id="p-chewed-2" class="st-pile-2">
+<g clip-path="url(#env-trace-boxes-chewed-front-flap-2)">
+<path d="M47.2 46.6L50.2 51.6L52.2 47.6L55.2 52.6L57.2 48.6L60.2 51.6L61.2 45.6Z" fill="#a07a4c"/>
+</g>
+<g clip-path="url(#env-trace-boxes-chewed-front-2)">
+<path d="M41.2 48L38.7 43.8Q37.6 42.1 39.5 42.9Q52.1 47.2 64 53.1Q65.9 53.8 66.7 55.7L69.5 62.1L41.2 48Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+<g id="p-chewed-3" class="st-pile-3">
+<g clip-path="url(#env-trace-boxes-chewed-front-flap-3)">
+<path d="M47.6 46.8L50.6 51.8L52.6 47.8L55.6 52.8L57.6 48.8L60.6 51.8L61.6 45.8Z" fill="#a07a4c"/>
+</g>
+<g clip-path="url(#env-trace-boxes-chewed-front-3)">
+<path d="M40.1 47L37.8 43.4Q36.7 41.7 38.6 42.5Q52.4 47.5 65.5 53.9Q67.4 54.7 68.2 56.5L70.7 62.3L40.1 47Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+<g id="p-chewed-4" class="st-pile-4">
+<g clip-path="url(#env-trace-boxes-chewed-front-flap-4)">
+<path d="M47.3 46.1L49.9 50.9L51.1 46.5L53.7 51.3L54.9 46.9L57.4 49.6L57.6 43.3Z" fill="#a07a4c"/>
+</g>
+<g clip-path="url(#env-trace-boxes-chewed-front-4)">
+<path d="M41.7 47.2L39.4 43.6Q38.4 41.9 40.2 42.7Q50.8 46 60.7 50.9Q62.5 51.6 63.3 53.4L65.8 59.3L41.7 47.2Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+</svg>

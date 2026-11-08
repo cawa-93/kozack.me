@@ -1,0 +1,78 @@
+{
+  "open": {
+    "hash": "604e9d44d2126c48",
+    "seconds": 0.075896
+  },
+  "close": {
+    "hash": "101fe659cc209eb5",
+    "seconds": 0.094875
+  },
+  "click-1": {
+    "hash": "3a11df1f264d72fe",
+    "seconds": 0.06
+  },
+  "click-2": {
+    "hash": "1b405b0b6984cad8",
+    "seconds": 0.06
+  },
+  "click-3": {
+    "hash": "097684dec3f232dc",
+    "seconds": 0.06
+  },
+  "tab": {
+    "hash": "cdfa703a75c44cf7",
+    "seconds": 0.145208
+  },
+  "refused-1": {
+    "hash": "a452fa73c136681e",
+    "seconds": 0.205
+  },
+  "refused-2": {
+    "hash": "82c6036b78071dd8",
+    "seconds": 0.19
+  },
+  "empty-1": {
+    "hash": "a6a555c6f2f4ff7a",
+    "seconds": 0.155
+  },
+  "empty-2": {
+    "hash": "1336c81d22d8ed23",
+    "seconds": 0.15
+  },
+  "notify": {
+    "hash": "3ec3d65354a3855c",
+    "seconds": 0.05
+  },
+  "ordered": {
+    "hash": "d6937e470bd603f1",
+    "seconds": 1.071021
+  },
+  "bought": {
+    "hash": "de6888c022c72f5f",
+    "seconds": 0.42
+  },
+  "retired": {
+    "hash": "47c206c8e5efefca",
+    "seconds": 2.74
+  },
+  "low-stat": {
+    "hash": "4a97d27229e061d6",
+    "seconds": 0.917333
+  },
+  "end": {
+    "hash": "dccd17f20904a02f",
+    "seconds": 2.9
+  },
+  "morning-1": {
+    "hash": "b3253f2fc3817e74",
+    "seconds": 2.155
+  },
+  "morning-2": {
+    "hash": "99dac9decd1db73c",
+    "seconds": 1.735
+  },
+  "morning-3": {
+    "hash": "efed41cc6fede2ea",
+    "seconds": 1.715
+  }
+}
