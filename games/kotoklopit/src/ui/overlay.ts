@@ -255,8 +255,8 @@ export class Overlay {
       panel.append(head);
     } else if (title) panel.append(title);
     if (card.tabs) {
-      // Рядок вкладок липне до верху картки (`.card-tabbar`) разом із хрестиком: товари каталогу, що прокручуються, не
-      // пропливають під хрестиком (рішення виконавця 2026-11-03: раніше там липнув підсумок магазину, а тепер кошик унизу).
+      // Рядок вкладок липне до верху картки (`.card-tabbar`): каталог прокручується під ним. У телефоні над вкладками ще й рядок
+      // стану, а хрестик — кнопка на корпусі (`phone.css`).
       const tabbar = element("div", "card-tabbar");
       const tabs = element("div", "card-tabs");
       tabs.setAttribute("role", "tablist");
