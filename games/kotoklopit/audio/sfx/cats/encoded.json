@@ -208,8 +208,8 @@
     }
   },
   "land-2": {
-    "hash": "fd6ee04ba6b44408",
-    "seconds": 0.5
+    "hash": "636d44b9df8a4974",
+    "seconds": 0.125
   },
   "claw-1": {
     "hash": "ebfb0a2832adb219",
@@ -300,8 +300,8 @@
     "seconds": 0.092896
   },
   "spark-1": {
-    "hash": "7a6ecffb26811dad",
-    "seconds": 0.98
+    "hash": "a22fb25cf4cd06bf",
+    "seconds": 0.5
   },
   "cabinet-open-1": {
     "hash": "42547a2759536c12",

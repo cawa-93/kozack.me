@@ -51,10 +51,6 @@
     "hash": "186cd7bf336889e1",
     "seconds": 1.86
   },
-  "discard": {
-    "hash": "03b8ddfd9c6f7305",
-    "seconds": 0.46
-  },
   "unpack-1": {
     "hash": "26d26ef572c2ed43",
     "seconds": 0.52
@@ -72,8 +68,8 @@
     "seconds": 0.42
   },
   "doorbell": {
-    "hash": "9969292e5ac58e7c",
-    "seconds": 2.9
+    "hash": "7fb94d1d0b15741d",
+    "seconds": 1.4
   },
   "knock": {
     "hash": "1231d41e44f9f40e",

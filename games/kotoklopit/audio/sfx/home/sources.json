@@ -373,13 +373,6 @@
       "fadeOut": 0.08,
       "note": "Кришка смітника: відкрили, кинули, закрили"
     },
-    "discard": {
-      "from": "trash-lid",
-      "start": 1.4,
-      "end": 1.86,
-      "fadeOut": 0.06,
-      "note": "Річ викинули з телефона: лише кришка"
-    },
     "unpack-1": {
       "from": "fs-box-open",
       "start": 0.2,
@@ -406,9 +399,9 @@
     },
     "doorbell": {
       "from": "doorbell",
-      "end": 2.9,
-      "fadeOut": 0.4,
-      "note": "Дзвінок у двері"
+      "end": 1.4,
+      "fadeOut": 0.45,
+      "note": "Дзвінок у двері: «дінь-дон», коротко згасає"
     },
     "knock": {
       "from": "fs-cat-kick",

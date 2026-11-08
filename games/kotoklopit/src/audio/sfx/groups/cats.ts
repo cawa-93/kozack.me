@@ -54,7 +54,7 @@ const SOUNDS: Record<string, SoundDef> = {
   "pen-drop": { files: ["pen-drop-1"], gain: 0.9, pitch: 0.08, cooldownMs: 300 },
   // Лапи на клавіатурі — серія кліків з однієї події: без паузи між ними.
   keys: { files: ["keys-1"], gain: 0.6, pitch: 0.06, spread: 0.2, cooldownMs: 0, voices: 3 },
-  spark: { files: ["spark-1"], gain: 1, pitch: 0.04, cooldownMs: 800 },
+  spark: { files: ["spark-1"], gain: 0.3, pitch: 0.04, cooldownMs: 800 },
   "cabinet-open": { files: ["cabinet-open-1"], gain: 0.75, pitch: 0.04, cooldownMs: 600 },
   "cabinet-lock": { files: ["cabinet-lock-1"], gain: 0.75, pitch: 0.06, cooldownMs: 600 },
   tap: { files: ["tap-1"], gain: 0.6, cooldownMs: 1000, voices: 1 },

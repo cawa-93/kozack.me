@@ -1,14 +1,5 @@
 {
   "originals": {
-    "gs-close-menu": {
-      "file": "commons/Close_menu_1_(Gravity_Sound).wav",
-      "url": "https://commons.wikimedia.org/wiki/File:Close_menu_1_(Gravity_Sound).wav",
-      "title": "Close menu 1 (Gravity Sound)",
-      "author": "Gravity Sound",
-      "license": "CC-BY-4.0",
-      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
-      "sha256": "a455c8d8d4551aaaf7ad5dd235ccadc52ba2f7b170e6639adadfc1db9bc0164b"
-    },
     "gs-clicking": {
       "file": "commons/Clicking_(Gravity_Sound).wav",
       "url": "https://commons.wikimedia.org/wiki/File:Clicking_(Gravity_Sound).wav",
@@ -126,11 +117,11 @@
       "note": "Картка відкрилась: «поп»"
     },
     "close": {
-      "from": "gs-close-menu",
-      "start": 0,
-      "end": 0.16,
-      "fadeOut": 0.06,
-      "note": "Картка закрилась"
+      "from": "fs-pop",
+      "start": 0.035,
+      "filter": "asetrate=35280,aresample=48000",
+      "fadeOut": 0.03,
+      "note": "Картка закрилась: той самий «поп», що й відкриття, нижче"
     },
     "click-1": {
       "from": "gs-clicking",

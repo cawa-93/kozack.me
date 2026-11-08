@@ -32,7 +32,7 @@ export const group: SoundGroup = {
   // найгучніші в групі; виміряно за найгучнішими 300 мс файлу.
   sounds: {
     open: { files: ["open"], gain: 1, pitch: 0.02, ui: true },
-    close: { files: ["close"], gain: 0.14, pitch: 0.02, ui: true },
+    close: { files: ["close"], gain: 0.52, pitch: 0.02, ui: true },
     click: { files: ["click-1", "click-2", "click-3"], gain: 0.4, pitch: 0.04, cooldownMs: 40, ui: true },
     tab: { files: ["tab"], gain: 0.11, pitch: 0.03, cooldownMs: 40, ui: true },
     // Відмови бувають поспіль, коли гравець тисне знову й знову: пауза, щоб «бум» не тарабанив.

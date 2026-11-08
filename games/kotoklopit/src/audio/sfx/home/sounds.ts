@@ -17,7 +17,7 @@ export const HOME_SOUNDS = {
   "thing-take": { files: variants("dish-pick", 3), gain: 0.3, pitch: 0.06 },
   "thing-put": { files: ["parcel"], gain: 0.8, pitch: 0.06 },
   trash: { files: ["trash"], gain: 0.5, pitch: 0.04 },
-  discard: { files: ["discard"], gain: 0.45, pitch: 0.04 },
+  discard: { files: ["trash"], gain: 0.45, pitch: 0.04 },
   // Запаси й пакунки.
   unpack: { files: ["unpack-1"], gain: 1, pitch: 0.04 },
   parcel: { files: ["parcel"], gain: 1 },

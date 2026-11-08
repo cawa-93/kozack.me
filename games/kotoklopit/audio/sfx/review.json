@@ -807,16 +807,6 @@
     "print": "0.33|career-up:418c4b8a041eda54",
     "at": "2026-11-08T06:29:03.924Z"
   },
-  "work/keyboard": {
-    "decision": "replace",
-    "print": "0.55|keyboard:e02a951164430a2a",
-    "at": "2026-11-08T06:27:49.336Z"
-  },
-  "work/murmur": {
-    "decision": "replace",
-    "print": "0.28|murmur:92d14ef21a4b8dfa",
-    "at": "2026-11-08T06:28:16.479Z"
-  },
   "work/rejected": {
     "decision": "ok",
     "print": "0.45|rejected:c9490c5172608adb",

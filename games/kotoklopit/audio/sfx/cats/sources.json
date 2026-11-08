@@ -807,9 +807,10 @@
     "land-2": {
       "from": "dc-tail",
       "start": 0,
-      "end": 0.4,
+      "end": 0.1,
       "filter": "asetrate=35280,aresample=48000",
-      "fadeOut": 0.05
+      "fadeOut": 0.04,
+      "note": "Кота поставили: лише м'який удар, без шуму після нього"
     },
     "claw-1": {
       "from": "fs-scratching",
@@ -939,10 +940,12 @@
     },
     "spark-1": {
       "from": "dc-sparks",
-      "start": 24.72,
+      "start": 25.2,
       "end": 25.7,
       "filter": "highpass=f=200",
-      "fadeOut": 0.1
+      "fadeIn": 0.02,
+      "fadeOut": 0.1,
+      "note": "Іскра: лише рівне тріскотіння другої половини"
     },
     "cabinet-open-1": {
       "from": "dc-latch",
