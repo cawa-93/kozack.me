@@ -70,5 +70,13 @@
       "start": 0.1,
       "end": 6.1
     }
+  },
+  "mouse-1": {
+    "hash": "b578bba5e7687e8f",
+    "seconds": 0.155
+  },
+  "mouse-2": {
+    "hash": "a63395d85739e34e",
+    "seconds": 0.125
   }
 }

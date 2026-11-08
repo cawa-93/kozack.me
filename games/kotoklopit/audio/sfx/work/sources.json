@@ -143,6 +143,15 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "3c5b4fce6c50309c4e5f1601b5469805f00f2ef2e77799e92ef18391866ad7b3"
+    },
+    "fs-mouse-clicks": {
+      "file": "freesound/643560__el_boss__corsair-m65-rgb-mouse-click-sound.wav",
+      "url": "https://freesound.org/people/el_boss/sounds/643560/",
+      "title": "Corsair M65 RGB Mouse Click Sound",
+      "author": "el_boss",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "3c5d6abe2b0912ac973975efc12bfa8acc686ff2161a6716efff1c207be44795"
     }
   },
   "files": {
@@ -247,6 +256,20 @@
       "filter": "highpass=f=250,highpass=f=250,lowpass=f=800,lowpass=f=800",
       "loop": true,
       "note": "Гамір колег на дзвінку петлею: розмови в кав'ярні, звужені до нерозбірливого бубоніння з динаміка"
+    },
+    "mouse-1": {
+      "from": "fs-mouse-clicks",
+      "start": 2.345,
+      "end": 2.5,
+      "fadeOut": 0.02,
+      "note": "клік миші: натиснув і відпустив"
+    },
+    "mouse-2": {
+      "from": "fs-mouse-clicks",
+      "start": 9.075,
+      "end": 9.2,
+      "fadeOut": 0.02,
+      "note": "клік миші: натиснув і відпустив"
     }
   }
 }

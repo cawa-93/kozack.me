@@ -57,6 +57,7 @@ export const group: SoundGroup = {
     "work-start": { files: ["work-start"], gain: 0.15 },
     // Клавіша: одна, а набір складає `work/typing.ts`; розкид висоти й гучності — щоб клавіші звучали по-різному.
     key: { files: ["key-1"], gain: 0.3, pitch: 0.08, spread: 0.25, cooldownMs: 30, voices: 3 },
+    mouse: { files: ["mouse-1", "mouse-2"], gain: 0.3, pitch: 0.04, spread: 0.15, cooldownMs: 0, voices: 2 },
     murmur: { files: ["murmur"], loop: true, gain: 0.28 },
     // Дзвінок — сама картка «Мама дзвонить»: поки вона висить, час стоїть, а дзвінок не тихне.
     ring: { files: ["ring"], loop: true, gain: 0.4, ui: true },

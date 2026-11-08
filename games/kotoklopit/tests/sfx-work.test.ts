@@ -119,6 +119,24 @@ describe("звуки роботи: петлі зі стану (§8.6, §4.1)", (
     expect(clicks(1000)).toEqual([]);
   });
 
+  it("задумавшись, персонаж клацає мишею посеред паузи", () => {
+    const state = game().current;
+    state.minute = 15 * 60;
+    startWork(state);
+    const pensive = new Typing(() => 0.05);
+    const heard: Cue[] = [];
+    for (let t = 0; t < 5000; t += 16) heard.push(...pensive.tick(state, 16));
+    const mouse = heard.filter((cue) => cue.sound === "mouse");
+    expect(mouse.length).toBeGreaterThan(0);
+    for (const cue of mouse) expect(cue.delayMs).toBeGreaterThanOrEqual(TYPING.think[0] * TYPING.mouseAt[0]);
+    expectPlayable(heard, false);
+    // Задумується лише зрідка: за середніх випадковостей миші немає.
+    const busy = new Typing(() => 0.5);
+    const typed: Cue[] = [];
+    for (let t = 0; t < 5000; t += 16) typed.push(...busy.tick(state, 16));
+    expect(typed.some((cue) => cue.sound === "mouse")).toBe(false);
+  });
+
   it("летучка з симуляції: гудок виклику, гамір колег замість клавіатури, потім знову клавіатура", () => {
     const save = game();
     const state = save.current;
