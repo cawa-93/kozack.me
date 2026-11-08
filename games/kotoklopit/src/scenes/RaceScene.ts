@@ -17,6 +17,7 @@ import Phaser from "phaser";
 import { PALETTE } from "../../art/palette";
 import { uiSound } from "../audio/sfx/sounds";
 import { Horns } from "../audio/sfx/trip/horns";
+import { Revs } from "../audio/sfx/trip/revs";
 import { drive } from "../sim/game";
 import { trafficFactor } from "../sim/modifiers";
 import { carAt, type RaceInput } from "../sim/race";
@@ -156,6 +157,8 @@ export class RaceScene extends Phaser.Scene {
   private touched = false;
   /** Машини позаду сигналять, коли пригальмували за персонажем (§8.5). */
   private readonly horns = new Horns();
+  /** Мотор гарчить, коли гравець натиснув газ. */
+  private readonly revs = new Revs();
   /** Сцена показує гонку від самого старту (від'їзд від дому чи свіжа гонка), а не з середини після перезавантаження (`startHintShown`). */
   private fromStart = false;
   private keys: Record<"up" | "down" | "up2" | "down2", Phaser.Input.Keyboard.Key> | null = null;
@@ -373,9 +376,13 @@ export class RaceScene extends Phaser.Scene {
     if (state.trip?.phase !== "drive" || state.end !== null) return this.finish({ mode: "race" });
     if (this.running()) {
       const seconds = Math.min(delta / 1000, MAX_FRAME_SECONDS);
-      const { result, night } = drive(this.session.save, raceMinutes(seconds) * this.session.speed, this.input_());
+      const input = this.input_();
+      const { result, night } = drive(this.session.save, raceMinutes(seconds) * this.session.speed, input);
       const race = this.state.trip?.race;
-      if (result === null && race && this.horns.tick(race, seconds * 1000)) uiSound("trip", "horn");
+      if (result === null && race) {
+        if (this.horns.tick(race, seconds * 1000)) uiSound("trip", "horn");
+        if (this.revs.tick(input.throttle)) uiSound("trip", "rev");
+      }
       // Врізалися (сим уже застосував аварію, §8.5) — спершу анімація аварії тут, а картку покаже день.
       if (result === "crash" && night === null && state.end === null) return this.startCrash();
       // Доїхали (§8.5 «На місці — кадр парковки») — спершу прибуття на парковку тут, а картку пункту покаже день поверх неї.

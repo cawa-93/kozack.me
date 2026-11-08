@@ -53,6 +53,15 @@
       "license": "CC-BY-4.0",
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
       "sha256": "850239c5796bb0420e1682194d31e9a2f6e8fc8f0a08eeb92a3264bc4df623b7"
+    },
+    "fs-revs": {
+      "file": "freesound/592409__dan_audiofile__fr-car-engine-start-revs-engine.wav",
+      "url": "https://freesound.org/people/Dan_AudioFile/sounds/592409/",
+      "title": "FR- Car engine, start, revs, Engine.wav",
+      "author": "Dan_AudioFile",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "sha256": "2a8c264216e2484db2fb71d4155fa4e752cd61eda76fdda60a16d8fa4cd8b038"
     }
   },
   "files": {
@@ -107,6 +116,28 @@
       "fadeIn": 0.05,
       "fadeOut": 0.08,
       "note": "мотор глухне"
+    },
+    "rev-1": {
+      "from": "fs-revs",
+      "start": 28.25,
+      "end": 28.85,
+      "fadeIn": 0.03,
+      "fadeOut": 0.2,
+      "note": "газування: «вррум» з холостих"
+    },
+    "rev-2": {
+      "from": "fs-revs",
+      "start": 33.25,
+      "end": 33.85,
+      "fadeIn": 0.03,
+      "fadeOut": 0.2
+    },
+    "rev-3": {
+      "from": "fs-revs",
+      "start": 35.38,
+      "end": 35.98,
+      "fadeIn": 0.03,
+      "fadeOut": 0.2
     }
   }
 }

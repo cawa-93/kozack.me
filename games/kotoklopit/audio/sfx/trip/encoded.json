@@ -26,5 +26,17 @@
   "engine-stop-1": {
     "hash": "f043f4f740969da8",
     "seconds": 0.55
+  },
+  "rev-1": {
+    "hash": "b29b90b173cf136c",
+    "seconds": 0.6
+  },
+  "rev-2": {
+    "hash": "bd570ab73e91c48b",
+    "seconds": 0.6
+  },
+  "rev-3": {
+    "hash": "a35e9ca2796ad3ef",
+    "seconds": 0.6
   }
 }
