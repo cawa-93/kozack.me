@@ -16,6 +16,8 @@ import { catalog, type CartLine } from "../sim/shop";
 import { element, type Card, type CardAction } from "./overlay";
 import { breedLine, breedText, plural } from "./cards";
 import { traitChips } from "./traits";
+import "./tripmap.css";
+import "./places.css";
 
 /** Невдале дешеве лікування цієї поїздки не повторюють — ні у ветеринара, ні в лікаря (§8.5; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6). */
 const NO_RETRY = "не допомогло — повторно лише наступного разу";

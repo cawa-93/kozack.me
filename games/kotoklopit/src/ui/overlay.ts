@@ -5,6 +5,7 @@ import { uiSound } from "../audio/sfx/sounds";
 import { drawGlyphs } from "./glyphs";
 import { drawIcons } from "./icons";
 import "./overlay.css";
+import type { Destination } from "../sim/types";
 
 export interface CardAction {
   label: string;
@@ -20,6 +21,9 @@ export interface CardTab {
   active?: boolean;
   onSelect: () => void;
 }
+
+/** Своє оформлення картки: радіо (§8.10), телефон (§6.4), мапа «Куди поїхати?» і картки на місці (§8.5 «Оформлення поїздок»). */
+export type CardSkin = "radio" | "phone" | "map" | `place-${Destination}`;
 
 export interface Card {
   kicker?: string;
@@ -56,8 +60,8 @@ export interface Card {
   onDismiss?: () => void;
   /** Хрестик у кутку замість кнопки «Скасувати» чи «Закрити»; натискання — як Esc. */
   closable?: boolean;
-  /** Своє оформлення картки замість паперу: клас `card-<skin>`. */
-  skin?: "radio";
+  /** Своє оформлення картки замість паперу: клас `card-<skin>`; пункт поїздки ще й `card-place` (§8.5 «Оформлення поїздок»). */
+  skin?: CardSkin;
   /** Темне тло: гра ще не почалася (меню, нова гра), тож квартиру за карткою не видно. */
   solid?: boolean;
 }
@@ -226,7 +230,7 @@ export class Overlay {
     this.root.classList.remove("cinematic", "dawn");
     this.root.classList.toggle("solid", card.solid ?? false);
     if (card.solid) this.root.classList.remove("aside", "away");
-    const panel = element("section", card.skin ? `card card-${card.skin}` : "card");
+    const panel = element("section", ["card", ...(card.skin ? [`card-${card.skin}`] : []), ...(card.skin?.startsWith("place-") ? ["card-place"] : [])].join(" "));
     panel.setAttribute("role", "dialog");
     panel.setAttribute("aria-modal", "true");
     if (card.closable && card.onDismiss) {

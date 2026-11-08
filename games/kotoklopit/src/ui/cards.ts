@@ -1,6 +1,7 @@
 // Вміст карток: титулка дня з ранковими повідомленнями, кінець гри, телефон, нова гра.
 
 import { PALETTE } from "../../art/palette";
+import "./phone.css";
 import { MODIFIERS, NAME_MAX_LENGTH, WAKE_MINUTE, WAKE_UP } from "../sim/config";
 import { supplyCount, utilitiesDue } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
