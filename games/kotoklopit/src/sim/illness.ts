@@ -19,7 +19,7 @@ export function fallIllPerson(state: GameState, id: IllnessId): boolean {
   return true;
 }
 
-function curePerson(state: GameState, id: IllnessId): void {
+export function curePerson(state: GameState, id: IllnessId): void {
   state.character.illnesses = state.character.illnesses.filter((i) => i.id !== id);
   // Вилікуване виснаження знімає й накопичений недосип: рахунок трьох коротких ночей починається заново (§6.5, загальна
   // ревізія 2026-10-29). Інакше після лікаря одна коротка ніч одразу повертала хворобу. Після доброго сну лічильник і так 0.
@@ -62,12 +62,12 @@ export function nightlyIllness(state: GameState, sleptHours: number): void {
   }
 }
 
-/** Чи є що лікувати таблеткою сьогодні: хвороба, що лікується ліками, і сьогодні ще без дози (§6.5). */
 /** Персонаж хворий тим, що лікують ліками (§6.5), — хай навіть сьогоднішню дозу вже випито. */
 export function treatable(state: GameState): boolean {
   return state.character.illnesses.some((i) => ILLNESSES[i.id].doses !== null);
 }
 
+/** Чи є що лікувати ліками сьогодні: хвороба, що лікується ліками, і сьогодні ще без дози (§6.5). */
 export function needsHumanMeds(state: GameState): boolean {
   return state.character.illnesses.some((i) => ILLNESSES[i.id].doses !== null && i.lastDose !== state.day);
 }

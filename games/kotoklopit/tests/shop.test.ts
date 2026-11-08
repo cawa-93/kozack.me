@@ -188,7 +188,7 @@ describe("магазин відкривається поступово (§11.3а
 
   it("до першого кота — лише запаси для себе; з першим котом — котячі запаси й речі, і вже назавжди (рішення автора 2026-10-29, дрібні питання)", () => {
     const state = game().current;
-    expect(shown(state)).toEqual(["detergent", "food", "humanMeds", "hygiene"]);
+    expect(shown(state)).toEqual(["detergent", "dressing", "food", "humanMeds", "hygiene"]);
     addCat(state, createCat(state, createRng(1), { source: "shelter", ageWeeks: 3, at: { x: 5.5, y: 8.5 } }));
     const withCat = shown(state);
     for (const key of ["catFood", "litter", "pills", "drops", "treats", "collar", "shampoo", "catnip", "thing:bowl", "thing:litter", "thing:carrier", "thing:lock", "thing:robot"]) {

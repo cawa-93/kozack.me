@@ -20,7 +20,8 @@ import type { Address, Chronotype, Difficulty, GameState, Look, NightReport, Sav
 import { isWorking, newJob, tickWork } from "./work";
 import { momAtNight, tickModifiers } from "./modifiers";
 
-export const SAVE_VERSION = 1;
+// Нова версія — щойно стан отримав поле, без якого старе збереження ламає гру (міграцій немає, §12.2).
+export const SAVE_VERSION = 2;
 
 const EPSILON = 1e-6;
 

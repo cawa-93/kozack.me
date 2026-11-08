@@ -569,7 +569,7 @@ describe("картки поїздок (§8.5)", () => {
     expect(text).toContain("Ліки");
   });
 
-  it("ветеринар — ліки для котів (таблетки й краплі), лікар — ліки для себе: розділ «Ліки» й смуга кошика з «Додому»", () => {
+  it("ветеринар — ліки для котів (таблетки й краплі), лікар — ліки для себе, пластир і бинт: розділ «Ліки» й смуга кошика з «Додому»", () => {
     const vet = visitCard(at("vet"), { exam: null, done: [] }, handlers);
     const vetList = vet.body.map((b) => (typeof b === "string" ? null : fake(b))).filter((b): b is FakeElement => b !== null && b.findAll("shop-item").length > 0)[0];
     expect(vetList?.findAll("shop-section").map((s) => s.textContent)).toEqual(["Ліки"]);
@@ -579,10 +579,10 @@ describe("картки поїздок (§8.5)", () => {
     expect(vet.actions).toEqual([]);
     expect(vet.bar ? fake(vet.bar).find("shop-pay").textContent : "").toBe("Додому");
 
-    // Лікар продає ліки й здоровому.
+    // Лікар продає ліки, пластир і бинт і здоровому.
     const doctor = visitCard(at("doctor"), { exam: null, done: [] }, handlers);
     const docList = doctor.body.map((b) => (typeof b === "string" ? null : fake(b))).find((b) => b !== null && b.findAll("shop-item").length > 0);
-    expect(docList?.findAll("shop-name").map((n) => plain(n.textContent))).toEqual(names([{ product: "humanMeds" }]));
+    expect(docList?.findAll("shop-name").map((n) => plain(n.textContent))).toEqual(names([{ product: "humanMeds" }, { product: "dressing" }]));
     expect(doctor.bar ? fake(doctor.bar).find("shop-pay").textContent : "").toBe("Додому");
   });
 

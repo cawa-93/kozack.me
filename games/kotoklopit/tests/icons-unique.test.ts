@@ -340,7 +340,7 @@ describe("унікальна іконка на унікальний кейс (§
     }
     expect(new Set(DESTINATION_LIST.map((d) => DESTINATION_ICONS[d])).size).toBe(DESTINATION_LIST.length);
     // Ветеринар і лікар — не аптечка, не ліки й не хвороби; притулок — не будиночок із магазину.
-    const medical = [icon("refusal:kit-empty"), icon("supply:pills"), icon("supply:humanMeds"), ...Object.values(ILLNESS_ICONS), ...Object.values(DISEASE_ICONS)];
+    const medical = [icon("refusal:kit-empty"), icon("supply:pills"), icon("supply:humanMeds"), icon("supply:dressing"), ...Object.values(ILLNESS_ICONS), ...Object.values(DISEASE_ICONS)];
     expect(medical).not.toContain(DESTINATION_ICONS.vet);
     expect(medical).not.toContain(DESTINATION_ICONS.doctor);
     expect(DESTINATION_ICONS.shelter).not.toBe(THING_ICONS.house);

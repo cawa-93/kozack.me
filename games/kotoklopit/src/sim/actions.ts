@@ -8,7 +8,7 @@ import { guestAtDoor, openDoor } from "./door";
 import { admitGuest } from "./visits";
 import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
-import { needsHumanMeds, takeHumanMeds, treatable } from "./illness";
+import { sinkCare } from "./dressing";
 import { bathe } from "./care";
 import { canSeat, releaseCats, seatCat } from "./carriers";
 import { catInWasher, emptyFeeder, fillFountainTank, furPerHour, putVacuumDown, sameFood, takeVacuum, tapWasher } from "./household";
@@ -338,16 +338,15 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       character.activity = { kind: "use", target: target.id, progress: 0, inside: true };
       return null;
     case "sink": {
-      // Ліки для себе — біля умивальника (§6.5). Кіт на умивальнику чекає крана — спершу відкрити воду йому (§9.12).
+      // Ліки, пластир і бинт — біля умивальника (§6.5). Кіт на умивальнику чекає крана — спершу відкрити воду йому (§9.12).
       if (held !== null) return refuse(state, target.id, "hands-full");
       const drinker = catOnSink(state);
       if (drinker) {
         openTap(state, drinker);
         return null;
       }
-      if (!needsHumanMeds(state)) return refuse(state, target.id, treatable(state) ? "dose-taken" : "healthy");
-      if (!takeHumanMeds(state, stateRng(state, "behavior"))) return refuse(state, target.id, { reason: "empty", product: "humanMeds" });
-      return null;
+      const refusal = sinkCare(state, stateRng(state, "behavior"));
+      return refusal === null ? null : refuse(state, target.id, refusal);
     }
     case "radio":
     case "wardrobe":

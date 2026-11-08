@@ -46,20 +46,20 @@ describe("що де продається (§8.5, STORE_GOODS)", () => {
   const drops = { product: "drops" } as const;
   const humanMeds = { product: "humanMeds" } as const;
 
-  it("магазин — усе; ветеринар — таблетки й краплі для котів; лікар — ліки для себе; деінде — нічого", () => {
-    expect(STORE_GOODS).toEqual({ shop: "all", vet: ["pills", "drops"], doctor: ["humanMeds"] });
+  it("магазин — усе; ветеринар — таблетки й краплі для котів; лікар — ліки для себе, пластир і бинт; деінде — нічого", () => {
+    expect(STORE_GOODS).toEqual({ shop: "all", vet: ["pills", "drops"], doctor: ["humanMeds", "dressing"] });
     for (const g of GOODS) expect(soldAt("shop", g), goodsKey(g)).toBe(true);
     expect(keys(GOODS.filter((g) => soldAt("vet", g)))).toEqual(["drops", "pills"]);
-    expect(keys(GOODS.filter((g) => soldAt("doctor", g)))).toEqual(["humanMeds"]);
+    expect(keys(GOODS.filter((g) => soldAt("doctor", g)))).toEqual(["dressing", "humanMeds"]);
     for (const d of ["shelter", "breeder", "groomer", "show", "office"] as const) expect(GOODS.some((g) => soldAt(d, g)), d).toBe(false);
   });
 
   it("каталог на місці — лише те, що тут продають; у телефоні — увесь; обидва варіанти якості", () => {
     expect(keys(catalog(at("vet"), "store"))).toEqual(["drops", "pills"]);
-    expect(keys(catalog(at("doctor"), "store"))).toEqual(["humanMeds"]);
+    expect(keys(catalog(at("doctor"), "store"))).toEqual(["dressing", "humanMeds"]);
     expect(catalog(at("shelter"), "store")).toEqual([]);
     expect(catalog(at("vet"), "delivery").length).toBe(catalog(at("shop"), "store").length);
-    for (const g of [pills, drops, humanMeds]) expect(variants(g)).toEqual(["cheap", "premium"]);
+    for (const g of [pills, drops, humanMeds, { product: "dressing" } as const]) expect(variants(g)).toEqual(["cheap", "premium"]);
   });
 
   it("ціна ліків у ветеринара й лікаря — як у магазині: той самий модифікатор поїздки з вікна складності, для кожного варіанта", () => {
