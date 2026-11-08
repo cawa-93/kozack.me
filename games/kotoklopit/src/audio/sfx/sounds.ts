@@ -36,6 +36,22 @@ export function uiSound(group: string, sound: string): void {
   current?.play(group, sound);
 }
 
+/** Мить сцени (`SceneMoment`) зі сцени, що не тримає звуків сама (сцена гонки). */
+export function sceneMoment(moment: SceneMoment): void {
+  current?.moment(moment);
+}
+
+/** Петля, яку веде сцена сама (мотор у гонці): гучність (множник `gain` звуку) і висота — щокадру. */
+export interface SceneLoop {
+  set(gain: number, rate: number): void;
+  stop(): void;
+}
+
+/** Увімкнути петлю групи без стану квартири; звуку ще немає (аудіо не запущено, файл не закодовано) — null, спробуйте пізніше. */
+export function sceneLoop(group: string, sound: string): SceneLoop | null {
+  return current?.sceneLoop(group, sound) ?? null;
+}
+
 export class Sounds {
   private readonly player: Player;
   private scene: SoundScene | null = null;
@@ -104,6 +120,17 @@ export class Sounds {
       const cues = group.onScene?.(moment, state);
       if (cues) for (const cue of cues) this.fire(group, cue, state);
     }
+  }
+
+  sceneLoop(groupId: string, sound: string): SceneLoop | null {
+    const group = GROUPS.find((g) => g.id === groupId);
+    const def = group?.sounds[sound];
+    const file = group && def?.loop ? soundFile(group.id, def.files[0] ?? "") : null;
+    if (!def || !file) return null;
+    const base = def.gain ?? 1;
+    const voice = this.player.loop(file, { bus: def.ui ? "ui" : "world", gain: base, pan: 0 });
+    if (!voice) return null;
+    return { set: (gain, rate) => voice.set(base * gain, 0, rate), stop: () => voice.stop() };
   }
 
   /** Звук групи без місця: інтерфейс, телефон. */

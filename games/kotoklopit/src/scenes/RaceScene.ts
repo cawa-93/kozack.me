@@ -15,9 +15,12 @@
 import Phaser from "phaser";
 
 import { PALETTE } from "../../art/palette";
-import { uiSound } from "../audio/sfx/sounds";
+import { SFX } from "../audio/config";
+import { sceneLoop, sceneMoment, uiSound } from "../audio/sfx/sounds";
+import { ENGINE, EngineHum, engineRate } from "../audio/sfx/trip/engine";
 import { Horns } from "../audio/sfx/trip/horns";
 import { Revs } from "../audio/sfx/trip/revs";
+import { RACE } from "../sim/config";
 import { drive } from "../sim/game";
 import { trafficFactor } from "../sim/modifiers";
 import { carAt, type RaceInput } from "../sim/race";
@@ -159,6 +162,8 @@ export class RaceScene extends Phaser.Scene {
   private readonly horns = new Horns();
   /** Мотор гарчить, коли гравець натиснув газ. */
   private readonly revs = new Revs();
+  /** Мотор гуде, поки машина їде: висота — за швидкістю (`trip/engine.ts`). */
+  private readonly engine = new EngineHum(() => sceneLoop("trip", "engine"));
   /** Сцена показує гонку від самого старту (від'їзд від дому чи свіжа гонка), а не з середини після перезавантаження (`startHintShown`). */
   private fromStart = false;
   private keys: Record<"up" | "down" | "up2" | "down2", Phaser.Input.Keyboard.Key> | null = null;
@@ -213,6 +218,7 @@ export class RaceScene extends Phaser.Scene {
     // Phaser перевикористовує сцену: стан минулого показу — геть, і день не бачить парковки, якої вже немає.
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       art.destroy();
+      this.engine.stop();
       this.parked = null;
       this.arrival = null;
       this.leave = null;
@@ -390,7 +396,14 @@ export class RaceScene extends Phaser.Scene {
       if (result === "arrived" && night === null && state.end === null && this.state.trip?.phase === "visit") return this.startArrival();
       if (result !== null || night !== null) return this.finish({ mode: "race" });
     }
+    const race = state.trip?.race;
+    if (race) this.hum(engineRate(race.speed));
     this.draw();
+  }
+
+  /** Мотор гуде з висотою `rate`: на паузі тихо, як петлі квартири, і згасає разом із темрявою катсцени (`dark`). */
+  private hum(rate: number, dark = 0): void {
+    this.engine.run(rate, (this.running() ? 1 : SFX.pausedLoops) * (1 - dark));
   }
 
   /** Машина стоїть на парковці під карткою пункту (§8.5 «На місці — кадр парковки»): день показує картку пункту, лише коли так. */
@@ -413,6 +426,7 @@ export class RaceScene extends Phaser.Scene {
     if (!parked || !this.sys.isActive()) return false;
     this.parked = null;
     this.home = { ms: 0, save: this.session.save, skipped: false, from: "parked", at: { spot: parked.spot, destination: parked.destination } };
+    sceneMoment("unparked");
     this.stick = null;
     this.g.clear();
     this.label.setVisible(false);
@@ -431,6 +445,7 @@ export class RaceScene extends Phaser.Scene {
   }
 
   private finish(end: RoadEnd): void {
+    this.engine.stop();
     this.stick = null;
     this.arrival = null;
     this.parked = null;
@@ -461,6 +476,8 @@ export class RaceScene extends Phaser.Scene {
     const state = this.state;
     if (this.session.save !== leave.save || state.trip?.phase !== "drive" || state.end !== null) return this.finish({ mode: "race" });
     leave.ms += this.animationMs(delta);
+    // Заводять на початку від'їзду (подія `trip-started`): гудіння — після звуку запуску, машина розганяється до швидкості старту.
+    if (leave.ms >= ENGINE.startDelayMs) this.hum(engineRate(RACE.startSpeed * Math.min(1, leave.ms / HOME_DEPARTURE.ms)));
     if (!leave.skipped && !this.drawLeave()) return;
     const over = leave.skipped ? delta : leave.ms - HOME_DEPARTURE.ms;
     this.leave = null;
@@ -531,7 +548,11 @@ export class RaceScene extends Phaser.Scene {
     const trip = state.trip;
     if (this.session.save !== arrival.save || trip?.phase !== "visit" || state.end !== null) return this.finish({ mode: "race" });
     arrival.ms += this.animationMs(delta);
+    // Машина гальмує на парковку — мотор скидає оберти.
+    this.hum(engineRate(trip.race.speed * Math.max(0, 1 - arrival.ms / arrivalMs(arrival.start))));
     if (!this.drawArrival()) return;
+    this.engine.stop();
+    sceneMoment("parked");
     this.arrival = null;
     this.parked = { save: arrival.save, ...parkedAt(trip) };
     this.drawParked();
@@ -588,6 +609,7 @@ export class RaceScene extends Phaser.Scene {
    * більше немає, напис і підказка зникають; поштовх камери — мить удару.
    */
   private startCrash(): void {
+    this.engine.stop();
     this.crash = { ms: 0, save: this.session.save };
     this.stick = null;
     this.g.clear();
@@ -651,6 +673,8 @@ export class RaceScene extends Phaser.Scene {
       frame = road;
     }
     this.dark.setSize(view.width, view.height).setFillStyle(0x000000, frame.dark);
+    // З парковки щойно завели (`unparked`): гудіння — після звуку запуску; з чорного — одразу.
+    if (home.from !== "parked" || home.ms >= ENGINE.startDelayMs) this.hum(engineRate(RACE.startSpeed), frame.dark);
     if (frame.done) this.finish({ mode: "home" });
   }
 

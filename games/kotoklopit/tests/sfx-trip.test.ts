@@ -11,14 +11,22 @@ import { RACE } from "../src/sim/config";
 import { driveRace, newRace } from "../src/sim/race";
 import { HORN, Horns } from "../src/audio/sfx/trip/horns";
 import { Revs } from "../src/audio/sfx/trip/revs";
+import { ENGINE, EngineHum, engineRate } from "../src/audio/sfx/trip/engine";
+import type { SceneLoop } from "../src/audio/sfx/sounds";
+import type { SceneMoment } from "../src/audio/sfx/types";
 
 describe("звуки поїздки", () => {
   const state = newGame({ address: "he", difficulty: "normal", seed: 3 }).current;
   const sounds = (event: GameEvent): string[] => (group.onEvent?.(event, state) ?? []).map((cue) => cue.sound);
 
-  it("на виїзді — двері, мотор заводиться й машина рушає; на місці — ручник, мотор глухне, двері", () => {
+  it("на виїзді — двері, мотор заводиться й машина рушає; стала на парковці — мотор глухне, ручник, двері", () => {
+    const scene = (moment: SceneMoment): string[] => (group.onScene?.(moment, state) ?? []).map((cue) => cue.sound);
     expect(sounds({ type: "trip-started", destination: "shop" })).toEqual(["car-door", "engine-start", "rev"]);
-    expect(sounds({ type: "trip-arrived", destination: "shop" })).toEqual(["handbrake", "engine-stop", "car-door"]);
+    expect(scene("unparked")).toEqual(["car-door", "engine-start", "rev"]);
+    // Фініш — ще не парковка: машина заїжджає на місце, і все звучить, коли вона стала.
+    expect(sounds({ type: "trip-arrived", destination: "shop" })).toEqual([]);
+    expect(scene("parked")).toEqual(["engine-stop", "handbrake", "car-door"]);
+    expect(scene("morning")).toEqual([]);
     expect(sounds({ type: "trip-crashed", losses: [], speed: 5, minutes: 30 })).toEqual(["crash"]);
     expect(sounds({ type: "doorbell" })).toEqual([]);
   });
@@ -26,7 +34,11 @@ describe("звуки поїздки", () => {
   it("у поїздці квартири не чути, тож звуки групи — на шині інтерфейсу й закодовані", () => {
     for (const [name, def] of Object.entries(group.sounds)) {
       expect(def.ui, name).toBe(true);
-      for (const file of def.files) expect(soundFile("trip", file), `${name}: ${file}`).not.toBeNull();
+      for (const file of def.files) {
+        const encoded = soundFile("trip", file);
+        expect(encoded, `${name}: ${file}`).not.toBeNull();
+        expect(encoded?.loop !== null, `${name}: ${file} — петля`).toBe(def.loop === true);
+      }
     }
   });
 
@@ -55,5 +67,27 @@ describe("звуки поїздки", () => {
   it("газування — щойно натиснули газ, а не щокадру, поки його тримають", () => {
     const revs = new Revs();
     expect([0, 1, 1, 0.5, 0, -1, 0.3, 0].map((throttle) => revs.tick(throttle))).toEqual([false, true, false, false, false, false, true, false]);
+  });
+
+  it("мотор: холості на місці, вище зі швидкістю, але не вище за межу", () => {
+    expect(engineRate(0)).toBe(ENGINE.idleRate);
+    expect(engineRate(-1)).toBe(ENGINE.idleRate);
+    expect(engineRate(RACE.startSpeed)).toBeGreaterThan(engineRate(0));
+    expect(engineRate(RACE.maxSpeed)).toBeGreaterThan(engineRate(RACE.startSpeed));
+    expect(engineRate(RACE.maxSpeed * 10)).toBe(ENGINE.maxRate);
+  });
+
+  it("гудіння вмикається, щойно звук готовий, і згасає, коли мотор заглушили", () => {
+    const calls: string[] = [];
+    let ready = false;
+    const hum = new EngineHum((): SceneLoop | null =>
+      ready ? { set: (gain, rate) => calls.push(`set ${gain} ${rate}`), stop: () => calls.push("stop") } : null,
+    );
+    hum.run(1, 1);
+    ready = true;
+    hum.run(1.2, 0.5);
+    hum.stop();
+    hum.stop();
+    expect(calls).toEqual(["set 0.5 1.2", "stop"]);
   });
 });

@@ -42,5 +42,13 @@
   "crash-1": {
     "hash": "74fc7914d0c25ef3",
     "seconds": 0.95
+  },
+  "engine-loop": {
+    "hash": "05bf4acc490b6465",
+    "seconds": 3.7,
+    "loop": {
+      "start": 0.1,
+      "end": 3.8
+    }
   }
 }

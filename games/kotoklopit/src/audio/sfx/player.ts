@@ -26,9 +26,9 @@ export interface PlayOptions {
   delay: number;
 }
 
-/** Петля, що звучить: гучність і зсув змінюються плавно. */
+/** Петля, що звучить: гучність, зсув і висота (`rate`, мотор у гонці) змінюються плавно. */
 export interface LoopVoice {
-  set(gain: number, pan: number): void;
+  set(gain: number, pan: number, rate?: number): void;
   stop(): void;
 }
 
@@ -81,6 +81,7 @@ export class Player {
     gain.connect(panner).connect(bus);
     let source: AudioBufferSourceNode | null = null;
     let target = options.gain;
+    let rate = 1;
     let stopped = false;
     const begin = (decoded: Decoded): void => {
       if (stopped) return;
@@ -89,6 +90,7 @@ export class Player {
       source.loop = true;
       source.loopStart = range.start;
       source.loopEnd = range.end;
+      source.playbackRate.value = rate;
       source.connect(gain);
       // Кожна петля — з випадкового місця кола: дві однакові не звучать в унісон.
       source.start(context.currentTime, range.start + Math.random() * (range.end - range.start));
@@ -98,7 +100,11 @@ export class Player {
     if (ready) begin(ready);
     else void this.decode(file).then((decoded) => decoded && begin(decoded));
     return {
-      set: (next, pan) => {
+      set: (next, pan, nextRate) => {
+        if (nextRate !== undefined && Math.abs(nextRate - rate) > 0.005) {
+          rate = nextRate;
+          if (source) source.playbackRate.setTargetAtTime(nextRate, context.currentTime, SFX.loopFade / 3);
+        }
         if (Math.abs(next - target) > 0.01) {
           target = next;
           if (source) gain.gain.setTargetAtTime(next, context.currentTime, SFX.loopFade / 3);

@@ -52,9 +52,10 @@ export interface LoopCue {
 
 /**
  * Мить сцени, якої симуляція не помічає подією: титулка ранку, екран кінця гри (причина — `state.end`), засинання в ліжку,
- * падіння без сил. Звучить завжди, хоч би що казав режим сцени.
+ * падіння без сил; у поїздці — машина стала на парковці (`parked`) і рушає з неї додому (`unparked`). Звучить завжди, хоч би що
+ * казав режим сцени.
  */
-export type SceneMoment = "morning" | "end" | "fall-asleep" | "collapse";
+export type SceneMoment = "morning" | "end" | "fall-asleep" | "collapse" | "parked" | "unparked";
 
 export interface SoundGroup {
   /** Збігається з назвою файлу групи й теки `audio/sfx/<id>/`. */
