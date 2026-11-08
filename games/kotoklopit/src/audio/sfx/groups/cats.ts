@@ -14,12 +14,12 @@ const files = (name: string, count: number): string[] => Array.from({ length: co
  * гри, а це щосекунди реального часу. Трійки (`chatter`, `hack`) звучать кількома сигналами з затримкою — без паузи.
  */
 const SOUNDS: Record<string, SoundDef> = {
-  meow: { files: files("meow", 4), gain: 0.7, pitch: 0.05, spread: 0.1, cooldownMs: 600 },
+  meow: { files: files("meow", 2), gain: 0.7, pitch: 0.05, spread: 0.1, cooldownMs: 600 },
   "meow-ask": { files: files("meow-ask", 5), gain: 0.7, pitch: 0.04, spread: 0.1, cooldownMs: 600 },
   "meow-happy": { files: files("meow-happy", 3), gain: 0.65, pitch: 0.05, spread: 0.1, cooldownMs: 400 },
   "meow-sad": { files: files("meow-sad", 2), gain: 0.6, pitch: 0.03, spread: 0.08, cooldownMs: 800 },
   "meow-old": { files: files("meow-old", 2), gain: 0.65, pitch: 0.03, spread: 0.08, cooldownMs: 700 },
-  "meow-kitten": { files: files("meow-kitten", 6), gain: 0.55, pitch: 0.06, spread: 0.1, cooldownMs: 300 },
+  "meow-kitten": { files: files("meow-kitten", 7), gain: 0.55, pitch: 0.06, spread: 0.1, cooldownMs: 300 },
   "meow-angry": { files: files("meow-angry", 2), gain: 0.75, pitch: 0.04, spread: 0.08, cooldownMs: 500 },
   "meow-door": { files: files("meow-door", 3), gain: 0.8, pitch: 0.04, spread: 0.1, cooldownMs: 1500, voices: 1 },
   cry: { files: files("cry", 2), gain: 0.85, pitch: 0.03, spread: 0.08, cooldownMs: 900 },

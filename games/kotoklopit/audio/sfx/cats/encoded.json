@@ -1,17 +1,9 @@
 {
   "meow-1": {
-    "hash": "9ec3fdc50ae3c138",
-    "seconds": 1.72
+    "hash": "86d75ad8ea23e519",
+    "seconds": 0.475
   },
   "meow-2": {
-    "hash": "9405b3b3c0094af3",
-    "seconds": 1.152292
-  },
-  "meow-3": {
-    "hash": "b17f8cbbe667a8e9",
-    "seconds": 0.83
-  },
-  "meow-4": {
     "hash": "84975f2edaa731d4",
     "seconds": 0.943042
   },
@@ -86,6 +78,10 @@
   "meow-kitten-6": {
     "hash": "b1763b6590655672",
     "seconds": 0.68
+  },
+  "meow-kitten-7": {
+    "hash": "1c92b0dee5cf32c4",
+    "seconds": 0.49
   },
   "meow-angry-1": {
     "hash": "c907b18750532b99",
