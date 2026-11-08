@@ -68,7 +68,7 @@ describe("режим розробки", () => {
   });
 });
 
-const pages = import.meta.glob<string>(["../index.html", "../gallery.html", "../sounds.html"], { query: "?raw", import: "default", eager: true });
+const pages = import.meta.glob<string>(["../index.html", "../gallery.html", "../sounds.html", "../credits.html"], { query: "?raw", import: "default", eager: true });
 const scripts = (html: string | undefined): string[] => [...(html ?? "").matchAll(/<script[^>]*src="([^"]+)"/g)].map((match) => match[1] ?? "");
 
 describe("галерея арту (крок 16)", () => {
@@ -81,7 +81,7 @@ describe("галерея арту (крок 16)", () => {
     }
   });
 
-  it("у збірці — лише з режимом розробки: є на прев'ю Netlify, немає в продакшні", async () => {
+  it("у збірці — лише з режимом розробки: є на прев'ю Netlify, немає в продакшні; титри — в усіх збірках", async () => {
     const { default: config } = await import("../vite.config");
     const build = (context: string | undefined): { input: string[]; dev: unknown } => {
       const saved = process.env["CONTEXT"];
@@ -97,10 +97,10 @@ describe("галерея арту (крок 16)", () => {
         else process.env["CONTEXT"] = saved;
       }
     };
-    expect(build(undefined)).toEqual({ input: ["index"], dev: "false" });
-    expect(build("production")).toEqual({ input: ["index"], dev: "false" });
-    expect(build("deploy-preview")).toEqual({ input: ["index", "gallery", "sounds"], dev: "true" });
-    expect(build("branch-deploy")).toEqual({ input: ["index", "gallery", "sounds"], dev: "true" });
+    expect(build(undefined)).toEqual({ input: ["index", "credits"], dev: "false" });
+    expect(build("production")).toEqual({ input: ["index", "credits"], dev: "false" });
+    expect(build("deploy-preview")).toEqual({ input: ["index", "credits", "gallery", "sounds"], dev: "true" });
+    expect(build("branch-deploy")).toEqual({ input: ["index", "credits", "gallery", "sounds"], dev: "true" });
   });
 });
 
@@ -110,6 +110,20 @@ describe("каталог звуків", () => {
     for (const [file, source] of Object.entries(app)) {
       if (file.includes("/src/dev/sounds/")) continue;
       expect(source, file).not.toMatch(/from\s+["'][^"']*\/dev\/sounds(\/[^"']*)?["']|import\(["'][^"']*\/dev\/sounds(\/[^"']*)?["']\)/);
+    }
+  });
+});
+
+describe("титри (§2.1)", () => {
+  it("окрема сторінка без Phaser і режиму розробки: credits.html підключає лише src/credits/back.ts, а гра титрів не імпортує", () => {
+    expect(scripts(pages["../credits.html"])).toEqual(["/src/credits/back.ts"]);
+    for (const [file, source] of Object.entries(app)) {
+      if (file.includes("/src/credits/")) {
+        expect(source, file).not.toMatch(/from\s+["']phaser["']/);
+        expect(source, file).not.toMatch(/from\s+["'][^"']*\/dev(\/[^"']*)?["']|import\(["'][^"']*\/dev(\/[^"']*)?["']\)/);
+      } else {
+        expect(source, file).not.toMatch(/from\s+["'][^"']*\/credits(\/[^"']*)?["']|import\(["'][^"']*\/credits(\/[^"']*)?["']\)/);
+      }
     }
   });
 });

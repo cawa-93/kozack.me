@@ -7,7 +7,7 @@ import gamePackage from "../package.json";
 import type { Sources } from "../src/audio/sfx/sourcetypes";
 import { buildCredits, catalogTrack, OPEN_SOUND_ENTRIES, type CreditsInput, type SoundEntry } from "../src/credits/credits";
 import { creditsInput, FONT_FILES, FONTS } from "../src/credits/input";
-import { escapeHtml, renderCredits } from "../src/credits/render";
+import { escapeHtml, licenseParagraphs, renderCredits } from "../src/credits/render";
 
 const input = creditsInput();
 const credits = buildCredits(input);
@@ -140,6 +140,12 @@ describe("титри: програми й шрифти", () => {
       expect(font.copyright, font.family).toMatch(/^Copyright/);
       expect(html).toContain(escapeHtml(font.copyright!));
     }
+  });
+
+  it("текст ліцензії — абзацами, без рядків-прикрас, слово в слово", () => {
+    expect(licenseParagraphs("A\nb\n\n-----\nC\r\n d\n")).toEqual(["A b", "C d"]);
+    const words = (text: string): string[] => text.split(/\s+/).filter((word) => word !== "" && !/^[-=_*]+$/.test(word));
+    for (const { text } of [...credits.libraries, ...credits.fonts]) expect(words(licenseParagraphs(text ?? "").join(" "))).toEqual(words(text ?? ""));
   });
 
   it("угорі — гра й автор, «Назад до гри» — на початку й наприкінці", () => {

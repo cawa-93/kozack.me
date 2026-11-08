@@ -38,7 +38,7 @@ function music({ music }: Credits): string {
   return [
     `<section class="credits-section" aria-labelledby="credits-music"><h2 id="credits-music">${CREDITS_TEXTS.music}</h2>`,
     `<p class="credits-lead">${count(music.tracks, "трек", "треки", "треків")} · ${count(music.artists.length, "виконавець", "виконавці", "виконавців")}. ${sources.length > 1 ? "Джерела" : "Джерело"} — ${listing(sources)}.</p>`,
-    `<ul class="credits-list">${artists.join("")}</ul></section>`,
+    `<ul class="credits-list credits-grid">${artists.join("")}</ul></section>`,
   ].join("");
 }
 
@@ -58,12 +58,32 @@ function sounds({ sounds }: Credits): string {
   return [
     `<section class="credits-section" aria-labelledby="credits-sounds"><h2 id="credits-sounds">${CREDITS_TEXTS.sounds}</h2>`,
     `<p class="credits-lead">${count(sounds.entries, "запис", "записи", "записів")} · ${count(sounds.authors.length, "автор", "автори", "авторів")}. ${changes}</p>`,
-    `<ul class="credits-list">${sounds.authors.map(soundAuthor).join("")}</ul></section>`,
+    `<ul class="credits-list credits-columns">${sounds.authors.map(soundAuthor).join("")}</ul></section>`,
   ].join("");
 }
 
-const licenseText = (text: string | null): string =>
-  text ? `<details class="credits-license"><summary>${CREDITS_TEXTS.licenseText}</summary><pre>${escapeHtml(text.replace(/\r\n/g, "\n"))}</pre></details>` : "";
+/**
+ * Текст ліцензії абзацами: у файлі рядки зламано під 80 знаків, і на телефоні вони рвалися б удруге. Рядки з самих рисок —
+ * прикраса, їх немає.
+ */
+export function licenseParagraphs(text: string): string[] {
+  return text
+    .split(/\r?\n\s*\r?\n/)
+    .map((paragraph) =>
+      paragraph
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => line !== "" && !/^[-=_*]+$/.test(line))
+        .join(" "),
+    )
+    .filter((paragraph) => paragraph !== "");
+}
+
+const licenseText = (text: string | null): string => {
+  if (!text) return "";
+  const paragraphs = licenseParagraphs(text).map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join("");
+  return `<details class="credits-license"><summary>${CREDITS_TEXTS.licenseText}</summary><div class="credits-license-text">${paragraphs}</div></details>`;
+};
 
 function software({ libraries, fonts, tools }: Credits): string {
   const items = [

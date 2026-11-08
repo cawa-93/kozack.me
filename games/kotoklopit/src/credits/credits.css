@@ -1,0 +1,233 @@
+/* Сторінка титрів (§2.1): картка гри — папір у чорнильній рамці (як `.card` в `src/ui/overlay.css`) на темному тлі, рукописні
+   заголовки, решта — системним шрифтом, дрібно. */
+@import "../ui/theme.css";
+
+html {
+  background: var(--ink);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  padding: max(12px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom))
+    max(8px, env(safe-area-inset-left));
+  background: var(--ink);
+  color: var(--ink);
+  font: 16px/1.45 system-ui, sans-serif;
+}
+
+.credits {
+  box-sizing: border-box;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 6px 12px 4px;
+  border: 20px solid transparent;
+  border-image: url("../../art/ui/frame/card.svg") 24 / 24px / 4px stretch;
+  background: var(--paper) var(--paper-tile) 0 0 / 256px 256px;
+  background-clip: padding-box;
+  background-origin: padding-box;
+  filter: drop-shadow(0 6px 0 var(--shade-base));
+}
+
+.credits a {
+  color: inherit;
+  text-decoration-color: var(--ink-soft);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.credits a:hover {
+  color: var(--ink-soft);
+}
+
+.credits a:focus-visible,
+.credits summary:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.credits-back {
+  margin: 0;
+  font: 400 18px/1.2 var(--hand);
+}
+
+.credits-back a {
+  text-decoration: none;
+}
+
+.credits-head {
+  margin: 14px 0 4px;
+  text-align: center;
+}
+
+.credits-kicker {
+  margin: 0;
+  color: var(--ink-soft);
+  font: 400 18px/1.2 var(--hand);
+}
+
+.credits h1 {
+  margin: 0;
+  font: 400 44px/1.1 var(--hand);
+}
+
+.credits-by {
+  margin: 6px 0 0;
+  font-size: 17px;
+}
+
+.credits-section {
+  margin: 26px 0 0;
+}
+
+.credits h2 {
+  margin: 0 0 4px;
+  font: 400 30px/1.15 var(--hand);
+}
+
+.credits-lead {
+  margin: 0 0 12px;
+  color: var(--ink-soft);
+  font-size: 15px;
+}
+
+.credits-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.credits-item {
+  margin: 0 0 12px;
+}
+
+/* Широкий екран — у дві колонки, інакше переліки тягнуться на кілька екранів. Виконавці — сіткою: розгорнуті назви треків
+   лише розсувають свій рядок; автори звуків — колонками, щільніше (згорнутих там майже немає). */
+@media (min-width: 720px) {
+  .credits-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 32px;
+    align-items: start;
+  }
+
+  .credits-columns {
+    columns: 2;
+    column-gap: 32px;
+  }
+
+  .credits-columns > .credits-item {
+    break-inside: avoid;
+  }
+}
+
+.credits-name {
+  margin: 0;
+  font: 400 20px/1.2 var(--hand);
+}
+
+summary .credits-name {
+  display: inline;
+}
+
+.credits summary {
+  cursor: pointer;
+}
+
+.credits summary::marker {
+  color: var(--ink-soft);
+}
+
+.credits-meta {
+  color: var(--ink-soft);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* Записи звуків: назви бувають довжелезні (повний шлях файлу в колекції) — переносяться будь-де. */
+.credits-entries,
+.credits-titles {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.credits-entries li + li {
+  margin-top: 3px;
+}
+
+/* Ліцензія — останнє посилання рядка — не рветься («CC0 / 1.0»). */
+.credits-entries a:last-child:not(:first-child),
+.credits-entry a:last-child {
+  white-space: nowrap;
+}
+
+/* Назви треків — суцільним абзацом через крапку: сотні рядків інакше тягнулися б на кілька екранів. */
+.credits-titles {
+  color: var(--ink-soft);
+}
+
+.credits-titles li {
+  display: inline;
+}
+
+.credits-titles li + li::before {
+  content: " · ";
+}
+
+.credits-entry {
+  margin: 2px 0 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.credits-license {
+  margin-top: 4px;
+  font-size: 14px;
+}
+
+.credits-license-text {
+  max-height: 50vh;
+  margin: 6px 0 0;
+  padding: 2px 12px;
+  overflow: auto;
+  border-radius: 6px;
+  background: var(--enamel);
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.credits-license-text p {
+  margin: 8px 0;
+}
+
+.credits-tools {
+  margin: 16px 0 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.credits > .credits-back:last-child {
+  margin: 28px 0 8px;
+  text-align: center;
+}
+
+@media (max-width: 480px) {
+  .credits {
+    padding: 4px 4px 2px;
+  }
+
+  .credits h1 {
+    font-size: 38px;
+  }
+
+  .credits h2 {
+    font-size: 27px;
+  }
+}
