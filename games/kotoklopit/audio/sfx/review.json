@@ -4,11 +4,6 @@
     "print": "0.9|bag-rip-1:01a835b35df33a76",
     "at": "2026-11-08T06:14:41.174Z"
   },
-  "cats/bin": {
-    "decision": "delete",
-    "print": "1|bin-1:2befd069625f2f0d",
-    "at": "2026-11-08T06:13:26.639Z"
-  },
   "cats/bite": {
     "decision": "replace",
     "print": "0.85|bite-1:0399d2b1a9b633af",
@@ -53,15 +48,6 @@
     "decision": "replace",
     "print": "0.8|claw-1:f26247d0824c5a47",
     "at": "2026-11-08T06:11:21.517Z"
-  },
-  "cats/crunch": {
-    "decision": "delete",
-    "print": "0.9|crunch-1:11c420dd809fe8a0,crunch-2:cca2935894b56dda",
-    "at": "2026-11-08T06:12:00.203Z",
-    "variants": [
-      "crunch-1",
-      "crunch-2"
-    ]
   },
   "cats/cry": {
     "decision": "replace",
@@ -130,12 +116,9 @@
     ]
   },
   "cats/land": {
-    "decision": "delete",
-    "print": "0.5|land-1:eb7484f97dff99d4,land-2:fd6ee04ba6b44408",
+    "decision": "replace",
+    "print": "0.5|land-2:fd6ee04ba6b44408",
     "at": "2026-11-08T06:09:32.869Z",
-    "variants": [
-      "land-1"
-    ],
     "comment": "land-2 норм але треба підрізати, або замінити"
   },
   "cats/lap-loop": {
@@ -285,12 +268,9 @@
     "at": "2026-11-08T06:11:30.033Z"
   },
   "cats/smash": {
-    "decision": "delete",
-    "print": "1|smash-1:92275762eb195a06,smash-2:511c6826d6a0497a",
-    "at": "2026-11-08T06:12:44.025Z",
-    "variants": [
-      "smash-2"
-    ]
+    "decision": "ok",
+    "print": "1|smash-1:92275762eb195a06",
+    "at": "2026-11-08T06:12:44.025Z"
   },
   "cats/sneeze": {
     "decision": "replace",
@@ -318,21 +298,11 @@
     "print": "0.45|squeak-1:66f0e312517fbcb5,squeak-2:981d4244baf69279",
     "at": "2026-11-08T06:07:11.484Z"
   },
-  "cats/tail": {
-    "decision": "delete",
-    "print": "0.5|tail-1:be9712626a37b342",
-    "at": "2026-11-08T06:08:29.422Z"
-  },
   "cats/tap": {
     "decision": "ok",
     "print": "0.6|tap-1:2d2b456fec572a70",
     "at": "2026-11-08T06:12:20.123Z",
     "comment": "Загучно"
-  },
-  "cats/toy-break": {
-    "decision": "delete",
-    "print": "1|toy-break-1:50b6f1ef0f4489ad",
-    "at": "2026-11-08T06:30:01.309Z"
   },
   "cats/yawn": {
     "decision": "replace",
@@ -343,11 +313,6 @@
     "decision": "replace",
     "print": "0.55|zoom-loop:554b8836edd2372e",
     "at": "2026-11-08T06:11:47.813Z"
-  },
-  "home/bag": {
-    "decision": "delete",
-    "print": "0.5|bag:6c6ac8627479ede5",
-    "at": "2026-11-08T06:18:20.318Z"
   },
   "home/beep-high": {
     "decision": "ok",
@@ -414,20 +379,6 @@
     "print": "0.8|doorbell:9969292e5ac58e7c",
     "at": "2026-11-08T06:17:55.227Z",
     "comment": "Добре, але укоротити"
-  },
-  "home/feeder": {
-    "decision": "delete",
-    "print": "0.5|feeder-1:eba99e8f68b8509b,feeder-2:a24ec48e9502fdfd",
-    "at": "2026-11-08T06:21:01.316Z",
-    "variants": [
-      "feeder-1",
-      "feeder-2"
-    ]
-  },
-  "home/feeder-empty": {
-    "decision": "delete",
-    "print": "0.45|feeder-empty:b4f824a2b3208559",
-    "at": "2026-11-08T06:21:08.263Z"
   },
   "home/fireworks": {
     "decision": "ok",
@@ -508,11 +459,6 @@
     "decision": "ok",
     "print": "0.3|stove-loop:82434f361cb4ed9d",
     "at": "2026-11-08T06:15:46.224Z"
-  },
-  "home/swept": {
-    "decision": "delete",
-    "print": "0.3|swept:4efbd404573d763d",
-    "at": "2026-11-08T06:20:36.106Z"
   },
   "home/thing-put": {
     "decision": "replace",
@@ -613,33 +559,6 @@
     "print": "0.4|dash-1:e4960a002c11baf8,dash-2:066e2d7f6c497a81,dash-3:dc9c10268e8eca67,dash-4:fb11944adec1d469",
     "at": "2026-11-08T06:21:37.333Z"
   },
-  "person/drop": {
-    "decision": "delete",
-    "print": "0.35|drop-1:73e35bfce45fa29b,drop-2:ceb3466079c1097b",
-    "at": "2026-11-08T06:24:59.431Z",
-    "variants": [
-      "drop-1",
-      "drop-2"
-    ]
-  },
-  "person/drop-again": {
-    "decision": "delete",
-    "print": "0.35|drop-3:7bf3cda6f80513bc,drop-4:83641a8107a9febc",
-    "at": "2026-11-08T06:24:55.642Z",
-    "variants": [
-      "drop-3",
-      "drop-4"
-    ]
-  },
-  "person/eat": {
-    "decision": "delete",
-    "print": "1|eat-1:00ba63c0826017d8,eat-2:320a42c44aa08937",
-    "at": "2026-11-08T06:22:21.862Z",
-    "variants": [
-      "eat-1",
-      "eat-2"
-    ]
-  },
   "person/fall": {
     "decision": "replace",
     "print": "0.85|fall-1:d9dbda15cf4e0ae2",
@@ -703,16 +622,6 @@
     "at": "2026-11-08T06:23:04.209Z",
     "comment": "Використати як загальний звук коли страву/тарілку/судочок/тощо ставлять на стіл"
   },
-  "person/relief-he": {
-    "decision": "delete",
-    "print": "0.4|relief-he:394b8999920fd533",
-    "at": "2026-11-08T06:25:32.804Z"
-  },
-  "person/relief-she": {
-    "decision": "delete",
-    "print": "0.4|relief-she:df244799a415709f",
-    "at": "2026-11-08T06:25:31.702Z"
-  },
   "person/scoop": {
     "decision": "replace",
     "print": "0.4|scoop-1:5a606adbfe16c44a,scoop-2:0e8869da8b31a8bb",
@@ -757,48 +666,10 @@
     "print": "0.5|sneeze-she:12d1ae5eb78f3b28",
     "at": "2026-11-08T06:25:15.505Z"
   },
-  "person/sock": {
-    "decision": "delete",
-    "print": "0.4|sock:c218b5f8780e3d65",
-    "at": "2026-11-08T06:25:06.239Z"
-  },
   "person/splash": {
     "decision": "replace",
     "print": "0.6|splash-loop:5bcfbeeef6c5a2b0",
     "at": "2026-11-08T06:23:21.462Z"
-  },
-  "person/step-rug": {
-    "decision": "delete",
-    "print": "0.16|step-rug-1:d60de0ad7104be08,step-rug-2:cd28b2128d5a44c3,step-rug-3:0dea7550916c1a21",
-    "at": "2026-11-08T06:21:26.368Z",
-    "variants": [
-      "step-rug-1",
-      "step-rug-2",
-      "step-rug-3"
-    ]
-  },
-  "person/step-tile": {
-    "decision": "delete",
-    "print": "0.16|step-tile-1:3ae8aaaf929cef93,step-tile-2:285ac193d1f6fe46,step-tile-3:f28b609343fbac75,step-tile-4:b384ade9e5be3779,step-tile-5:cd5143a1e822f165",
-    "at": "2026-11-08T06:21:23.288Z",
-    "variants": [
-      "step-tile-1",
-      "step-tile-2",
-      "step-tile-3",
-      "step-tile-4",
-      "step-tile-5"
-    ]
-  },
-  "person/step-wood": {
-    "decision": "delete",
-    "print": "0.2|step-wood-1:e9c0f41f1887063a,step-wood-2:3250d54c0a4d7cd7,step-wood-3:e851e43d6cbd0e5b,step-wood-4:ba92ec47414c821b",
-    "at": "2026-11-08T06:21:24.898Z",
-    "variants": [
-      "step-wood-1",
-      "step-wood-2",
-      "step-wood-3",
-      "step-wood-4"
-    ]
   },
   "person/swallow": {
     "decision": "ok",
@@ -871,11 +742,6 @@
     "print": "0.55|end:221f5623b0750c43",
     "at": "2026-11-08T06:27:34.049Z"
   },
-  "ui/glitch": {
-    "decision": "delete",
-    "print": "0.28|glitch:5bd856bd8a917b0c",
-    "at": "2026-11-08T06:27:02.345Z"
-  },
   "ui/low-stat": {
     "decision": "ok",
     "print": "0.4|low-stat:4a97d27229e061d6",
@@ -926,11 +792,6 @@
     "print": "0.35|call:d09c6b4a97e81d4b",
     "at": "2026-11-08T06:28:13.233Z"
   },
-  "work/call-missed": {
-    "decision": "delete",
-    "print": "0.4|call-missed:0063fba311663b41",
-    "at": "2026-11-08T06:28:29.972Z"
-  },
   "work/call-ok": {
     "decision": "replace",
     "print": "0.22|call-ok:bd347dd284857779",
@@ -946,45 +807,20 @@
     "print": "0.33|career-up:418c4b8a041eda54",
     "at": "2026-11-08T06:29:03.924Z"
   },
-  "work/coin": {
-    "decision": "delete",
-    "print": "0.75|coin:6688253b9f122fe9",
-    "at": "2026-11-08T06:27:54.472Z"
-  },
   "work/keyboard": {
     "decision": "replace",
     "print": "0.55|keyboard:e02a951164430a2a",
     "at": "2026-11-08T06:27:49.336Z"
-  },
-  "work/message": {
-    "decision": "delete",
-    "print": "0.27|message:bfca62fc37a874cf",
-    "at": "2026-11-08T06:29:21.914Z"
   },
   "work/murmur": {
     "decision": "replace",
     "print": "0.28|murmur:92d14ef21a4b8dfa",
     "at": "2026-11-08T06:28:16.479Z"
   },
-  "work/patience-out": {
-    "decision": "delete",
-    "print": "1|patience-out:25bd3e2b45bbc711",
-    "at": "2026-11-08T06:28:06.365Z"
-  },
-  "work/patience-warning": {
-    "decision": "delete",
-    "print": "0.8|patience-warning:ce35f4c202567758",
-    "at": "2026-11-08T06:28:02.802Z"
-  },
   "work/rejected": {
     "decision": "ok",
     "print": "0.45|rejected:c9490c5172608adb",
     "at": "2026-11-08T06:29:12.867Z"
-  },
-  "work/remark": {
-    "decision": "delete",
-    "print": "0.5|remark:a6461757d9ca36a9",
-    "at": "2026-11-08T06:28:39.054Z"
   },
   "work/ring": {
     "decision": "replace",

@@ -117,15 +117,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "5527f928332b634c339c03f8c077c4e8b33d7a00de6f325c8af5794bad7f6feb"
     },
-    "dc-shotglass": {
-      "file": "archive/Designers-Choice-Collection-Glass/GLASBrk-CU_Shotglass_Break_Nicholas_Judy_TDC.mp3",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Glass",
-      "title": "The Designer's Choice UCS Collection - GLASS — GLASS/BREAK/GLASBrk-CU_Shotglass Break_Nicholas Judy_TDC.mp3",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "1d5cff19cfb1add7906d862032f02b8b0838898f5253f3ecff5f8bc70a425b12"
-    },
     "dc-ink-cap": {
       "file": "archive/Designers-Choice-Collection-Plastic/PLASImpt-Blue_Snowball_Microphone_MCU_Ink_Cap_Small_Drop_Spin_Nicholas_Judy_TDC.flac",
       "url": "https://archive.org/details/Designers-Choice-Collection-Plastic",
@@ -171,24 +162,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "b9aae427833eaebc2a27b5508a685cf9f30a17c9dd8bdc51333be510bdc82149"
     },
-    "dc-stick": {
-      "file": "archive/Designers-Choice-Collection-Wood/WOODBrk-Blue_Snowball_Microphone_CU_Stick_Small_Breaks_X3_Nicholas_Judy_TDC.mp3",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Wood",
-      "title": "The Designer's Choice UCS Collection - WOOD — WOOD/BREAK/WOODBrk-Blue Snowball Microphone, CU_Stick, Small, Breaks, X3_Nicholas Judy_TDC.mp3",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "c557f7a3a9b2b2cff7103d4dd5a5a955344b71a2e92a3ec7a0cc3010dfe0fb7c"
-    },
-    "dc-crunch": {
-      "file": "archive/Designers-Choice-Collection-Cartoon/TOONMisc-Blue_Snowball_Microphone_CU_Bite_Bone_Crunch_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Cartoon",
-      "title": "The Designer's Choice UCS Collection - CARTOON — CARTOON/MISC/TOONMisc-Blue Snowball Microphone, CU_Bite, Bone, Crunch_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "3847f5c05d829c8be77920bb5ec596af50ca43ddb7efd86e515bbbcf3da22111"
-    },
     "dc-chomp": {
       "file": "archive/Designers-Choice-Collection-Cartoon/TOONVox-Blue_Snowball_Microphone_CU_Chomp_Nicholas_Judy_TDC.flac",
       "url": "https://archive.org/details/Designers-Choice-Collection-Cartoon",
@@ -224,15 +197,6 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "35b4db803d47688cc2570ca7885db961b6c2a9b341d2f8050274603d25cb1266"
-    },
-    "dc-bodyfall": {
-      "file": "archive/Designers-Choice-Collection-Fight/FGHTBf-Samsung_Galaxy_Smartphone_CU_Bodyfall_On_Grass_Nicholas_Judy_TDC.mp3",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Fight",
-      "title": "The Designer's Choice UCS Collection - FIGHT — FIGHT/BODYFALL/FGHTBf-Samsung Galaxy Smartphone, CU_Bodyfall, On Grass_Nicholas Judy_TDC.mp3",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "2841db834a01cf3e3d01fac2710ae4c4cbf5f1a0c4e6a5de190ef9496a15f88a"
     },
     "dc-crumple": {
       "file": "archive/Designers-Choice-Collection-Paper/PAPRHndl-Blue_Snowball_Microphone_CU_Paper_Crumple_Nicholas_Judy_TDC.mp3",
@@ -828,12 +792,6 @@
       "end": 1.5,
       "fadeOut": 0.1
     },
-    "tail-1": {
-      "from": "dc-tail",
-      "start": 0,
-      "end": 0.4,
-      "fadeOut": 0.05
-    },
     "scamper-1": {
       "from": "fs-zoomies",
       "start": 0.03,
@@ -854,14 +812,6 @@
       "end": 4.35,
       "loop": true,
       "note": "зумі: справжній тупіт лап"
-    },
-    "land-1": {
-      "from": "dc-bodyfall",
-      "start": 0.0806,
-      "end": 0.4199,
-      "filter": "asetrate=57330,aresample=48000",
-      "fadeOut": 0.08,
-      "note": "кота поставили на підлогу"
     },
     "land-2": {
       "from": "dc-tail",
@@ -906,21 +856,6 @@
       "end": 0.3504,
       "filter": "asetrate=52920,aresample=48000",
       "fadeOut": 0.06
-    },
-    "crunch-1": {
-      "from": "dc-crunch",
-      "start": 0,
-      "end": 0.42,
-      "level": -11,
-      "fadeOut": 0.05,
-      "note": "тихіше, як хрумкіт із запису їжі"
-    },
-    "crunch-2": {
-      "from": "eating",
-      "start": 15.42,
-      "end": 15.85,
-      "filter": "highpass=f=250",
-      "fadeOut": 0.05
     },
     "chew-wire-1": {
       "from": "dc-chomp",
@@ -982,12 +917,6 @@
       "end": 0.96,
       "fadeOut": 0.08
     },
-    "smash-2": {
-      "from": "dc-shotglass",
-      "start": 0,
-      "end": 0.95,
-      "fadeOut": 0.1
-    },
     "mug-break-1": {
       "from": "dc-mug-break",
       "start": 0,
@@ -1013,19 +942,6 @@
       "start": 0,
       "end": 0.95,
       "fadeOut": 0.08
-    },
-    "toy-break-1": {
-      "from": "dc-stick",
-      "start": 0.08,
-      "end": 0.32,
-      "fadeOut": 0.04
-    },
-    "bin-1": {
-      "from": "dc-plastic-drop",
-      "start": 0.08,
-      "end": 1.42,
-      "fadeOut": 0.12,
-      "note": "пластиковий смітник падає й торохтить"
     },
     "keys-1": {
       "from": "fs-key-click",

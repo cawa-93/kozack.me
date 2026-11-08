@@ -105,7 +105,7 @@ export class Sounds {
     }
   }
 
-  /** День показують заново: петлі стихають, пам'ять кроків забувається. */
+  /** День показують заново: петлі стихають, пам'ять груп (`tick`) забувається. */
   reset(): void {
     for (const playing of this.loops.values()) playing.voice.stop();
     this.loops.clear();
@@ -139,7 +139,7 @@ export class Sounds {
     if (group) this.fire(group, { sound }, null);
   }
 
-  /** Щокадру зі сцени квартири: кроки й петлі. */
+  /** Щокадру зі сцени квартири: звуки груп (`tick`) і петлі. */
   frame(dtMs: number): void {
     const scene = this.scene;
     if (!scene) return;

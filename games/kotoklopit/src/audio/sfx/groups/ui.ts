@@ -11,7 +11,6 @@ const cue = (sound: string): readonly Cue[] => [{ sound }];
 
 const REFUSED = cue("refused");
 const REFUSED_EMPTY = cue("refused-empty");
-const GLITCH = cue("glitch");
 const NOTIFY = cue("notify");
 const ORDERED = cue("ordered");
 const BOUGHT = cue("bought");
@@ -40,7 +39,6 @@ export const group: SoundGroup = {
     refused: { files: ["refused-1", "refused-2"], gain: 0.28, pitch: 0.04, spread: 0.1, cooldownMs: 350, voices: 1, ui: true },
     "refused-empty": { files: ["empty-1", "empty-2"], gain: 0.6, pitch: 0.04, spread: 0.1, cooldownMs: 350, voices: 1, ui: true },
     // Збій керування повторюється, поки здоровий глузд низький: не частіше, ніж раз на півтори секунди.
-    glitch: { files: ["glitch"], gain: 0.28, pitch: 0.05, cooldownMs: 1500, voices: 1, ui: true },
     notify: { files: ["notify"], gain: 0.35, cooldownMs: 600, voices: 1, ui: true },
     ordered: { files: ["ordered"], gain: 0.5, voices: 1, ui: true },
     bought: { files: ["bought"], gain: 0.6, pitch: 0.03, ui: true },
@@ -54,8 +52,6 @@ export const group: SoundGroup = {
     switch (event.type) {
       case "refused":
         return refusalCues(event.reason);
-      case "glitch":
-        return GLITCH;
       case "trait-noticed":
         return NOTIFY;
       case "ordered":

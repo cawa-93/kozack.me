@@ -2,12 +2,12 @@
 // а не нові щоразу.
 
 import type { GameEvent, ModifierEvent } from "../../../sim/events";
-import { cleaningTool, robotAt } from "../../../sim/household";
+import { cleaningTool } from "../../../sim/household";
 import { CARRIER_SPOT, itemPoint, ROBOT_DOCK } from "../../../sim/home";
 import type { GameState } from "../../../sim/types";
 import type { Cue, SoundAt } from "../types";
 import type { HomeSound } from "./sounds";
-import { bowlsAt, brokeAt, itemAt, storageAt } from "./where";
+import { brokeAt, storageAt } from "./where";
 
 type HomeCue = Cue & { sound: HomeSound };
 
@@ -35,15 +35,13 @@ const VISITS: Partial<Record<ModifierEvent, readonly HomeCue[]>> = {
   cleaner: visit("bucket", 800),
   fireworks: one("fireworks", "sill-living"),
 };
-/** Мама заходить сама (§4.1): стукає тричі, відчиняє й несе пакет; не застала — пакет у ящиках біля входу. */
+/** Мама заходить сама (§4.1): стукає тричі й відчиняє; не застала персонажа — тиша. */
 const MOM: readonly HomeCue[] = [
   { sound: "knock", at: "door" },
   { sound: "knock", at: "door", delayMs: 190, rate: 1.04 },
   { sound: "knock", at: "door", delayMs: 380, rate: 0.97 },
   { sound: "door", at: "door", delayMs: 900 },
-  { sound: "bag", at: "door", delayMs: 1350 },
 ];
-const MOM_PORCH = one("bag", "boxes");
 const RECEIVED: readonly HomeCue[] = [
   { sound: "lock", at: "door" },
   { sound: "door", at: "door", delayMs: 250 },
@@ -69,7 +67,6 @@ const STATIC = {
   burnt: one("burnt", "stove"),
   wire: one("wire", "computer"),
   vacuumOn: one("vacuum-on", "person"),
-  swept: one("swept", "person"),
 } as const;
 
 /** Річ кухні взяли чи поклали (`took`, `put`). */
@@ -110,20 +107,14 @@ export function homeCues(event: GameEvent, state: GameState): readonly HomeCue[]
       // Віник — тихо: гуде лише пилосос, і лише коли є світло (§8.7).
       if (cleaningTool(state) !== "vacuum") return NONE;
       return event.stage === "taken" ? STATIC.vacuumOn : one("vacuum-off", state.home.vacuumAt ?? "person");
-    case "vacuumed":
-      return event.by === "person" ? STATIC.swept : [{ sound: "swept", at: robotAt(state), gain: 0.6 }];
     case "robot":
       return ROBOT_BACK;
     case "broke":
       return one("broke", brokeAt(state, event.what));
-    case "feeder":
-      return one("feeder", bowlsAt(state, event.bowls));
-    case "feeder-emptied":
-      return one("feeder-empty", itemAt(state, event.item));
     case "wire-fixed":
       return STATIC.wire;
     case "modifier":
-      if (event.kind === "mom-food") return event.value === 1 ? MOM : MOM_PORCH;
+      if (event.kind === "mom-food") return event.value === 1 ? MOM : NONE;
       return VISITS[event.kind] ?? NONE;
     default:
       return NONE;

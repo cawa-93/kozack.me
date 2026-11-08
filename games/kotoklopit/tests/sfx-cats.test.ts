@@ -29,6 +29,9 @@ const CAT_EVENTS = new Set<GameEvent["type"]>([
   "mess", "treat-snatched", "play-declined", "sulked", "cat-left",
 ]);
 
+/** Бабли «вголос» котів без звуку (`SOUND_PLAN.md`, «Без звуку»): звук лише засмічував. */
+const MUTE = new Set<GameEvent["type"]>(["stole", "treat-snatched"]);
+
 /** Приклади подій групи, яких немає серед прикладів баблів (`bubblecases.ts`). */
 const MORE: GameEvent[] = [
   { type: "carrier-cry", cat: 1 },
@@ -101,15 +104,17 @@ describe("звуки котів (§11.4а)", () => {
     }
   });
 
-  it("кожен бабл «вголос» події котів звучить, думки — ні (окрім звуку тіла)", () => {
+  it("кожен бабл «вголос» події котів звучить, крім беззвучних; думки — ні", () => {
     const s = withCats();
+    const mute: string[] = [];
     for (const event of SAMPLES) {
       const cues = group.onEvent?.(event, s) ?? [];
       // «Тихоня» відкриває рота, а звуку немає (§9.12): бабл уголос, але беззвучний.
       const silent = event.type === "meow" && event.silent === true;
       const aloud = !silent && eventBubbles(event).some((b) => b.kind === "say");
-      if (aloud) expect(cues.length, `${event.type} ${JSON.stringify(event)}`).toBeGreaterThan(0);
+      if (aloud && cues.length === 0) mute.push(event.type);
     }
+    expect([...new Set(mute)].sort()).toEqual([...MUTE].sort());
     // Беззвучне нявкання «Тихоні» не звучить.
     expect(group.onEvent?.({ type: "meow", cat: 1, silent: true }, s)).toEqual([]);
   });

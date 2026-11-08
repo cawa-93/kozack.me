@@ -411,7 +411,7 @@ const GAITS: Readonly<Record<PersonGait, PersonGaitInfo>> = {
 };
 
 /**
- * Хода персонажа: крок, тривалість і опори (для `personGaitSpeed`, тестів і звуку кроків). Модуль анімацій експортує
+ * Хода персонажа: крок, тривалість і опори (для `personGaitSpeed` і тестів). Модуль анімацій експортує
  * об'єктом лише групу (`PERSON_MOVE`): будь-який інший об'єкт тести й галерея вважали б групою анімацій.
  */
 export function personGait(gait: PersonGait): PersonGaitInfo {

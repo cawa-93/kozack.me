@@ -57,22 +57,26 @@ const EVENTS: readonly GameEvent[] = [
   { type: "laundry", stage: "hung" },
   { type: "vacuum", stage: "taken" },
   { type: "vacuum", stage: "put" },
-  { type: "vacuumed", by: "person", tufts: [0], dust: [], messes: [] },
-  { type: "vacuumed", by: "robot", tufts: [], dust: [1], messes: [] },
   { type: "robot" },
   { type: "broke", what: "bowl" },
   { type: "broke", what: "carrier" },
   { type: "broke", what: "robot" },
-  { type: "feeder", bowls: [3, 4] },
-  { type: "feeder-emptied", item: 3, products: ["catFood"] },
   { type: "wire-fixed" },
   { type: "modifier", kind: "guests", value: -2, guests: { mess: true, hissed: false, delighted: false } },
   { type: "modifier", kind: "inspection", value: 100, paid: 100 },
   { type: "modifier", kind: "home-vet", value: 1 },
   { type: "modifier", kind: "cleaner", value: 3 },
   { type: "modifier", kind: "mom-food", value: 1 },
-  { type: "modifier", kind: "mom-food", value: 0 },
   { type: "modifier", kind: "fireworks", value: 0 },
+];
+
+/** Події дому без звуку (`SOUND_PLAN.md`, «Без звуку»): звук лише засмічував. */
+const SILENT: readonly GameEvent[] = [
+  { type: "vacuumed", by: "person", tufts: [0], dust: [], messes: [] },
+  { type: "vacuumed", by: "robot", tufts: [], dust: [1], messes: [] },
+  { type: "feeder", bowls: [3, 4] },
+  { type: "feeder-emptied", item: 3, products: ["catFood"] },
+  { type: "modifier", kind: "mom-food", value: 0 },
 ];
 
 const cues = (event: GameEvent, state = home()): readonly Cue[] => group.onEvent?.(event, state) ?? [];
@@ -94,10 +98,15 @@ describe("звуки дому (§11.4а)", () => {
     }
   });
 
-  it("кожен бабл вголос над річчю з подій дому звучить (§11.4)", () => {
+  it("без звуку: втягнуте пилососом, автогодівниця, пакет мами під дверима", () => {
+    for (const event of SILENT) expect(cues(event), JSON.stringify(event)).toEqual([]);
+  });
+
+  it("кожен бабл вголос над річчю з подій дому звучить (§11.4), крім беззвучних", () => {
     // Модифікатори діляться між групами за видом (`meeting-start` — робота).
     const kind = (e: GameEvent): string => (e.type === "modifier" ? `modifier:${e.kind}` : e.type);
     const mine = new Set(EVENTS.map(kind));
+    for (const event of SILENT) mine.delete(kind(event));
     for (const event of BUBBLE_EVENTS) {
       if (!mine.has(kind(event)) || !eventBubbles(event).some((b) => b.kind === "say" && b.at !== "person" && !b.at.startsWith("cat:"))) continue;
       expect(cues(event).length, JSON.stringify(event)).toBeGreaterThan(0);

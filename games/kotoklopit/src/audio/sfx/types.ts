@@ -67,7 +67,7 @@ export interface SoundGroup {
   onScene?(moment: SceneMoment, state: GameState): readonly Cue[];
   /** Петлі зі стану: душ, пральна, мурчання. Кличуть кожні `SFX.loopMs`. */
   loops?(state: GameState): readonly LoopCue[];
-  /** Щокадру: звуки від руху (кроки). `dtMs` — реальний час кадру. Пам'ять між кадрами група тримає сама. */
+  /** Щокадру: звуки, що йдуть за станом (клавіатура, позіх, низька шкала). `dtMs` — реальний час кадру. Пам'ять між кадрами група тримає сама. */
   tick?(state: GameState, dtMs: number): readonly Cue[];
   /** Пам'ять `tick` скинути: день показують заново. */
   reset?(): void;

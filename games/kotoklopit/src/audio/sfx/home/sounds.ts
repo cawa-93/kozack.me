@@ -28,7 +28,6 @@ export const HOME_SOUNDS = {
   door: { files: ["door"], gain: 0.55 },
   lock: { files: ["lock"], gain: 0.45 },
   knock: { files: ["knock"], gain: 0.65 },
-  bag: { files: ["bag"], gain: 0.5 },
   guests: { files: ["guests"], gain: 0.4, voices: 1 },
   papers: { files: ["papers"], gain: 0.5 },
   "vet-case": { files: ["vet-case"], gain: 0.5 },
@@ -52,14 +51,11 @@ export const HOME_SOUNDS = {
   "vacuum-on": { files: ["vacuum-on"], gain: 0.85 },
   "vacuum-off": { files: ["vacuum-off"], gain: 0.75 },
   "vacuum-loop": { files: ["vacuum-loop"], gain: 0.85, loop: true },
-  swept: { files: ["swept"], gain: 0.3, pitch: 0.06, cooldownMs: 400 },
   "robot-loop": { files: ["robot-loop"], gain: 0.3, loop: true },
   "beep-high": { files: ["beep-high"], gain: 0.35 },
   "beep-low": { files: ["beep-low"], gain: 0.35 },
-  // Поломки, годівниця, дріт, мухи.
+  // Поломки, дріт, мухи.
   broke: { files: variants("broke", 2), gain: 0.75, pitch: 0.05, cooldownMs: 200 },
-  feeder: { files: variants("feeder", 2), gain: 0.5, pitch: 0.04, cooldownMs: 500 },
-  "feeder-empty": { files: ["feeder-empty"], gain: 0.45 },
   wire: { files: ["wire"], gain: 0.5 },
   "flies-loop": { files: ["flies-loop"], gain: 0.22, loop: true },
 } satisfies Record<string, SoundDef>;

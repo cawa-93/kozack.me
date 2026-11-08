@@ -1,5 +1,5 @@
 // Події котів → звуки (§11.4а, `SOUND_PLAN.md`, «Ефекти», рядок `cats`): кожен бабл «вголос» над котом, річчю, що її зачепив
-// кіт, чи персонажем, якого кіт вкусив, звучить; думки — ні (хіба тихий звук тіла: позіхнув, ляснув хвостом).
+// кіт, чи персонажем, якого кіт вкусив, звучить, крім тих, де звук лише засмічує («Без звуку»); думки — ні (хіба позіх).
 
 import { isKitten } from "../../../sim/cat";
 import { CARRIER_SPOT } from "../../../sim/home";
@@ -50,13 +50,6 @@ function triple(sound: string, at: SoundAt, stepMs: number): Cue[] {
   ];
 }
 
-/** Точка іграшки, яку щойно розгриз кіт: самої іграшки вже немає, тож — кіт, що з нею грався. */
-function toyCat(state: GameState, toy: number): SoundAt {
-  const target = `item:${toy}`;
-  const cat = state.cats.find((c) => c.act.target === target);
-  return cat ? catAt(cat.id) : null;
-}
-
 export function catEvent(event: GameEvent, state: GameState): readonly Cue[] {
   switch (event.type) {
     case "meow": {
@@ -95,9 +88,6 @@ export function catEvent(event: GameEvent, state: GameState): readonly Cue[] {
       return [{ sound: "claw", at: catAt(event.cat) }];
     case "cat-ate":
       return [{ sound: "lick", at: catAt(event.cat), gain: 0.6 }];
-    case "stole":
-    case "treat-snatched":
-      return [{ sound: "crunch", at: catAt(event.cat) }];
     case "coughing":
       return triple("hack", catAt(event.cat), 240);
     case "symptom":
@@ -113,26 +103,19 @@ export function catEvent(event: GameEvent, state: GameState): readonly Cue[] {
     case "chatter":
       // Запис — уже ціла фраза «ек-ек-ек».
       return [{ sound: "chatter", at: catAt(event.cat) }];
-    case "window-angry":
-    case "sulked":
-    case "cat-left":
-      // Сіпає хвостом, дметься, іде з-під руки — думка, лише тихий звук тіла.
-      return [{ sound: "tail", at: catAt(event.cat) }];
     case "play-declined":
-      return event.sick ? voiced(state, "hiss-soft", event.cat) : [{ sound: "tail", at: catAt(event.cat) }];
+      return event.sick ? voiced(state, "hiss-soft", event.cat) : NONE;
     case "knocked":
       return [{ sound: "smash", at: event.object }];
     case "trinket-fell":
       return [{ sound: event.broken ? "mug-break" : `${event.trinket}-drop`, at: event.object }];
-    case "toy-broke":
-      return [{ sound: "toy-break", at: toyCat(state, event.toy) }];
     case "scratched":
       // Дряпання звучить петлею, поки триває; подія — його кінець.
       return NONE;
     case "keyboard":
       return PAWS;
     case "trash-tipped":
-      return [{ sound: "bin", at: "trash" }, { sound: "paper", at: "trash", delayMs: 300 }];
+      return [{ sound: "paper", at: "trash" }];
     case "chewing":
       return [{ sound: event.what === "wire" ? "chew-wire" : "chew-box", at: catAt(event.cat) }];
     case "wire-chewed":

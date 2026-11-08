@@ -1,14 +1,5 @@
 {
   "originals": {
-    "steps-stone": {
-      "file": "archive/aporee_22211_25783/HansenHouseFootstepsIndoors.ogg",
-      "url": "https://archive.org/details/aporee_22211_25783",
-      "title": "Hansen House, Jerusalem, Israel - Footsteps in Hansen House Interior — HansenHouseFootstepsIndoors.ogg",
-      "author": "Josef Sprinzak (radio aporee ::: maps)",
-      "license": "CC-BY-3.0",
-      "licenseUrl": "http://creativecommons.org/licenses/by/3.0/",
-      "sha256": "d82bef5beca034cde06b5ac3ad0e0fcf51f0f389230c1e1baba2fd1a861e4aca"
-    },
     "sigh": {
       "file": "archive/Designers-Choice-Collection-Human/HMNBrth-Blue_Snowball_Microphone_CU_Sigh_Nicholas_Judy_TDC.flac",
       "url": "https://archive.org/details/Designers-Choice-Collection-Human",
@@ -17,15 +8,6 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "0a8c125830703c02f1a483568986fe6905f59759915fa126b807cfbbaa42c4c2"
-    },
-    "breath": {
-      "file": "archive/Designers-Choice-Collection-Human/HMNBrth-Blue_Snowball_Microphone_Breathing_Deep_Inhale_Exhale_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Human",
-      "title": "The Designer's Choice UCS Collection - HUMAN — HUMAN/BREATH/HMNBrth-Blue Snowball Microphone_Breathing, Deep, Inhale, Exhale_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "b34fd7015654a405b35220147e1522cbff075179ae2a310237e8abb4754b3577"
     },
     "gasps": {
       "file": "archive/Designers-Choice-Collection-Human/HMNBrth-Blue_Snowball_Microphone_CU_Gasps_Short_Various_Nicholas_Judy_TDC.flac",
@@ -189,15 +171,6 @@
       "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
       "sha256": "701ff1210f925d28c9c7b878e2c44208130be5b73c3b325442aa284d72edffb5"
     },
-    "drip": {
-      "file": "archive/Designers-Choice-Collection-Water/WATRDrip_Bathtub_Dripping_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Water",
-      "title": "The Designer's Choice UCS Collection - WATER — WATER/DRIP/WATRDrip_Bathtub Dripping_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "446b67f8cf757b1996f4a9a9ab74fb3b3d5b89b9e732d79bd6de586e663e8f5a"
-    },
     "yawn-1": {
       "file": "commons/Yawning_1.ogg",
       "url": "https://commons.wikimedia.org/wiki/File:Yawning_1.ogg",
@@ -243,33 +216,6 @@
       "licenseUrl": "https://commons.wikimedia.org/wiki/File:Bathtub_water_splashes.ogg",
       "sha256": "471b9c2cc35a183d74af61abc1352c93ecc457450cef1c29aa79669113010f38"
     },
-    "snacks": {
-      "file": "commons/Eating_snacks.ogg",
-      "url": "https://commons.wikimedia.org/wiki/File:Eating_snacks.ogg",
-      "title": "Eating snacks",
-      "author": "earthcalling (PDSounds)",
-      "license": "PD",
-      "licenseUrl": "https://commons.wikimedia.org/wiki/File:Eating_snacks.ogg",
-      "sha256": "f801e98415e51c9a13393df11700a53f762d682ca678fd20441a5452b388ec46"
-    },
-    "fs-steps-wood": {
-      "file": "freesound/164315__rickmk2__footsteps-on-wooden-flooring.wav",
-      "url": "https://freesound.org/people/Rickmk2/sounds/164315/",
-      "title": "Footsteps on wooden flooring",
-      "author": "Rickmk2",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "9f51e4c8f4e8c2bff3682ae8f5c34a1ae8425844baa7e1cde2b265b2aebe54e6"
-    },
-    "fs-steps-carpet": {
-      "file": "freesound/638509__tgerginov__steps-on-a-carpet-over-wood-floor.wav",
-      "url": "https://freesound.org/people/tgerginov/sounds/638509/",
-      "title": "Steps on a carpet over wood floor",
-      "author": "tgerginov",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "4992c5ad7cd4571f6436a0ce394a2f03668230f3e94dac3862b222894cc3cba9"
-    },
     "fs-yawn-man": {
       "file": "freesound/447460__florianreichelt__yawning-sound-by-a-man.wav",
       "url": "https://freesound.org/people/florianreichelt/sounds/447460/",
@@ -290,115 +236,6 @@
     }
   },
   "files": {
-    "step-tile-1": {
-      "from": "steps-stone",
-      "start": 39,
-      "end": 39.24,
-      "filter": "highpass=f=90",
-      "fadeIn": 0.002,
-      "fadeOut": 0.08,
-      "note": "крок по плитці (ванна)"
-    },
-    "step-tile-2": {
-      "from": "steps-stone",
-      "start": 42.57,
-      "end": 42.81,
-      "filter": "highpass=f=90",
-      "fadeIn": 0.002,
-      "fadeOut": 0.08,
-      "note": "крок по плитці (ванна)"
-    },
-    "step-tile-3": {
-      "from": "steps-stone",
-      "start": 43.74,
-      "end": 43.98,
-      "filter": "highpass=f=90",
-      "fadeIn": 0.002,
-      "fadeOut": 0.08,
-      "note": "крок по плитці (ванна)"
-    },
-    "step-tile-4": {
-      "from": "steps-stone",
-      "start": 46,
-      "end": 46.24,
-      "filter": "highpass=f=90",
-      "fadeIn": 0.002,
-      "fadeOut": 0.08,
-      "note": "крок по плитці (ванна)"
-    },
-    "step-tile-5": {
-      "from": "steps-stone",
-      "start": 58.23,
-      "end": 58.47,
-      "filter": "highpass=f=90",
-      "fadeIn": 0.002,
-      "fadeOut": 0.08,
-      "note": "крок по плитці (ванна)"
-    },
-    "step-wood-1": {
-      "from": "fs-steps-wood",
-      "start": 1.07,
-      "end": 1.35,
-      "filter": "highpass=f=80,lowpass=f=5000",
-      "fadeIn": 0.002,
-      "fadeOut": 0.1,
-      "note": "крок по дошках, паркету й лінолеуму"
-    },
-    "step-wood-2": {
-      "from": "fs-steps-wood",
-      "start": 2.45,
-      "end": 2.73,
-      "filter": "highpass=f=80,lowpass=f=5000",
-      "fadeIn": 0.002,
-      "fadeOut": 0.1,
-      "level": -6
-    },
-    "step-wood-3": {
-      "from": "fs-steps-wood",
-      "start": 7.14,
-      "end": 7.42,
-      "filter": "highpass=f=80,lowpass=f=5000",
-      "fadeIn": 0.002,
-      "fadeOut": 0.1,
-      "level": -3
-    },
-    "step-wood-4": {
-      "from": "fs-steps-wood",
-      "start": 9.85,
-      "end": 10.13,
-      "filter": "highpass=f=80,lowpass=f=5000",
-      "fadeIn": 0.002,
-      "fadeOut": 0.1,
-      "level": -3
-    },
-    "step-rug-1": {
-      "from": "fs-steps-carpet",
-      "start": 15.25,
-      "end": 15.51,
-      "filter": "highpass=f=60,lowpass=f=1800",
-      "fadeIn": 0.002,
-      "fadeOut": 0.1,
-      "note": "крок по килиму: глухий шурхіт, тихіший за дерево (запис шумний — пік нижче)",
-      "level": -18
-    },
-    "step-rug-2": {
-      "from": "fs-steps-carpet",
-      "start": 9.01,
-      "end": 9.27,
-      "filter": "highpass=f=60,lowpass=f=1800",
-      "fadeIn": 0.002,
-      "fadeOut": 0.1,
-      "level": -19
-    },
-    "step-rug-3": {
-      "from": "fs-steps-carpet",
-      "start": 2.65,
-      "end": 2.91,
-      "filter": "highpass=f=60,lowpass=f=1800",
-      "fadeIn": 0.002,
-      "fadeOut": 0.1,
-      "level": -20
-    },
     "dash-1": {
       "from": "swoosh",
       "start": 0.15,
@@ -490,20 +327,6 @@
       "end": 0.45,
       "fadeOut": 0.06,
       "note": "ковток"
-    },
-    "eat-1": {
-      "from": "snacks",
-      "start": 14.15,
-      "end": 15.3,
-      "fadeOut": 0.08,
-      "note": "їсть: хрумкий укус і жування"
-    },
-    "eat-2": {
-      "from": "snacks",
-      "start": 21.7,
-      "end": 23.05,
-      "fadeOut": 0.1,
-      "note": "їсть: жування"
     },
     "plate-1": {
       "from": "bowl",
@@ -674,34 +497,6 @@
       "fadeOut": 0.08,
       "note": "таблетки в баночці"
     },
-    "drop-1": {
-      "from": "drip",
-      "start": 1.62,
-      "end": 1.87,
-      "fadeOut": 0.08,
-      "note": "крапля з піпетки"
-    },
-    "drop-2": {
-      "from": "drip",
-      "start": 6.455,
-      "end": 6.705,
-      "fadeOut": 0.08,
-      "note": "крапля з піпетки"
-    },
-    "drop-3": {
-      "from": "drip",
-      "start": 14.43,
-      "end": 14.68,
-      "fadeOut": 0.08,
-      "note": "крапля з піпетки"
-    },
-    "drop-4": {
-      "from": "drip",
-      "start": 25.79,
-      "end": 26.04,
-      "fadeOut": 0.08,
-      "note": "крапля з піпетки"
-    },
     "sneeze-he": {
       "from": "sneeze-he",
       "start": 0.14,
@@ -730,21 +525,6 @@
       "filter": "asetrate=49392,aresample=48000",
       "fadeOut": 0.12,
       "note": "важко дихає (вона)"
-    },
-    "relief-he": {
-      "from": "breath",
-      "start": 1.55,
-      "end": 2.75,
-      "fadeOut": 0.15,
-      "note": "видих полегшення: одужав (він)"
-    },
-    "relief-she": {
-      "from": "breath",
-      "start": 1.5501,
-      "end": 2.7496,
-      "filter": "asetrate=49392,aresample=48000",
-      "fadeOut": 0.15,
-      "note": "видих полегшення (вона)"
     },
     "yawn-she-1": {
       "from": "yawn-2",
@@ -808,13 +588,6 @@
       "end": 9.2,
       "fadeOut": 0.12,
       "note": "ковдра й подушка: ліг у ліжко"
-    },
-    "sock": {
-      "from": "pillow",
-      "start": 4.97,
-      "end": 5.45,
-      "fadeOut": 0.08,
-      "note": "шкарпетку витягли й струсили"
     }
   }
 }

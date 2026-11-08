@@ -83,10 +83,6 @@
     "hash": "1231d41e44f9f40e",
     "seconds": 0.120833
   },
-  "bag": {
-    "hash": "6c6ac8627479ede5",
-    "seconds": 1.2
-  },
   "carrier": {
     "hash": "18780df90b3f558a",
     "seconds": 0.8
@@ -159,10 +155,6 @@
     "hash": "862d69797761dac0",
     "seconds": 2
   },
-  "swept": {
-    "hash": "4efbd404573d763d",
-    "seconds": 0.5
-  },
   "robot-loop": {
     "hash": "7fbc4b0e4a9397ad",
     "seconds": 5.45,
@@ -186,18 +178,6 @@
   "broke-2": {
     "hash": "cfc5b96026b87c77",
     "seconds": 0.292
-  },
-  "feeder-1": {
-    "hash": "eba99e8f68b8509b",
-    "seconds": 0.65
-  },
-  "feeder-2": {
-    "hash": "a24ec48e9502fdfd",
-    "seconds": 1.1
-  },
-  "feeder-empty": {
-    "hash": "b4f824a2b3208559",
-    "seconds": 1.12
   },
   "wire": {
     "hash": "cd9af73fc615a118",

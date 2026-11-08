@@ -44,25 +44,23 @@ describe("звуки роботи: події (§8.6, §4.1)", () => {
   const modifier = (kind: ModifierEvent): GameEvent => ({ type: "modifier", kind, value: 0 });
   const cases: [GameEvent, string[]][] = [
     [{ type: "work-started" }, ["work-start"]],
-    [{ type: "work-stopped", minutes: 60, money: 120, reputation: 1, sanity: -1 }, ["coin"]],
-    [{ type: "work-stopped", minutes: 60, money: 0, reputation: 0, sanity: -1 }, []],
-    [{ type: "patience", level: "warning" }, ["patience-warning"]],
-    [{ type: "patience", level: "out" }, ["patience-out"]],
-    [{ type: "patience", level: "ok" }, []],
+    [{ type: "work-stopped", minutes: 60, money: 120, reputation: 1, sanity: -1 }, []],
+    [{ type: "patience", level: "warning" }, []],
+    [{ type: "patience", level: "out" }, []],
     [{ type: "standup-started" }, ["call"]],
     [{ type: "standup", attended: true, reputation: 0 }, ["call-ok"]],
-    [{ type: "standup", attended: false, reputation: -1 }, ["call-missed"]],
+    [{ type: "standup", attended: false, reputation: -1 }, []],
     [{ type: "career", change: "promoted", position: 1 }, ["career-up"]],
     [{ type: "career", change: "hired", position: 0 }, ["career-up"]],
     [{ type: "career", change: "demoted", position: 0 }, ["career-down"]],
     [{ type: "career", change: "fired", position: 0 }, ["career-down"]],
     [{ type: "job-rejected", vacancy: 1 }, ["rejected"]],
-    [{ type: "call-remark", issue: "clothes" }, ["remark"]],
-    [modifier("reputation"), ["message"]],
+    [{ type: "call-remark", issue: "clothes" }, []],
+    [modifier("reputation"), []],
     [modifier("meeting-start"), ["call"]],
     [modifier("meeting-attended"), ["call-ok"]],
-    [modifier("meeting-missed"), ["call-missed"]],
-    [modifier("office-missed"), ["call-missed"]],
+    [modifier("meeting-missed"), []],
+    [modifier("office-missed"), []],
     [modifier("vacation-pay"), ["vacation-pay"]],
     // Дзвінок мами — петлею, поки чекає (нижче); події дня інших груп і чужі події — без звуку цієї групи.
     [modifier("mom-call"), []],
@@ -76,20 +74,12 @@ describe("звуки роботи: події (§8.6, §4.1)", () => {
     expectPlayable(cues, false);
   });
 
-  it("«!» і «Х» — лише коли терпіння падає: за комп'ютером воно відновлюється, і тривоги немає", () => {
-    const working = game().current;
-    startWork(working);
-    expect(onEvent({ type: "patience", level: "warning" }, working)).toEqual([]);
-    expect(onEvent({ type: "patience", level: "out" }, working)).toEqual([]);
-  });
-
   it("звуки комп'ютера — з комп'ютера, новини й гроші — без місця", () => {
     expect(onEvent({ type: "work-started" }, state)[0]?.at).toBe("computer");
     expect(onEvent({ type: "standup-started" }, state)[0]?.at).toBe("computer");
     expect(onEvent({ type: "career", change: "fired", position: 0 }, state)[0]?.at).toBeUndefined();
-    // Новини кар'єри й пропущене чути й у поїздці (шина інтерфейсу), а клавіатуру — ні.
+    // Новини кар'єри чути й у поїздці (шина інтерфейсу), а клавіатуру — ні.
     expect(group.sounds["career-down"]?.ui).toBe(true);
-    expect(group.sounds["call-missed"]?.ui).toBe(true);
     expect(group.sounds["key"]?.ui).toBeUndefined();
   });
 });

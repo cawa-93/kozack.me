@@ -191,10 +191,6 @@
     "hash": "b83726ce12bb9cda",
     "seconds": 1.5
   },
-  "tail-1": {
-    "hash": "be9712626a37b342",
-    "seconds": 0.4
-  },
   "scamper-1": {
     "hash": "d83c110112b75ba5",
     "seconds": 0.97
@@ -210,10 +206,6 @@
       "start": 0.1,
       "end": 4.12
     }
-  },
-  "land-1": {
-    "hash": "eb7484f97dff99d4",
-    "seconds": 0.261021
   },
   "land-2": {
     "hash": "fd6ee04ba6b44408",
@@ -238,14 +230,6 @@
   "spit-1": {
     "hash": "f735c44d9fa0f8e5",
     "seconds": 0.292
-  },
-  "crunch-1": {
-    "hash": "11c420dd809fe8a0",
-    "seconds": 0.42
-  },
-  "crunch-2": {
-    "hash": "cca2935894b56dda",
-    "seconds": 0.43
   },
   "chew-wire-1": {
     "hash": "c1fcde6438014b16",
@@ -295,10 +279,6 @@
     "hash": "92275762eb195a06",
     "seconds": 0.91
   },
-  "smash-2": {
-    "hash": "511c6826d6a0497a",
-    "seconds": 0.95
-  },
   "mug-break-1": {
     "hash": "5beaf129da99ec56",
     "seconds": 0.92
@@ -314,14 +294,6 @@
   "pen-drop-1": {
     "hash": "bc44cd94de481881",
     "seconds": 0.95
-  },
-  "toy-break-1": {
-    "hash": "50b6f1ef0f4489ad",
-    "seconds": 0.24
-  },
-  "bin-1": {
-    "hash": "2befd069625f2f0d",
-    "seconds": 1.34
   },
   "keys-1": {
     "hash": "81016423d1f4325a",

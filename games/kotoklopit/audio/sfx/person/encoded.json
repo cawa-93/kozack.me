@@ -1,52 +1,4 @@
 {
-  "step-tile-1": {
-    "hash": "3ae8aaaf929cef93",
-    "seconds": 0.241333
-  },
-  "step-tile-2": {
-    "hash": "285ac193d1f6fe46",
-    "seconds": 0.242
-  },
-  "step-tile-3": {
-    "hash": "f28b609343fbac75",
-    "seconds": 0.245333
-  },
-  "step-tile-4": {
-    "hash": "b384ade9e5be3779",
-    "seconds": 0.244
-  },
-  "step-tile-5": {
-    "hash": "cd5143a1e822f165",
-    "seconds": 0.246
-  },
-  "step-wood-1": {
-    "hash": "e9c0f41f1887063a",
-    "seconds": 0.28
-  },
-  "step-wood-2": {
-    "hash": "3250d54c0a4d7cd7",
-    "seconds": 0.28
-  },
-  "step-wood-3": {
-    "hash": "e851e43d6cbd0e5b",
-    "seconds": 0.28
-  },
-  "step-wood-4": {
-    "hash": "ba92ec47414c821b",
-    "seconds": 0.28
-  },
-  "step-rug-1": {
-    "hash": "d60de0ad7104be08",
-    "seconds": 0.26
-  },
-  "step-rug-2": {
-    "hash": "cd28b2128d5a44c3",
-    "seconds": 0.26
-  },
-  "step-rug-3": {
-    "hash": "0dea7550916c1a21",
-    "seconds": 0.26
-  },
   "dash-1": {
     "hash": "e4960a002c11baf8",
     "seconds": 0.4
@@ -98,14 +50,6 @@
   "swallow": {
     "hash": "f8c7b30cc4a5f2d4",
     "seconds": 0.37
-  },
-  "eat-1": {
-    "hash": "00ba63c0826017d8",
-    "seconds": 1.15
-  },
-  "eat-2": {
-    "hash": "320a42c44aa08937",
-    "seconds": 1.35
   },
   "plate-1": {
     "hash": "e087bacb1d711c09",
@@ -207,22 +151,6 @@
     "hash": "f40eeee81b6b4c25",
     "seconds": 0.65
   },
-  "drop-1": {
-    "hash": "73e35bfce45fa29b",
-    "seconds": 0.25
-  },
-  "drop-2": {
-    "hash": "ceb3466079c1097b",
-    "seconds": 0.25
-  },
-  "drop-3": {
-    "hash": "7bf3cda6f80513bc",
-    "seconds": 0.25
-  },
-  "drop-4": {
-    "hash": "83641a8107a9febc",
-    "seconds": 0.25
-  },
   "sneeze-he": {
     "hash": "d29b67c7a67db473",
     "seconds": 1.41
@@ -238,14 +166,6 @@
   "pant-she": {
     "hash": "6d02af4cf1dfc761",
     "seconds": 1.115979
-  },
-  "relief-he": {
-    "hash": "394b8999920fd533",
-    "seconds": 1.2
-  },
-  "relief-she": {
-    "hash": "df244799a415709f",
-    "seconds": 1.071
   },
   "yawn-she-1": {
     "hash": "0c538331220673ee",
@@ -278,9 +198,5 @@
   "blanket-2": {
     "hash": "abb918da1905f894",
     "seconds": 0.57
-  },
-  "sock": {
-    "hash": "c218b5f8780e3d65",
-    "seconds": 0.48
   }
 }

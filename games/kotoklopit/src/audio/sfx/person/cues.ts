@@ -30,11 +30,8 @@ const SLIP = voiced((voice) => [
   { sound: "fall", at, delayMs: 230 },
   { sound: "knock", at, delayMs: 250 },
 ]);
-// Жування (до 1,35 с), потім тарілку відставили.
-const ATE: readonly Cue[] = [
-  { sound: "eat", at },
-  { sound: "plate", at, delayMs: 1100 },
-];
+// Поїв — тарілку відставили.
+const ATE: readonly Cue[] = [{ sound: "plate", at }];
 const SHOWERED: readonly Cue[] = [{ sound: "shower-off", at: "shower" }];
 const LITTER: readonly Cue[] = [
   { sound: "scoop", at },
@@ -50,11 +47,6 @@ const COLLAR: readonly Cue[] = [
   { sound: "bell", at, delayMs: 120 },
 ];
 const PILLS: readonly Cue[] = [{ sound: "pills", at }];
-// Дві краплі з піпетки — два різні звуки: той самий звук двічі за мить відсіче пауза між повторами.
-const DROPS: readonly Cue[] = [
-  { sound: "drop", at },
-  { sound: "drop-again", at, delayMs: 280 },
-];
 const MEDS: readonly Cue[] = [
   { sound: "pills", at, gain: 0.8 },
   { sound: "swallow", at, delayMs: 650 },
@@ -62,8 +54,6 @@ const MEDS: readonly Cue[] = [
 const SNEEZE = voiced((voice) => [{ sound: `sneeze-${voice}`, at }]);
 const GASP = voiced((voice) => [{ sound: `gasp-${voice}`, at }]);
 const PANT = voiced((voice) => [{ sound: `pant-${voice}`, at }]);
-const RELIEF = voiced((voice) => [{ sound: `relief-${voice}`, at }]);
-const SOCK: readonly Cue[] = [{ sound: "sock", at }];
 export const YAWN = voiced((voice) => [{ sound: `yawn-${voice}`, at }]);
 const FALL_ASLEEP = voiced((voice) => [
   { sound: "blanket", at },
@@ -117,15 +107,11 @@ export function personEventCues(event: GameEvent, state: GameState): readonly Cu
     case "collar":
       return COLLAR;
     case "medicine":
-      return event.medicine === "pills" ? PILLS : DROPS;
+      return event.medicine === "pills" ? PILLS : NONE;
     case "person-ill":
       return event.illness === "cold" ? SNEEZE[voice] : event.illness === "injury" ? GASP[voice] : PANT[voice];
     case "person-meds":
       return MEDS;
-    case "person-cured":
-      return RELIEF[voice];
-    case "sock-found":
-      return SOCK;
     default:
       return NONE;
   }

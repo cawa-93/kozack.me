@@ -72,15 +72,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "a937f2413fc2f5f7242a906c454d8251b07feb1f04fb78df52384030028a31f4"
     },
-    "feeder": {
-      "file": "archive/Designers-Choice-Collection-Machines/MACHMisc-Samsung_Galaxy_Smartphone_CU_Cat_Food_Dispenser_Dispensing_Dry_Cat_Food_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Machines",
-      "title": "The Designer's Choice UCS Collection - MACHINES — MACHINES/MISC/MACHMisc-Samsung Galaxy Smartphone, CU_Cat Food Dispenser, Dispensing Dry Cat Food_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "53930c447267cb9e1126a9f93bb507684f3b1b95aa5901276fb595165a80eec8"
-    },
     "microwave": {
       "file": "archive/Designers-Choice-Collection-Machines/MACHAppl-Samsung_Galaxy_Smartphone_Microwave_Press_Buttons_Start_Run_Stop_Beeping_Nicholas_Judy_TDC.mp3",
       "url": "https://archive.org/details/Designers-Choice-Collection-Machines",
@@ -162,15 +153,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "18c9086434ff09dccc6e4cb7a8213a293bf849a4a5c1714940f9d6bbb26d89c1"
     },
-    "paper-bag": {
-      "file": "archive/Designers-Choice-Collection-Objects/OBJBag-Blue_Snowball_Microphone_CU_Paper_Rummage_Through_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Objects",
-      "title": "The Designer's Choice UCS Collection - OBJECTS — OBJECTS/BAG/OBJBag-Blue Snowball Microphone, CU_Paper, Rummage Through_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "5f3d894dc3ce7f8ec76419dd60b6132f608af90edc7624338365630446e913a3"
-    },
     "paint-can": {
       "file": "archive/Designers-Choice-Collection-Objects/OBJHsehld-Samsung_Galaxy_Smartphone_CU_Paint_Can_Lift_Set_Down_Nicholas_Judy_TDC.flac",
       "url": "https://archive.org/details/Designers-Choice-Collection-Objects",
@@ -188,15 +170,6 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "e3358e1391fa3b95ee975b0f6731cc7f51945e4b6c96588e9a19fbdfa49abab1"
-    },
-    "box-rattle": {
-      "file": "archive/Designers-Choice-Collection-Objects/OBJCont-Samsung_Galaxy_Smartphone_Box_Things_Inside_Rattle_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Objects",
-      "title": "The Designer's Choice UCS Collection - OBJECTS — OBJECTS/CONTAINER/OBJCont-Samsung Galaxy Smartphone_Box, Things Inside, Rattle_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "7c1c69a84b8b0c58264682db627715bc78decbd7e827b7b4b9d5fb84e9008f13"
     },
     "pillow": {
       "file": "archive/Designers-Choice-Collection-Objects/OBJFurn-Blue_Snowball_Microphone_MCU_Pillow_Fluff_Nicholas_Judy_TDC.flac",
@@ -233,15 +206,6 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "3d6d3dad01bf3c5b5a3e2a0bb11ae71f385095f66875458138611b34f2ca2c35"
-    },
-    "debris": {
-      "file": "archive/Designers-Choice-Collection-Wood/WOODImpt-CU_Sticks_Small_Dropping_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Wood",
-      "title": "The Designer's Choice UCS Collection - WOOD — WOOD/IMPACT/WOODImpt-CU_Sticks, Small, Dropping_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "13fb6eadce8ff713c92af45046fae2cbd400c2ef49200846653369404d3ca153"
     },
     "washer-mid": {
       "file": "commons/Washing_machine_mid_program.ogg",
@@ -460,14 +424,6 @@
       "fadeOut": 0.02,
       "note": "один короткий удар; мама стукає тричі (src/audio/sfx/home/cues.ts)"
     },
-    "bag": {
-      "from": "paper-bag",
-      "start": 0.25,
-      "end": 1.45,
-      "fadeIn": 0.05,
-      "fadeOut": 0.2,
-      "note": "Пакет із гостинцями"
-    },
     "carrier": {
       "from": "pet-gate",
       "end": 0.8,
@@ -567,12 +523,6 @@
       "fadeOut": 0.8,
       "note": "Пилосос вимкнули: мотор стихає"
     },
-    "swept": {
-      "from": "debris",
-      "end": 0.5,
-      "fadeOut": 0.1,
-      "note": "Пилосос утягнув сміття"
-    },
     "robot-loop": {
       "from": "fs-roomba",
       "start": 8.75,
@@ -605,26 +555,6 @@
       "start": 0.36,
       "end": 0.652,
       "fadeOut": 0.06
-    },
-    "feeder-1": {
-      "from": "feeder",
-      "start": 0.4,
-      "end": 1.05,
-      "fadeOut": 0.12,
-      "note": "Автогодівниця сипле гранули в миску"
-    },
-    "feeder-2": {
-      "from": "feeder",
-      "start": 1.75,
-      "end": 2.85,
-      "fadeOut": 0.15
-    },
-    "feeder-empty": {
-      "from": "box-rattle",
-      "start": 13.88,
-      "end": 15,
-      "fadeOut": 0.15,
-      "note": "Корм з автогодівниці висипали назад"
     },
     "wire": {
       "from": "fs-tape",

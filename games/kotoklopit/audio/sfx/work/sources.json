@@ -1,14 +1,5 @@
 {
   "originals": {
-    "gs-notification-2": {
-      "file": "commons/Notification_2_(Gravity_Sound).wav",
-      "url": "https://commons.wikimedia.org/wiki/File:Notification_2_(Gravity_Sound).wav",
-      "title": "Notification 2 (Gravity Sound)",
-      "author": "Gravity Sound",
-      "license": "CC-BY-4.0",
-      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
-      "sha256": "45a3adce91e6ab7c8860894b5d76bca81a55971a1eed09c497ec1e68242a211a"
-    },
     "gs-notification-3": {
       "file": "commons/Notification_3_(Gravity_Sound).wav",
       "url": "https://commons.wikimedia.org/wiki/File:Notification_3_(Gravity_Sound).wav",
@@ -17,15 +8,6 @@
       "license": "CC-BY-4.0",
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
       "sha256": "642ad5c4b1aac7a03da3e69dd7bcbc9b8cc70195cce267d8f7d5258148bc13bc"
-    },
-    "gs-notification-4": {
-      "file": "commons/Notification_4_(Gravity_Sound).wav",
-      "url": "https://commons.wikimedia.org/wiki/File:Notification_4_(Gravity_Sound).wav",
-      "title": "Notification 4 (Gravity Sound)",
-      "author": "Gravity Sound",
-      "license": "CC-BY-4.0",
-      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
-      "sha256": "7e4699dafdd23327c77294adc107a500bf53473edb6d9a6eeed52f5f06219f5f"
     },
     "gs-error-3": {
       "file": "commons/Error_3_(Gravity_Sound).wav",
@@ -36,24 +18,6 @@
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
       "sha256": "ec67344672fedfb82aeb8d887f375d2314bded452c777db951627b4891086383"
     },
-    "gs-error-4": {
-      "file": "commons/Error_4_(Gravity_Sound).wav",
-      "url": "https://commons.wikimedia.org/wiki/File:Error_4_(Gravity_Sound).wav",
-      "title": "Error 4 (Gravity Sound)",
-      "author": "Gravity Sound",
-      "license": "CC-BY-4.0",
-      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
-      "sha256": "ef2237c8f37866e0efade37692025c783664947b7dda44b53010d0da6f9239b5"
-    },
-    "gs-coins-1": {
-      "file": "commons/Coins_1_(Gravity_Sound).mp3",
-      "url": "https://commons.wikimedia.org/wiki/File:Coins_1_(Gravity_Sound).mp3",
-      "title": "Coins 1 (Gravity Sound)",
-      "author": "Gravity Sound",
-      "license": "CC-BY-4.0",
-      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
-      "sha256": "999416dc13e02fc543d6fe65580bcfe7da9b5f50ad186810249f4651aa638e4c"
-    },
     "gs-coins-5": {
       "file": "commons/Coins_5_(Gravity_Sound).mp3",
       "url": "https://commons.wikimedia.org/wiki/File:Coins_5_(Gravity_Sound).mp3",
@@ -62,15 +26,6 @@
       "license": "CC-BY-4.0",
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
       "sha256": "891c0ae28d75aa1eadf68e94b813a50394a7d2961d7ca8ddade99b86e19529f2"
-    },
-    "gs-alarm-7": {
-      "file": "commons/Alarm_7_(Gravity_Sound).wav",
-      "url": "https://commons.wikimedia.org/wiki/File:Alarm_7_(Gravity_Sound).wav",
-      "title": "Alarm 7 (Gravity Sound)",
-      "author": "Gravity Sound",
-      "license": "CC-BY-4.0",
-      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
-      "sha256": "6df73a07b5ad55f5be3ba387377e3367bd5688fb630da460f843369b3192add6"
     },
     "us-ringback": {
       "file": "commons/US_ringback_tone.ogg",
@@ -98,15 +53,6 @@
       "license": "CC0-1.0",
       "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
       "sha256": "7eaa7da8ace47d4bdac6bf51439bab6a467196de4a0ea9057d9f2c0f359882b6"
-    },
-    "cough": {
-      "file": "commons/Woman_coughing_three_times.wav",
-      "url": "https://commons.wikimedia.org/wiki/File:Woman_coughing_three_times.wav",
-      "title": "Woman coughing three times",
-      "author": "Ashe Kirk",
-      "license": "CC0-1.0",
-      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
-      "sha256": "8e10238f86d6e7495165f5a60f02a816eed98bf083fec8e18271578839e842ae"
     },
     "gs-accept": {
       "file": "commons/Accept_(Gravity_Sound).wav",
@@ -174,25 +120,6 @@
       "fadeOut": 0.01,
       "note": "одна клавіша; набір складає src/audio/sfx/work/typing.ts"
     },
-    "coin": {
-      "from": "gs-coins-1",
-      "start": 0.06,
-      "end": 0.66,
-      "fadeOut": 0.08,
-      "note": "Встав із заробітком: монети"
-    },
-    "patience-warning": {
-      "from": "gs-notification-4",
-      "fadeOut": 0.05,
-      "note": "«!»: тривожне «ді-да-ді-да»"
-    },
-    "patience-out": {
-      "from": "gs-alarm-7",
-      "start": 0,
-      "end": 0.52,
-      "fadeOut": 0.04,
-      "note": "«Х»: два різкі гудки"
-    },
     "call": {
       "from": "us-ringback",
       "start": 0,
@@ -205,13 +132,6 @@
       "from": "gs-accept",
       "fadeOut": 0.04,
       "note": "Був на дзвінку: короткий сигнал завершення"
-    },
-    "call-missed": {
-      "from": "gs-error-4",
-      "start": 0,
-      "end": 0.62,
-      "fadeOut": 0.12,
-      "note": "Пропустив дзвінок чи збори: дисонанс"
     },
     "rejected": {
       "from": "gs-error-3",
@@ -229,19 +149,6 @@
       "from": "retro-error",
       "fadeOut": 0.08,
       "note": "Пониження чи звільнення: сумне «ні»"
-    },
-    "remark": {
-      "from": "cough",
-      "start": 0.07,
-      "end": 0.36,
-      "filter": "highpass=f=350,lowpass=f=3200",
-      "fadeOut": 0.05,
-      "note": "Колеги помітили вигляд: покашлювання з динаміка"
-    },
-    "message": {
-      "from": "gs-notification-2",
-      "fadeOut": 0.06,
-      "note": "Догана чи похвала: лист від керівництва"
     },
     "vacation-pay": {
       "from": "gs-coins-5",

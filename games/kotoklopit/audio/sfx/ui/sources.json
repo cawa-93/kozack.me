@@ -63,15 +63,6 @@
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
       "sha256": "7bfb252ded55c2d1986f9f6b0d50b94f728400bd51d3b61da4e6e69f15419bbc"
     },
-    "gs-computer-sounds-2": {
-      "file": "commons/Computer_sounds_2_(Gravity_Sound).wav",
-      "url": "https://commons.wikimedia.org/wiki/File:Computer_sounds_2_(Gravity_Sound).wav",
-      "title": "Computer sounds 2 (Gravity Sound)",
-      "author": "Gravity Sound",
-      "license": "CC-BY-4.0",
-      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
-      "sha256": "6db20fd55cc948b1c5d18deebc1701d2ec073a968ff801cf375ae607a8a4cddf"
-    },
     "gs-complete": {
       "file": "commons/Complete_(Gravity_Sound).mp3",
       "url": "https://commons.wikimedia.org/wiki/File:Complete_(Gravity_Sound).mp3",
@@ -176,11 +167,6 @@
       "end": 4.84,
       "fadeOut": 0.05,
       "note": "Порожньо: інший стук"
-    },
-    "glitch": {
-      "from": "gs-computer-sounds-2",
-      "fadeOut": 0.03,
-      "note": "Збій керування: цифровий тріск"
     },
     "notify": {
       "from": "gs-notification",
