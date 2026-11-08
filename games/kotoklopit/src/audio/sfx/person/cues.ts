@@ -45,6 +45,12 @@ const MEDS: readonly Cue[] = [
   { sound: "pills", at, gain: 0.8 },
   { sound: "swallow", at, delayMs: 650 },
 ];
+// Пластир — коротко відклеїли плівку; бинт — розмотали й відірвали: на слух різні речі.
+const PLASTER: readonly Cue[] = [{ sound: "plaster", at }];
+const BANDAGE: readonly Cue[] = [
+  { sound: "bandage", at },
+  { sound: "bandage-tear", at, delayMs: 320 },
+];
 const SNEEZE = voiced((voice) => [{ sound: `sneeze-${voice}`, at }]);
 const GASP = voiced((voice) => [{ sound: `gasp-${voice}`, at }]);
 const PANT = voiced((voice) => [{ sound: `pant-${voice}`, at }]);
@@ -88,6 +94,8 @@ export function personEventCues(event: GameEvent, state: GameState): readonly Cu
       return event.illness === "cold" ? SNEEZE[voice] : event.illness === "injury" ? GASP[voice] : PANT[voice];
     case "person-meds":
       return MEDS;
+    case "person-dressing":
+      return event.quality === "premium" ? BANDAGE : PLASTER;
     default:
       return NONE;
   }

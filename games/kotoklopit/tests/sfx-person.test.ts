@@ -32,6 +32,8 @@ const EVENTS: GameEvent[] = [
   { type: "person-ill", illness: "injury" },
   { type: "person-ill", illness: "exhaustion" },
   { type: "person-meds", quality: "cheap" },
+  { type: "person-dressing", quality: "cheap", cured: false },
+  { type: "person-dressing", quality: "premium", cured: true },
 ];
 
 /** Події групи без звуку (`SOUND_PLAN.md`, «Без звуку»); їжа й прибирання звучать під час дії, а не подією по завершенні. */
@@ -138,6 +140,18 @@ describe("звуки персонажа (§11.4а, SOUND_PLAN «Хто що оз
     expect(sounds()).toEqual(["water-tank"]);
     state.home.appliances.fountain = "premium";
     expect(sounds()).toEqual(["water"]);
+  });
+
+  it("пластир і бинт звучать по-різному; зняв травму бинт чи ні — той самий звук", () => {
+    const state = fresh();
+    const sounds = (quality: "cheap" | "premium", cured: boolean): string[] =>
+      group.onEvent!({ type: "person-dressing", quality, cured }, state).map((cue) => cue.sound);
+    const plaster = sounds("cheap", false);
+    const bandage = sounds("premium", true);
+    expect(plaster).toEqual(["plaster"]);
+    expect(bandage).toEqual(["bandage", "bandage-tear"]);
+    expect(bandage.filter((sound) => plaster.includes(sound))).toEqual([]);
+    expect(sounds("premium", false)).toEqual(bandage);
   });
 
   it("краплі котові, одужання й знайдена шкарпетка — без звуку", () => {
