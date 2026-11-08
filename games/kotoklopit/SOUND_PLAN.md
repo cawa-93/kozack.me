@@ -147,7 +147,7 @@
 
 Ще без групи: `bathed` (кінець купання) — `person`; бабл порожньої поїлки — `home`, коли буде подія; `cat-retreated`, `heat` (нічне завивання — ніч і так мовчить), `groom-refused`, `trinket-sniffed`, `cat-remembered`, `fur-tuft`, `weather-felt`, `cat-ill` — думки чи приховане, без звуку.
 
-**Слабкі місця** (тимчасове, замінити кращим): коти — кахикання й плювок (людські, підняті вгору); дім — старт віджиму (сушарка); робота — кар'єра (ретро-біпи); інтерфейс — клаци з шумом. Що шукати на Freesound — «cat hairball cough», «washing machine spin start», «achievement chime», «ui click soft».
+**Слабкі місця** (тимчасове, замінити кращим): коти — кахикання й плювок (людські, підняті вгору); дім — старт віджиму (сушарка); робота — кар'єра (ретро-біпи); інтерфейс — клаци з шумом; тло — вечірка (рівний гамір ресторану, без сміху й тупоту), фестиваль (близька юрба, віддалена фільтром), ремонт у під'їзді (інструменти з луною фільтра). Що шукати на Freesound — «cat hairball cough», «washing machine spin start», «achievement chime», «ui click soft», «party through wall muffled» (без музики), «distant crowd murmur», «stairwell renovation».
 
 ## Блоки
 

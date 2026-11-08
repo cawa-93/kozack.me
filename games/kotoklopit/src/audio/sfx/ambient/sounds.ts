@@ -17,9 +17,9 @@ export const AMBIENT_SOUNDS = {
   festival: { files: ["festival-loop"], gain: 0.3, loop: true, voices: STREET },
   party: { files: ["party-loop"], gain: 0.3, loop: true },
   fridge: { files: ["fridge-loop"], gain: 0.2, loop: true },
-  drill: { files: files("drill", 2), gain: 0.3, pitch: 0.04, spread: 0.15, cooldownMs: 0, voices: 1 },
-  hammer: { files: files("hammer", 2), gain: 0.3, pitch: 0.04, spread: 0.15, cooldownMs: 0, voices: 1 },
-  stairwell: { files: files("stairwell", 2), gain: 0.3, pitch: 0.04, spread: 0.15, cooldownMs: 0, voices: 1 },
+  drill: { files: files("drill", 3), gain: 0.3, pitch: 0.04, spread: 0.15, cooldownMs: 0, voices: 1 },
+  hammer: { files: files("hammer", 3), gain: 0.3, pitch: 0.04, spread: 0.15, cooldownMs: 0, voices: 1 },
+  stairwell: { files: files("stairwell", 3), gain: 0.3, pitch: 0.04, spread: 0.15, cooldownMs: 0, voices: 1 },
 } as const satisfies Record<string, SoundDef>;
 
 export type AmbientSound = keyof typeof AMBIENT_SOUNDS;
