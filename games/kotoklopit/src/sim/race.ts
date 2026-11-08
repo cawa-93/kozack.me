@@ -25,6 +25,17 @@ export function newRace(road: number, seed: number): Race {
 /** Де зараз машина на дорозі. */
 export const carAt = (race: Race, car: RaceCar): number => car.start + RACE.carSpeed * race.minutes;
 
+/** Машина в смузі персонажа: ближче за пів смуги. */
+const SAME_LANE = 0.6;
+
+/**
+ * Машина позаду пригальмувала за персонажем (§8.5): у його смузі впритул ззаду — `step` тримає її рівно на `RACE.carLength`
+ * позаду. Для звуку: вона сигналить.
+ */
+export function heldBehind(race: Race, car: RaceCar): boolean {
+  return Math.abs(car.lane - race.lane) < SAME_LANE && Math.abs(carAt(race, car) - race.done + RACE.carLength) < 1e-6;
+}
+
 /** Додати машини попереду, щоб дорога в полі зору була заповнена. */
 function spawn(race: Race, difficulty: Difficulty, traffic: number): void {
   const ahead = race.done + RACE.view;
@@ -68,7 +79,7 @@ function step(race: Race, minutes: number, throttle: number, difficulty: Difficu
   race.done = Math.min(race.road, race.done + race.speed * minutes);
   spawn(race, difficulty, traffic);
   for (const car of race.cars) {
-    if (Math.abs(car.lane - race.lane) >= 0.6) continue;
+    if (Math.abs(car.lane - race.lane) >= SAME_LANE) continue;
     const gap = carAt(race, car) - race.done;
     if (gap >= RACE.carLength) continue;
     // Машина позаду не врізається, а пригальмовує за персонажем.

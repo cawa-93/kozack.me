@@ -7,6 +7,9 @@ import { soundFile } from "../src/audio/sfx/files";
 import { group } from "../src/audio/sfx/groups/trip";
 import type { GameEvent } from "../src/sim/events";
 import { newGame } from "../src/sim/game";
+import { RACE } from "../src/sim/config";
+import { driveRace, newRace } from "../src/sim/race";
+import { HORN, Horns } from "../src/audio/sfx/trip/horns";
 
 describe("звуки поїздки", () => {
   const state = newGame({ address: "he", difficulty: "normal", seed: 3 }).current;
@@ -23,5 +26,27 @@ describe("звуки поїздки", () => {
       expect(def.ui, name).toBe(true);
       for (const file of def.files) expect(soundFile("trip", file), `${name}: ${file}`).not.toBeNull();
     }
+  });
+
+  it("гудок: машина позаду пригальмувала впритул — сигналить, тягнеться далі — знову не раніше ніж за `HORN.repeatMs`", () => {
+    const race = newRace(1000, 1);
+    race.spawned = Infinity;
+    race.done = 5;
+    race.speed = 0;
+    race.cars.push({ lane: race.lane, start: 5 - RACE.carLength * 2 });
+    const horns = new Horns();
+    const honks = (ms: number): number => {
+      let count = 0;
+      for (let t = 0; t < ms; t += 50) {
+        driveRace(race, 0.05, { steer: 0, throttle: 0 }, "normal");
+        if (horns.tick(race, 50)) count++;
+      }
+      return count;
+    };
+    expect(honks(HORN.repeatMs * 2 + 500)).toBe(3);
+    // Поїхав — більше не сигналять.
+    race.speed = RACE.maxSpeed;
+    driveRace(race, 1, { steer: 0, throttle: 1 }, "normal");
+    expect(honks(HORN.repeatMs)).toBe(0);
   });
 });

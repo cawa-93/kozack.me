@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 
 import { MODIFIERS, RACE, TRIPS } from "../src/sim/config";
-import { driveRace, newRace } from "../src/sim/race";
+import { driveRace, heldBehind, newRace } from "../src/sim/race";
 import { raceMinutes } from "../src/sim/time";
 import type { Difficulty, RaceCar } from "../src/sim/types";
 
@@ -190,6 +190,12 @@ describe("інші машини (§8.5)", () => {
     race.cars.push({ lane: 1, start: 4.8 });
     expect(driveRace(race, 3, COAST, "normal")).toBeNull();
     expect(race.cars[0]?.start).toBeLessThan(4.8);
+    // Пригальмувала впритул — сигналить; персонаж поїхав геть, швидше за потік, — вже ні.
+    const behind = race.cars[0]!;
+    expect(heldBehind(race, behind)).toBe(true);
+    race.speed = RACE.startSpeed;
+    driveRace(race, 1, GAS, "normal");
+    expect(heldBehind(race, behind)).toBe(false);
   });
 
   it("на ×10 машина попереду не проскакує крізь персонажа навіть за довгий кадр", () => {

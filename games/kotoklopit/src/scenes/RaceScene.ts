@@ -15,6 +15,8 @@
 import Phaser from "phaser";
 
 import { PALETTE } from "../../art/palette";
+import { uiSound } from "../audio/sfx/sounds";
+import { Horns } from "../audio/sfx/trip/horns";
 import { drive } from "../sim/game";
 import { trafficFactor } from "../sim/modifiers";
 import { carAt, type RaceInput } from "../sim/race";
@@ -152,6 +154,8 @@ export class RaceScene extends Phaser.Scene {
   private hint!: Phaser.GameObjects.Text;
   /** Гравець уже торкнувся екрана чи натиснув газ, гальмо чи смугу в цій гонці: підказка старту більше не потрібна. */
   private touched = false;
+  /** Машини позаду сигналять, коли пригальмували за персонажем (§8.5). */
+  private readonly horns = new Horns();
   /** Сцена показує гонку від самого старту (від'їзд від дому чи свіжа гонка), а не з середини після перезавантаження (`startHintShown`). */
   private fromStart = false;
   private keys: Record<"up" | "down" | "up2" | "down2", Phaser.Input.Keyboard.Key> | null = null;
@@ -370,6 +374,8 @@ export class RaceScene extends Phaser.Scene {
     if (this.running()) {
       const seconds = Math.min(delta / 1000, MAX_FRAME_SECONDS);
       const { result, night } = drive(this.session.save, raceMinutes(seconds) * this.session.speed, this.input_());
+      const race = this.state.trip?.race;
+      if (result === null && race && this.horns.tick(race, seconds * 1000)) uiSound("trip", "horn");
       // Врізалися (сим уже застосував аварію, §8.5) — спершу анімація аварії тут, а картку покаже день.
       if (result === "crash" && night === null && state.end === null) return this.startCrash();
       // Доїхали (§8.5 «На місці — кадр парковки») — спершу прибуття на парковку тут, а картку пункту покаже день поверх неї.

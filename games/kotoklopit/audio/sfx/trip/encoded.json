@@ -6,5 +6,17 @@
   "handbrake-1": {
     "hash": "5001d1d86efeecb4",
     "seconds": 0.41
+  },
+  "horn-1": {
+    "hash": "dc908928cfd5b4e4",
+    "seconds": 0.28
+  },
+  "horn-2": {
+    "hash": "29d2c4c0d7de87da",
+    "seconds": 0.326
+  },
+  "horn-3": {
+    "hash": "438a7c5d333629fd",
+    "seconds": 0.44
   }
 }
