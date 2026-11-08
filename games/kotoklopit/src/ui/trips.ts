@@ -377,10 +377,11 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers, sto
     go.addEventListener("click", h.nextCat);
     body.push(row(`Наступний кіт: ${next.name}`, "", go));
   }
-  // Заголовок — назва пункту з його іконкою, як у «Куди поїхати?» і на табличці на даху (§11.4 «Іконка біля назви»). Годинник —
-  // останнім у примітці праворуч від заголовка, коли картка посередині й напису над парковкою немає (§8.5 «На місці — кадр
-  // парковки»); підпису «Поїздка» немає (рішення автора 2026-11-03).
-  const card = { awayClock: formatClock(state.minute), title: destinationLabel(destination), body };
+  // Заголовок — назва пункту з його іконкою, як у «Куди поїхати?» і на табличці на даху (§11.4 «Іконка біля назви»), а картка —
+  // з вивіскою пункту (`places.css`, §8.5 «Оформлення поїздок»). Годинник — останнім у примітці праворуч від заголовка, коли
+  // картка посередині й напису над парковкою немає (§8.5 «На місці — кадр парковки»); підпису «Поїздка» немає.
+  const skin: Card["skin"] = `place-${destination}`;
+  const card = { awayClock: formatClock(state.minute), title: destinationLabel(destination), body, skin };
   if (STORE_GOODS[destination] === undefined) {
     const home: CardAction = { label: "Додому", primary: true, onSelect: h.home };
     // «Додому» — праворуч, там само, де головна кнопка смуги кошика в інших пунктах (рецензія 2026-11-03).
