@@ -23,7 +23,7 @@ import { catOnStairs, guestAtDoor, openDoor } from "./door";
 export const HOME_DOOR = { x: 10.5, y: 10.2 } as const;
 
 /**
- * Дорога до пункту за звичайної швидкості, у хвилинах (§8.5): і гонка туди, і повернення без гонки. «Пробки» її подовжують,
+ * Дорога до пункту за звичайної швидкості, у хвилинах (§8.5): і гонка туди, і повернення без гонки. «Затори» її подовжують,
  * «Порожні дороги» — скорочують (§4.1; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А14).
  */
 export function roadMinutes(state: GameState, destination: Destination): number {

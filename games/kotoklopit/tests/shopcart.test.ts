@@ -642,13 +642,13 @@ describe("картки поїздок (§8.5)", () => {
     }
   });
 
-  it("«Куди поїхати?»: без «Поїздка»; праворуч від заголовка — «Пробки» чи «Порожні дороги» й гроші", () => {
+  it("«Куди поїхати?»: без «Поїздка»; праворуч від заголовка — «Затори» чи «Порожні дороги» й гроші", () => {
     const state = at(null, 5, 250);
     const plainDay = destinationCard(state, noop, noop);
     expect(plainDay.kicker).toBeUndefined();
     expect(plainDay.aside).toEqual(["👛 250 ₴"]);
     state.modifiers.day = "traffic";
-    expect(destinationCard(state, noop, noop).aside).toEqual(["Пробки", "👛 250 ₴"]);
+    expect(destinationCard(state, noop, noop).aside).toEqual(["Затори", "👛 250 ₴"]);
     state.modifiers.day = "empty-roads";
     expect(destinationCard(state, noop, noop).aside).toEqual(["Порожні дороги", "👛 250 ₴"]);
     // Подія, що дороги не змінює, — не тут.

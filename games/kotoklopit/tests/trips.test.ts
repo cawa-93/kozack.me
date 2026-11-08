@@ -104,7 +104,7 @@ describe("гонка (§8.5)", () => {
     expect(save.current.minute - from).toBeGreaterThan(TRIPS.shop.road * 2 - 3);
   });
 
-  it("«Пробки» подовжують дорогу (×1,3), «Порожні дороги» скорочують (×0,8): і гонку туди, і повернення без гонки (рішення автора 2026-10-29, А14)", () => {
+  it("«Затори» подовжують дорогу (×1,3), «Порожні дороги» скорочують (×0,8): і гонку туди, і повернення без гонки (рішення автора 2026-10-29, А14)", () => {
     const trip = (modifier: string | null): { race: number; back: number } => {
       const save = game(10 * 60);
       save.current.day = 5; // субота: без штрафу роботи
@@ -564,7 +564,7 @@ describe("аварія забирає години, а не день (§8.5, §5
     expect([home("easy"), home("normal"), home("hard")]).toEqual([6 * 60, 7.5 * 60, 9.5 * 60]);
   });
 
-  it("«Пробки» й «Порожні дороги» змінюють дорогу, а не години аварії", () => {
+  it("«Затори» й «Порожні дороги» змінюють дорогу, а не години аварії", () => {
     for (const modifier of ["traffic", "empty-roads"]) {
       const save = saturday(9 * 60);
       save.current.modifiers.day = modifier;

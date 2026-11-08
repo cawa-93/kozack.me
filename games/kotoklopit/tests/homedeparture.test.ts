@@ -374,7 +374,7 @@ describe("виїзд із дому: рух", () => {
     const height = 720;
     const k = raceScale(height);
     const problems: string[] = [];
-    // Різні двори (своє місце й сусіди) і різний потік старту: складність і «Пробки» / «Порожні дороги».
+    // Різні двори (своє місце й сусіди) і різний потік старту: складність і «Затори» / «Порожні дороги».
     for (const difficulty of DIFFICULTIES) {
       for (const traffic of TRAFFIC) {
         for (let seed = 0; seed < 16; seed++) {

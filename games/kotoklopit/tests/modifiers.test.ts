@@ -584,7 +584,7 @@ describe("ефекти (§4.1)", () => {
     expect(events).toContainEqual(expect.objectContaining({ type: "trip-ended", destination: "shelter" }));
   });
 
-  it("знайда в «Пробки» й «Порожні дороги» — ті самі дві години: це не дорога пункту (§4.1, рецензія реалізації А14)", () => {
+  it("знайда в «Затори» й «Порожні дороги» — ті самі дві години: це не дорога пункту (§4.1, рецензія реалізації А14)", () => {
     for (const day of ["traffic", "empty-roads", null]) {
       const save = game();
       save.current.modifiers.day = day;

@@ -705,7 +705,7 @@ export const CHEWING = { decideStep: 0.02, kitten: 0.01, playWeight: 0.1, minMin
 /** «Засідки» (§9.12): `waitRelief` — частка `PLAY_RELIEF` без стрибка. */
 export const AMBUSH = { step: 0.25, base: 0.04, kitten: 0.1, bored: 2, played: 0.5, playedMinutes: 5, minutes: 10, reach: 1, strongLevel: 2, dashMinutes: 0.5, waitRelief: 0.5 } as const;
 /**
- * Хвороби котів (§9.5): `safe` — безпечні дні; `damage` — шкода за день; `recovers` — днів до самолікування (null — лише
+ * Хвороби котів (§9.5): `safe` — безпечні дні; `damage` — шкода за день; `recovers` — за скільки днів минає сама (null — лише
  * лікування).
  */
 export const DISEASES: Record<
@@ -727,6 +727,7 @@ export const DISEASES: Record<
   conjunctivitis: { safe: 4, damage: 1, recovers: 10, cure: { kind: "drops", doses: 2 }, contagious: "friends" },
   urolithiasis: { safe: 1, damage: 6, recovers: null, cure: { kind: "vet" }, contagious: null },
   dermatitis: { safe: 5, damage: 1, recovers: null, cure: { kind: "vet" }, contagious: null },
+  gingivitis: { safe: 7, damage: 1, recovers: null, cure: { kind: "vet" }, contagious: null },
   // Минає, щойно вага повернеться (`WEIGHT.cured`).
   obesity: { safe: 7, damage: 1, recovers: null, cure: { kind: "weight" }, contagious: null },
   // Хронічні — під контролем таблеток чи ветеринара.
@@ -734,7 +735,6 @@ export const DISEASES: Record<
   joints: { safe: 3, damage: 1, recovers: null, cure: { kind: "control", medicine: "pills" }, contagious: null },
   spine: { safe: 3, damage: 1, recovers: null, cure: { kind: "control", medicine: "pills" }, contagious: null },
   breathing: { safe: 3, damage: 1, recovers: null, cure: { kind: "control", medicine: "pills" }, contagious: null },
-  gingivitis: { safe: 7, damage: 1, recovers: null, cure: { kind: "vet" }, contagious: null },
 };
 /** Схильність породи (§9.5, `BREEDS.md`): `step` — за половину породи; «ожиріння» — через `WEIGHT.breedStep`. */
 export const BREED_RISK = {

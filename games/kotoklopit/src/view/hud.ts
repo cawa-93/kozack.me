@@ -8,7 +8,7 @@ import Phaser from "phaser";
 import { addArt, setArt } from "./art/atlas";
 import { canFullscreen, isFullscreen, toggleFullscreen } from "../screen";
 import { statCeiling } from "../sim/character";
-import { LOW_STAT } from "../sim/config";
+import { LOW_STAT, SLEEP_SPEED_MAX_BONUS } from "../sim/config";
 import { utilitiesPlanned } from "../sim/economy";
 import { powerOut } from "../sim/modifiers";
 import { isDrowsy } from "../sim/sleep";
@@ -431,7 +431,7 @@ export class Hud {
     const effects: string[] = [];
     if (isDrowsy(state)) effects.push(PANEL_STATES.drowsy);
     if (sleepSpeed < 0) effects.push(PANEL_STATES.sleepDebt);
-    if (sleepSpeed > 0) effects.push(fill(sleepSpeed >= 0.1 ? PANEL_STATES.wellRested : PANEL_STATES.rested, state.character.address));
+    if (sleepSpeed > 0) effects.push(fill(sleepSpeed >= SLEEP_SPEED_MAX_BONUS ? PANEL_STATES.wellRested : PANEL_STATES.rested, state.character.address));
     // Знесилення й голод видно з самих шкал: вони блимають (§11.4), тож слово не повторює їх.
     const job = state.job;
     if (job.unemployed) effects.push(PANEL_STATES.jobSearch);

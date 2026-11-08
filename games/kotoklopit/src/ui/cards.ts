@@ -106,7 +106,7 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
   for (const motherId of new Set(born.map((c) => c.parents.mother))) {
     const kittens = born.filter((c) => c.parents.mother === motherId);
     const mother = state.cats.find((c) => c.id === motherId) ?? state.album.find((e) => e.id === motherId);
-    const values = { кішка: mother?.name ?? "кішка", кількість: kittens.length, кошенята: kittens.map((c) => c.name).join(", ") };
+    const values = { кішка: mother?.name ?? "кішка", кількість: `${kittens.length} ${plural(kittens.length, "кошеня", "кошеняти", "кошенят")}`, кошенята: kittens.map((c) => c.name).join(", ") };
     // `[одне|кілька]`: «чоловіча» форма — одне кошеня.
     events.push([fill(BIRTH_MESSAGE, kittens.length === 1 ? "male" : "female", values)]);
   }
@@ -130,7 +130,7 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
   }
   const utilities = night?.utilities;
   if (utilities && utilities.outcome !== "evicted") {
-    events.push([fill(UTILITIES_MESSAGES[utilities.outcome], address, { сума: utilities.paid, борг: utilities.nextDue })]);
+    events.push([fill(UTILITIES_MESSAGES[utilities.outcome], address, { сума: utilities.paid, платіж: utilities.nextDue })]);
   }
   // Куди пішли гроші минулого тижня (§6.4, рішення автора 2026-10-27, Е4).
   if (night?.ledger) events.push([LEDGER_TEXTS.heading, ...ledgerLines(night.ledger)]);
@@ -426,14 +426,14 @@ function catCards(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
 }
 
 /** Причина в альбомі (§9.7); віддані — «живе в нових руках» (§9.8), як і на титулці. */
-const CAUSE_TITLES: Record<string, string> = { old: "старість", sorrow: "туга", carrier: "замкнений у переносці", given: "живе в нових руках" };
+const CAUSE_TITLES: Record<string, string> = { old: "старість", sorrow: "туга", carrier: "[замкнений у|замкнена в] переносці", given: "живе в нових руках" };
 
 /**
  * Причина в першому рядку альбому: хвороба — сама назва з малої, як «старість» і «туга» (загальна ревізія 2026-10-29: було
  * «хвороба «Хвороба серця»»). `title` — назва хвороби: в альбомі — з іконкою (`diseaseLabel`, §11.4 «Іконка біля назви»).
  */
 export function albumCause(entry: AlbumEntry, title: (id: string) => string = diseaseTitle): string {
-  return entry.cause.kind === "disease" ? title(entry.cause.disease).toLowerCase() : (CAUSE_TITLES[entry.cause.kind] ?? "");
+  return entry.cause.kind === "disease" ? title(entry.cause.disease).toLowerCase() : fill(CAUSE_TITLES[entry.cause.kind] ?? "", entry.sex);
 }
 
 /** Альбом пам'яті (§9.7): ім'я, вік, усі риси, причина й опис життя. */
@@ -560,7 +560,7 @@ export function callCard(onAnswer: () => void, onIgnore: () => void): Card {
   return {
     kicker: "Телефон",
     title: "Дзвонить мама",
-    body: ["Мама питає, як справи, чи ви їсте і чи не забагато в домі котів."],
+    body: ["Мама питає, як справи, чи ви їсте й чи не забагато в домі котів."],
     actions: [
       { label: `Відповісти · 🕐 ${MODIFIERS.call.minutes} хв`, primary: true, onSelect: onAnswer },
       { label: "Не відповідати", onSelect: onIgnore },

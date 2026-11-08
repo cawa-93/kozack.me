@@ -429,7 +429,7 @@ describe("тексти, розклад і двері (§4.1, `TEXTS.md`)", () =>
   const visit = (over: Partial<CleanerVisit> = {}): CleanerVisit => ({ messes: 3, tufts: 2, dust: 5, litter: 0, hung: false, washing: false, fed: null, watered: false, sock: false, ...over });
 
   it("титулки пари — з `TEXTS.md`", () => {
-    expect(DAY_MODIFIER_TEXTS["construction-dust"]).toEqual({ title: "Будівельний пил", situation: "У під'їзді ремонт: з десятої до полудня в квартиру летітиме пил." });
+    expect(DAY_MODIFIER_TEXTS["construction-dust"]).toEqual({ title: "Будівельний пил", situation: "У під'їзді ремонт: з 10:00 до 12:00 в квартиру летітиме пил." });
     expect(DAY_MODIFIER_TEXTS["cleaner"]).toEqual({ title: "Прибиральниця", situation: "О 13:00 прийде прибиральниця — мама подарувала прибирання." });
   });
 

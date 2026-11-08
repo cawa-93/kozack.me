@@ -718,7 +718,7 @@ describe("«Пиття» (рішення автора 2026-10-25)", () => {
     expect(thirsty.needs.thirst).toBeGreaterThan(50);
   });
 
-  it("«Зразковий поїльник» іде пити, щойно воду долили", () => {
+  it("«Зразково п'є» іде пити, щойно воду долили", () => {
     const save = game();
     const water = waterOf(save);
     water.water = 2;
@@ -733,7 +733,7 @@ describe("«Пиття» (рішення автора 2026-10-25)", () => {
     expect(seen(cat, "drinking")).toBe(1);
   });
 
-  it("сечокам'яна: «Фонтанолюб» без фонтанчика ризикує більше, «Зразковий поїльник» — менше", () => {
+  it("сечокам'яна: «Фонтанолюб» без фонтанчика ризикує більше, «Зразково п'є» — менше", () => {
     const save = game();
     expect(stonesFactor(save.current, withCat(save, { drinking: 2 }))).toBeCloseTo(1.5);
     expect(stonesFactor(save.current, withCat(save, { drinking: -2 }))).toBeCloseTo(0.5);

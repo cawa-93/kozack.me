@@ -21,7 +21,7 @@ function emptyRace() {
 }
 
 const DIFFICULTIES: Difficulty[] = ["easy", "normal", "hard"];
-/** Множник потоку дня: звичайний, «Пробки» (найгустіший) і «Порожні дороги». */
+/** Множник потоку дня: звичайний, «Затори» (найгустіший) і «Порожні дороги». */
 const TRAFFIC = [1, MODIFIERS.traffic["traffic"] ?? 1, MODIFIERS.traffic["empty-roads"] ?? 1];
 
 describe("швидкість у гонці (§8.5)", () => {

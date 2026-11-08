@@ -155,9 +155,9 @@ describe("картка на місці: тло й положення (§8.5 «Н
     expect(child(panel, "card-kicker")).toBeUndefined();
 
     // Примітка — частини по черзі, годинник — останнім.
-    overlay.show({ ...card, aside: ["Пробки", "👛 300 ₴"], awayClock: "10:45" });
+    overlay.show({ ...card, aside: ["Затори", "👛 300 ₴"], awayClock: "10:45" });
     const parts = child(child(root.children[0] as FakeElement, "card-head"), "card-aside")?.children as FakeElement[];
-    expect(parts.map((p) => p.textContent)).toEqual(["Пробки", "👛 300 ₴", "🕐 10:45"]);
+    expect(parts.map((p) => p.textContent)).toEqual(["Затори", "👛 300 ₴", "🕐 10:45"]);
     expect(parts.map((p) => p.className)).toEqual(["card-aside-part", "card-aside-part", "card-aside-part card-clock"]);
 
     // Іншим карткам нічого не змінюється: заголовок — прямо в картці, без рядка з приміткою.
