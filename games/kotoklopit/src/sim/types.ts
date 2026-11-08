@@ -17,7 +17,7 @@ export type Quality = "cheap" | "premium";
  * Запаси, що поповнюються упаковками (§6.4): людська їжа, засоби гігієни, котячий корм, наповнювач. Мамині судочки (`momMeal`,
  * §4.1, рішення автора 2026-10-26) — лише від мами, у магазині їх немає.
  */
-export type Product = "food" | "hygiene" | "catFood" | "sterileFood" | "litter" | "pills" | "drops" | "humanMeds" | "treats" | "collar" | "shampoo" | "detergent" | "catnip" | "momMeal";
+export type Product = "food" | "hygiene" | "catFood" | "sterileFood" | "litter" | "pills" | "drops" | "humanMeds" | "dressing" | "treats" | "collar" | "shampoo" | "detergent" | "catnip" | "momMeal";
 /** Ліки вдома (§9.5). */
 export type Medicine = "pills" | "drops";
 

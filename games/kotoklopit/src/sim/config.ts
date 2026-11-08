@@ -168,6 +168,7 @@ export const PRODUCTS: Record<Product, { units: Record<Quality, number>; price: 
   pills: { units: { cheap: 5, premium: 5 }, price: { cheap: 23, premium: 75 } },
   drops: { units: { cheap: 5, premium: 5 }, price: { cheap: 30, premium: 113 } },
   humanMeds: { units: { cheap: 5, premium: 5 }, price: { cheap: 30, premium: 98 } },
+  dressing: { units: { cheap: 5, premium: 5 }, price: { cheap: 15, premium: 75 } },
   treats: { units: { cheap: 20, premium: 20 }, price: { cheap: 23, premium: 75 } },
   // Без якостей: `SINGLE_VARIANT`.
   collar: { units: { cheap: 1, premium: 1 }, price: { cheap: 23, premium: 23 } },
@@ -184,7 +185,7 @@ export const SINGLE_VARIANT: readonly Product[] = ["collar"];
 /** Речі з одним варіантом: магазин теж продає лише «дешевий». */
 export const SINGLE_VARIANT_THINGS: readonly ThingKind[] = ["vacuum"];
 /** Для себе (§11.3а): лише їх магазин показує, поки вдома не було кота. */
-export const SELF_PRODUCTS: readonly Product[] = ["food", "hygiene", "humanMeds", "detergent"];
+export const SELF_PRODUCTS: readonly Product[] = ["food", "hygiene", "humanMeds", "dressing", "detergent"];
 export const START_SUPPLIES: Record<Product, Record<Quality, number>> = {
   food: { cheap: 6, premium: 0 },
   hygiene: { cheap: 3, premium: 0 },
@@ -194,6 +195,7 @@ export const START_SUPPLIES: Record<Product, Record<Quality, number>> = {
   pills: { cheap: 0, premium: 0 },
   drops: { cheap: 0, premium: 0 },
   humanMeds: { cheap: 0, premium: 0 },
+  dressing: { cheap: 0, premium: 0 },
   treats: { cheap: 0, premium: 0 },
   collar: { cheap: 0, premium: 0 },
   shampoo: { cheap: 0, premium: 0 },
@@ -218,6 +220,7 @@ export const STORAGE_LIMITS: Record<Product, number> = {
   pills: 10,
   drops: 10,
   humanMeds: 10,
+  dressing: 10,
   treats: 40,
   collar: 10,
   shampoo: 10,
@@ -1027,7 +1030,7 @@ export const SHOP_TOYS_PER_ORDER = 5;
 export const STORE_GOODS: Partial<Record<Destination, readonly Product[] | "all">> = {
   shop: "all",
   vet: ["pills", "drops"],
-  doctor: ["humanMeds"],
+  doctor: ["humanMeds", "dressing"],
 };
 /** Вікно ціни, частка від базової (§6.4): поїздка в середньому дешевша за доставку, але знижка є не на все. */
 export const SHOP_WINDOW: Record<Difficulty, { min: number; max: number }> = {
@@ -1130,6 +1133,8 @@ export const ILLNESS_EFFECTS = {
   restNights: 2,
   medsWork: 0.7,
 } as const;
+/** Пластир і бинт (§6.5): здоров'я одразу; бинт ще й знімає травму. */
+export const DRESSING = { health: { cheap: 5, premium: 10 } as Record<Quality, number> } as const;
 /** Лікар (§6.5): `health` — після лікування. */
 export const DOCTOR_TREAT = { cheap: 45, premium: 120, cheapWorks: 0.7, health: 10 } as const;
 /** Смерть кота (§9.2, §9.5): `zeroHealth` — за нульового здоров'я ввечері; решта — понад межу віку. */

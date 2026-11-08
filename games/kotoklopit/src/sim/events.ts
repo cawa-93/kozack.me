@@ -160,6 +160,8 @@ export type GameEvent =
   | { type: "person-ill"; illness: IllnessId }
   | { type: "person-cured"; illness: IllnessId }
   | { type: "person-meds"; quality: Quality }
+  /** Пластир чи бинт біля умивальника (§6.5): `cured` — бинт зняв травму. */
+  | { type: "person-dressing"; quality: Quality; cured: boolean }
   | { type: "treat"; cat: number; quality: Quality }
   | { type: "collar"; cat: number }
   | { type: "bathed"; cat: number }

@@ -56,6 +56,7 @@ export const ICON_NAMES = [
   "shampoo",
   "detergent",
   "human-meds",
+  "dressing",
   "pills",
   "drops",
   "treats",

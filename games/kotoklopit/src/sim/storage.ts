@@ -23,7 +23,7 @@ export const STORAGES: readonly Storage[] = [
   { object: "litter-bag", products: ["litter"] },
   { object: "shower", products: ["hygiene", "shampoo"] },
   { object: "washer", products: ["detergent"] },
-  { object: "sink", products: ["humanMeds"] },
+  { object: "sink", products: ["humanMeds", "dressing"] },
   { object: "cat-kit", products: ["pills", "drops", "treats", "collar", "catnip"] },
 ];
 

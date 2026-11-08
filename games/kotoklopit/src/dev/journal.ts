@@ -175,6 +175,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `Персонаж одужав: ${event.illness}`;
     case "person-meds":
       return `Ліки для себе (${quality(event.quality)})`;
+    case "person-dressing":
+      return `${event.quality === "premium" ? "Бинт" : "Пластир"}${event.cured ? ": травму знято" : ""}`;
     case "treat":
       return `${catName(state, event.cat)}: ласощі (${quality(event.quality)})`;
     case "collar":
