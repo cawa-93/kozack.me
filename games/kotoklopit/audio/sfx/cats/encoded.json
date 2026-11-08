@@ -111,6 +111,10 @@
     "hash": "f88adbf71338a6c6",
     "seconds": 1.618958
   },
+  "cry-kitten-1": {
+    "hash": "94813f333bf61f7c",
+    "seconds": 0.65
+  },
   "squeak-1": {
     "hash": "66f0e312517fbcb5",
     "seconds": 0.292021
@@ -132,12 +136,12 @@
     "seconds": 0.84
   },
   "hiss-2": {
-    "hash": "65e74b4ed737781a",
-    "seconds": 0.9
+    "hash": "3aceaced42a9752a",
+    "seconds": 0.44
   },
-  "hiss-3": {
-    "hash": "b80c05111cb0ec56",
-    "seconds": 0.833021
+  "hiss-soft-1": {
+    "hash": "1c89bf886bc1e2d1",
+    "seconds": 0.47
   },
   "growl-1": {
     "hash": "fea6a1b478d7d98b",

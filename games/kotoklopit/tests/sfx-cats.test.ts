@@ -130,6 +130,8 @@ describe("звуки котів (§11.4а)", () => {
     expect(meowSound(old, meowMood(old))).toBe("meow-old");
     adult.act = act("beg", { target: "item:1" });
     expect(meowSound(adult, meowMood(adult))).toBe("meow-ask");
+    kitten.act = act("beg", { target: "high" });
+    expect(meowSound(kitten, meowMood(kitten))).toBe("cry-kitten");
     adult.act = act("attention", { target: "character" });
     expect(meowSound(adult, meowMood(adult))).toBe("meow-ask");
     adult.act = act("beg", { target: "high" });
@@ -241,7 +243,7 @@ describe("звуки котів (§11.4а)", () => {
     for (const event of SAMPLES) for (const cue of group.onEvent?.(event, s) ?? []) used.add(cue.sound);
     for (const [name, def] of Object.entries(group.sounds)) if (def.loop) used.add(name);
     // Нявкання за віком і ситуацією та кіт за дверима.
-    for (const name of ["meow", "meow-ask", "meow-happy", "meow-sad", "meow-old", "meow-kitten", "cry", "meow-door"]) used.add(name);
+    for (const name of ["meow", "meow-ask", "meow-happy", "meow-sad", "meow-old", "meow-kitten", "cry", "cry-kitten", "meow-door"]) used.add(name);
     expect(Object.keys(group.sounds).filter((name) => !used.has(name))).toEqual([]);
   });
 });

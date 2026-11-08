@@ -45,15 +45,6 @@
       "licenseUrl": "http://creativecommons.org/publicdomain/mark/1.0/",
       "sha256": "a9c31484c9a6610b217099a5e490cc3eca575d660ab5827c0dc44ae6037a3d8a"
     },
-    "dc-hiss": {
-      "file": "archive/Designers-Choice-Collection-Animals/ANMLCat-Blue_Snowball_Microphone_CU_Hiss_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Animals",
-      "title": "The Designer's Choice UCS Collection - ANIMALS — ANIMALS/CAT DOMESTIC/ANMLCat-Blue Snowball Microphone, CU_Hiss_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "5695f3c3a569463362c81bbab70dc27908241c4773ba28b1ac7f2c97d80a922c"
-    },
     "dc-meow3": {
       "file": "archive/Designers-Choice-Collection-Animals/ANMLCat-Samsung_Galaxy_Smartphone_MCU_Meowing_X3_Nicholas_Judy_TDC.flac",
       "url": "https://archive.org/details/Designers-Choice-Collection-Animals",
@@ -422,6 +413,33 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "bdea1ed097f2ded6f19920452db8cdbe00c2e9b64b492e892f97cf9e24b7ee60"
+    },
+    "fs-hiss-loud": {
+      "file": "freesound/343927__reitanna__hiss2.wav",
+      "url": "https://freesound.org/people/Reitanna/sounds/343927/",
+      "title": "hiss2.wav",
+      "author": "Reitanna",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "dc48c5a5c642a5efc50c0ea4288de69bb8eda2d56812c76c893eaf13b84fd824"
+    },
+    "fs-hiss-quiet": {
+      "file": "freesound/620962__cdonahueucsd__cat-hiss.wav",
+      "url": "https://freesound.org/people/cdonahueucsd/sounds/620962/",
+      "title": "Cat Hiss",
+      "author": "cdonahueucsd",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "sha256": "ede7db46d5e66e81451cb6d55aab4a9be7e99fb66d54628577f9f7867c230f11"
+    },
+    "fs-kitten-call": {
+      "file": "freesound/583386__fmaudio__cute-cat-vocalisation-2.wav",
+      "url": "https://freesound.org/people/F.M.Audio/sounds/583386/",
+      "title": "Cute Cat Vocalisation 2.wav",
+      "author": "F.M.Audio",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "sha256": "9500bf194bd90dec586fddb83ad437dc5c391677bc9a861d5ed797068509d75e"
     }
   },
   "files": {
@@ -624,6 +642,14 @@
       "filter": "highpass=f=150,asetrate=50400,aresample=48000",
       "fadeOut": 0.1
     },
+    "cry-kitten-1": {
+      "from": "fs-kitten-call",
+      "start": 0,
+      "end": 0.65,
+      "fadeIn": 0.01,
+      "fadeOut": 0.04,
+      "note": "протяжний писк кошеняти"
+    },
     "squeak-1": {
       "from": "dc-kitten",
       "start": 20.6206,
@@ -663,18 +689,21 @@
       "fadeOut": 0.08
     },
     "hiss-2": {
-      "from": "dc-hiss",
-      "start": 0,
-      "end": 0.9,
-      "filter": "highpass=f=300",
-      "fadeOut": 0.08
+      "from": "fs-hiss-loud",
+      "start": 0.12,
+      "end": 0.56,
+      "fadeIn": 0.03,
+      "fadeOut": 0.08,
+      "filter": "highpass=f=200",
+      "note": "гучне шипіння; низ зрізано"
     },
-    "hiss-3": {
-      "from": "dc-hiss",
-      "start": 0,
-      "end": 0.7497,
-      "filter": "highpass=f=300,asetrate=39690,aresample=48000",
-      "fadeOut": 0.08
+    "hiss-soft-1": {
+      "from": "fs-hiss-quiet",
+      "start": 0.01,
+      "end": 0.48,
+      "fadeOut": 0.08,
+      "filter": "highpass=f=200",
+      "note": "тихе шипіння незадоволеного кота"
     },
     "growl-1": {
       "from": "fs-growl",

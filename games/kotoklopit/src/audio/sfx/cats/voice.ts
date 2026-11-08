@@ -18,9 +18,9 @@ export function meowMood(cat: Cat): MeowMood {
   return cat.mood < THOUGHTS.sad ? "sad" : "plain";
 }
 
-/** Звук нявкання групи `cats` для кота й ситуації. Кошеня пищить завжди, старий — хрипкіше й нижче. */
+/** Звук нявкання групи `cats` для кота й ситуації. Кошеня пищить (кличе — протяжно), старий — хрипкіше й нижче. */
 export function meowSound(cat: Cat, mood: MeowMood): string {
-  if (isKitten(cat)) return "meow-kitten";
+  if (isKitten(cat)) return mood === "cry" ? "cry-kitten" : "meow-kitten";
   if (mood === "cry") return "cry";
   if (isOld(cat)) return mood === "happy" ? "meow-happy" : "meow-old";
   switch (mood) {

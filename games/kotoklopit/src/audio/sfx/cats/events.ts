@@ -23,18 +23,15 @@ function meow(cat: Cat | undefined, id: number): Cue[] {
 }
 
 /** Звук з голосом кота (`rate` — його висота), коли кіт відомий. */
-function voiced(state: GameState, sound: string, id: number, gain?: number): Cue[] {
+function voiced(state: GameState, sound: string, id: number): Cue[] {
   const cat = catById(state, id);
-  const cue: Cue = { sound: cat && isKittenVoice(cat, sound) ? "meow-kitten" : sound, at: catAt(id) };
+  const cue: Cue = { sound: cat && isKitten(cat) ? (KITTEN_VOICE[sound] ?? sound) : sound, at: catAt(id) };
   if (cat) cue.rate = voiceRate(cat);
-  if (gain !== undefined) cue.gain = gain;
   return [cue];
 }
 
-/** Кошеня не гарчить і не кричить дорослим голосом: його злість і крик — той самий писк. */
-function isKittenVoice(cat: Cat, sound: string): boolean {
-  return isKitten(cat) && (sound === "cry" || sound === "meow-angry");
-}
+/** Кошеня не гарчить і не кричить дорослим голосом: кричить протяжним писком, а сердиться звичайним. */
+const KITTEN_VOICE: Readonly<Record<string, string>> = { cry: "cry-kitten", "meow-angry": "meow-kitten" };
 
 /** Коротке, що звучить серією («ек-ек-ек», «кх-кх-кх»): той самий звук тричі з паузою `stepMs`, трохи різної висоти. */
 function triple(sound: string, at: SoundAt, stepMs: number): Cue[] {
@@ -63,7 +60,7 @@ export function catEvent(event: GameEvent, state: GameState): readonly Cue[] {
     }
     case "carrier-cry": {
       const cat = catById(state, event.cat);
-      const cue: Cue = { sound: cat && isKitten(cat) ? "meow-kitten" : "cry", at: { x: CARRIER_SPOT.x, y: CARRIER_SPOT.y } };
+      const cue: Cue = { sound: cat && isKitten(cat) ? "cry-kitten" : "cry", at: { x: CARRIER_SPOT.x, y: CARRIER_SPOT.y } };
       if (cat) cue.rate = voiceRate(cat);
       return [cue];
     }
@@ -77,13 +74,13 @@ export function catEvent(event: GameEvent, state: GameState): readonly Cue[] {
     case "hissed-guests":
       return voiced(state, "hiss", event.cat);
     case "standoff-parted":
-      return voiced(state, "hiss", event.cat, 0.7);
+      return voiced(state, "hiss-soft", event.cat);
     case "standoff":
       return voiced(state, "growl", event.cats[0]);
     case "cat-fight":
       return [{ sound: "fight", at: catAt(event.cats[0]) }];
     case "fight-stopped":
-      return [{ sound: "hiss", at: catAt(event.cat), gain: 0.7 }, { sound: "scamper", at: catAt(event.cat), delayMs: 150 }];
+      return [{ sound: "hiss-soft", at: catAt(event.cat) }, { sound: "scamper", at: catAt(event.cat), delayMs: 150 }];
     case "bite":
       return [{ sound: "bite", at: catAt(event.cat) }];
     case "clawed":
@@ -114,7 +111,7 @@ export function catEvent(event: GameEvent, state: GameState): readonly Cue[] {
       // Сіпає хвостом, дметься, іде з-під руки — думка, лише тихий звук тіла.
       return [{ sound: "tail", at: catAt(event.cat) }];
     case "play-declined":
-      return event.sick ? voiced(state, "hiss", event.cat) : [{ sound: "tail", at: catAt(event.cat) }];
+      return event.sick ? voiced(state, "hiss-soft", event.cat) : [{ sound: "tail", at: catAt(event.cat) }];
     case "knocked":
       return [{ sound: "smash", at: event.object }];
     case "trinket-fell":
