@@ -1,6 +1,7 @@
 // Програвач сторінки звуків: файли декодуються на першу потребу, звучить щось одне. Петля грає колом між мітками `encoded.json`,
 // як у грі (`src/audio/sfx/player.ts`), поки її не зупинять; разові звуки звучать один за одним із паузою.
 
+import { farTone } from "../../audio/engine";
 import type { CatalogFile } from "./catalog";
 
 /** Пауза між варіантами, коли слухають усі, с. */
@@ -11,8 +12,11 @@ export class Listener {
   private readonly buffers = new Map<string, Promise<AudioBuffer>>();
   private playing: { sources: AudioBufferSourceNode[]; done: () => void; timer: number } | null = null;
 
-  /** Зіграти файли (`loop` — перший колом); `done` — коли дозвучало чи зупинили. Попереднє зупиняється. */
-  async play(files: readonly CatalogFile[], gain: number, loop: boolean, done: () => void): Promise<void> {
+  /**
+   * Зіграти файли (`loop` — перший колом) з гучністю `gain`; `far` — з приглушеними верхами, як звук квартири в грі. `done` —
+   * коли дозвучало чи зупинили. Попереднє зупиняється.
+   */
+  async play(files: readonly CatalogFile[], mix: { gain: number; far: boolean }, loop: boolean, done: () => void): Promise<void> {
     this.stop();
     const context = (this.context ??= new AudioContext());
     if (context.state === "suspended") await context.resume();
@@ -33,8 +37,8 @@ export class Listener {
     }
     if (this.playing !== token) return;
     const out = context.createGain();
-    out.gain.value = gain;
-    out.connect(context.destination);
+    out.gain.value = mix.gain;
+    (mix.far ? out.connect(farTone(context)) : out).connect(context.destination);
     let at = context.currentTime + 0.03;
     playable.forEach((file, i) => {
       const buffer = buffers[i]!;

@@ -240,8 +240,8 @@ export class Sounds {
   private applyVolume(): void {
     const buses = this.engine.buses;
     if (!buses) return;
-    buses.world.gain.value = this.volume;
-    buses.ui.gain.value = this.volume;
+    buses.world.gain.value = this.volume * SFX.worldLevel;
+    buses.ui.gain.value = this.volume * SFX.uiLevel;
   }
 }
 

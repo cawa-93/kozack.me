@@ -56,3 +56,11 @@ describe("де звучить звук (§11.4а)", () => {
     expect(soundPoint(state, "mess:9999")).toBeNull();
   });
 });
+
+describe("шини звуків (§11.4а)", () => {
+  it("усе тихіше за файл, а квартира — ще й тихіша за інтерфейс і з приглушеними верхами: її видно згори й здалеку", () => {
+    expect(SFX.uiLevel).toBeLessThan(1);
+    expect(SFX.worldLevel).toBeLessThan(SFX.uiLevel);
+    expect(SFX.worldShelfDb).toBeLessThan(0);
+  });
+});

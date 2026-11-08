@@ -3,6 +3,7 @@
 // вирішує: затвердити, замінити чи прибрати (`review.ts`, зберігає `store.ts`). Звук, змінений після рішення, позначено:
 // його треба переслухати.
 
+import { SFX } from "../../audio/config";
 import { GROUPS } from "../../audio/sfx/registry";
 import { soundFile, type EncodedGroup } from "../../audio/sfx/files";
 import type { Sources } from "../../audio/sfx/sourcetypes";
@@ -186,7 +187,7 @@ class Page {
         { class: "s-row" },
         h("h1", {}, "Звуки Котоклопіту"),
         nav,
-        h("label", { class: "s-toggle", title: "Гучність звуку відносно інших, як у грі (gain групи). Без позначки — файл на повну." }, gain, " гучність як у грі"),
+        h("label", { class: "s-toggle", title: "Як у грі на повному повзунку «Звуки»: gain групи й шина — квартира тихіша за інтерфейс і з приглушеними верхами (SFX). Без позначки — файл на повну." }, gain, " гучність як у грі"),
         download,
       ),
       h("div", { class: "s-row" }, filters, this.storeNote),
@@ -405,8 +406,9 @@ class SoundCard {
       }
       button.classList.add("is-playing");
       button.textContent = "■";
-      const gain = this.page.prefs.gameGain ? this.sound.gain : 1;
-      void this.page.listener.play(files(), gain, this.sound.loop, () => {
+      const game = this.page.prefs.gameGain;
+      const gain = game ? this.sound.gain * (this.sound.ui ? SFX.uiLevel : SFX.worldLevel) : 1;
+      void this.page.listener.play(files(), { gain, far: game && !this.sound.ui }, this.sound.loop, () => {
         button.classList.remove("is-playing");
         button.textContent = "▶";
       });

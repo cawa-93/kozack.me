@@ -1,11 +1,11 @@
 // Єдиний AudioContext гри (§8.10, §11.4а). Він окремо від Phaser, бо звук потрібен і карткам (DOM); Phaser запущено з `noAudio`.
 
-import { SAMPLE_RATE } from "./config";
+import { SAMPLE_RATE, SFX } from "./config";
 
 /** Браузер дозволяє звук лише після дії гравця; `fullscreenOnFirstAction` для цього не годиться: на iPhone він одразу виходить. */
 const GESTURES = ["pointerup", "keydown", "touchend"] as const;
 
-/** Шини: музика радіо, звуки світу, інтерфейс. Кожна — свій GainNode просто до виходу. */
+/** Шини: музика радіо, звуки світу, інтерфейс. Кожна — свій GainNode до виходу; шина світу — через `farTone`. */
 export interface Buses {
   music: GainNode;
   world: GainNode;
@@ -52,9 +52,11 @@ export class AudioEngine {
       gain.connect(context.destination);
       return gain;
     };
+    const world = context.createGain();
+    world.connect(farTone(context)).connect(context.destination);
     context.addEventListener("statechange", () => this.sync());
     this.context = context;
-    this.buses = { music: bus(), world: bus(), ui: bus() };
+    this.buses = { music: bus(), world, ui: bus() };
     this.sync();
   }
 
@@ -64,4 +66,13 @@ export class AudioEngine {
     if (running && !this.running) for (const listener of this.listeners) listener();
     this.running = running;
   }
+}
+
+/** Приглушені верхи шини світу (§11.4а): квартира звучить здалеку, а не над вухом. Той самий фільтр — у каталозі звуків. */
+export function farTone(context: BaseAudioContext): BiquadFilterNode {
+  const shelf = context.createBiquadFilter();
+  shelf.type = "highshelf";
+  shelf.frequency.value = SFX.worldShelfHz;
+  shelf.gain.value = SFX.worldShelfDb;
+  return shelf;
 }
