@@ -334,7 +334,8 @@ export class Bot {
     need("hygiene", 3);
     need("detergent", 2);
     if (s.character.illnesses.some((i) => ILLNESSES[i.id].doses !== null)) need("humanMeds", 1);
-    need("dressing", 2);
+    // Пластирі — лише коли здоров'я помітно просіло: запас про всяк випадок на «Реалістичному» наближав виселення.
+    if (s.character.stats.health <= STAT_MAX - DRESSING.health.premium) need("dressing", 1);
     // Травма — пачка бинтів: вона знімає травму одразу (§6.5).
     const bandages = s.home.supplies.dressing.premium + (s.home.boxes?.dressing?.premium ?? 0) + [...s.home.deliveries, ...s.home.porch].filter((d) => "product" in d && d.product === "dressing" && d.quality === "premium").length;
     if (bandages === 0 && s.character.illnesses.some((i) => i.id === "injury") && s.character.money > PRODUCTS.dressing.price.premium + SPARE_MONEY) {
