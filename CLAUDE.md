@@ -22,7 +22,7 @@
 
 ## Поточна робота
 
-- Зараз автор розробляє гру `games/kotoklopit` у гілці `new-game` (PR [#213](https://github.com/cawa-93/kozack.me/pull/213)). Claude Code працює локально на комп'ютері автора; інтернет нестабільний.
+- Гру `games/kotoklopit` випущено (PR [#213](https://github.com/cawa-93/kozack.me/pull/213) злито в `master`); автор далі розвиває її — кожен блок у своїй гілці від `master` з PR. Claude Code працює локально на комп'ютері автора; інтернет нестабільний.
 - Перед будь-якою роботою над грою прочитай `games/kotoklopit/CLAUDE.md` (порядок роботи, коміти й пуші) і розділ §12 «Стан і що далі» в `games/kotoklopit/GAME_DESIGN.md`.
 - Для хмарної сесії (якщо знадобиться) залежності ставить хук `SessionStart` (`.claude/settings.json` → `.claude/hooks/session-start.sh`, `npm ci`).
 
