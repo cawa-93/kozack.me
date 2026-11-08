@@ -162,8 +162,8 @@ export class RaceScene extends Phaser.Scene {
   private readonly horns = new Horns();
   /** Мотор гарчить, коли гравець натиснув газ. */
   private readonly revs = new Revs();
-  /** Мотор гуде, поки машина їде: висота — за швидкістю (`trip/engine.ts`). */
-  private readonly engine = new EngineHum(() => sceneLoop("trip", "engine"));
+  /** Мотор гуде, поки машина їде: оберти — за швидкістю (`trip/engine.ts`). */
+  private readonly engine = new EngineHum((sound) => sceneLoop("trip", sound));
   /** Сцена показує гонку від самого старту (від'їзд від дому чи свіжа гонка), а не з середини після перезавантаження (`startHintShown`). */
   private fromStart = false;
   private keys: Record<"up" | "down" | "up2" | "down2", Phaser.Input.Keyboard.Key> | null = null;

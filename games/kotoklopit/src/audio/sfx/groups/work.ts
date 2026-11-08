@@ -52,7 +52,7 @@ export const group: SoundGroup = {
     "call-ok": { files: ["call-ok"], gain: 0.22, voices: 1 },
     rejected: { files: ["rejected"], gain: 0.45, voices: 1 },
     // Новини кар'єри й гроші від роботи приходять на телефон, і в поїздці теж (звільнили дорогою, відпускні).
-    "career-up": { files: ["career-up"], gain: 0.33, voices: 1, ui: true },
+    "career-up": { files: ["career-up"], gain: 0.47, voices: 1, ui: true },
     "career-down": { files: ["career-down"], gain: 0.37, voices: 1, ui: true },
     "vacation-pay": { files: ["vacation-pay"], gain: 0.9, voices: 1, ui: true },
   },

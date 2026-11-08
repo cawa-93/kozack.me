@@ -135,24 +135,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "145c2e33de735ac5d5f7838a5b68c0ed9646411348e49eb0564c546df60ed17f"
     },
-    "cardboard": {
-      "file": "archive/Designers-Choice-Collection-Objects/OBJCont-Blue_Snowball_Microphone_CU_Box_Cardboard_Lift_Flaps_Close_Open_Slow_Fast_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Objects",
-      "title": "The Designer's Choice UCS Collection - OBJECTS — OBJECTS/CONTAINER/OBJCont-Blue Snowball Microphone, CU_Box, Cardboard, Lift Flaps, Close, Open, Slow, Fast_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "7e68bcc7eab5ffdf7d09f879e8b6b421927df69c2f20a92e45c2b75df5051e35"
-    },
-    "parcel": {
-      "file": "archive/Designers-Choice-Collection-Objects/OBJCont-Blue_Snowball_Microphone_CU_Box_Cardboard_Place_Item_Remove_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Objects",
-      "title": "The Designer's Choice UCS Collection - OBJECTS — OBJECTS/CONTAINER/OBJCont-Blue Snowball Microphone, CU_Box, Cardboard, Place Item, Remove_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "18c9086434ff09dccc6e4cb7a8213a293bf849a4a5c1714940f9d6bbb26d89c1"
-    },
     "paint-can": {
       "file": "archive/Designers-Choice-Collection-Objects/OBJHsehld-Samsung_Galaxy_Smartphone_CU_Paint_Can_Lift_Set_Down_Nicholas_Judy_TDC.flac",
       "url": "https://archive.org/details/Designers-Choice-Collection-Objects",
@@ -287,6 +269,24 @@
       "license": "CC-BY-4.0",
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
       "sha256": "b6e917a1a5c9c930ef6b596923c0e28faad64324e8465fb09a94c185b118db28"
+    },
+    "fs-put-down": {
+      "file": "freesound/792930__qubodup__put-down-item.wav",
+      "url": "https://freesound.org/people/qubodup/sounds/792930/",
+      "title": "Put down item",
+      "author": "qubodup",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "bd3db46685774feb205969adfa90dafd22eee042d9cd4f1b66d26e11bbe63ea5"
+    },
+    "fs-box-open": {
+      "file": "freesound/364740__newagesoup__open-cardboard-box-compartment.wav",
+      "url": "https://freesound.org/people/newagesoup/sounds/364740/",
+      "title": "open-cardboard-box-compartment.wav",
+      "author": "newagesoup",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "fc8857287922619592f46e69b6430ef995259969f4752c304f5accdfab81852a"
     }
   },
   "files": {
@@ -381,24 +381,15 @@
       "note": "Річ викинули з телефона: лише кришка"
     },
     "unpack-1": {
-      "from": "cardboard",
-      "start": 9.3,
-      "end": 10.6,
-      "fadeOut": 0.2,
-      "note": "Ящики біля входу розпаковують: клапани коробки"
-    },
-    "unpack-2": {
-      "from": "cardboard",
-      "start": 13.33,
-      "end": 14.6,
-      "fadeOut": 0.2
+      "from": "fs-box-open",
+      "start": 0.2,
+      "end": 0.72,
+      "fadeOut": 0.1,
+      "note": "Розпакування: відкрили картонну коробку"
     },
     "parcel": {
-      "from": "parcel",
-      "start": 0.03,
-      "end": 1.1,
-      "fadeOut": 0.12,
-      "note": "Коробку поставили: пакунки, запас ліг у сховище, річ на місці"
+      "from": "fs-put-down",
+      "note": "Поставили важку річ: посилка, річ котячого кутка, запас у сховищі"
     },
     "door": {
       "from": "front-door",

@@ -1,14 +1,5 @@
 {
   "originals": {
-    "gs-open-menu": {
-      "file": "commons/Open_menu_1_(Gravity_Sound).wav",
-      "url": "https://commons.wikimedia.org/wiki/File:Open_menu_1_(Gravity_Sound).wav",
-      "title": "Open menu 1 (Gravity Sound)",
-      "author": "Gravity Sound",
-      "license": "CC-BY-4.0",
-      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
-      "sha256": "2af2945c19252c82bd9dbb38b3b386583f9c0db3c03f8717c8e65e55f269f844"
-    },
     "gs-close-menu": {
       "file": "commons/Close_menu_1_(Gravity_Sound).wav",
       "url": "https://commons.wikimedia.org/wiki/File:Close_menu_1_(Gravity_Sound).wav",
@@ -54,15 +45,6 @@
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
       "sha256": "63554e13069dede872ea606ea3b7a5649f7a1ff786847069c81298f89986863d"
     },
-    "gs-notification": {
-      "file": "commons/Notification_(Gravity_Sound).wav",
-      "url": "https://commons.wikimedia.org/wiki/File:Notification_(Gravity_Sound).wav",
-      "title": "Notification (Gravity Sound)",
-      "author": "Gravity Sound",
-      "license": "CC-BY-4.0",
-      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
-      "sha256": "7bfb252ded55c2d1986f9f6b0d50b94f728400bd51d3b61da4e6e69f15419bbc"
-    },
     "gs-complete": {
       "file": "commons/Complete_(Gravity_Sound).mp3",
       "url": "https://commons.wikimedia.org/wiki/File:Complete_(Gravity_Sound).mp3",
@@ -90,21 +72,58 @@
       "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
       "sha256": "660682ebcef9b9a4c0464c1ec3208c6f10b7c7b7e7411f0c03341e1e36056a96"
     },
-    "fs-register": {
-      "file": "freesound/475915__tompalompa__vintage-cash-register.m4a",
-      "url": "https://freesound.org/people/Tompalompa/sounds/475915/",
-      "title": "Vintage cash register.m4a",
-      "author": "Tompalompa",
+    "fs-impact": {
+      "file": "freesound/749465__audiopapkin__sound-design-elements-impact-sfx-ps-001.wav",
+      "url": "https://freesound.org/people/AudioPapkin/sounds/749465/",
+      "title": "Sound Design Elements Impact SFX PS 001",
+      "author": "AudioPapkin",
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "5fbf0ea694be91a637c7af6e7c757a3bb1266279b2c483a7daffc3a4d8e0fc1e"
+      "sha256": "ee1fd66ef27ea1a9c557848918aec67637ab5a35d31fa5dccec507e607c230ab"
+    },
+    "fs-ui-03": {
+      "file": "freesound/380292__rhodesmas__ui-03.wav",
+      "url": "https://freesound.org/people/rhodesmas/sounds/380292/",
+      "title": "UI 03",
+      "author": "rhodesmas",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "sha256": "4639d12d7d03a76fbf94404ed1cadbc5724f761bb18a863ed632d6debe108f35"
+    },
+    "fs-pop": {
+      "file": "freesound/692109__samuel54tw__pop-videogame-sound.flac",
+      "url": "https://freesound.org/people/Samuel54tw/sounds/692109/",
+      "title": "Pop (Videogame sound)",
+      "author": "Samuel54tw",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "e77bde67201d7371b63920cd8a743bbff166190ade46f7b5570a1fc347fa39e1"
+    },
+    "fs-ping": {
+      "file": "freesound/266742__n_audioman__ping12.wav",
+      "url": "https://freesound.org/people/n_audioman/sounds/266742/",
+      "title": "Ping12.wav",
+      "author": "n_audioman",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "b377ec31a600974a937ec965c19c41a156d9ed8e5e39941f99ab5e9afb51775b"
+    },
+    "fs-coins": {
+      "file": "freesound/336571__anthousai__coins-05.wav",
+      "url": "https://freesound.org/people/Anthousai/sounds/336571/",
+      "title": "coins 05.wav",
+      "author": "Anthousai",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "3fe86fa6597cd1f86572bd249010d3d2aad7b141e213e5a5668966fd75f104b6"
     }
   },
   "files": {
     "open": {
-      "from": "gs-open-menu",
-      "fadeOut": 0.04,
-      "note": "Картка відкрилась: короткий шурхіт угору"
+      "from": "fs-pop",
+      "start": 0.035,
+      "fadeOut": 0.03,
+      "note": "Картка відкрилась: «поп»"
     },
     "close": {
       "from": "gs-close-menu",
@@ -135,10 +154,9 @@
       "note": "Кнопка: ще один клац"
     },
     "tab": {
-      "from": "gs-clicking",
-      "filter": "aresample=48000,atrim=0.365:0.425,asetpts=PTS-STARTPTS,asetrate=60000,aresample=48000",
-      "fadeOut": 0.02,
-      "note": "Вкладка: той самий клац, на велику терцію вище. Обрізка — у фільтрі: зі зміною частоти -ss/-to дають порожнечу"
+      "from": "fs-ui-03",
+      "fadeOut": 0.03,
+      "note": "Вкладка: короткий м'який клац"
     },
     "refused-1": {
       "from": "gs-bump-2",
@@ -169,9 +187,10 @@
       "note": "Порожньо: інший стук"
     },
     "notify": {
-      "from": "gs-notification",
-      "fadeOut": 0.05,
-      "note": "Телефон: сповіщення про рису кота, два високі сигнали"
+      "from": "fs-ping",
+      "end": 0.05,
+      "fadeOut": 0.01,
+      "note": "Телефон: сповіщення про рису кота — короткий «пінг»"
     },
     "ordered": {
       "from": "gs-complete",
@@ -179,11 +198,11 @@
       "note": "Замовлення оплачено: «дінь-дон»"
     },
     "bought": {
-      "from": "fs-register",
-      "start": 3.66,
-      "end": 4.56,
-      "fadeOut": 0.2,
-      "note": "Купівля на місці: клацання каси й дзвіночок"
+      "from": "fs-coins",
+      "start": 0.03,
+      "end": 0.45,
+      "fadeOut": 0.08,
+      "note": "Купівля на місці: монети"
     },
     "morning": {
       "from": "koshi",
@@ -207,10 +226,12 @@
       "note": "Шкала впала нижче LOW_STAT: дві ноти піаніно вниз"
     },
     "end": {
-      "from": "piano-error",
-      "filter": "aresample=48000,asetrate=36000,aresample=48000",
-      "fadeOut": 0.15,
-      "note": "Кінець гри (показник, виселення): ті самі ноти, нижче й повільніше"
+      "from": "fs-impact",
+      "start": 0.3,
+      "end": 3.2,
+      "fadeIn": 0.01,
+      "fadeOut": 1.2,
+      "note": "Кінець гри (показник, виселення): глухий удар, що довго згасає"
     }
   }
 }

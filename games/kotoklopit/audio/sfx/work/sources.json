@@ -36,15 +36,6 @@
       "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
       "sha256": "2413fface19bac7f777f9fbfce5f8d78666f54c4b530de6b28b0622113aa04f0"
     },
-    "retro-correct": {
-      "file": "commons/Acerto_efeito_sonoro_retrô.oga",
-      "url": "https://commons.wikimedia.org/wiki/File:Acerto_efeito_sonoro_retr%C3%B4.oga",
-      "title": "Acerto efeito sonoro retrô",
-      "author": "Rafaeljuliani",
-      "license": "CC0-1.0",
-      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
-      "sha256": "32f6a4c35d55d2c3e301a0ff8988cd6ed48d90d0dfdc2d6c68acb989e5dec9ff"
-    },
     "retro-error": {
       "file": "commons/Erro_efeito_sonoro_retrô.oga",
       "url": "https://commons.wikimedia.org/wiki/File:Erro_efeito_sonoro_retr%C3%B4.oga",
@@ -107,6 +98,15 @@
       "license": "CC-BY-4.0",
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
       "sha256": "f6ebe2f52686ca6f261f2e88e022395cd9e9b3fa937e88d6ee143a83af188b13"
+    },
+    "fs-level-up": {
+      "file": "freesound/646114__crunchymaniac__level-up.mp3",
+      "url": "https://freesound.org/people/crunchymaniac/sounds/646114/",
+      "title": "Level-Up.mp3",
+      "author": "crunchymaniac",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "ebe442e0a19c8d188235e681887797ab72a2634bd92e7b9b48ee5b9bde9e58b4"
     }
   },
   "files": {
@@ -141,9 +141,10 @@
       "note": "Відмова після вакансії: подвійне дзижчання"
     },
     "career-up": {
-      "from": "retro-correct",
-      "fadeOut": 0.08,
-      "note": "Підвищення чи найм: радісне «так!»"
+      "from": "fs-level-up",
+      "end": 2.1,
+      "fadeOut": 0.3,
+      "note": "Підвищення чи нова робота: «level up»"
     },
     "career-down": {
       "from": "retro-error",

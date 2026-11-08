@@ -32,7 +32,7 @@ const SOUNDS: Record<string, SoundDef> = {
   growl: { files: files("growl", 2), gain: 0.7, pitch: 0.04, cooldownMs: 800 },
   fight: { files: files("fight", 2), gain: 1, pitch: 0.04, cooldownMs: 800, voices: 1 },
   bite: { files: ["bite-1"], gain: 0.85, pitch: 0.05, cooldownMs: 400 },
-  claw: { files: ["claw-1"], gain: 0.8, pitch: 0.06, cooldownMs: 400 },
+  claw: { files: ["claw-1"], gain: 1, pitch: 0.06, cooldownMs: 400 },
   purr: { files: files("purr", 2), gain: 0.35, pitch: 0.04, cooldownMs: 2500, voices: 1 },
   yawn: { files: ["yawn-1"], gain: 0.8, pitch: 0.06, cooldownMs: 1500 },
   land: { files: ["land-2"], gain: 0.5, pitch: 0.08, cooldownMs: 200 },

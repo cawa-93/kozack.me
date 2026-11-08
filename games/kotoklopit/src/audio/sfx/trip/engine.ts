@@ -1,34 +1,50 @@
-// Гудіння мотора в поїздці (§8.5): петля холостих, яку веде сцена гонки сама (день у поїздці спить) — щокадру висота за
-// швидкістю машини й гучність (тихіше на паузі й у темряві катсцени). Мотор вимкнено — петля згасає.
+// Гудіння мотора в поїздці (§8.5): дві петлі одного запису — холості й високі оберти, — які веде сцена гонки сама (день у
+// поїздці спить). Щокадру оберти йдуть за швидкістю машини: шари переходять один в один, кожен грає з висотою, що дає ці
+// оберти, — тож розгін звучить наростанням, а гальмування спадом. Гучність — тихіше на паузі й у темряві катсцени. Мотор
+// вимкнено — петлі згасають.
 
+import { RACE } from "../../../sim/config";
 import type { SceneLoop } from "../sounds";
 
 /**
- * Висота петлі: холості — `idleRate`, кожна одиниця швидкості гонки додає `perSpeed`, вище за `maxRate` мотор не тягне; на
- * виїзді й дорогою додому гудіння починається за `startDelayMs` — після звуку запуску (`trip`, `engine-start`).
+ * Висота шарів у записі (`trip/sources.json`): холості `idleHz`, високі оберти `highHz`. На місці мотор на холостих, на
+ * `RACE.maxSpeed` — на високих. На виїзді й дорогою додому гудіння починається за `startDelayMs` — після звуку запуску
+ * (`trip`, `engine-start`).
  */
-export const ENGINE = { idleRate: 0.85, perSpeed: 0.09, maxRate: 1.8, startDelayMs: 1200 } as const;
+export const ENGINE = { idleHz: 46.5, highHz: 141, startDelayMs: 1200 } as const;
 
-/** Висота гудіння на швидкості `speed` гонки. */
+/** Оберти на швидкості `speed` гонки — у разах від холостих: 1 на місці, `highHz / idleHz` на `RACE.maxSpeed` і вище. */
 export function engineRate(speed: number): number {
-  return Math.min(ENGINE.maxRate, ENGINE.idleRate + Math.max(0, speed) * ENGINE.perSpeed);
+  const load = Math.min(1, Math.max(0, speed) / RACE.maxSpeed);
+  return 1 + load * (ENGINE.highHz / ENGINE.idleHz - 1);
+}
+
+/** Частка високих обертів у суміші (0 — самі холості, 1 — самі високі) для обертів `rate` (`engineRate`). */
+export function engineMix(rate: number): number {
+  return Math.min(1, Math.max(0, (rate - 1) / (ENGINE.highHz / ENGINE.idleHz - 1)));
 }
 
 export class EngineHum {
-  private loop: SceneLoop | null = null;
+  private idle: SceneLoop | null = null;
+  private high: SceneLoop | null = null;
 
-  /** `open` вмикає петлю; поки звуку немає (аудіо ще не запущено), повертає null — тоді спробуємо наступного кадру. */
-  constructor(private readonly open: () => SceneLoop | null) {}
+  /** `open` вмикає петлю шару; поки звуку немає (аудіо ще не запущено), повертає null — тоді спробуємо наступного кадру. */
+  constructor(private readonly open: (sound: "engine" | "engine-high") => SceneLoop | null) {}
 
-  /** Кадр: мотор гуде з висотою `rate` і гучністю `gain` (множник звуку). */
+  /** Кадр: мотор на обертах `rate` (`engineRate`) з гучністю `gain` (множник звуку). Шари — за рівною потужністю. */
   run(rate: number, gain: number): void {
-    this.loop ??= this.open();
-    this.loop?.set(gain, rate);
+    this.idle ??= this.open("engine");
+    this.high ??= this.open("engine-high");
+    const angle = (engineMix(rate) * Math.PI) / 2;
+    this.idle?.set(gain * Math.cos(angle), rate);
+    this.high?.set(gain * Math.sin(angle), (rate * ENGINE.idleHz) / ENGINE.highHz);
   }
 
-  /** Мотор заглушили (чи сцени вже немає): петля згасає. */
+  /** Мотор заглушили (чи сцени вже немає): петлі згасають. */
   stop(): void {
-    this.loop?.stop();
-    this.loop = null;
+    this.idle?.stop();
+    this.high?.stop();
+    this.idle = null;
+    this.high = null;
   }
 }

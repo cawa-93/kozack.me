@@ -26,8 +26,10 @@ export const group: SoundGroup = {
     handbrake: { files: ["handbrake-1"], gain: 0.5, pitch: 0.04, voices: 1, ui: true },
     "engine-start": { files: ["engine-start-1"], gain: 0.5, pitch: 0.03, voices: 1, ui: true },
     "engine-stop": { files: ["engine-stop-1"], gain: 0.45, pitch: 0.03, voices: 1, ui: true },
-    // Гудіння: висоту й гучність щокадру задає сцена гонки (`trip/engine.ts`).
+    // Гудіння — два шари одного мотора: холості й високі оберти; суміш, висоту й гучність щокадру задає сцена гонки
+    // (`trip/engine.ts`).
     engine: { files: ["engine-loop"], gain: 0.35, loop: true, ui: true },
+    "engine-high": { files: ["engine-high"], gain: 0.35, loop: true, ui: true },
     // Газування: на виїзді й щоразу, як у гонці натиснули газ (`trip/revs.ts`), — але газ підтискають часто, тож пауза.
     rev: { files: ["rev-1", "rev-2", "rev-3"], gain: 0.4, pitch: 0.05, cooldownMs: 1500, voices: 1, ui: true },
     crash: { files: ["crash-1"], gain: 0.8, voices: 1, ui: true },

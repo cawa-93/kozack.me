@@ -71,6 +71,15 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "eb18f9c0a27f4b2e6d54386affbe122cf74d91a69078bf5c6000fc420476f555"
+    },
+    "fs-renault-ramp": {
+      "file": "freesound/425846__soundholder__renault-master-f3500-dci135-engine-rpm-ramp-2-mono.wav",
+      "url": "https://freesound.org/people/Soundholder/sounds/425846/",
+      "title": "Renault Master F3500 dCi135 Engine RPM Ramp 2 Mono.wav",
+      "author": "Soundholder",
+      "license": "CC-BY-3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "sha256": "859156521b08388ae55a14d4424458cdbf7c828a3aaa24af9918a6cf86a100e5"
     }
   },
   "files": {
@@ -156,11 +165,18 @@
       "note": "удар і уламки; переробка Car Crash (squareal, CC0)"
     },
     "engine-loop": {
-      "from": "fs-engine",
-      "start": 26,
-      "end": 30,
+      "from": "fs-renault-ramp",
+      "start": 0.4,
+      "end": 1.8,
       "loop": true,
-      "note": "рівні холості між запуском і зупинкою; висоту за швидкістю задає сцена гонки"
+      "note": "Холості (≈46,5 Гц, `ENGINE.idleHz`): з високими обертами їх змішує сцена гонки за швидкістю"
+    },
+    "engine-high": {
+      "from": "fs-renault-ramp",
+      "start": 6.9,
+      "end": 8.9,
+      "loop": true,
+      "note": "Високі оберти (≈141 Гц, `ENGINE.highHz`) — той самий мотор на «полиці» розгону"
     }
   }
 }

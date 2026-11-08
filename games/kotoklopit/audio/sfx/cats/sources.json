@@ -189,15 +189,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "aedbb49a66533ce6dc21139c2731f6457db5fb27f4daeecb53a8d66e4f4c5b9a"
     },
-    "dc-velcro": {
-      "file": "archive/Designers-Choice-Collection-Cloth/CLOTHRip-Blue_Snowball_Microphone_CU_Baseball_Mitt_Velcro_Fast_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Cloth",
-      "title": "The Designer's Choice UCS Collection - CLOTH — CLOTH/RIP/CLOTHRip-Blue Snowball Microphone, CU_Baseball Mitt, Velcro, Fast_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "35b4db803d47688cc2570ca7885db961b6c2a9b341d2f8050274603d25cb1266"
-    },
     "dc-crumple": {
       "file": "archive/Designers-Choice-Collection-Paper/PAPRHndl-Blue_Snowball_Microphone_CU_Paper_Crumple_Nicholas_Judy_TDC.mp3",
       "url": "https://archive.org/details/Designers-Choice-Collection-Paper",
@@ -269,15 +260,6 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "cb8120794f7775f9b7adea29798fadd1320c7a14676279d4e022e16d3ae05332"
-    },
-    "fs-scratch-post": {
-      "file": "freesound/490730__samantha_dolman__cat-scratching-a-post.wav",
-      "url": "https://freesound.org/people/Samantha_Dolman/sounds/490730/",
-      "title": "Cat Scratching A Post",
-      "author": "Samantha_Dolman",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "e73d5315e6c445b47f45ac60468d890b807f7df487344787e5bf27a2fa89357b"
     },
     "fs-drinking": {
       "file": "freesound/791359__lake_constance__01-cat-drinking.aiff",
@@ -458,6 +440,15 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "3c5b4fce6c50309c4e5f1601b5469805f00f2ef2e77799e92ef18391866ad7b3"
+    },
+    "fs-scratching": {
+      "file": "freesound/566886__tetoszka__footsteps-rubbing-scratching.wav",
+      "url": "https://freesound.org/people/Tetoszka/sounds/566886/",
+      "title": "footsteps-rubbing-scratching",
+      "author": "Tetoszka",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "7145eae35f8287230d238d9cab0756d118a4f9a7fc9236938f876a85d96c03cf"
     }
   },
   "files": {
@@ -821,12 +812,11 @@
       "fadeOut": 0.05
     },
     "claw-1": {
-      "from": "dc-velcro",
-      "start": 0.03,
-      "end": 0.62,
-      "filter": "highpass=f=400",
-      "fadeOut": 0.06,
-      "note": "кігті — різкий шкряб"
+      "from": "fs-scratching",
+      "start": 8.22,
+      "end": 8.5,
+      "fadeOut": 0.04,
+      "note": "Подряпина: один різкий штрих"
     },
     "sneeze-1": {
       "from": "fs-spit2",
@@ -905,11 +895,10 @@
       "loop": true
     },
     "scratch-loop": {
-      "from": "fs-scratch-post",
-      "start": 12.5,
-      "end": 15.6,
+      "from": "fs-scratching",
       "loop": true,
-      "note": "кігті по кігтеточці"
+      "filter": "asplit=12[s0][s1][s2][s3][s4][s5][s6][s7][s8][s9][s10][s11];[s0]atrim=2.36:2.66,asetpts=PTS-STARTPTS,apad=pad_dur=0.12[a0];[s1]atrim=3.67:3.86,asetpts=PTS-STARTPTS,apad=pad_dur=0.15[a1];[s2]atrim=4.71:4.92,asetpts=PTS-STARTPTS,apad=pad_dur=0.1[a2];[s3]atrim=5.73:5.96,asetpts=PTS-STARTPTS,apad=pad_dur=0.16[a3];[s4]atrim=7.0:7.24,asetpts=PTS-STARTPTS,apad=pad_dur=0.12[a4];[s5]atrim=8.22:8.48,asetpts=PTS-STARTPTS,apad=pad_dur=0.14[a5];[s6]atrim=9.48:9.7,asetpts=PTS-STARTPTS,apad=pad_dur=0.11[a6];[s7]atrim=10.84:11.06,asetpts=PTS-STARTPTS,apad=pad_dur=0.17[a7];[s8]atrim=13.2:13.42,asetpts=PTS-STARTPTS,apad=pad_dur=0.12[a8];[s9]atrim=14.58:14.82,asetpts=PTS-STARTPTS,apad=pad_dur=0.14[a9];[s10]atrim=15.56:15.76,asetpts=PTS-STARTPTS,apad=pad_dur=0.1[a10];[s11]atrim=16.37:16.6,asetpts=PTS-STARTPTS,apad=pad_dur=0.18[a11];[a0][a1][a2][a3][a4][a5][a6][a7][a8][a9][a10][a11]concat=n=12:v=0:a=1",
+      "note": "Дряпання: дванадцять штрихів запису підряд із короткими паузами різної довжини"
     },
     "smash-1": {
       "from": "dc-bottle-smash",

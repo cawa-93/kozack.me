@@ -72,15 +72,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "f8af5a4e1a14c11e2bf9527a4a79538462e5a612710ffd9701ac6abdaf3f801d"
     },
-    "pour-water": {
-      "file": "archive/Designers-Choice-Collection-Water/WATRPour_Water_Pouring_Into_Cup_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Water",
-      "title": "The Designer's Choice UCS Collection - WATER — WATER/POUR/WATRPour_Water Pouring, Into Cup_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "3dce806f96639fc032070620c1adb0aa194efc5fd71a45d9e1c7ad19f32f8b3b"
-    },
     "snap": {
       "file": "archive/Designers-Choice-Collection-Objects/OBJFash-Blue_Snowball_Microphone_MCU_Button_Snap_On_Off_Windbreaker_Nicholas_Judy_TDC.flac",
       "url": "https://archive.org/details/Designers-Choice-Collection-Objects",
@@ -143,15 +134,6 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "993e0a2b11e8c6c535ab40b5bb478f96aa63cf867846ccc9e911ab7b3640391c"
-    },
-    "bell": {
-      "file": "archive/Designers-Choice-Collection-Bells/BELLHand-Blue_Snowball_Microphone_CU_Small_Metal_Shake_Short_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Bells",
-      "title": "The Designer's Choice UCS Collection - BELLS — BELLS/HANDBELL/BELLHand-Blue Snowball Microphone, CU_Small, Metal, Shake, Short_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "7530bcf641e2a3ad7253dd8dc487d471177d2f2d58c12b34bc757c878c77c453"
     },
     "bowl": {
       "file": "archive/Designers-Choice-Collection-Ceramics/CERMHndl-Blue_Snowball_Microphone_CU_Bowl_Ceramic_Pick_Up_Put_Down_The_Designer_s_Choice_GNRL2.flac",
@@ -233,6 +215,42 @@
       "license": "CC-BY-4.0",
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
       "sha256": "b6e917a1a5c9c930ef6b596923c0e28faad64324e8465fb09a94c185b118db28"
+    },
+    "fs-pour": {
+      "file": "freesound/240465__godowan__pour_water.wav",
+      "url": "https://freesound.org/people/Godowan/sounds/240465/",
+      "title": "pour_water.wav",
+      "author": "Godowan",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "bcc22b89eb02bfc8f736837b043c69bb7ba30b45a96656e65e5ead1319d71ecc"
+    },
+    "fs-quick-pour": {
+      "file": "freesound/235779__elliotlp__quick-pour.mp3",
+      "url": "https://freesound.org/people/elliotlp/sounds/235779/",
+      "title": "Quick Pour",
+      "author": "elliotlp",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "1afc8a71fbf9824bbec328bf09f0828c41918b1320c786320b0ec0840df84f38"
+    },
+    "fs-sizzle": {
+      "file": "freesound/133449__chaosportal__cigarette-sizzle-02.wav",
+      "url": "https://freesound.org/people/chaosportal/sounds/133449/",
+      "title": "Cigarette Sizzle 02",
+      "author": "chaosportal",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "cec8d9e7fbc41cfaf24a753cf4fb5581c3e534871af5f9f215f44694f665201e"
+    },
+    "fs-collar": {
+      "file": "freesound/401308__pogmothoin__dog-collar-cat-collar-jingling.wav",
+      "url": "https://freesound.org/people/pogmothoin/sounds/401308/",
+      "title": "dog collar cat collar jingling.WAV",
+      "author": "pogmothoin",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "sha256": "a83857dc7212e453b65844b3b7c69d126ed6816cdddcf6d90cbcb5c8f40a5d96"
     }
   },
   "files": {
@@ -417,35 +435,17 @@
       "note": "підмести сухий безлад"
     },
     "kibble-1": {
-      "from": "lentils",
-      "start": 2.35,
-      "end": 3.55,
-      "fadeIn": 0.02,
-      "fadeOut": 0.25,
-      "note": "корм сиплеться в миску: сочевиця в пластикову миску"
-    },
-    "kibble-2": {
-      "from": "lentils",
-      "start": 9.45,
-      "end": 10.65,
-      "fadeIn": 0.02,
-      "fadeOut": 0.25,
-      "note": "корм сиплеться в миску"
+      "from": "fs-sizzle",
+      "end": 0.65,
+      "fadeOut": 0.12,
+      "note": "Корм у миску: сухий шелест"
     },
     "water-1": {
-      "from": "pour-water",
-      "start": 0,
-      "end": 1.5,
-      "fadeOut": 0.3,
-      "note": "вода ллється в поїлку"
-    },
-    "water-2": {
-      "from": "pour-water",
-      "start": 3,
-      "end": 4.4,
-      "fadeIn": 0.05,
-      "fadeOut": 0.3,
-      "note": "вода ллється в поїлку"
+      "from": "fs-pour",
+      "start": 0.02,
+      "end": 0.6,
+      "fadeOut": 0.06,
+      "note": "Вода в миску"
     },
     "treat-1": {
       "from": "ziploc",
@@ -476,12 +476,11 @@
       "note": "застібка нашийника"
     },
     "bell": {
-      "from": "bell",
-      "start": 0,
-      "end": 0.9,
-      "level": -2.5,
-      "fadeOut": 0.3,
-      "note": "дзвіночок нашийника"
+      "from": "fs-collar",
+      "start": 3.98,
+      "end": 4.55,
+      "fadeOut": 0.08,
+      "note": "Дзвіночок нашийника"
     },
     "pills-1": {
       "from": "pills",
@@ -588,6 +587,13 @@
       "end": 9.2,
       "fadeOut": 0.12,
       "note": "ковдра й подушка: ліг у ліжко"
+    },
+    "water-tank": {
+      "from": "fs-quick-pour",
+      "start": 0.02,
+      "end": 1.13,
+      "fadeOut": 0.12,
+      "note": "Вода в миску й бак простого фонтанчика: більша ємність"
     }
   }
 }

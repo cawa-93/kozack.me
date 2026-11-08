@@ -15,14 +15,14 @@ export const HOME_SOUNDS = {
   "dish-put": { files: variants("dish-put", 2), gain: 0.4, pitch: 0.05 },
   // Речі котячого кутка переставляють (`thing-moved`): узяли — тихо, поставили — глухий стук.
   "thing-take": { files: variants("dish-pick", 3), gain: 0.3, pitch: 0.06 },
-  "thing-put": { files: ["parcel"], gain: 0.4, pitch: 0.06 },
+  "thing-put": { files: ["parcel"], gain: 0.8, pitch: 0.06 },
   trash: { files: ["trash"], gain: 0.5, pitch: 0.04 },
   discard: { files: ["discard"], gain: 0.45, pitch: 0.04 },
   // Запаси й пакунки.
-  unpack: { files: variants("unpack", 2), gain: 0.55, pitch: 0.04 },
-  parcel: { files: ["parcel"], gain: 0.55 },
+  unpack: { files: ["unpack-1"], gain: 1, pitch: 0.04 },
+  parcel: { files: ["parcel"], gain: 1 },
   // Запаси сідають у сховища один за одним: тихо, коротка пауза.
-  land: { files: ["parcel"], gain: 0.2, pitch: 0.06, cooldownMs: 150 },
+  land: { files: ["parcel"], gain: 0.4, pitch: 0.06, cooldownMs: 150 },
   // Двері й гості. Кілька пакунків за раз дзвонять одним дзвінком.
   doorbell: { files: ["doorbell"], gain: 0.8, cooldownMs: 1500, voices: 1 },
   door: { files: ["door"], gain: 0.55 },

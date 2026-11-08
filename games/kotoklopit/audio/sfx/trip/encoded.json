@@ -44,11 +44,19 @@
     "seconds": 0.95
   },
   "engine-loop": {
-    "hash": "05bf4acc490b6465",
-    "seconds": 3.7,
+    "hash": "a606b7c39eeb108d",
+    "seconds": 1.1,
     "loop": {
       "start": 0.1,
-      "end": 3.8
+      "end": 1.2
+    }
+  },
+  "engine-high": {
+    "hash": "139b2c53df7d7e3b",
+    "seconds": 1.7,
+    "loop": {
+      "start": 0.1,
+      "end": 1.8
     }
   }
 }

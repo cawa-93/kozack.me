@@ -97,6 +97,16 @@ describe("звуки персонажа (§11.4а, SOUND_PLAN «Хто що оз
     expect(sounds("fur")).toEqual(["sweep"]);
   });
 
+  it("вода: у поїлку — свій звук; з простим фонтанчиком — більша ємність, бак", () => {
+    const state = fresh();
+    const sounds = (): string[] => group.onEvent!({ type: "watered", item: 2 }, state).map((cue) => cue.sound);
+    expect(sounds()).toEqual(["water"]);
+    state.home.appliances.fountain = "cheap";
+    expect(sounds()).toEqual(["water-tank"]);
+    state.home.appliances.fountain = "premium";
+    expect(sounds()).toEqual(["water"]);
+  });
+
   it("краплі котові, одужання й знайдена шкарпетка — без звуку", () => {
     const state = fresh();
     for (const event of SILENT) expect(group.onEvent!(event, state), JSON.stringify(event)).toEqual([]);

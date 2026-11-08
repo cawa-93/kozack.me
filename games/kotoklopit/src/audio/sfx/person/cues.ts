@@ -41,6 +41,7 @@ const WIPE: readonly Cue[] = [{ sound: "wipe", at }];
 const SWEEP: readonly Cue[] = [{ sound: "sweep", at }];
 const FED: readonly Cue[] = [{ sound: "kibble", at }];
 const WATERED: readonly Cue[] = [{ sound: "water", at }];
+const WATERED_TANK: readonly Cue[] = [{ sound: "water-tank", at }];
 const TREAT: readonly Cue[] = [{ sound: "treat", at }];
 const COLLAR: readonly Cue[] = [
   { sound: "buckle", at },
@@ -101,7 +102,8 @@ export function personEventCues(event: GameEvent, state: GameState): readonly Cu
     case "fed":
       return FED;
     case "watered":
-      return WATERED;
+      // З простим фонтанчиком разом із поїлкою наливають і його бак (§8.7).
+      return state.home.appliances.fountain === "cheap" ? WATERED_TANK : WATERED;
     case "treat":
       return TREAT;
     case "collar":

@@ -1,7 +1,7 @@
 {
   "open": {
-    "hash": "7351c012866eed12",
-    "seconds": 0.25
+    "hash": "604e9d44d2126c48",
+    "seconds": 0.075896
   },
   "close": {
     "hash": "845779cb4ce2c85c",
@@ -20,8 +20,8 @@
     "seconds": 0.06
   },
   "tab": {
-    "hash": "a587bbd6be687301",
-    "seconds": 0.048
+    "hash": "cdfa703a75c44cf7",
+    "seconds": 0.145208
   },
   "refused-1": {
     "hash": "a452fa73c136681e",
@@ -40,16 +40,16 @@
     "seconds": 0.15
   },
   "notify": {
-    "hash": "a51d28c07150d51b",
-    "seconds": 0.75
+    "hash": "3ec3d65354a3855c",
+    "seconds": 0.05
   },
   "ordered": {
     "hash": "d6937e470bd603f1",
     "seconds": 1.071021
   },
   "bought": {
-    "hash": "32637b767b3a2596",
-    "seconds": 0.9
+    "hash": "de6888c022c72f5f",
+    "seconds": 0.42
   },
   "morning": {
     "hash": "3f54d28965f776a3",
@@ -64,7 +64,7 @@
     "seconds": 0.917333
   },
   "end": {
-    "hash": "221f5623b0750c43",
-    "seconds": 1.223125
+    "hash": "dccd17f20904a02f",
+    "seconds": 2.9
   }
 }

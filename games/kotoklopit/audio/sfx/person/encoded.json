@@ -108,20 +108,12 @@
     "seconds": 1.06
   },
   "kibble-1": {
-    "hash": "56bfc61c35b69273",
-    "seconds": 1.2
-  },
-  "kibble-2": {
-    "hash": "a0b4d1590cf6ca1e",
-    "seconds": 1.2
+    "hash": "420842a67930f182",
+    "seconds": 0.65
   },
   "water-1": {
-    "hash": "a0aca561fed20fb1",
-    "seconds": 1.5
-  },
-  "water-2": {
-    "hash": "ddebd6b0b99ee347",
-    "seconds": 1.4
+    "hash": "29c1aa44e25ccd39",
+    "seconds": 0.58
   },
   "treat-1": {
     "hash": "ccc3db7b8e1dfff2",
@@ -140,8 +132,8 @@
     "seconds": 0.25
   },
   "bell": {
-    "hash": "d89dc8b71ed0ef03",
-    "seconds": 0.9
+    "hash": "69b9d909d3f0e39b",
+    "seconds": 0.57
   },
   "pills-1": {
     "hash": "df1641ab54b9b0b7",
@@ -198,5 +190,9 @@
   "blanket-2": {
     "hash": "abb918da1905f894",
     "seconds": 0.57
+  },
+  "water-tank": {
+    "hash": "afd7fc4063218908",
+    "seconds": 1.11
   }
 }

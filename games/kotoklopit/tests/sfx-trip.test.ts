@@ -11,7 +11,7 @@ import { RACE } from "../src/sim/config";
 import { driveRace, newRace } from "../src/sim/race";
 import { HORN, Horns } from "../src/audio/sfx/trip/horns";
 import { Revs } from "../src/audio/sfx/trip/revs";
-import { ENGINE, EngineHum, engineRate } from "../src/audio/sfx/trip/engine";
+import { ENGINE, EngineHum, engineMix, engineRate } from "../src/audio/sfx/trip/engine";
 import type { SceneLoop } from "../src/audio/sfx/sounds";
 import type { SceneMoment } from "../src/audio/sfx/types";
 
@@ -69,25 +69,41 @@ describe("звуки поїздки", () => {
     expect([0, 1, 1, 0.5, 0, -1, 0.3, 0].map((throttle) => revs.tick(throttle))).toEqual([false, true, false, false, false, false, true, false]);
   });
 
-  it("мотор: холості на місці, вище зі швидкістю, але не вище за межу", () => {
-    expect(engineRate(0)).toBe(ENGINE.idleRate);
-    expect(engineRate(-1)).toBe(ENGINE.idleRate);
+  it("мотор: холості на місці, вище зі швидкістю, на найбільшій — високі оберти й не вище", () => {
+    const top = ENGINE.highHz / ENGINE.idleHz;
+    expect(engineRate(0)).toBe(1);
+    expect(engineRate(-1)).toBe(1);
     expect(engineRate(RACE.startSpeed)).toBeGreaterThan(engineRate(0));
-    expect(engineRate(RACE.maxSpeed)).toBeGreaterThan(engineRate(RACE.startSpeed));
-    expect(engineRate(RACE.maxSpeed * 10)).toBe(ENGINE.maxRate);
+    expect(engineRate(RACE.maxSpeed)).toBeCloseTo(top, 9);
+    expect(engineRate(RACE.maxSpeed * 10)).toBeCloseTo(top, 9);
+    expect(engineMix(engineRate(0))).toBe(0);
+    expect(engineMix(engineRate(RACE.maxSpeed))).toBeCloseTo(1, 9);
+    expect(engineMix(engineRate(RACE.startSpeed))).toBeGreaterThan(0);
   });
 
-  it("гудіння вмикається, щойно звук готовий, і згасає, коли мотор заглушили", () => {
+  it("гудіння: два шари вмикаються, щойно звук готовий, і згасають, коли мотор заглушили", () => {
     const calls: string[] = [];
     let ready = false;
-    const hum = new EngineHum((): SceneLoop | null =>
-      ready ? { set: (gain, rate) => calls.push(`set ${gain} ${rate}`), stop: () => calls.push("stop") } : null,
+    const hum = new EngineHum((sound): SceneLoop | null =>
+      ready ? { set: (gain, rate) => calls.push(`${sound} ${gain.toFixed(2)} ${rate.toFixed(2)}`), stop: () => calls.push(`stop ${sound}`) } : null,
     );
     hum.run(1, 1);
     ready = true;
-    hum.run(1.2, 0.5);
+    // Холості: чутно лише нижній шар на своїй висоті.
+    hum.run(1, 0.5);
+    // Найбільша швидкість: лише верхній шар на своїй висоті.
+    hum.run(engineRate(RACE.maxSpeed), 1);
     hum.stop();
     hum.stop();
-    expect(calls).toEqual(["set 0.5 1.2", "stop"]);
+    const idleHigh = (ENGINE.idleHz / ENGINE.highHz).toFixed(2);
+    const top = (ENGINE.highHz / ENGINE.idleHz).toFixed(2);
+    expect(calls).toEqual([
+      "engine 0.50 1.00",
+      `engine-high 0.00 ${idleHigh}`,
+      `engine 0.00 ${top}`,
+      "engine-high 1.00 1.00",
+      "stop engine",
+      "stop engine-high",
+    ]);
   });
 });

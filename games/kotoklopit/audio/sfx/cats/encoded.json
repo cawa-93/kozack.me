@@ -212,8 +212,8 @@
     "seconds": 0.5
   },
   "claw-1": {
-    "hash": "f26247d0824c5a47",
-    "seconds": 0.59
+    "hash": "ebfb0a2832adb219",
+    "seconds": 0.28
   },
   "sneeze-1": {
     "hash": "42ecbff24c1e0056",
@@ -268,11 +268,11 @@
     }
   },
   "scratch-loop": {
-    "hash": "410ed2bf6629a75a",
-    "seconds": 2.8,
+    "hash": "99116e80f529097c",
+    "seconds": 4.07,
     "loop": {
       "start": 0.1,
-      "end": 2.9
+      "end": 4.17
     }
   },
   "smash-1": {
