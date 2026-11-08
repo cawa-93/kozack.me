@@ -57,11 +57,11 @@ describe("режим розробки", () => {
   });
 });
 
-const pages = import.meta.glob<string>(["../index.html", "../gallery.html"], { query: "?raw", import: "default", eager: true });
+const pages = import.meta.glob<string>(["../index.html", "../gallery.html", "../sounds.html"], { query: "?raw", import: "default", eager: true });
+const scripts = (html: string | undefined): string[] => [...(html ?? "").matchAll(/<script[^>]*src="([^"]+)"/g)].map((match) => match[1] ?? "");
 
 describe("галерея арту (крок 16)", () => {
   it("окрема сторінка: gallery.html підключає лише src/dev/gallery/main.ts, а гра й її режим розробки галереї не імпортують", () => {
-    const scripts = (html: string | undefined): string[] => [...(html ?? "").matchAll(/<script[^>]*src="([^"]+)"/g)].map((match) => match[1] ?? "");
     expect(scripts(pages["../index.html"])).toEqual(["/src/main.ts"]);
     expect(scripts(pages["../gallery.html"])).toEqual(["/src/dev/gallery/main.ts"]);
     for (const [file, source] of Object.entries(app)) {
@@ -88,7 +88,17 @@ describe("галерея арту (крок 16)", () => {
     };
     expect(build(undefined)).toEqual({ input: ["index"], dev: "false" });
     expect(build("production")).toEqual({ input: ["index"], dev: "false" });
-    expect(build("deploy-preview")).toEqual({ input: ["index", "gallery"], dev: "true" });
-    expect(build("branch-deploy")).toEqual({ input: ["index", "gallery"], dev: "true" });
+    expect(build("deploy-preview")).toEqual({ input: ["index", "gallery", "sounds"], dev: "true" });
+    expect(build("branch-deploy")).toEqual({ input: ["index", "gallery", "sounds"], dev: "true" });
+  });
+});
+
+describe("каталог звуків", () => {
+  it("окрема сторінка: sounds.html підключає лише src/dev/sounds/main.ts, а гра її не імпортує", () => {
+    expect(scripts(pages["../sounds.html"])).toEqual(["/src/dev/sounds/main.ts"]);
+    for (const [file, source] of Object.entries(app)) {
+      if (file.includes("/src/dev/sounds/")) continue;
+      expect(source, file).not.toMatch(/from\s+["'][^"']*\/dev\/sounds(\/[^"']*)?["']|import\(["'][^"']*\/dev\/sounds(\/[^"']*)?["']\)/);
+    }
   });
 });

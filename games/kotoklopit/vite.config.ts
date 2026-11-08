@@ -6,13 +6,15 @@ import { defineConfig } from "vitest/config";
 // збирач конфігу Vite не тягне в конфіг код гри (у ньому імпорти без розширень, яких майбутній завантажувач конфігу не
 // прийме). Що в плагіні, перевіряє tsc зі scripts/tsconfig.json.
 const { artPlugin } = (await import(new URL("./scripts/art/plugin.ts", import.meta.url).href)) as { artPlugin(): Plugin };
+// Рішення сторінки звуків (`sounds.html`) dev-сервер пише у файл — так само за адресою файлу.
+const { soundReviewPlugin } = (await import(new URL("./scripts/audio/reviewplugin.ts", import.meta.url).href)) as { soundReviewPlugin(): Plugin };
 
 /**
  * Режим розробки (§11.5) потрібен і на прев'ю-деплоях Netlify, щоб тестувати гру з телефона.
  * Netlify задає CONTEXT: production, deploy-preview чи branch-deploy.
  */
 const PREVIEW_CONTEXTS = ["deploy-preview", "branch-deploy"];
-/** Чи вмикати режим розробки (`__DEV_TOOLS__`) і галерею арту (`gallery.html`, крок 16): `npm run dev` і прев'ю. */
+/** Чи вмикати режим розробки (`__DEV_TOOLS__`), галерею арту (`gallery.html`, крок 16) і каталог звуків (`sounds.html`): `npm run dev` і прев'ю. */
 const devTools = (command: string): boolean => command === "serve" || PREVIEW_CONTEXTS.includes(process.env["CONTEXT"] ?? "");
 /** Сторінка в теці гри — абсолютним шляхом, щоб не залежати від теки, з якої запустили збирання. */
 const page = (file: string): string => fileURLToPath(new URL(file, import.meta.url));
@@ -21,7 +23,7 @@ const page = (file: string): string => fileURLToPath(new URL(file, import.meta.u
 export default defineConfig(({ command }) => ({
   base: command === "build" ? "/games/kotoklopit/" : "/",
   // Атлас арту з SVG теки art/: у dev — з пам'яті за адресою art/…, у збірці — файли art/ у теці збірки.
-  plugins: [artPlugin()],
+  plugins: [artPlugin(), soundReviewPlugin()],
   server: {
     // Сирі бібліотеки звуків і вивантаження музики (поза git, їх беруть лише скрипти `scripts/audio/`) — понад 10 тисяч
     // файлів, а наглядач Vite ставить `fs.watch` на кожен: на Windows це блокує dev-сервер на хвилини (і завантаження
@@ -37,8 +39,10 @@ export default defineConfig(({ command }) => ({
     emptyOutDir: true,
     // Phaser сам по собі важить близько 1,4 МБ.
     chunkSizeWarningLimit: 1600,
-    // Галерея арту — лише разом із режимом розробки: у продакшн-збірці її немає.
-    rolldownOptions: { input: { index: page("index.html"), ...(devTools(command) ? { gallery: page("gallery.html") } : {}) } },
+    // Галерея арту й каталог звуків — лише разом із режимом розробки: у продакшн-збірці їх немає.
+    rolldownOptions: {
+      input: { index: page("index.html"), ...(devTools(command) ? { gallery: page("gallery.html"), sounds: page("sounds.html") } : {}) },
+    },
   },
   test: {
     include: ["tests/**/*.test.ts"],
