@@ -36,15 +36,6 @@
       "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
       "sha256": "ffbc639ecce3731c33f89da5b5fb6a829b7f8df916ce6ac7d628e79dd062d304"
     },
-    "purr-kitty": {
-      "file": "archive/aporee_16612_19301/WeisigerFile06.ogg",
-      "url": "https://archive.org/details/aporee_16612_19301",
-      "title": "22nd & Canyon Blvd, Boulder, CO, USA - Kitty Purring — WeisigerFile06.ogg",
-      "author": "Emily Weisiger",
-      "license": "PD",
-      "licenseUrl": "http://creativecommons.org/publicdomain/mark/1.0/",
-      "sha256": "a9c31484c9a6610b217099a5e490cc3eca575d660ab5827c0dc44ae6037a3d8a"
-    },
     "dc-yawn": {
       "file": "archive/Designers-Choice-Collection-Animals/ANMLCat-Samsung_Galaxy_Smartphone_CU_Yawn_Nicholas_Judy_TDC.flac",
       "url": "https://archive.org/details/Designers-Choice-Collection-Animals",
@@ -449,6 +440,51 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "b7a18448ec05a32196d50e206609340beb2ae90f243375836a56d9c094e5a7c2"
+    },
+    "fs-hiss-bright": {
+      "file": "freesound/826834__rickismyname__cat-hissing-2.wav",
+      "url": "https://freesound.org/people/rickismyname/sounds/826834/",
+      "title": "Cat hissing #2",
+      "author": "rickismyname",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "c64fabc331f2dd863a3a3a345b300fc7ad4c8b82d0310cdc891e7337370dbe3f"
+    },
+    "fs-purr-small": {
+      "file": "freesound/583383__fmaudio__cat-purring-5.wav",
+      "url": "https://freesound.org/people/F.M.Audio/sounds/583383/",
+      "title": "Cat Purring 5.wav",
+      "author": "F.M.Audio",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "sha256": "a2b1b13e0ee176a9b6dc89a46ddcfa430a045a9270d502289f4ae9bb8cb0fcaa"
+    },
+    "fs-tiny-meow": {
+      "file": "freesound/877612__ineedfreesoundeffectspls__tiny-meow-2.wav",
+      "url": "https://freesound.org/people/Ineedfreesoundeffectspls/sounds/877612/",
+      "title": "tiny meow 2",
+      "author": "Ineedfreesoundeffectspls",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "ceda397dc18ab151f18225b506bc6b15150c3ac871ed28ac4ccb6a3798397b2f"
+    },
+    "fs-meow-light": {
+      "file": "freesound/368011__trngle__meow-8.wav",
+      "url": "https://freesound.org/people/TRNGLE/sounds/368011/",
+      "title": "Meow 8.wav",
+      "author": "TRNGLE",
+      "license": "CC-BY-3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "sha256": "4b2e9716683fe99fb49855f6237b2232b416db64a69f235f57f4a384916b1999"
+    },
+    "fs-meow-demanding": {
+      "file": "freesound/156643__yoyodaman234__catmeow1.wav",
+      "url": "https://freesound.org/people/Yoyodaman234/sounds/156643/",
+      "title": "catmeow1",
+      "author": "Yoyodaman234",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "f234d4b0150d4013d4aec7a37c735409e72b7729db1878b14c26bafd3c1db3a3"
     }
   },
   "files": {
@@ -549,6 +585,14 @@
       "filter": "highpass=f=250",
       "note": "кошеня; гул нижче 250 Гц зрізано"
     },
+    "meow-kitten-8": {
+      "from": "fs-tiny-meow",
+      "start": 0.03,
+      "end": 0.64,
+      "fadeOut": 0.08,
+      "filter": "highpass=f=250",
+      "note": "кошеня; низ зрізано"
+    },
     "meow-angry-1": {
       "from": "dc-fight",
       "start": 0.08,
@@ -566,29 +610,14 @@
       "fadeOut": 0.12
     },
     "meow-door-1": {
-      "from": "meow-food",
-      "start": 0.2,
-      "end": 1.6,
-      "filter": "highpass=f=150,lowpass=f=700",
-      "level": -6,
-      "fadeOut": 0.08,
-      "note": "кіт на сходах, за дверима"
-    },
-    "meow-door-2": {
-      "from": "meow-food",
-      "start": 10.98,
-      "end": 12.6,
-      "filter": "highpass=f=150,lowpass=f=700",
-      "level": -6,
-      "fadeOut": 0.1
-    },
-    "meow-door-3": {
-      "from": "meow-siamese",
-      "start": 0,
-      "end": 1.12,
-      "filter": "highpass=f=150,lowpass=f=700",
-      "level": -6,
-      "fadeOut": 0.06
+      "from": "fs-meow-demanding",
+      "start": 0.14,
+      "end": 0.66,
+      "fadeIn": 0.03,
+      "fadeOut": 0.12,
+      "filter": "highpass=f=150,lowpass=f=2000",
+      "level": -4,
+      "note": "гучне вибагливе «МЯУ» з-за дверей: верх трохи приглушено"
     },
     "cry-1": {
       "from": "meow-siamese",
@@ -668,6 +697,15 @@
       "filter": "highpass=f=200",
       "note": "шипіння з відстані; низ зрізано"
     },
+    "hiss-4": {
+      "from": "fs-hiss-bright",
+      "start": 0.19,
+      "end": 0.6,
+      "fadeIn": 0.02,
+      "fadeOut": 0.08,
+      "filter": "highpass=f=250",
+      "note": "яскраве зле шипіння; гул нижче 250 Гц зрізано"
+    },
     "hiss-soft-1": {
       "from": "fs-hiss-quiet",
       "start": 0.01,
@@ -730,20 +768,20 @@
       "note": "запис уже петлею з періодом 4 с; взято один період і запас на перехід"
     },
     "purr-1": {
-      "from": "purr-kitty",
-      "start": 40,
-      "end": 41.4,
-      "filter": "highpass=f=20",
-      "fadeIn": 0.15,
-      "fadeOut": 0.35
+      "from": "fs-purr-small",
+      "start": 0.1,
+      "end": 0.5,
+      "fadeIn": 0.05,
+      "fadeOut": 0.1,
+      "filter": "highpass=f=60",
+      "note": "коротке задоволене «мрр»"
     },
     "purr-2": {
-      "from": "purr-kitty",
-      "start": 44,
-      "end": 45.4,
-      "filter": "highpass=f=20",
-      "fadeIn": 0.15,
-      "fadeOut": 0.35
+      "from": "fs-meow-light",
+      "start": 0.11,
+      "end": 0.46,
+      "fadeOut": 0.06,
+      "note": "легке задоволене «мяв»"
     },
     "eat-loop": {
       "from": "eating",

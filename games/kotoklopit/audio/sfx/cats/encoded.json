@@ -55,6 +55,10 @@
     "hash": "1c92b0dee5cf32c4",
     "seconds": 0.49
   },
+  "meow-kitten-8": {
+    "hash": "edce97c94b3ebdf2",
+    "seconds": 0.61
+  },
   "meow-angry-1": {
     "hash": "c907b18750532b99",
     "seconds": 0.84
@@ -64,16 +68,8 @@
     "seconds": 0.95
   },
   "meow-door-1": {
-    "hash": "c229d4a6355a48d8",
-    "seconds": 1.4
-  },
-  "meow-door-2": {
-    "hash": "f0a259b497e18c14",
-    "seconds": 1.62
-  },
-  "meow-door-3": {
-    "hash": "36d3061df32696f9",
-    "seconds": 1.12
+    "hash": "281eb712bf85b362",
+    "seconds": 0.52
   },
   "cry-1": {
     "hash": "cd62e3145b0e177d",
@@ -114,6 +110,10 @@
   "hiss-3": {
     "hash": "8c5512e25318d3fc",
     "seconds": 0.47
+  },
+  "hiss-4": {
+    "hash": "5e6b903be31ef882",
+    "seconds": 0.41
   },
   "hiss-soft-1": {
     "hash": "1c89bf886bc1e2d1",
@@ -156,12 +156,12 @@
     }
   },
   "purr-1": {
-    "hash": "4460028867fd09a0",
-    "seconds": 1.4
+    "hash": "d8517caafe377914",
+    "seconds": 0.4
   },
   "purr-2": {
-    "hash": "fb02ee2f1cb5aef2",
-    "seconds": 1.4
+    "hash": "8b1dd0c1fc81afc5",
+    "seconds": 0.35
   },
   "eat-loop": {
     "hash": "d000995ed56b1384",
