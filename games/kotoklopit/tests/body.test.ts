@@ -32,6 +32,16 @@ describe("рух (§8.4)", () => {
     expect(save.current.character.body.facing).toEqual({ x: 1, y: 0 });
   });
 
+  it("під підвіконня з батареєю можна стати: дошка вузька, решта клітинки — підлога (§9.12, «Вікно»)", () => {
+    const save = game();
+    place(save, 4.5, 2.5);
+    walk(save, { x: 0, y: -1 }, 3);
+    expect(save.current.character.body.y).toBeCloseTo(1 + BODY_RADIUS, 4);
+    place(save, 2.5, 8.5);
+    walk(save, { x: -1, y: 0 }, 3);
+    expect(save.current.character.body.x).toBeCloseTo(1 + BODY_RADIUS, 4);
+  });
+
   it("стіни й речі не пропускають, а вздовж стіни персонаж ковзає", () => {
     const save = game();
     // Не під підвіконням спальні (4, 1): воно теж річ (§9.12, «Вікно»).

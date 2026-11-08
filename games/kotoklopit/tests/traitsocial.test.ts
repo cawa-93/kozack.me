@@ -302,12 +302,12 @@ function atWindow(cat: Cat, sill = WINDOWS[0]!.sill, minutes = 60): void {
 }
 
 describe("«Вікно» (§9.12, рішення автора 2026-10-25)", () => {
-  it("підвіконня в спальні й вітальні видно, вони — меблі, а квартира лишається прохідною", () => {
+  it("підвіконня в спальні й вітальні видно, вони — меблі, під вузькою дошкою можна стати, а квартира лишається прохідною", () => {
     const state = game().current;
     expect(WINDOWS.map((w) => objectById(w.sill).kind)).toEqual(["windowsill", "windowsill"]);
     for (const { sill } of WINDOWS) {
       const o = objectById(sill);
-      expect(isSolid(state, o.x, o.y)).toBe(true);
+      expect(isSolid(state, o.x, o.y)).toBe(false);
       expect(hiddenTile(o.x, o.y)).toBe(false);
     }
     // З місця пробудження дійти можна до кожної вільної клітинки підлоги.

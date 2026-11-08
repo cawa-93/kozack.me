@@ -3,7 +3,7 @@
 
 import { highPlaceOf, isCarried } from "./catai";
 import { FACING_PRIORITY, MOVING, REACH } from "./config";
-import { CARRIER_SPOT, centerOf, distanceToRect, isSolid, isWall, itemPoint, objectsOf, slotById, type HomeObject } from "./home";
+import { CARRIER_SPOT, centerOf, distanceToRect, isSolid, isWall, itemPoint, objectAt, objectsOf, slotById, type HomeObject } from "./home";
 import type { Body, Cat, GameState, HomeItem, Mess, PlacedItem, Vec } from "./types";
 
 export type Target =
@@ -32,8 +32,18 @@ const UNDERFOOT = 0.3;
 const UNDERFOOT_FACING = -0.2;
 /** Безлад важливіший за річ поруч (лоток, миска): спершу прибирають його. */
 const MESS_PRIORITY = 0.3;
-/** Кіт на меблях (комп'ютер, ліжко) важливіший за саму річ: щоб скористатися нею, кота треба забрати. */
+/** Кіт на речі квартири (комп'ютер, ліжко, підвіконня) важливіший за саму річ: щоб скористатися нею, кота треба забрати. */
 const CAT_ON_OBJECT_PRIORITY = 0.4;
+
+/**
+ * Кіт на меблях: на непрохідній речі чи на підвіконні — його клітинка прохідна, бо дошка вузька (§9.12, «Вікно»). Кіт у ящиках
+ * біля входу — ні: ящики тоді відмовляють «кіт у ящиках», і кота забирають окремо (§9.12, «Допитливість»).
+ */
+function catOnFurniture(state: GameState, cat: Cat): boolean {
+  const x = Math.floor(cat.x);
+  const y = Math.floor(cat.y);
+  return isSolid(state, x, y) || objectAt(state, x, y)?.kind === "windowsill";
+}
 /**
  * Іграшка під холодильником менш важлива за річ поруч: її дістають, ставши біля неї, а перед холодильником він сам — ціль. Під
  * диваном штрафу немає: диван не ціль, а кіт, що щойно заштовхав іграшку, стоїть просто над нею, і зі штрафом кнопка діставалася
@@ -173,7 +183,7 @@ export function targetOf(state: GameState): Target | null {
     // Кіт нагорі — на холодильнику чи шафі — річ під собою не заступає: його й так не дістати; застрягле кошеня — ціль, його
     // знімають (§9.12, «Лазіння», перевірка етапу 2026-10-26).
     const high = target.type === "cat" && target.cat.stuck !== true && highPlaceOf(state, target.cat) !== null;
-    const onObject = target.type === "cat" && !high && isSolid(state, Math.floor(target.cat.x), Math.floor(target.cat.y));
+    const onObject = target.type === "cat" && !high && catOnFurniture(state, target.cat);
     const hidden = target.type === "item" && target.item.kind === "toy" && target.item.hidden === "fridge";
     const score =
       distance - FACING_PRIORITY * facing - (target.type === "mess" ? MESS_PRIORITY : 0) - (onObject ? CAT_ON_OBJECT_PRIORITY : 0) + (hidden ? HIDDEN_PRIORITY : 0);
