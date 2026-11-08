@@ -41,7 +41,7 @@ export const group: SoundGroup = {
     notify: { files: ["notify"], gain: 0.43, cooldownMs: 600, voices: 1, ui: true },
     ordered: { files: ["ordered"], gain: 0.5, voices: 1, ui: true },
     bought: { files: ["bought"], gain: 0.72, pitch: 0.03, ui: true },
-    morning: { files: ["morning"], gain: 0.5, voices: 1, ui: true },
+    morning: { files: ["morning-1", "morning-2", "morning-3"], gain: 0.5, voices: 1, ui: true },
     end: { files: ["end"], gain: 0.46, voices: 1, ui: true },
     retired: { files: ["retired"], gain: 0.7, voices: 1, ui: true },
     "low-stat": { files: ["low-stat"], gain: 0.4, cooldownMs: 5000, voices: 1, ui: true },

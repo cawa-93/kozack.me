@@ -72,15 +72,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "8d935385c0c5537a19134fc2286f6c976c9c170a346ac06872abcd9ac88ef086"
     },
-    "dc-purr": {
-      "file": "archive/Designers-Choice-Collection-Animals/ANMLCat_Cat_Purring_Looped_Nicholas_Judy_TDC.mp3",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Animals",
-      "title": "The Designer's Choice UCS Collection - ANIMALS — ANIMALS/CAT DOMESTIC/ANMLCat_Cat Purring, Looped_Nicholas Judy_TDC.mp3",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "97cd62258ae84e51d14c06853bb7001eea1d3cdab8e255d38406d28d0e6439ae"
-    },
     "drinking": {
       "file": "archive/aporee_48494_55194/mix1m09saudiojoinercom.mp3",
       "url": "https://archive.org/details/aporee_48494_55194",
@@ -224,24 +215,6 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "5a64fef0ac166b58f79642c9e83049d911632c5da9194d949acaabdb6dec4d9b"
-    },
-    "fs-chatter-trill": {
-      "file": "freesound/850103__catphony__chatter-and-trill.mp3",
-      "url": "https://freesound.org/people/CatPhony/sounds/850103/",
-      "title": "Chatter and Trill",
-      "author": "CatPhony",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "59e43a3231f9a58c8a337bccb3247e857695aa46bcf61122f393a15e8e55c87b"
-    },
-    "fs-chatter-excited": {
-      "file": "freesound/850108__catphony__excited-and-desperate-chatter.mp3",
-      "url": "https://freesound.org/people/CatPhony/sounds/850108/",
-      "title": "Excited and desperate chatter",
-      "author": "CatPhony",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "6aa94ac6cfe1acd1bfbee48e20e1cdc0b18bc68a82a4f088d82a6226bec7d1ce"
     },
     "fs-litter": {
       "file": "freesound/498835__16fpanskarollerova_adriena__cat_litter_box.wav",
@@ -387,15 +360,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "c64fabc331f2dd863a3a3a345b300fc7ad4c8b82d0310cdc891e7337370dbe3f"
     },
-    "fs-purr-small": {
-      "file": "freesound/583383__fmaudio__cat-purring-5.wav",
-      "url": "https://freesound.org/people/F.M.Audio/sounds/583383/",
-      "title": "Cat Purring 5.wav",
-      "author": "F.M.Audio",
-      "license": "CC-BY-4.0",
-      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
-      "sha256": "a2b1b13e0ee176a9b6dc89a46ddcfa430a045a9270d502289f4ae9bb8cb0fcaa"
-    },
     "fs-tiny-meow": {
       "file": "freesound/877612__ineedfreesoundeffectspls__tiny-meow-2.wav",
       "url": "https://freesound.org/people/Ineedfreesoundeffectspls/sounds/877612/",
@@ -449,6 +413,42 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "7145eae35f8287230d238d9cab0756d118a4f9a7fc9236938f876a85d96c03cf"
+    },
+    "fs-purr-loop": {
+      "file": "freesound/866343__busukbangak__cat-purring-loop.wav",
+      "url": "https://freesound.org/people/busukbangak/sounds/866343/",
+      "title": "cat purring loop",
+      "author": "busukbangak",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "6d3f23f78b3959fc7687eba8528f74c6c63133137cf4c8873b6ff90f55e24f8e"
+    },
+    "fs-purr-fadeout": {
+      "file": "freesound/866342__busukbangak__cat-purring-fadeout.wav",
+      "url": "https://freesound.org/people/busukbangak/sounds/866342/",
+      "title": "cat purring fadeout",
+      "author": "busukbangak",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "821bfdec96c83247594a43847dae44217eaff5508b8b818eabcbefd1f5c30f49"
+    },
+    "fs-purr-alert": {
+      "file": "freesound/866341__busukbangak__cat-purring-alert.wav",
+      "url": "https://freesound.org/people/busukbangak/sounds/866341/",
+      "title": "cat purring alert",
+      "author": "busukbangak",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "b2b25f71837f9f9b5d8087db1bb339f3aae5add98b96addd0b29277b86826e30"
+    },
+    "fs-cat-chirps": {
+      "file": "freesound/634174__tyler31898__cat-chirps.wav",
+      "url": "https://freesound.org/people/Tyler31898/sounds/634174/",
+      "title": "Cat Chirps.wav",
+      "author": "Tyler31898",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "28c8c9370fec0c5299a882c7f0a0557c7a813b0a14295a613af9d67d60211e66"
     }
   },
   "files": {
@@ -629,20 +629,23 @@
       "fadeOut": 0.04
     },
     "chatter-1": {
-      "from": "fs-chatter-trill",
-      "start": 0.1,
-      "end": 2.35,
-      "fadeIn": 0.01,
-      "fadeOut": 0.08,
-      "note": "«ек-ек-ек» на птаха — ціла фраза"
+      "from": "fs-cat-chirps",
+      "start": 6.94,
+      "end": 7.75,
+      "fadeIn": 0.005,
+      "fadeOut": 0.05,
+      "filter": "highpass=f=200,highpass=f=200",
+      "note": "цокотіння: два «ек», друге тихше; фільтр прибирає гул 53 Гц і низи кімнати",
+      "level": -5
     },
     "chatter-2": {
-      "from": "fs-chatter-excited",
-      "start": 1.25,
-      "end": 3,
-      "fadeIn": 0.01,
-      "fadeOut": 0.08,
-      "note": "збуджене «ек-ек-ек»"
+      "from": "fs-cat-chirps",
+      "start": 16.28,
+      "end": 17.45,
+      "fadeIn": 0.005,
+      "fadeOut": 0.05,
+      "filter": "highpass=f=200,highpass=f=200",
+      "note": "цокотіння: три «ек» поспіль"
     },
     "hiss-1": {
       "from": "hiss-zabuhailo",
@@ -730,28 +733,29 @@
       "note": "різкий вереск-гарчання на укус"
     },
     "purr-loop": {
-      "from": "dc-purr",
-      "start": 1,
-      "end": 5.3,
+      "from": "fs-purr-loop",
+      "start": 6.25,
+      "end": 10.77,
       "loop": true,
-      "filter": "highpass=f=20",
-      "note": "запис уже петлею з періодом 4 с; взято один період і запас на перехід"
+      "filter": "highpass=f=45,highpass=f=45",
+      "note": "мурчання петлею: від паузи між циклами до тієї самої фази; фільтр зрізає основу 26 Гц, що лише гуде"
     },
     "purr-1": {
-      "from": "fs-purr-small",
-      "start": 0.1,
-      "end": 0.5,
-      "fadeIn": 0.05,
-      "fadeOut": 0.1,
-      "filter": "highpass=f=60",
-      "note": "коротке задоволене «мрр»"
+      "from": "fs-purr-fadeout",
+      "start": 7.97,
+      "end": 9.35,
+      "fadeIn": 0.1,
+      "fadeOut": 0.3,
+      "filter": "highpass=f=45,highpass=f=45",
+      "note": "один вдих і видих мурчання; фільтр зрізає основу 26 Гц, що лише гуде, — чутні гармоніки лишаються"
     },
     "purr-2": {
       "from": "fs-meow-light",
       "start": 0.11,
       "end": 0.46,
       "fadeOut": 0.06,
-      "note": "легке задоволене «мяв»"
+      "note": "легке задоволене «мяв»",
+      "level": -3
     },
     "eat-loop": {
       "from": "eating",
@@ -961,6 +965,23 @@
       "fadeOut": 0.4,
       "note": "кран відкрили — тече вода",
       "filter": "asplit[n0][s0];[n0]atrim=6.5:6.95,asetpts=PTS-STARTPTS[n];[s0]atrim=0:1.425,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,equalizer=f=53.5:t=q:w=8:g=-24,equalizer=f=159.0:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.4 afftdn sn stop',afftdn=nr=10:nf=-40,atrim=start=0.475,asetpts=PTS-STARTPTS"
+    },
+    "chatter-3": {
+      "from": "fs-cat-chirps",
+      "start": 5.38,
+      "end": 6.02,
+      "fadeIn": 0.005,
+      "fadeOut": 0.05,
+      "filter": "highpass=f=200,highpass=f=200",
+      "note": "цокотіння: два короткі «ек»"
+    },
+    "purr-3": {
+      "from": "fs-purr-alert",
+      "end": 0.48,
+      "fadeIn": 0.03,
+      "fadeOut": 0.06,
+      "filter": "highpass=f=45,highpass=f=45",
+      "note": "коротке «мрр» з голосом"
     }
   }
 }

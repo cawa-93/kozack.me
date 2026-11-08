@@ -96,12 +96,12 @@
     "seconds": 0.281063
   },
   "chatter-1": {
-    "hash": "66f6a223127c7134",
-    "seconds": 2.25
+    "hash": "1bc8838b34999d13",
+    "seconds": 0.81
   },
   "chatter-2": {
-    "hash": "a32832c4e0917b9b",
-    "seconds": 1.75
+    "hash": "f609426b3d9585f6",
+    "seconds": 1.17
   },
   "hiss-1": {
     "hash": "48c07a8151ebb08a",
@@ -152,19 +152,19 @@
     "seconds": 0.52
   },
   "purr-loop": {
-    "hash": "f2ba4d2d1998318a",
-    "seconds": 4,
+    "hash": "dae1c38b2e7a2dca",
+    "seconds": 4.22,
     "loop": {
       "start": 0.1,
-      "end": 4.1
+      "end": 4.32
     }
   },
   "purr-1": {
-    "hash": "d8517caafe377914",
-    "seconds": 0.4
+    "hash": "5d840ce0eaa49803",
+    "seconds": 1.38
   },
   "purr-2": {
-    "hash": "8b1dd0c1fc81afc5",
+    "hash": "795445a558029889",
     "seconds": 0.35
   },
   "eat-loop": {
@@ -314,5 +314,13 @@
   "tap-1": {
     "hash": "97fa98c123e0e07d",
     "seconds": 1.4
+  },
+  "chatter-3": {
+    "hash": "8cb6c4e76893df73",
+    "seconds": 0.64
+  },
+  "purr-3": {
+    "hash": "84fb70ffd7d71b1a",
+    "seconds": 0.48
   }
 }

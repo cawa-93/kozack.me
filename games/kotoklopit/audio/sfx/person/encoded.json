@@ -16,7 +16,7 @@
     "seconds": 0.45
   },
   "fall-1": {
-    "hash": "d9dbda15cf4e0ae2",
+    "hash": "b8cbc761f9370c0d",
     "seconds": 0.72
   },
   "knock-1": {
@@ -194,5 +194,9 @@
   "water-tank": {
     "hash": "afd7fc4063218908",
     "seconds": 1.11
+  },
+  "fall-2": {
+    "hash": "3869fcaf00446701",
+    "seconds": 0.63
   }
 }

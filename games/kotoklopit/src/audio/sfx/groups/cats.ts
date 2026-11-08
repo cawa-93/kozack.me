@@ -11,7 +11,7 @@ const files = (name: string, count: number): string[] => Array.from({ length: co
 /**
  * Гучність вирівнено за середнім рівнем файлів (разові нормовано за піком, петлі — за RMS): голоси — середньо, мурчання — тихо,
  * бійка й розбите — гучніше. Розкид висоти — щоб те саме не набридало. Пауза в голосів довша: кіт, що просить, нявкає щохвилини
- * гри, а це щосекунди реального часу. Трійки (`chatter`, `hack`) звучать кількома сигналами з затримкою — без паузи.
+ * гри, а це щосекунди реального часу. Кахикання (`hack`) звучить кількома сигналами з затримкою — без паузи.
  */
 const SOUNDS: Record<string, SoundDef> = {
   meow: { files: files("meow", 3), gain: 0.7, pitch: 0.05, spread: 0.1, cooldownMs: 600 },
@@ -26,14 +26,14 @@ const SOUNDS: Record<string, SoundDef> = {
   cry: { files: files("cry", 2), gain: 0.85, pitch: 0.03, spread: 0.08, cooldownMs: 900 },
   "cry-kitten": { files: ["cry-kitten-1"], gain: 0.6, pitch: 0.04, spread: 0.08, cooldownMs: 900 },
   squeak: { files: files("squeak", 2), gain: 0.45, pitch: 0.06, voices: 1, cooldownMs: 1000 },
-  chatter: { files: files("chatter", 2), gain: 0.6, pitch: 0.05, cooldownMs: 1500, voices: 1 },
+  chatter: { files: files("chatter", 3), gain: 0.85, pitch: 0.05, cooldownMs: 1500, voices: 1 },
   hiss: { files: files("hiss", 4), gain: 0.75, pitch: 0.06, spread: 0.1, cooldownMs: 700 },
   "hiss-soft": { files: ["hiss-soft-1"], gain: 0.6, pitch: 0.06, spread: 0.1, cooldownMs: 700 },
   growl: { files: files("growl", 2), gain: 0.7, pitch: 0.04, cooldownMs: 800 },
   fight: { files: files("fight", 2), gain: 1, pitch: 0.04, cooldownMs: 800, voices: 1 },
   bite: { files: ["bite-1"], gain: 0.85, pitch: 0.05, cooldownMs: 400 },
   claw: { files: ["claw-1"], gain: 1, pitch: 0.06, cooldownMs: 400 },
-  purr: { files: files("purr", 2), gain: 0.35, pitch: 0.04, cooldownMs: 2500, voices: 1 },
+  purr: { files: files("purr", 3), gain: 0.5, pitch: 0.04, cooldownMs: 2500, voices: 1 },
   yawn: { files: ["yawn-1"], gain: 0.8, pitch: 0.06, cooldownMs: 1500 },
   land: { files: ["land-2"], gain: 0.5, pitch: 0.08, cooldownMs: 200 },
   scamper: { files: files("scamper", 2), gain: 0.6, pitch: 0.06, spread: 0.1, cooldownMs: 300 },
@@ -58,7 +58,7 @@ const SOUNDS: Record<string, SoundDef> = {
   "cabinet-open": { files: ["cabinet-open-1"], gain: 0.75, pitch: 0.04, cooldownMs: 600 },
   "cabinet-lock": { files: ["cabinet-lock-1"], gain: 0.75, pitch: 0.06, cooldownMs: 600 },
   tap: { files: ["tap-1"], gain: 0.6, cooldownMs: 1000, voices: 1 },
-  "purr-loop": { files: ["purr-loop"], gain: 0.5, loop: true },
+  "purr-loop": { files: ["purr-loop"], gain: 0.4, loop: true },
   "eat-loop": { files: ["eat-loop"], gain: 0.9, loop: true },
   "lap-loop": { files: ["lap-loop"], gain: 0.55, loop: true },
   "dig-loop": { files: ["dig-loop"], gain: 0.6, loop: true },

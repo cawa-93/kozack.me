@@ -107,6 +107,15 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "3fe86fa6597cd1f86572bd249010d3d2aad7b141e213e5a5668966fd75f104b6"
+    },
+    "fs-bird-chirps": {
+      "file": "freesound/184870__keweldog__bird-chirps5.wav",
+      "url": "https://freesound.org/people/keweldog/sounds/184870/",
+      "title": "bird chirps5.wav",
+      "author": "keweldog",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "161af60d39ea99c0601992c8639db6a339a34356febf87572e7b14b7e5f91e36"
     }
   },
   "files": {
@@ -195,14 +204,6 @@
       "fadeOut": 0.08,
       "note": "Купівля на місці: монети"
     },
-    "morning": {
-      "from": "koshi",
-      "start": 0.42,
-      "end": 2.3,
-      "fadeIn": 0.01,
-      "fadeOut": 0.7,
-      "note": "Титулка ранку: кілька ударів вітрових дзвіночків"
-    },
     "retired": {
       "from": "koshi",
       "start": 39.66,
@@ -223,6 +224,28 @@
       "fadeIn": 0.01,
       "fadeOut": 1.2,
       "note": "Кінець гри (показник, виселення): глухий удар, що довго згасає"
+    },
+    "morning-1": {
+      "from": "fs-bird-chirps",
+      "fadeIn": 0.02,
+      "fadeOut": 0.4,
+      "filter": "asplit[n0][s0];[n0]atrim=1.82:2.0,asetpts=PTS-STARTPTS[n];[s0]atrim=0.42:2.6,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,highpass=f=1000,highpass=f=1000,asendcmd=c='0.0 afftdn sn start;0.13 afftdn sn stop',afftdn=nr=10:nf=-57,atrim=start=0.205,asetpts=PTS-STARTPTS",
+      "note": "Титулка ранку: вільшанка співає вранці. Гул транспорту нижче 1 кГц зрізано, шум парку — з профілем із паузи між трелями",
+      "level": -2
+    },
+    "morning-2": {
+      "from": "fs-bird-chirps",
+      "fadeIn": 0.02,
+      "fadeOut": 0.4,
+      "filter": "asplit[n0][s0];[n0]atrim=9.25:9.45,asetpts=PTS-STARTPTS[n];[s0]atrim=7.74:9.5,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,highpass=f=1000,highpass=f=1000,asendcmd=c='0.0 afftdn sn start;0.15 afftdn sn stop',afftdn=nr=10:nf=-57,atrim=start=0.225,asetpts=PTS-STARTPTS",
+      "note": "Титулка ранку: інша фраза того самого птаха"
+    },
+    "morning-3": {
+      "from": "fs-bird-chirps",
+      "fadeIn": 0.02,
+      "fadeOut": 0.4,
+      "filter": "asplit[n0][s0];[n0]atrim=14.78:14.98,asetpts=PTS-STARTPTS[n];[s0]atrim=13.86:15.6,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,highpass=f=1000,highpass=f=1000,asendcmd=c='0.0 afftdn sn start;0.15 afftdn sn stop',afftdn=nr=10:nf=-57,atrim=start=0.225,asetpts=PTS-STARTPTS",
+      "note": "Титулка ранку: ще одна фраза"
     }
   }
 }

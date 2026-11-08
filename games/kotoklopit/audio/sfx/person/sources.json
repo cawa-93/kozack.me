@@ -251,6 +251,15 @@
       "license": "CC-BY-4.0",
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
       "sha256": "a83857dc7212e453b65844b3b7c69d126ed6816cdddcf6d90cbcb5c8f40a5d96"
+    },
+    "fs-body-fall": {
+      "file": "freesound/325270__deleted_user_2104797__body-fall-1.wav",
+      "url": "https://freesound.org/people/deleted_user_2104797/sounds/325270/",
+      "title": "Body fall 1.wav",
+      "author": "deleted_user_2104797",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "69dbebcf54aba6802a1e24f781d740f0f53ea7d1bb6e12f53b33eeef3c45839d"
     }
   },
   "files": {
@@ -284,7 +293,8 @@
       "start": 0.08,
       "end": 0.8,
       "fadeOut": 0.2,
-      "note": "падіння тіла: глухий удар"
+      "note": "падіння тіла: глухий удар",
+      "level": -6
     },
     "knock-1": {
       "from": "fs-cat-kick",
@@ -577,6 +587,14 @@
       "end": 1.13,
       "fadeOut": 0.12,
       "note": "Вода в миску й бак простого фонтанчика: більша ємність"
+    },
+    "fall-2": {
+      "from": "fs-body-fall",
+      "start": 0.67,
+      "end": 1.3,
+      "fadeIn": 0.005,
+      "fadeOut": 0.15,
+      "note": "падіння тіла на підлогу: два удари, коліна й тулуб; запис чистий, без фільтра"
     }
   }
 }
