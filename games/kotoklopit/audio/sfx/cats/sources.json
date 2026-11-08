@@ -45,15 +45,6 @@
       "licenseUrl": "http://creativecommons.org/publicdomain/mark/1.0/",
       "sha256": "a9c31484c9a6610b217099a5e490cc3eca575d660ab5827c0dc44ae6037a3d8a"
     },
-    "dc-meow3": {
-      "file": "archive/Designers-Choice-Collection-Animals/ANMLCat-Samsung_Galaxy_Smartphone_MCU_Meowing_X3_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Animals",
-      "title": "The Designer's Choice UCS Collection - ANIMALS — ANIMALS/CAT DOMESTIC/ANMLCat-Samsung Galaxy Smartphone, MCU_Meowing, X3_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "973f35fcdba11c06bab120c8300e27fa1c24d9a474de47b053f80888afe977d1"
-    },
     "dc-yawn": {
       "file": "archive/Designers-Choice-Collection-Animals/ANMLCat-Samsung_Galaxy_Smartphone_CU_Yawn_Nicholas_Judy_TDC.flac",
       "url": "https://archive.org/details/Designers-Choice-Collection-Animals",
@@ -315,24 +306,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "6aa94ac6cfe1acd1bfbee48e20e1cdc0b18bc68a82a4f088d82a6226bec7d1ce"
     },
-    "fs-trill-short": {
-      "file": "freesound/850104__catphony__cat-trills-shortly-calmquiet.mp3",
-      "url": "https://freesound.org/people/CatPhony/sounds/850104/",
-      "title": "Cat trills shortly (calm/quiet)",
-      "author": "CatPhony",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "40ae20cbae3d074d63bc5540412abe86d093f31f826db6252770a5572de401b6"
-    },
-    "fs-trill-4": {
-      "file": "freesound/668825__mbpl__cat-trill-4.wav",
-      "url": "https://freesound.org/people/MBPL/sounds/668825/",
-      "title": "Cat trill 4",
-      "author": "MBPL",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "c9ddc018d82d96c1440f2added039f5f990ca6f30e8f4d45ce3994811a7c7f9d"
-    },
     "fs-litter": {
       "file": "freesound/498835__16fpanskarollerova_adriena__cat_litter_box.wav",
       "url": "https://freesound.org/people/16FPanskaRollerova_Adriena/sounds/498835/",
@@ -440,6 +413,42 @@
       "license": "CC-BY-4.0",
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
       "sha256": "9500bf194bd90dec586fddb83ad437dc5c391677bc9a861d5ed797068509d75e"
+    },
+    "fs-meow-throaty": {
+      "file": "freesound/629502__abir19__catmeowthroaty.wav",
+      "url": "https://freesound.org/people/Abir19/sounds/629502/",
+      "title": "cat;meow;throaty.wav",
+      "author": "Abir19",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "76f3627a29409bfadbdf6915ee4a24f8f6825c5f79beac1f3ff0bebddf61df9d"
+    },
+    "fs-sad-small": {
+      "file": "freesound/583390__fmaudio__sad-cat-vocalisation-1.wav",
+      "url": "https://freesound.org/people/F.M.Audio/sounds/583390/",
+      "title": "Sad Cat Vocalisation 1.wav",
+      "author": "F.M.Audio",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "sha256": "c6b22b39df5f8ab8b2d85d761f7e772b6f5a0c1ba0e599341b7d210080ba8200"
+    },
+    "fs-meow-food": {
+      "file": "freesound/368012__trngle__meow-6.wav",
+      "url": "https://freesound.org/people/TRNGLE/sounds/368012/",
+      "title": "Meow 6.wav",
+      "author": "TRNGLE",
+      "license": "CC-BY-3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "sha256": "2a272c516a32004554e8fa79c45de48bc369c6ad023c5daedd8dd5cf4133266e"
+    },
+    "fs-hiss-medium": {
+      "file": "freesound/874259__thekingofgeeks360__house-cats-hiss-medium-perspective.wav",
+      "url": "https://freesound.org/people/TheKingOfGeeks360/sounds/874259/",
+      "title": "House Cats - Hiss, Medium Perspective",
+      "author": "TheKingOfGeeks360",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "b7a18448ec05a32196d50e206609340beb2ae90f243375836a56d9c094e5a7c2"
     }
   },
   "files": {
@@ -459,74 +468,27 @@
       "note": "перше нявкання британки, трохи вище й коротше"
     },
     "meow-ask-1": {
-      "from": "meow-food",
-      "start": 0.2,
-      "end": 1.6,
-      "filter": "highpass=f=150",
-      "fadeOut": 0.08
-    },
-    "meow-ask-2": {
-      "from": "meow-food",
-      "start": 2.25,
-      "end": 3.95,
-      "filter": "highpass=f=150",
-      "fadeOut": 0.1
-    },
-    "meow-ask-3": {
-      "from": "meow-food",
-      "start": 7.43,
-      "end": 9.2,
-      "filter": "highpass=f=150",
-      "fadeOut": 0.1
-    },
-    "meow-ask-4": {
-      "from": "meow-food",
-      "start": 10.98,
-      "end": 12.6,
-      "filter": "highpass=f=150",
-      "fadeOut": 0.1
-    },
-    "meow-ask-5": {
-      "from": "meow-siamese",
-      "start": 0,
-      "end": 1.12,
-      "filter": "highpass=f=150",
-      "fadeOut": 0.06,
-      "note": "сіамська, вимогливо"
+      "from": "fs-meow-food",
+      "start": 0.145,
+      "end": 0.575,
+      "fadeOut": 0.05,
+      "note": "дорослий кіт просить їсти; клацання навколо відрізано"
     },
     "meow-happy-1": {
-      "from": "fs-trill-4",
-      "fadeOut": 0.05,
-      "note": "радісне «мррп»"
-    },
-    "meow-happy-2": {
-      "from": "fs-trill-short",
-      "start": 0.15,
-      "end": 0.85,
-      "fadeIn": 0.01,
-      "fadeOut": 0.06,
-      "note": "тихе «мррп»"
-    },
-    "meow-happy-3": {
-      "from": "dc-meow3",
-      "start": 0.1496,
-      "end": 0.6204,
-      "filter": "highpass=f=250,asetrate=52800,aresample=48000",
-      "fadeOut": 0.1
+      "from": "fs-meow-throaty",
+      "start": 0.2,
+      "end": 0.66,
+      "fadeIn": 0.04,
+      "fadeOut": 0.04,
+      "note": "задоволене «мрр-мяу»"
     },
     "meow-sad-1": {
-      "from": "meow-siamese",
-      "start": 0,
-      "end": 1.1202,
-      "filter": "highpass=f=150,asetrate=38808,aresample=48000",
-      "fadeOut": 0.12
-    },
-    "meow-sad-2": {
-      "from": "meow-food",
-      "start": 2.25,
-      "end": 3.9501,
-      "filter": "highpass=f=150,asetrate=43200,aresample=48000",
-      "fadeOut": 0.15
+      "from": "fs-sad-small",
+      "start": 0.255,
+      "end": 0.68,
+      "fadeIn": 0.01,
+      "fadeOut": 0.06,
+      "note": "тихе сумне «мяу» маленького кота: головна частина"
     },
     "meow-old-1": {
       "from": "meow-niaou",
@@ -696,6 +658,15 @@
       "fadeOut": 0.08,
       "filter": "highpass=f=200",
       "note": "гучне шипіння; низ зрізано"
+    },
+    "hiss-3": {
+      "from": "fs-hiss-medium",
+      "start": 0.13,
+      "end": 0.6,
+      "fadeIn": 0.02,
+      "fadeOut": 0.1,
+      "filter": "highpass=f=200",
+      "note": "шипіння з відстані; низ зрізано"
     },
     "hiss-soft-1": {
       "from": "fs-hiss-quiet",

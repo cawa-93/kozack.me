@@ -15,9 +15,10 @@ const files = (name: string, count: number): string[] => Array.from({ length: co
  */
 const SOUNDS: Record<string, SoundDef> = {
   meow: { files: files("meow", 2), gain: 0.7, pitch: 0.05, spread: 0.1, cooldownMs: 600 },
-  "meow-ask": { files: files("meow-ask", 5), gain: 0.7, pitch: 0.04, spread: 0.1, cooldownMs: 600 },
-  "meow-happy": { files: files("meow-happy", 3), gain: 0.65, pitch: 0.05, spread: 0.1, cooldownMs: 400 },
-  "meow-sad": { files: files("meow-sad", 2), gain: 0.6, pitch: 0.03, spread: 0.08, cooldownMs: 800 },
+  // Просить — і голосом старшої кішки (`meow-old-1`): за вибором автора.
+  "meow-ask": { files: ["meow-ask-1", "meow-old-1"], gain: 0.7, pitch: 0.04, spread: 0.1, cooldownMs: 600 },
+  "meow-happy": { files: ["meow-happy-1"], gain: 0.65, pitch: 0.05, spread: 0.1, cooldownMs: 400 },
+  "meow-sad": { files: ["meow-sad-1"], gain: 0.6, pitch: 0.03, spread: 0.08, cooldownMs: 800 },
   "meow-old": { files: files("meow-old", 2), gain: 0.65, pitch: 0.03, spread: 0.08, cooldownMs: 700 },
   "meow-kitten": { files: files("meow-kitten", 7), gain: 0.55, pitch: 0.06, spread: 0.1, cooldownMs: 300 },
   "meow-angry": { files: files("meow-angry", 2), gain: 0.75, pitch: 0.04, spread: 0.08, cooldownMs: 500 },
@@ -26,7 +27,7 @@ const SOUNDS: Record<string, SoundDef> = {
   "cry-kitten": { files: ["cry-kitten-1"], gain: 0.6, pitch: 0.04, spread: 0.08, cooldownMs: 900 },
   squeak: { files: files("squeak", 2), gain: 0.45, pitch: 0.06, voices: 1, cooldownMs: 1000 },
   chatter: { files: files("chatter", 2), gain: 0.6, pitch: 0.05, cooldownMs: 1500, voices: 1 },
-  hiss: { files: files("hiss", 2), gain: 0.75, pitch: 0.06, spread: 0.1, cooldownMs: 700 },
+  hiss: { files: files("hiss", 3), gain: 0.75, pitch: 0.06, spread: 0.1, cooldownMs: 700 },
   "hiss-soft": { files: ["hiss-soft-1"], gain: 0.6, pitch: 0.06, spread: 0.1, cooldownMs: 700 },
   growl: { files: files("growl", 2), gain: 0.7, pitch: 0.04, cooldownMs: 800 },
   fight: { files: files("fight", 2), gain: 1, pitch: 0.04, cooldownMs: 800, voices: 1 },

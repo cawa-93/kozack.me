@@ -8,44 +8,16 @@
     "seconds": 0.943042
   },
   "meow-ask-1": {
-    "hash": "e62a88aa6af9e132",
-    "seconds": 1.4
-  },
-  "meow-ask-2": {
-    "hash": "6aeaa74d098c6674",
-    "seconds": 1.7
-  },
-  "meow-ask-3": {
-    "hash": "0c2f4d215493a50b",
-    "seconds": 1.77
-  },
-  "meow-ask-4": {
-    "hash": "6aebc793270856dd",
-    "seconds": 1.62
-  },
-  "meow-ask-5": {
-    "hash": "184de56672f07904",
-    "seconds": 1.12
+    "hash": "3303cbcf2816f9c7",
+    "seconds": 0.43
   },
   "meow-happy-1": {
-    "hash": "5d9a07213f64b113",
-    "seconds": 0.859938
-  },
-  "meow-happy-2": {
-    "hash": "98f8296f8be474e4",
-    "seconds": 0.7
-  },
-  "meow-happy-3": {
-    "hash": "35030e00ca21accc",
-    "seconds": 0.428
+    "hash": "d72949654bfcadee",
+    "seconds": 0.46
   },
   "meow-sad-1": {
-    "hash": "0341267de1cca6bf",
-    "seconds": 1.272979
-  },
-  "meow-sad-2": {
-    "hash": "3a7ab47873d7d8fb",
-    "seconds": 1.889021
+    "hash": "5e7497272ffc6c7d",
+    "seconds": 0.425
   },
   "meow-old-1": {
     "hash": "60d6af9eea6d9f28",
@@ -138,6 +110,10 @@
   "hiss-2": {
     "hash": "3aceaced42a9752a",
     "seconds": 0.44
+  },
+  "hiss-3": {
+    "hash": "8c5512e25318d3fc",
+    "seconds": 0.47
   },
   "hiss-soft-1": {
     "hash": "1c89bf886bc1e2d1",
