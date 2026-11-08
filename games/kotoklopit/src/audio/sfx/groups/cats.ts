@@ -14,7 +14,7 @@ const files = (name: string, count: number): string[] => Array.from({ length: co
  * гри, а це щосекунди реального часу. Трійки (`chatter`, `hack`) звучать кількома сигналами з затримкою — без паузи.
  */
 const SOUNDS: Record<string, SoundDef> = {
-  meow: { files: files("meow", 2), gain: 0.7, pitch: 0.05, spread: 0.1, cooldownMs: 600 },
+  meow: { files: files("meow", 3), gain: 0.7, pitch: 0.05, spread: 0.1, cooldownMs: 600 },
   // Просить — і голосом старшої кішки (`meow-old-1`): за вибором автора.
   "meow-ask": { files: ["meow-ask-1", "meow-old-1"], gain: 0.7, pitch: 0.04, spread: 0.1, cooldownMs: 600 },
   "meow-happy": { files: ["meow-happy-1"], gain: 0.65, pitch: 0.05, spread: 0.1, cooldownMs: 400 },

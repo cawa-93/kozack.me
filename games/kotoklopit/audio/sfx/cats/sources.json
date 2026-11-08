@@ -485,6 +485,15 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "f234d4b0150d4013d4aec7a37c735409e72b7729db1878b14c26bafd3c1db3a3"
+    },
+    "fs-meow-upset": {
+      "file": "freesound/100030__nfrae__beef_mow1.wav",
+      "url": "https://freesound.org/people/nfrae/sounds/100030/",
+      "title": "beef_mow1.wav",
+      "author": "nfrae",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "ea9b1fa5a0f2f05b65effb00202107c6294245311cfb629cb80222d1f0599848"
     }
   },
   "files": {
@@ -502,6 +511,15 @@
       "filter": "highpass=f=150,asetrate=50880,aresample=48000",
       "fadeOut": 0.12,
       "note": "перше нявкання британки, трохи вище й коротше"
+    },
+    "meow-3": {
+      "from": "fs-meow-upset",
+      "start": 0.1,
+      "end": 0.62,
+      "fadeIn": 0.04,
+      "fadeOut": 0.1,
+      "filter": "highpass=f=150",
+      "note": "дорослий кіт: середина довгого «мяу»"
     },
     "meow-ask-1": {
       "from": "fs-meow-food",
