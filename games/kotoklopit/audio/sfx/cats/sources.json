@@ -153,15 +153,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "2ef34a94cb8f22b1b8a9d8ec0adecdee36ff5ab623e395da7b89362141f26402"
     },
-    "dc-keys": {
-      "file": "archive/Designers-Choice-Collection-Computers/CMPTKey-Blue_Snowball_Microphone_CU_Buttons_Being_Pressed_Nicholas_Judy_DC01.mp3",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Computers",
-      "title": "The Designer's Choice UCS Collection - COMPUTERS — COMPUTERS/KEYBOARD & MOUSE/CMPTKey-Blue Snowball Microphone, CU_Buttons Being Pressed_Nicholas Judy_DC01.mp3",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "46561f5f6b09a869911e3f581b1e32ab5d7cb6490120bcb116aba3db4a102b99"
-    },
     "dc-latch": {
       "file": "archive/Designers-Choice-Collection-Objects/OBJCont-Samsung_Galaxy_Smartphone_CU_Bin_Plastic_Unlatch_Open_Close_Latch_Nicholas_Judy_TDC.mp3",
       "url": "https://archive.org/details/Designers-Choice-Collection-Objects",
@@ -494,6 +485,15 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "ea9b1fa5a0f2f05b65effb00202107c6294245311cfb629cb80222d1f0599848"
+    },
+    "fs-key-click": {
+      "file": "freesound/679319__gamer500__keyboard-click.wav",
+      "url": "https://freesound.org/people/gamer500/sounds/679319/",
+      "title": "keyboard click",
+      "author": "gamer500",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "3c5b4fce6c50309c4e5f1601b5469805f00f2ef2e77799e92ef18391866ad7b3"
     }
   },
   "files": {
@@ -1028,19 +1028,9 @@
       "note": "пластиковий смітник падає й торохтить"
     },
     "keys-1": {
-      "from": "dc-keys",
-      "start": 8.97,
-      "end": 10.4,
-      "filter": "asetrate=61740,aresample=48000",
-      "fadeOut": 0.05,
-      "note": "клавіші частіше й вище — лапи на клавіатурі"
-    },
-    "keys-2": {
-      "from": "dc-keys",
-      "start": 10.92,
-      "end": 11.9,
-      "filter": "asetrate=61740,aresample=48000",
-      "fadeOut": 0.05
+      "from": "fs-key-click",
+      "fadeOut": 0.01,
+      "note": "одна клавіша; лапи — серія з кількох (src/audio/sfx/cats/events.ts)"
     },
     "spark-1": {
       "from": "dc-sparks",

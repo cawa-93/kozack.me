@@ -126,15 +126,6 @@
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
       "sha256": "48e2aee2a5923d35faed75d3a9c65457acaf0579dcc5466a12ba28523980e441"
     },
-    "typing-fast": {
-      "file": "commons/Typing_fast.ogg",
-      "url": "https://commons.wikimedia.org/wiki/File:Typing_fast.ogg",
-      "title": "Typing fast",
-      "author": "stephan (PDSounds)",
-      "license": "PD",
-      "licenseUrl": "https://commons.wikimedia.org/wiki/File:Typing_fast.ogg",
-      "sha256": "7aeb5a95a7f3c87bf1b829c533c17242643d4b08f99495e466f5b58744d846a2"
-    },
     "phone-ae80": {
       "file": "archive/yellow-ae-80/Blue_AE80.mp3",
       "url": "https://archive.org/details/yellow-ae-80",
@@ -143,6 +134,15 @@
       "license": "CC-BY-4.0",
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
       "sha256": "1fe20a40f789959f718931473c6090757c661ce2cb7c01788deea07f64b7d3be"
+    },
+    "fs-key-click": {
+      "file": "freesound/679319__gamer500__keyboard-click.wav",
+      "url": "https://freesound.org/people/gamer500/sounds/679319/",
+      "title": "keyboard click",
+      "author": "gamer500",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "3c5b4fce6c50309c4e5f1601b5469805f00f2ef2e77799e92ef18391866ad7b3"
     }
   },
   "files": {
@@ -151,12 +151,10 @@
       "fadeOut": 0.05,
       "note": "Сів за комп'ютер: м'який подвійний сигнал"
     },
-    "keyboard": {
-      "from": "typing-fast",
-      "start": 4,
-      "end": 9.3,
-      "loop": true,
-      "note": "Клавіатура петлею: швидкий рівний набір без пауз"
+    "key-1": {
+      "from": "fs-key-click",
+      "fadeOut": 0.01,
+      "note": "одна клавіша; набір складає src/audio/sfx/work/typing.ts"
     },
     "coin": {
       "from": "gs-coins-1",

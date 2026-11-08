@@ -3,13 +3,9 @@
     "hash": "d9fea3d82d9a18f9",
     "seconds": 0.375
   },
-  "keyboard": {
-    "hash": "e02a951164430a2a",
-    "seconds": 5,
-    "loop": {
-      "start": 0.1,
-      "end": 5.1
-    }
+  "key-1": {
+    "hash": "6c22e627b042bd31",
+    "seconds": 0.092896
   },
   "coin": {
     "hash": "6688253b9f122fe9",

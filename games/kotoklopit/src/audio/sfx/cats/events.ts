@@ -9,6 +9,14 @@ import type { Cue, SoundAt } from "../types";
 import { meowMood, meowSound, voiceRate } from "./voice";
 
 const NONE: readonly Cue[] = [];
+/** Кіт пройшовся клавіатурою: кілька клавіш урозкид, різної висоти. */
+const PAWS: readonly Cue[] = [
+  { sound: "keys", at: "computer" },
+  { sound: "keys", at: "computer", delayMs: 70, rate: 1.08 },
+  { sound: "keys", at: "computer", delayMs: 160, rate: 0.94 },
+  { sound: "keys", at: "computer", delayMs: 210, rate: 1.12 },
+  { sound: "keys", at: "computer", delayMs: 340, rate: 0.9 },
+];
 
 const catAt = (id: number): SoundAt => `cat:${id}`;
 
@@ -122,7 +130,7 @@ export function catEvent(event: GameEvent, state: GameState): readonly Cue[] {
       // Дряпання звучить петлею, поки триває; подія — його кінець.
       return NONE;
     case "keyboard":
-      return [{ sound: "keys", at: "computer" }];
+      return PAWS;
     case "trash-tipped":
       return [{ sound: "bin", at: "trash" }, { sound: "paper", at: "trash", delayMs: 300 }];
     case "chewing":
