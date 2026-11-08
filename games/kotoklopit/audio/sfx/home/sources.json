@@ -305,16 +305,14 @@
     },
     "fridge-close-1": {
       "from": "fridge",
-      "start": 7.62,
-      "end": 8.2,
       "fadeOut": 0.1,
-      "note": "Холодильник зачинили: глухий стук дверцят"
+      "note": "Холодильник зачинили: глухий стук дверцят",
+      "filter": "asplit[n0][s0];[n0]atrim=3.6:4.3,asetpts=PTS-STARTPTS[n];[s0]atrim=7.62:8.225,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,equalizer=f=97.0:t=q:w=8:g=-24,equalizer=f=214.0:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.65 afftdn sn stop',afftdn=nr=12:nf=-48,atrim=start=0.725,asetpts=PTS-STARTPTS"
     },
     "fridge-close-2": {
       "from": "fridge",
-      "start": 12.44,
-      "end": 13.02,
-      "fadeOut": 0.1
+      "fadeOut": 0.1,
+      "filter": "asplit[n0][s0];[n0]atrim=29.8:30.3,asetpts=PTS-STARTPTS[n];[s0]atrim=12.44:13.045,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,asendcmd=c='0.0 afftdn sn start;0.45 afftdn sn stop',afftdn=nr=10:nf=-53,atrim=start=0.525,asetpts=PTS-STARTPTS"
     },
     "cabinet-1": {
       "from": "cabinet",
@@ -337,16 +335,14 @@
     },
     "dish-pick-1": {
       "from": "bowl",
-      "start": 10.3,
-      "end": 10.75,
       "fadeOut": 0.08,
-      "note": "Тихо взяти страву з плити, столу чи поверхні"
+      "note": "Тихо взяти страву з плити, столу чи поверхні",
+      "filter": "asplit[n0][s0];[n0]atrim=10.85:11.75,asetpts=PTS-STARTPTS[n];[s0]atrim=10.3:10.775,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,asendcmd=c='0.0 afftdn sn start;0.85 afftdn sn stop',afftdn=nr=12:nf=-56,atrim=start=0.925,asetpts=PTS-STARTPTS"
     },
     "dish-pick-2": {
       "from": "bowl",
-      "start": 16.82,
-      "end": 17.25,
-      "fadeOut": 0.08
+      "fadeOut": 0.08,
+      "filter": "asplit[n0][s0];[n0]atrim=13.0:14.0,asetpts=PTS-STARTPTS[n];[s0]atrim=16.82:17.275,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,asendcmd=c='0.0 afftdn sn start;0.95 afftdn sn stop',afftdn=nr=10:nf=-56,atrim=start=1.025,asetpts=PTS-STARTPTS"
     },
     "dish-pick-3": {
       "from": "bowl",
@@ -482,10 +478,9 @@
     },
     "hung": {
       "from": "pillow",
-      "start": 8.3,
-      "end": 9.1,
       "fadeOut": 0.15,
-      "note": "Випране розвісили: струснули тканину"
+      "note": "Випране розвісили: струснули тканину",
+      "filter": "asplit[n0][s0];[n0]atrim=10.3:11.3,asetpts=PTS-STARTPTS[n];[s0]atrim=8.3:9.125,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,equalizer=f=72.0:t=q:w=8:g=-24,equalizer=f=118.0:t=q:w=8:g=-24,equalizer=f=165.0:t=q:w=8:g=-24,equalizer=f=269.5:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.95 afftdn sn stop',afftdn=nr=15:nf=-50,atrim=start=1.025,asetpts=PTS-STARTPTS"
     },
     "vacuum-on": {
       "from": "vacuum",
@@ -495,10 +490,9 @@
     },
     "vacuum-loop": {
       "from": "vacuum",
-      "start": 7.5,
-      "end": 13.5,
       "loop": true,
-      "note": "Вертикальний пилосос гуде"
+      "note": "Вертикальний пилосос гуде",
+      "filter": "asplit[n0][s0];[n0]atrim=32.35:33.35,asetpts=PTS-STARTPTS[n];[s0]atrim=7.5:13.525,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,equalizer=f=380.5:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.95 afftdn sn stop',afftdn=nr=12:nf=-36,atrim=start=1.025,asetpts=PTS-STARTPTS"
     },
     "vacuum-off": {
       "from": "vacuum",

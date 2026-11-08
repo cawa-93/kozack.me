@@ -256,17 +256,15 @@
   "files": {
     "dash-1": {
       "from": "swoosh",
-      "start": 0.15,
-      "end": 0.55,
       "fadeOut": 0.06,
-      "note": "ривок: свист одягу"
+      "note": "ривок: свист одягу",
+      "filter": "asplit[n0][s0];[n0]atrim=2.25:2.65,asetpts=PTS-STARTPTS[n];[s0]atrim=0.15:0.575,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,equalizer=f=294.5:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.35 afftdn sn stop',afftdn=nr=10:nf=-62,atrim=start=0.425,asetpts=PTS-STARTPTS"
     },
     "dash-2": {
       "from": "swoosh",
-      "start": 1.7,
-      "end": 2.15,
       "fadeOut": 0.06,
-      "note": "ривок: свист одягу"
+      "note": "ривок: свист одягу",
+      "filter": "asplit[n0][s0];[n0]atrim=2.25:2.65,asetpts=PTS-STARTPTS[n];[s0]atrim=1.7:2.175,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,asendcmd=c='0.0 afftdn sn start;0.35 afftdn sn stop',afftdn=nr=8:nf=-62,atrim=start=0.425,asetpts=PTS-STARTPTS"
     },
     "dash-3": {
       "from": "swoosh",
@@ -277,10 +275,9 @@
     },
     "dash-4": {
       "from": "swoosh",
-      "start": 10.4,
-      "end": 10.85,
       "fadeOut": 0.06,
-      "note": "ривок: свист одягу"
+      "note": "ривок: свист одягу",
+      "filter": "asplit[n0][s0];[n0]atrim=2.25:2.65,asetpts=PTS-STARTPTS[n];[s0]atrim=10.4:10.875,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,equalizer=f=204.5:t=q:w=8:g=-24,equalizer=f=207.0:t=q:w=8:g=-24,equalizer=f=339.0:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.35 afftdn sn stop',afftdn=nr=15:nf=-62,atrim=start=0.425,asetpts=PTS-STARTPTS"
     },
     "fall-1": {
       "from": "bodyfall-grass",
@@ -303,9 +300,7 @@
     },
     "gasp-she-1": {
       "from": "gasps",
-      "start": 3.4104,
-      "end": 3.78,
-      "filter": "asetrate=49392,aresample=48000",
+      "filter": "asplit[n0][s0];[n0]atrim=1.0:1.7,asetpts=PTS-STARTPTS[n];[s0]atrim=3.41:3.805,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,highpass=f=50,highpass=f=50,equalizer=f=120.5:t=q:w=8:g=-24,equalizer=f=269.5:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.65 afftdn sn stop',afftdn=nr=10:nf=-53,atrim=start=0.725,asetpts=PTS-STARTPTS,asetrate=49392,aresample=48000",
       "fadeOut": 0.08,
       "note": "різкий вдих (вона): той самий голос вище"
     },
@@ -392,9 +387,7 @@
     },
     "scoop-2": {
       "from": "scoop",
-      "start": 7,
-      "end": 7.95,
-      "filter": "lowpass=f=5000",
+      "filter": "asplit[n0][s0];[n0]atrim=13.5:13.85,asetpts=PTS-STARTPTS[n];[s0]atrim=7:7.975,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,highpass=f=50,highpass=f=50,equalizer=f=119.0:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.3 afftdn sn stop',afftdn=nr=12:nf=-46,atrim=start=0.375,asetpts=PTS-STARTPTS,lowpass=f=5000",
       "fadeOut": 0.15,
       "note": "совок у лотку"
     },
@@ -408,17 +401,15 @@
     },
     "wipe-1": {
       "from": "wipe",
-      "start": 2.55,
-      "end": 3.25,
       "fadeOut": 0.1,
-      "note": "витерти мокрий безлад"
+      "note": "витерти мокрий безлад",
+      "filter": "asplit[n0][s0];[n0]atrim=11.55:12.05,asetpts=PTS-STARTPTS[n];[s0]atrim=2.55:3.275,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,equalizer=f=45.0:t=q:w=8:g=-24,equalizer=f=119.5:t=q:w=8:g=-24,equalizer=f=164.5:t=q:w=8:g=-24,equalizer=f=289.0:t=q:w=8:g=-24,equalizer=f=292.5:t=q:w=8:g=-24,equalizer=f=330.0:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.45 afftdn sn stop',afftdn=nr=12:nf=-60,atrim=start=0.525,asetpts=PTS-STARTPTS"
     },
     "wipe-2": {
       "from": "wipe",
-      "start": 7.05,
-      "end": 8.1,
       "fadeOut": 0.1,
-      "note": "витерти мокрий безлад"
+      "note": "витерти мокрий безлад",
+      "filter": "asplit[n0][s0];[n0]atrim=11.55:12.05,asetpts=PTS-STARTPTS[n];[s0]atrim=7.05:8.125,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,equalizer=f=45.0:t=q:w=8:g=-24,equalizer=f=164.5:t=q:w=8:g=-24,equalizer=f=289.0:t=q:w=8:g=-24,equalizer=f=292.5:t=q:w=8:g=-24,equalizer=f=330.0:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.45 afftdn sn stop',afftdn=nr=12:nf=-60,atrim=start=0.525,asetpts=PTS-STARTPTS"
     },
     "sweep-1": {
       "from": "brush",
@@ -449,17 +440,15 @@
     },
     "treat-1": {
       "from": "ziploc",
-      "start": 1.68,
-      "end": 2.02,
       "fadeOut": 0.05,
-      "note": "пакет ласощів відкрили"
+      "note": "пакет ласощів відкрили",
+      "filter": "asplit[n0][s0];[n0]atrim=0.9:1.65,asetpts=PTS-STARTPTS[n];[s0]atrim=1.68:2.045,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,equalizer=f=120.5:t=q:w=8:g=-24,equalizer=f=269.0:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.7 afftdn sn stop',afftdn=nr=12:nf=-57,atrim=start=0.775,asetpts=PTS-STARTPTS"
     },
     "treat-2": {
       "from": "ziploc",
-      "start": 3.45,
-      "end": 3.8,
       "fadeOut": 0.05,
-      "note": "пакет ласощів відкрили"
+      "note": "пакет ласощів відкрили",
+      "filter": "asplit[n0][s0];[n0]atrim=22.45:23.45,asetpts=PTS-STARTPTS[n];[s0]atrim=3.45:3.825,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,equalizer=f=120.0:t=q:w=8:g=-24,equalizer=f=269.0:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.95 afftdn sn stop',afftdn=nr=15:nf=-57,atrim=start=1.025,asetpts=PTS-STARTPTS"
     },
     "buckle-1": {
       "from": "snap",
@@ -512,26 +501,22 @@
     },
     "pant-he": {
       "from": "panting",
-      "start": 1.95,
-      "end": 3.2,
       "fadeOut": 0.12,
-      "note": "важко дихає: виснаження (він)"
+      "note": "важко дихає: виснаження (він)",
+      "filter": "asplit[n0][s0];[n0]atrim=17.0:17.25,asetpts=PTS-STARTPTS[n];[s0]atrim=1.95:3.225,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,highpass=f=50,highpass=f=50,equalizer=f=122.0:t=q:w=8:g=-24,equalizer=f=207.0:t=q:w=8:g=-24,equalizer=f=370.0:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.2 afftdn sn stop',afftdn=nr=12:nf=-50,atrim=start=0.275,asetpts=PTS-STARTPTS"
     },
     "pant-she": {
       "from": "panting",
-      "start": 1.9499,
-      "end": 3.1998,
-      "filter": "asetrate=49392,aresample=48000",
+      "filter": "asplit[n0][s0];[n0]atrim=17.0:17.25,asetpts=PTS-STARTPTS[n];[s0]atrim=1.95:3.225,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,highpass=f=50,highpass=f=50,equalizer=f=122.0:t=q:w=8:g=-24,equalizer=f=207.0:t=q:w=8:g=-24,equalizer=f=370.0:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.2 afftdn sn stop',afftdn=nr=12:nf=-50,atrim=start=0.275,asetpts=PTS-STARTPTS,asetrate=49392,aresample=48000",
       "fadeOut": 0.12,
       "note": "важко дихає (вона)"
     },
     "yawn-she-1": {
       "from": "yawn-2",
-      "start": 0.78,
-      "end": 3.12,
       "fadeIn": 0.05,
       "fadeOut": 0.15,
-      "note": "позіх: «Сонливість» і засинання (вона)"
+      "note": "позіх: «Сонливість» і засинання (вона)",
+      "filter": "asplit[n0][s0];[n0]atrim=0.05:0.75,asetpts=PTS-STARTPTS[n];[s0]atrim=0.78:3.145,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,highpass=f=50,highpass=f=50,equalizer=f=100.0:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.65 afftdn sn stop',afftdn=nr=10:nf=-53,atrim=start=0.725,asetpts=PTS-STARTPTS"
     },
     "yawn-she-2": {
       "from": "yawn-twice",
@@ -543,11 +528,10 @@
     },
     "yawn-she-3": {
       "from": "yawn-1",
-      "start": 1.5,
-      "end": 4.35,
       "fadeIn": 0.05,
       "fadeOut": 0.2,
-      "note": "позіх: «Сонливість» і засинання (вона)"
+      "note": "позіх: «Сонливість» і засинання (вона)",
+      "filter": "asplit[n0][s0];[n0]atrim=0.05:0.95,asetpts=PTS-STARTPTS[n];[s0]atrim=1.5:4.375,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,equalizer=f=50.0:t=q:w=8:g=-24,equalizer=f=100.0:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.85 afftdn sn stop',afftdn=nr=12:nf=-55,atrim=start=0.925,asetpts=PTS-STARTPTS"
     },
     "yawn-he-1": {
       "from": "fs-yawn-man",
@@ -583,10 +567,9 @@
     },
     "blanket-2": {
       "from": "pillow",
-      "start": 8.63,
-      "end": 9.2,
       "fadeOut": 0.12,
-      "note": "ковдра й подушка: ліг у ліжко"
+      "note": "ковдра й подушка: ліг у ліжко",
+      "filter": "asplit[n0][s0];[n0]atrim=10.3:11.3,asetpts=PTS-STARTPTS[n];[s0]atrim=8.63:9.225,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,asendcmd=c='0.0 afftdn sn start;0.95 afftdn sn stop',afftdn=nr=11:nf=-50,atrim=start=1.025,asetpts=PTS-STARTPTS"
     },
     "water-tank": {
       "from": "fs-quick-pour",

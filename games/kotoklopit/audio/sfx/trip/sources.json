@@ -129,11 +129,10 @@
     },
     "engine-stop-1": {
       "from": "fs-engine",
-      "start": 18.5,
-      "end": 19.05,
       "fadeIn": 0.05,
       "fadeOut": 0.08,
-      "note": "мотор глухне"
+      "note": "мотор глухне",
+      "filter": "asplit[n0][s0];[n0]atrim=32.95:33.95,asetpts=PTS-STARTPTS[n];[s0]atrim=18.5:19.075,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,asendcmd=c='0.0 afftdn sn start;0.95 afftdn sn stop',afftdn=nr=12:nf=-48,atrim=start=1.025,asetpts=PTS-STARTPTS"
     },
     "rev-1": {
       "from": "fs-revs",

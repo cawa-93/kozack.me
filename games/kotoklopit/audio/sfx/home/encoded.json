@@ -8,11 +8,11 @@
     "seconds": 1
   },
   "fridge-close-1": {
-    "hash": "aca58598342f8417",
+    "hash": "eed2a11e03aab40a",
     "seconds": 0.58
   },
   "fridge-close-2": {
-    "hash": "b406769276f314b6",
+    "hash": "0f4599154eb46f69",
     "seconds": 0.58
   },
   "cabinet-1": {
@@ -28,11 +28,11 @@
     "seconds": 0.52
   },
   "dish-pick-1": {
-    "hash": "b2566cea97a13000",
+    "hash": "458b5b9e03169ad0",
     "seconds": 0.45
   },
   "dish-pick-2": {
-    "hash": "d5e987700f88b888",
+    "hash": "4e93d3b7e0abe328",
     "seconds": 0.43
   },
   "dish-pick-3": {
@@ -128,7 +128,7 @@
     }
   },
   "hung": {
-    "hash": "cbf62908f5147d18",
+    "hash": "6e2defc724b836eb",
     "seconds": 0.8
   },
   "vacuum-on": {
@@ -136,7 +136,7 @@
     "seconds": 1.5
   },
   "vacuum-loop": {
-    "hash": "00ea8e67826cd338",
+    "hash": "8a5dfd6ad647e490",
     "seconds": 5.7,
     "loop": {
       "start": 0.1,

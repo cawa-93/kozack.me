@@ -64,11 +64,11 @@
     "seconds": 0.61
   },
   "meow-angry-1": {
-    "hash": "c907b18750532b99",
+    "hash": "38a35aabd72022ad",
     "seconds": 0.84
   },
   "meow-angry-2": {
-    "hash": "69c20f120383d3f2",
+    "hash": "6bea1655168d70d0",
     "seconds": 0.95
   },
   "meow-door-1": {
@@ -136,7 +136,7 @@
     "seconds": 1.4
   },
   "fight-2": {
-    "hash": "e60a691154848531",
+    "hash": "c3715295a602be9a",
     "seconds": 2
   },
   "fight-loop": {
@@ -148,7 +148,7 @@
     }
   },
   "bite-1": {
-    "hash": "0399d2b1a9b633af",
+    "hash": "da74e5f3b8dc43d7",
     "seconds": 0.52
   },
   "purr-loop": {
@@ -184,7 +184,7 @@
     }
   },
   "lick-1": {
-    "hash": "b023bfd4362b2565",
+    "hash": "177eae3584d7c111",
     "seconds": 0.85
   },
   "yawn-1": {
@@ -312,7 +312,7 @@
     "seconds": 0.52
   },
   "tap-1": {
-    "hash": "2d2b456fec572a70",
+    "hash": "97fa98c123e0e07d",
     "seconds": 1.4
   }
 }
