@@ -260,6 +260,33 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "69dbebcf54aba6802a1e24f781d740f0f53ea7d1bb6e12f53b33eeef3c45839d"
+    },
+    "sticker": {
+      "file": "archive/designers-choice-complete/FOLYProp-Samsung_Galaxy_Smartphone_CU_Sticker_Peel_Off_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/designers-choice-complete",
+      "title": "The Complete Designer's Choice SFX Collection — FOLEY/PROP/FOLYProp-Samsung Galaxy Smartphone, CU_Sticker, Peel Off_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "48c5944f4ee8c071647e688cedef2023c38f93c561f32ef16b97acb5eef60b8d"
+    },
+    "tissue": {
+      "file": "archive/Designers-Choice-Collection-Paper/PAPRHndl-Blue_Snowball_Microphone_CU_Tissue_Pull_Out_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Paper",
+      "title": "The Designer's Choice UCS Collection - PAPER — PAPER/HANDLE/PAPRHndl-Blue Snowball Microphone, CU_Tissue Pull Out_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "b1fa50e1ec51397c98868593c7446e488adc0c2050d83a34665f3e626332f192"
+    },
+    "cloth-rip": {
+      "file": "archive/Designers-Choice-Collection-Cloth/CLOTHRip-CU_Single_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Cloth",
+      "title": "The Designer's Choice UCS Collection - CLOTH — CLOTH/RIP/CLOTHRip-CU_Single_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "01c27fbd0e7905f2e588cdbf4a6a56e983095e615b268004335a8585ef8dde40"
     }
   },
   "files": {
@@ -595,6 +622,39 @@
       "fadeIn": 0.005,
       "fadeOut": 0.15,
       "note": "падіння тіла на підлогу: два удари, коліна й тулуб; запис чистий, без фільтра"
+    },
+    "plaster-1": {
+      "from": "sticker",
+      "start": 3.055,
+      "end": 3.325,
+      "filter": "highpass=f=250,highpass=f=250",
+      "fadeIn": 0.005,
+      "fadeOut": 0.03,
+      "note": "пластир: захисну плівку відклеїли — сухий тріск клею; у низах лише гул запису"
+    },
+    "bandage-1": {
+      "from": "tissue",
+      "start": 0.04,
+      "end": 0.42,
+      "filter": "highpass=f=120,highpass=f=120",
+      "fadeIn": 0.04,
+      "fadeOut": 0.1,
+      "note": "бинт розмотують: м'який шелест марлі (серветку тягнуть із пачки)"
+    },
+    "bandage-tear-1": {
+      "from": "cloth-rip",
+      "start": 0.015,
+      "end": 0.33,
+      "fadeOut": 0.08,
+      "note": "бинт відірвали: тканина рветься"
+    },
+    "bandage-tear-2": {
+      "from": "cloth-rip",
+      "start": 0.3,
+      "end": 0.64,
+      "fadeIn": 0.01,
+      "fadeOut": 0.05,
+      "note": "бинт відірвали: тканина рветься, кінець розриву"
     }
   }
 }

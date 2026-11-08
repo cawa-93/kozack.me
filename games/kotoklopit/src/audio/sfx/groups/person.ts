@@ -39,6 +39,10 @@ const sounds: Record<string, SoundDef> = {
   buckle: { files: range("buckle", 2), gain: 0.45, pitch: 0.05, voices: 1 },
   bell: { files: ["bell"], gain: 0.9, pitch: 0.05, voices: 1 },
   pills: { files: range("pills", 2), gain: 0.4, pitch: 0.05, voices: 1 },
+  // Тріск клею пікуватий, тихий за середнім рівнем: множник більший, ніж у шелесту бинта.
+  plaster: { files: ["plaster-1"], gain: 0.9, pitch: 0.06, voices: 1 },
+  bandage: { files: ["bandage-1"], gain: 0.3, pitch: 0.05, voices: 1 },
+  "bandage-tear": { files: range("bandage-tear", 2), gain: 0.4, pitch: 0.05, voices: 1 },
   "sneeze-he": voice("sneeze-he", 0.5),
   "sneeze-she": voice("sneeze-she", 0.5),
   "pant-he": voice("pant-he", 0.4),

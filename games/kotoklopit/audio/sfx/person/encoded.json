@@ -198,5 +198,21 @@
   "fall-2": {
     "hash": "3869fcaf00446701",
     "seconds": 0.63
+  },
+  "plaster-1": {
+    "hash": "d0a971cb03c7d80f",
+    "seconds": 0.27
+  },
+  "bandage-1": {
+    "hash": "16f22138c903ed89",
+    "seconds": 0.38
+  },
+  "bandage-tear-1": {
+    "hash": "63d13eede6083faf",
+    "seconds": 0.315
+  },
+  "bandage-tear-2": {
+    "hash": "734774f3e42284b0",
+    "seconds": 0.34
   }
 }
