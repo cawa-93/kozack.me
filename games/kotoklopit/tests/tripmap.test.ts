@@ -9,7 +9,7 @@ import { homeBox, pinWidth, TRIP_MAP, tripMapLayout, type MapBox, type MapPin } 
 import { DESTINATION_TITLES } from "../src/ui/titles";
 
 const destinations = Object.keys(TRIPS) as Destination[];
-/** Дороги так, як їх рахує `roadMinutes`: звичайний день, «Пробки» й «Порожні дороги». */
+/** Дороги так, як їх рахує `roadMinutes`: звичайний день, «Затори» й «Порожні дороги». */
 const days = [1, ...Object.values(MODIFIERS.road)].map((factor) => ({
   factor,
   roads: Object.fromEntries(destinations.map((d) => [d, Math.round(TRIPS[d].road * factor)])) as Record<Destination, number>,

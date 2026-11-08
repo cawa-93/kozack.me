@@ -284,15 +284,18 @@ describe("іконка біля назви: пункти поїздок (§8.5 �
     expect(DESTINATION_ICONS.shop).toBe("store");
   });
 
-  it("«Куди поїхати?»: у рядку кожного пункту — назва з його іконкою", () => {
+  it("«Куди поїхати?»: у шпильці кожного пункту — назва і його іконка (на голівці шпильки поруч)", () => {
     const { save } = setup();
     const card = destinationCard(save.current, noop, noop);
-    const list = card.body.find((b): b is HTMLElement => typeof b !== "string") as unknown as FakeElement;
-    const names = list.findAll("shop-name").map((n) => n.textContent);
-    // Збори в офісі й виставка — лише в їхній день: у звичайний день їх у списку немає.
+    const map = card.body.find((b): b is HTMLElement => typeof b !== "string") as unknown as FakeElement;
+    const pins = map.findAll("tripmap-pin").map((pin) => ({
+      name: pin.findAll("tripmap-name")[0]?.textContent,
+      icon: (pin.findAll("tripmap-head")[0]?.findAll("name-icon")[0] as { src?: string } | undefined)?.src,
+    }));
+    // Збори в офісі й виставка — лише в їхній день: у звичайний день їх на мапі немає. Порядок шпильок — за мапою, а не за переліком.
     const shown = destinations.filter((d) => d !== "office" && d !== "show");
-    expect(names.map(iconOf)).toEqual(shown.map((d) => DESTINATION_ICONS[d]));
-    expect(names.map(plain)).toEqual(shown.map((d) => DESTINATION_TITLES[d]));
+    expect(pins.map((p) => p.name).sort()).toEqual(shown.map((d) => DESTINATION_TITLES[d]).sort());
+    for (const d of shown) expect(pins.find((p) => p.name === DESTINATION_TITLES[d])?.icon, d).toBe(iconUrl(DESTINATION_ICONS[d]));
   });
 
   it("заголовок картки пункту — назва з його іконкою, у кожного пункту", () => {

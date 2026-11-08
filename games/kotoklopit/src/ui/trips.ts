@@ -9,13 +9,16 @@ import { roadMinutes, tripBlocker } from "../sim/trips";
 import { formatClock } from "../sim/time";
 import type { Cat, Destination, DiseaseId, GameState, IllnessId, Quality, VisitLog } from "../sim/types";
 import { accidentLines, BREED_ABOUT, DAY_MODIFIER_TEXTS, fill, GROOMED, minutesText, VET_ADVICE, VET_MANNER } from "../texts";
-import { destinationLabel, diseaseLabel, illnessLabel } from "./icons";
+import { destinationLabel, diseaseLabel, iconImage, illnessLabel } from "./icons";
 import { shopCatalog, type CatalogOptions } from "./shop";
-import { SERVICE_TITLES, STORE_SECTION_TITLES } from "./titles";
+import { DESTINATION_TITLES, SERVICE_TITLES, STORE_SECTION_TITLES } from "./titles";
 import { catalog, type CartLine } from "../sim/shop";
 import { element, type Card, type CardAction } from "./overlay";
 import { breedLine, breedText, plural } from "./cards";
 import { traitChips } from "./traits";
+import { TRIP_MAP, tripMapLayout, type MapPin } from "./tripmap";
+import { DESTINATION_ROOFS } from "../view/racelook";
+import { DESTINATION_ICONS } from "../view/symbols";
 import "./tripmap.css";
 import "./places.css";
 
@@ -77,40 +80,92 @@ function discounts(n: number, section?: string): string[] {
   return [section === undefined ? count : `${section.toLocaleLowerCase("uk")}: ${count}`];
 }
 
+/** Колір пункту на мапі — дах його будівлі (`DESTINATION_ROOFS`), рядком CSS. */
+const roofColor = (destination: Destination): string => `#${DESTINATION_ROOFS[destination].toString(16).padStart(6, "0")}`;
+
+/** Число одиниць мапи — у `cqw` (`tripmap.css`). */
+const cqw = (units: number): string => `${Math.round(units * 100) / 100}cqw`;
+
+/** Кут шпильки від півночі за годинниковою стрілкою, градуси. */
+const clockwise = (pin: MapPin): number => (pin.road.angle + 450) % 360;
+
+/** Які пункти на мапі «Куди поїхати?» і чому туди зараз не можна (null — можна). */
+function shownDestinations(state: GameState): { destination: Destination; blocker: ReturnType<typeof tripBlocker> }[] {
+  return (Object.keys(TRIPS) as Destination[]).flatMap((destination) => {
+    const blocker = tripBlocker(state, destination);
+    // Офіс і виставка — лише в їхній день (§4.1): в інші дні їх на мапі немає зовсім.
+    if ((destination === "office" && blocker === "office") || (destination === "show" && blocker === "show")) return [];
+    // Ветеринар і грумер — коли вже є кіт: до першого кошеняти вони лише муляли б очі (§11.3а).
+    if (TRIPS[destination].cat && state.cats.length === 0) return [];
+    return [{ destination, blocker }];
+  });
+}
+
 /**
- * Куди поїхати (§8.5). Підпису «Поїздка» немає, а праворуч від заголовка — подія дня, що змінює дорогу («Затори», «Порожні
- * дороги»), і гроші (рішення автора 2026-11-03).
+ * Шпилька пункту на мапі — кнопка: голівка з іконкою пункту (та сама, що на табличці на даху будівлі, §11.4 «Іконка біля назви»),
+ * назва й час дороги та на місці, а коли туди не можна — причина замість часу. Причину «для всіх» (`everywhere`) кажуть один раз
+ * над мапою, тож тут — час, як і в доступних.
+ */
+function mapPin(state: GameState, destination: Destination, pin: MapPin, blocker: keyof typeof BLOCKERS | null, everywhere: boolean): HTMLButtonElement {
+  const button = element("button", `tripmap-pin ${pin.side}`);
+  button.type = "button";
+  // Шпилька стоїть краєм з боку голівки: ширина таблички не зсуває голівку з кінця дороги (`tripmap.ts`).
+  const edge = pin.side === "east" ? `left:${cqw(pin.box.x0)}` : `right:${cqw(100 - pin.box.x1)}`;
+  button.setAttribute("style", `${edge};top:${cqw(pin.box.y0)};--pin-w:${pin.width};--roof:${roofColor(destination)}`);
+  const head = element("span", "tripmap-head");
+  head.setAttribute("aria-hidden", "true");
+  const icon = iconImage(DESTINATION_ICONS[destination]);
+  if (icon) head.append(icon);
+  const label = element("span", "tripmap-label");
+  label.append(element("span", "tripmap-name", DESTINATION_TITLES[destination]));
+  if (blocker === null || everywhere) {
+    // Гліф 🕐 — рядковий блок (`glyphs.ts`): час — кожен своїм рядком, а не через « · », щоб шпилька лишалася вузькою.
+    label.append(element("span", "tripmap-time", `🚗 ~${minutesText(roadMinutes(state, destination))}`));
+    label.append(element("span", "tripmap-time", `🕐 ~${minutesText(TRIPS[destination].visit)}`));
+  } else label.append(element("span", "tripmap-why", BLOCKERS[blocker]));
+  button.append(head, label);
+  button.disabled = blocker !== null;
+  return button;
+}
+
+/**
+ * Куди поїхати (§8.5): паперова мапа міста з домом посередині й шпильками пунктів («Оформлення поїздок»; розкладка —
+ * `tripmap.ts`). Підпису «Поїздка» немає, а праворуч від заголовка — подія дня, що змінює дорогу («Затори», «Порожні дороги»), і
+ * гроші.
  */
 export function destinationCard(state: GameState, onPick: (d: Destination) => void, onCancel: () => void): Card {
-  const list = element("div", "shop");
-  // Причину, через яку не можна їхати нікуди, кажуть один раз, а не в кожному рядку.
+  // Причину, через яку не можна їхати нікуди, кажуть один раз, а не біля кожної шпильки.
   const held = state.character.held?.kind === "cat" ? tripBlocker(state, "shop") : null;
   const everywhere = held === "newborn" ? held : null;
-  for (const destination of Object.keys(TRIPS) as Destination[]) {
-    const blocker = tripBlocker(state, destination);
-    if ((destination === "office" && blocker === "office") || (destination === "show" && blocker === "show")) continue;
-    // Ветеринар і грумер — коли вже є кіт: до першого кошеняти вони лише муляли б очі (§11.3а).
-    if (TRIPS[destination].cat && state.cats.length === 0) continue;
-    const row = element("div", "shop-row");
-    const trip = TRIPS[destination];
-    // Біля назви пункту — його іконка, та сама, що на табличці на даху будівлі біля парковки (§11.4 «Іконка біля назви»).
-    const name = element("span", "shop-name", destinationLabel(destination));
-    const note = blocker === null || (everywhere !== null && blocker === everywhere) ? `🚗 ~${minutesText(roadMinutes(state, destination))} · 🕐 ~${minutesText(trip.visit)}` : BLOCKERS[blocker];
-    name.append(blocker === null || (everywhere !== null && blocker === everywhere) ? stockNote(note) : element("span", "shop-stock", note));
-    row.append(name);
-    const button = element("button", "button", "Їхати");
-    button.disabled = blocker !== null;
+  const layout = tripMapLayout(Object.fromEntries((Object.keys(TRIPS) as Destination[]).map((d) => [d, roadMinutes(state, d)])) as Record<Destination, number>);
+  const { pin, home } = TRIP_MAP;
+  const map = element("div", "tripmap");
+  map.setAttribute("style", `--map-h:${TRIP_MAP.height};--pin-h:${pin.height};--head:${pin.head};--inset:${pin.inset};--tuck:${pin.tuck};--name:${pin.name};--time:${pin.time};--home:${home.size}`);
+  // Кнопки — за годинниковою стрілкою від півночі: Tab обходить мапу по колу, а не за переліком пунктів.
+  const shown = shownDestinations(state).sort((a, b) => clockwise(layout[a.destination]) - clockwise(layout[b.destination]));
+  const roads = shown.map(({ destination, blocker }) => {
+    const road = element("div", blocker === null ? "tripmap-road" : "tripmap-road off");
+    const { length, angle } = layout[destination].road;
+    road.setAttribute("style", `left:${cqw(home.x)};top:${cqw(home.y)};width:${cqw(length)};rotate:${Math.round(angle)}deg;--roof:${roofColor(destination)}`);
+    return road;
+  });
+  const house = element("div", "tripmap-home", "🏠");
+  house.setAttribute("aria-hidden", "true");
+  house.setAttribute("style", `left:${cqw(home.x - home.size / 2)};top:${cqw(home.y - home.size / 2)}`);
+  const pins = shown.map(({ destination, blocker }) => {
+    const button = mapPin(state, destination, layout[destination], blocker, everywhere !== null && blocker === everywhere);
     button.addEventListener("click", () => onPick(destination));
-    row.append(button);
-    list.append(row);
-  }
+    return button;
+  });
+  map.append(...roads, house, ...pins);
   return {
     title: "Куди поїхати?",
     aside: [...dayEvent(state, roadFactor(state) !== 1), purse(state)],
-    body: [...(everywhere !== null ? [BLOCKERS[everywhere]] : []), list],
+    body: [...(everywhere !== null ? [BLOCKERS[everywhere]] : []), map],
     actions: [],
     onDismiss: onCancel,
     closable: true,
+    skin: "map",
   };
 }
 
