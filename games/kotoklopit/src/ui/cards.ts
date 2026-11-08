@@ -246,6 +246,7 @@ export interface PhoneHandlers {
   effects: { volume: number; set: (volume: number) => void };
 }
 
+/** Вкладки телефона по порядку: за місцем вкладки `phone.css` фарбує її плитку, тож порядок і іконки — разом із ним. */
 const PHONE_TABS: Record<PhoneTab, string> = { shop: "🛒 Магазин", mine: "🏠 Речі", cats: "🐱 Коти", album: "Альбом", game: "Гра" };
 
 /** Телефон персонажа (§6.4): магазин із доставкою, викинути річ, коти, альбом, гра. */
@@ -267,9 +268,11 @@ export function phoneCard(state: GameState, wanted: PhoneTab, handlers: PhoneHan
   if (tab === "cats") body.push(...catCards(state, handlers));
   if (tab === "album") body.push(...albumCards(state));
   if (tab === "game") body.push(...gameMenu(state, handlers));
-  // Вкладки — компактний рядок угорі, закрити — хрестиком: на телефоні горизонтально лишається місце для вмісту.
+  // Вкладки — компактний рядок угорі, закрити — хрестиком: на телефоні горизонтально лишається місце для вмісту. Вигляд
+  // смартфона набік — `phone.css`.
   return {
     title: "",
+    skin: "phone",
     tabs: tabs.map((t) => ({ label: PHONE_TABS[t], active: t === tab, onSelect: () => handlers.tab(t) })),
     body,
     ...(shop ? { bar: shop.bar } : {}),
