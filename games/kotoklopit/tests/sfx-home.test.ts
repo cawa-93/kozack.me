@@ -125,8 +125,8 @@ describe("звуки дому (§11.4а)", () => {
     for (const event of others) expect(cues(event), JSON.stringify(event)).toEqual([]);
   });
 
-  it("холодильник — дверцята, шафка — дверцята, страва — тихо", () => {
-    expect(cues(EVENTS[0]!).map((c) => c.sound)).toEqual(["fridge-open", "fridge-close"]);
+  it("холодильник — дверцята зачинили, шафка — дверцята, страва — тихо", () => {
+    expect(cues(EVENTS[0]!).map((c) => c.sound)).toEqual(["fridge-close"]);
     expect(cues(EVENTS[1]!).map((c) => c.sound)).toEqual(["cabinet"]);
     expect(cues(EVENTS[2]!).map((c) => c.sound)).toEqual(["dish-pick"]);
     expect(cues(EVENTS[5]!).map((c) => c.sound)).toEqual(["dish-put"]);

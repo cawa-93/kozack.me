@@ -35,7 +35,6 @@ const SHOWERED: readonly Cue[] = [{ sound: "shower-off", at: "shower" }];
 const FED: readonly Cue[] = [{ sound: "kibble", at }];
 const WATERED: readonly Cue[] = [{ sound: "water", at }];
 const WATERED_TANK: readonly Cue[] = [{ sound: "water-tank", at }];
-const TREAT: readonly Cue[] = [{ sound: "treat", at }];
 const COLLAR: readonly Cue[] = [
   { sound: "buckle", at },
   { sound: "bell", at, delayMs: 120 },
@@ -53,7 +52,6 @@ const BANDAGE: readonly Cue[] = [
 ];
 const SNEEZE = voiced((voice) => [{ sound: `sneeze-${voice}`, at }]);
 const GASP = voiced((voice) => [{ sound: `gasp-${voice}`, at }]);
-const PANT = voiced((voice) => [{ sound: `pant-${voice}`, at }]);
 export const YAWN = voiced((voice) => [{ sound: `yawn-${voice}`, at }]);
 const FALL_ASLEEP = voiced((voice) => [
   { sound: "blanket", at },
@@ -84,14 +82,13 @@ export function personEventCues(event: GameEvent, state: GameState): readonly Cu
     case "watered":
       // З простим фонтанчиком разом із поїлкою наливають і його бак (§8.7).
       return state.home.appliances.fountain === "cheap" ? WATERED_TANK : WATERED;
-    case "treat":
-      return TREAT;
     case "collar":
       return COLLAR;
     case "medicine":
       return event.medicine === "pills" ? PILLS : NONE;
     case "person-ill":
-      return event.illness === "cold" ? SNEEZE[voice] : event.illness === "injury" ? GASP[voice] : PANT[voice];
+      // Виснаження — без звуку: важке дихання автор прибрав.
+      return event.illness === "cold" ? SNEEZE[voice] : event.illness === "injury" ? GASP[voice] : NONE;
     case "person-meds":
       return MEDS;
     case "person-dressing":

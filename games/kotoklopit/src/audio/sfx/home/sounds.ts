@@ -8,7 +8,6 @@ const variants = (name: string, count: number): string[] => Array.from({ length:
 
 export const HOME_SOUNDS = {
   // Речі кухні (`took`, `put`): холодильник — дверцята, шафки — дверцята, страва — тихо.
-  "fridge-open": { files: variants("fridge-open", 2), gain: 0.5, pitch: 0.04 },
   "fridge-close": { files: variants("fridge-close", 2), gain: 0.55, pitch: 0.04 },
   cabinet: { files: variants("cabinet", 3), gain: 0.5, pitch: 0.05 },
   "dish-pick": { files: variants("dish-pick", 3), gain: 0.3, pitch: 0.05 },

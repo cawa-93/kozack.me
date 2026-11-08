@@ -69,11 +69,6 @@
     "print": "0.6|dig-loop:e30fc010508fe801",
     "at": "2026-11-08T06:12:33.148Z"
   },
-  "cats/eat-loop": {
-    "decision": "delete",
-    "print": "0.9|eat-loop:d000995ed56b1384",
-    "at": "2026-11-08T13:17:07.052Z"
-  },
   "cats/fight": {
     "decision": "ok",
     "print": "1|fight-1:29e848ea9034f8e9,fight-2:c3715295a602be9a",
@@ -88,11 +83,6 @@
     "decision": "ok",
     "print": "0.7|growl-1:fea6a1b478d7d98b,growl-2:fbf50fb7bf1776c0",
     "at": "2026-11-08T13:15:28.503Z"
-  },
-  "cats/hack": {
-    "decision": "delete",
-    "print": "0.6|hack-1:42b93b4fabe7152e",
-    "at": "2026-11-08T13:33:57.327Z"
   },
   "cats/hiss": {
     "decision": "ok",
@@ -204,11 +194,6 @@
     "print": "0.5|purr-loop:f2ba4d2d1998318a",
     "at": "2026-11-08T13:15:36.478Z",
     "comment": "Гул"
-  },
-  "cats/retch": {
-    "decision": "delete",
-    "print": "0.7|retch-1:d87c91b49b246b73",
-    "at": "2026-11-08T13:33:58.832Z"
   },
   "cats/scamper": {
     "decision": "ok",
@@ -339,15 +324,6 @@
     "decision": "ok",
     "print": "0.55|fridge-close-1:eed2a11e03aab40a,fridge-close-2:0f4599154eb46f69",
     "at": "2026-11-08T13:18:10.292Z"
-  },
-  "home/fridge-open": {
-    "decision": "delete",
-    "print": "0.5|fridge-open-1:ec64d84aed063c74,fridge-open-2:14025f66417194d8",
-    "at": "2026-11-08T13:34:50.817Z",
-    "variants": [
-      "fridge-open-1",
-      "fridge-open-2"
-    ]
   },
   "home/guests": {
     "decision": "ok",
@@ -526,16 +502,6 @@
     "print": "0.17|litter-pour:33d003607e083de4",
     "at": "2026-11-08T06:23:37.063Z"
   },
-  "person/pant-he": {
-    "decision": "delete",
-    "print": "0.4|pant-he:20df13faf4fa50f3",
-    "at": "2026-11-08T13:19:43.988Z"
-  },
-  "person/pant-she": {
-    "decision": "delete",
-    "print": "0.4|pant-she:27c339c367831d3c",
-    "at": "2026-11-08T13:19:45.144Z"
-  },
   "person/pills": {
     "decision": "ok",
     "print": "0.4|pills-1:df1641ab54b9b0b7,pills-2:f40eeee81b6b4c25",
@@ -546,15 +512,6 @@
     "print": "0.4|plate-1:e087bacb1d711c09,plate-2:fbf71fd73c5d4a05",
     "at": "2026-11-08T06:23:04.209Z",
     "comment": "Використати як загальний звук коли страву/тарілку/судочок/тощо ставлять на стіл"
-  },
-  "person/scoop": {
-    "decision": "delete",
-    "print": "0.4|scoop-1:5a606adbfe16c44a,scoop-2:28f1e1a1c28f318c",
-    "at": "2026-11-08T13:19:17.659Z",
-    "variants": [
-      "scoop-1",
-      "scoop-2"
-    ]
   },
   "person/shower": {
     "decision": "ok",
@@ -606,15 +563,6 @@
     "print": "0.4|sweep-1:922c293bfc96cf88,sweep-2:f57203b05b770ffe",
     "at": "2026-11-08T13:35:34.315Z"
   },
-  "person/treat": {
-    "decision": "delete",
-    "print": "0.5|treat-1:412edeb755672647,treat-2:f74de6f18cfc58e1",
-    "at": "2026-11-08T13:19:35.755Z",
-    "variants": [
-      "treat-1",
-      "treat-2"
-    ]
-  },
   "person/water": {
     "decision": "ok",
     "print": "0.42|water-1:29c1aa44e25ccd39",
@@ -624,15 +572,6 @@
     "decision": "ok",
     "print": "0.58|water-tank:afd7fc4063218908",
     "at": "2026-11-08T13:17:30.127Z"
-  },
-  "person/wipe": {
-    "decision": "delete",
-    "print": "0.35|wipe-1:46a961e30f17e3e2,wipe-2:ddaf2f7ae80f8f84",
-    "at": "2026-11-08T13:19:20.993Z",
-    "variants": [
-      "wipe-1",
-      "wipe-2"
-    ]
   },
   "person/yawn-he": {
     "decision": "ok",

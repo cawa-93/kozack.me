@@ -167,14 +167,6 @@
     "hash": "795445a558029889",
     "seconds": 0.35
   },
-  "eat-loop": {
-    "hash": "d000995ed56b1384",
-    "seconds": 4.3,
-    "loop": {
-      "start": 0.1,
-      "end": 4.4
-    }
-  },
   "lap-loop": {
     "hash": "6001abe11eaa4217",
     "seconds": 5.7,
@@ -218,14 +210,6 @@
   "sneeze-1": {
     "hash": "42ecbff24c1e0056",
     "seconds": 0.292
-  },
-  "hack-1": {
-    "hash": "42b93b4fabe7152e",
-    "seconds": 0.263
-  },
-  "retch-1": {
-    "hash": "d87c91b49b246b73",
-    "seconds": 0.48
   },
   "spit-1": {
     "hash": "f735c44d9fa0f8e5",

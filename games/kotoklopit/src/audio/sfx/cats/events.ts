@@ -41,15 +41,6 @@ function voiced(state: GameState, sound: string, id: number): Cue[] {
 /** Кошеня не гарчить і не кричить дорослим голосом: кричить протяжним писком, а сердиться звичайним. */
 const KITTEN_VOICE: Readonly<Record<string, string>> = { cry: "cry-kitten", "meow-angry": "meow-kitten" };
 
-/** Коротке, що звучить серією («ек-ек-ек», «кх-кх-кх»): той самий звук тричі з паузою `stepMs`, трохи різної висоти. */
-function triple(sound: string, at: SoundAt, stepMs: number): Cue[] {
-  return [
-    { sound, at },
-    { sound, at, delayMs: stepMs, rate: 1.05 },
-    { sound, at, delayMs: stepMs * 2, rate: 0.97 },
-  ];
-}
-
 export function catEvent(event: GameEvent, state: GameState): readonly Cue[] {
   switch (event.type) {
     case "meow": {
@@ -88,8 +79,6 @@ export function catEvent(event: GameEvent, state: GameState): readonly Cue[] {
       return [{ sound: "claw", at: catAt(event.cat) }];
     case "cat-ate":
       return [{ sound: "lick", at: catAt(event.cat), gain: 0.6 }];
-    case "coughing":
-      return triple("hack", catAt(event.cat), 240);
     case "symptom":
       if (event.symptom === "sneeze") return [{ sound: "sneeze", at: catAt(event.cat) }];
       // Крик болю в лотку (сечокам'яна, §9.5) — вголос; свербіж і очі — думка.
@@ -168,12 +157,9 @@ export function catEvent(event: GameEvent, state: GameState): readonly Cue[] {
   }
 }
 
-/** Звук безладу (§9.12): зригнув грудку чи блюванням — чути; папір розмотано — шелест; решта безладу тиха. */
+/** Звук безладу (§9.12): папір розмотано — шелест, наповнювач — розкидали; решта безладу тиха. */
 function messSound(kind: string, at: { x: number; y: number }): readonly Cue[] {
   switch (kind) {
-    case "vomit":
-    case "hairball":
-      return [{ sound: "retch", at }];
     case "paper":
       return [{ sound: "paper", at }];
     case "litter":

@@ -1,4 +1,4 @@
-// Тривале в котів петлями (§11.4а): мурчання під рукою, їжа, пиття, лоток, дряпання, зумі, бійка, гризіння. Протистояння
+// Тривале в котів петлями (§11.4а): мурчання під рукою, пиття, лоток, дряпання, зумі, бійка, гризіння. Протистояння
 // петлі не має: симуляція й так шипить щохвилини гри (подія `hissed`). Петлі перечитують кожні `SFX.loopMs`: перелік
 // перебудовується, лише коли в якогось кота змінилося, що звучить.
 
@@ -12,7 +12,6 @@ const KINDS = [
   null,
   { sound: "purr-loop", key: "purr", gain: 1 },
   { sound: "purr-loop", key: "purr", gain: 0.7 },
-  { sound: "eat-loop", key: "eat", gain: 1 },
   { sound: "lap-loop", key: "drink", gain: 1 },
   { sound: "lap-loop", key: "groom", gain: 0.5 },
   { sound: "dig-loop", key: "dig", gain: 1 },
@@ -24,14 +23,13 @@ const KINDS = [
 
 const PET_PURR = 1;
 const CALM_PURR = 2;
-const EAT = 3;
-const DRINK = 4;
-const GROOM = 5;
-const DIG = 6;
-const SCRATCH = 7;
-const ZOOM = 8;
-const FIGHT = 9;
-const CHEW = 10;
+const DRINK = 3;
+const GROOM = 4;
+const DIG = 5;
+const SCRATCH = 6;
+const ZOOM = 7;
+const FIGHT = 8;
+const CHEW = 9;
 
 /** Скільки однакових петель водночас: кілька котів біля мисок — це не кілька однакових записів у фазі. */
 const SAME_LIMIT = 2;
@@ -66,10 +64,6 @@ export function loopCode(state: GameState, cat: Cat): number {
     case "idle":
       // «Щедра душа» лягла поруч із тим, кого пестять, і муркоче (§9.12).
       return there && act.target?.startsWith("cuddle:") === true ? CALM_PURR : 0;
-    case "eat":
-      return there && act.refused !== true ? EAT : 0;
-    case "raid":
-      return there && act.target === "cabinet" ? EAT : 0;
     case "drink":
       return there && act.refused !== true ? DRINK : 0;
     case "groom":

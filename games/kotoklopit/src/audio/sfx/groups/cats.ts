@@ -11,7 +11,7 @@ const files = (name: string, count: number): string[] => Array.from({ length: co
 /**
  * Гучність вирівнено за середнім рівнем файлів (разові нормовано за піком, петлі — за RMS): голоси — середньо, мурчання — тихо,
  * бійка й розбите — гучніше. Розкид висоти — щоб те саме не набридало. Пауза в голосів довша: кіт, що просить, нявкає щохвилини
- * гри, а це щосекунди реального часу. Кахикання (`hack`) звучить кількома сигналами з затримкою — без паузи.
+ * гри, а це щосекунди реального часу.
  */
 const SOUNDS: Record<string, SoundDef> = {
   meow: { files: files("meow", 3), gain: 0.7, pitch: 0.05, spread: 0.1, cooldownMs: 600 },
@@ -38,8 +38,6 @@ const SOUNDS: Record<string, SoundDef> = {
   land: { files: ["land-2"], gain: 0.5, pitch: 0.08, cooldownMs: 200 },
   scamper: { files: files("scamper", 2), gain: 0.6, pitch: 0.06, spread: 0.1, cooldownMs: 300 },
   sneeze: { files: ["sneeze-1"], gain: 0.45, pitch: 0.06, cooldownMs: 500 },
-  hack: { files: ["hack-1"], gain: 0.6, pitch: 0.05, cooldownMs: 0, voices: 3 },
-  retch: { files: ["retch-1"], gain: 0.7, pitch: 0.05, cooldownMs: 1500 },
   spit: { files: ["spit-1"], gain: 0.6, pitch: 0.05, cooldownMs: 500 },
   lick: { files: ["lick-1"], gain: 0.9, pitch: 0.06, cooldownMs: 1200 },
   dig: { files: ["dig-1"], gain: 0.6, pitch: 0.06, cooldownMs: 600 },
@@ -59,7 +57,6 @@ const SOUNDS: Record<string, SoundDef> = {
   "cabinet-lock": { files: ["cabinet-lock-1"], gain: 0.75, pitch: 0.06, cooldownMs: 600 },
   tap: { files: ["tap-1"], gain: 0.6, cooldownMs: 1000, voices: 1 },
   "purr-loop": { files: ["purr-loop"], gain: 0.4, loop: true },
-  "eat-loop": { files: ["eat-loop"], gain: 0.9, loop: true },
   "lap-loop": { files: ["lap-loop"], gain: 0.55, loop: true },
   "dig-loop": { files: ["dig-loop"], gain: 0.6, loop: true },
   "scratch-loop": { files: ["scratch-loop"], gain: 0.55, loop: true },

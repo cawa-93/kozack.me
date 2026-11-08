@@ -290,19 +290,6 @@
     }
   },
   "files": {
-    "fridge-open-1": {
-      "from": "fridge",
-      "start": 4.3,
-      "end": 5.3,
-      "fadeOut": 0.15,
-      "note": "Холодильник відчинили: присос дверцят і брязкіт усередині"
-    },
-    "fridge-open-2": {
-      "from": "fridge",
-      "start": 9.12,
-      "end": 10.12,
-      "fadeOut": 0.15
-    },
     "fridge-close-1": {
       "from": "fridge",
       "fadeOut": 0.1,

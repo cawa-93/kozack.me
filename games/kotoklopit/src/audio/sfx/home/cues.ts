@@ -14,11 +14,8 @@ type HomeCue = Cue & { sound: HomeSound };
 const NONE: readonly HomeCue[] = [];
 const one = (sound: HomeSound, at: SoundAt): readonly HomeCue[] => [{ sound, at }];
 
-/** Холодильник щоразу відчиняють і зачиняють: що взяли чи поклали, байдуже. */
-const FRIDGE: readonly HomeCue[] = [
-  { sound: "fridge-open", at: "fridge" },
-  { sound: "fridge-close", at: "fridge", delayMs: 450 },
-];
+/** Холодильник щоразу зачиняють: що взяли чи поклали, байдуже. */
+const FRIDGE: readonly HomeCue[] = [{ sound: "fridge-close", at: "fridge", delayMs: 450 }];
 const CABINET: Record<string, readonly HomeCue[]> = { "cat-cabinet": one("cabinet", "cat-cabinet"), "sterile-bin": one("cabinet", "sterile-bin") };
 
 /** Хтось заходить (§4.1): замок, двері й те, з чим зайшли. */

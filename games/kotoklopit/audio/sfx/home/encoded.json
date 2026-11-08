@@ -1,12 +1,4 @@
 {
-  "fridge-open-1": {
-    "hash": "ec64d84aed063c74",
-    "seconds": 1
-  },
-  "fridge-open-2": {
-    "hash": "14025f66417194d8",
-    "seconds": 1
-  },
   "fridge-close-1": {
     "hash": "eed2a11e03aab40a",
     "seconds": 0.58

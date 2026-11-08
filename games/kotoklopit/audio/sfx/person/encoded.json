@@ -79,25 +79,9 @@
       "end": 6.1
     }
   },
-  "scoop-1": {
-    "hash": "5a606adbfe16c44a",
-    "seconds": 1.05
-  },
-  "scoop-2": {
-    "hash": "28f1e1a1c28f318c",
-    "seconds": 0.95
-  },
   "litter-pour": {
     "hash": "33d003607e083de4",
     "seconds": 1.1
-  },
-  "wipe-1": {
-    "hash": "46a961e30f17e3e2",
-    "seconds": 0.7
-  },
-  "wipe-2": {
-    "hash": "ddaf2f7ae80f8f84",
-    "seconds": 1.05
   },
   "sweep-1": {
     "hash": "922c293bfc96cf88",
@@ -114,14 +98,6 @@
   "water-1": {
     "hash": "29c1aa44e25ccd39",
     "seconds": 0.58
-  },
-  "treat-1": {
-    "hash": "412edeb755672647",
-    "seconds": 0.34
-  },
-  "treat-2": {
-    "hash": "f74de6f18cfc58e1",
-    "seconds": 0.35
   },
   "buckle-1": {
     "hash": "c2d6955648772e29",
@@ -150,14 +126,6 @@
   "sneeze-she": {
     "hash": "12d1ae5eb78f3b28",
     "seconds": 0.39
-  },
-  "pant-he": {
-    "hash": "20df13faf4fa50f3",
-    "seconds": 1.25
-  },
-  "pant-she": {
-    "hash": "27c339c367831d3c",
-    "seconds": 1.116083
   },
   "yawn-she-1": {
     "hash": "23ee829fdde25f19",

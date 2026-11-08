@@ -25,19 +25,22 @@ const EVENTS: GameEvent[] = [
   { type: "showered", hygiene: 40, quality: "premium", left: 3, cold: true },
   { type: "fed", item: 1, food: 2 },
   { type: "watered", item: 2 },
-  { type: "treat", cat: 1, quality: "cheap" },
   { type: "collar", cat: 1 },
   { type: "medicine", cat: 1, medicine: "pills", quality: "cheap" },
   { type: "person-ill", illness: "cold" },
   { type: "person-ill", illness: "injury" },
-  { type: "person-ill", illness: "exhaustion" },
   { type: "person-meds", quality: "cheap" },
   { type: "person-dressing", quality: "cheap", cured: false },
   { type: "person-dressing", quality: "premium", cured: true },
 ];
 
-/** Події групи без звуку (`SOUND_PLAN.md`, «Без звуку»); їжа й прибирання звучать під час дії, а не подією по завершенні. */
+/**
+ * Події групи без звуку (`SOUND_PLAN.md`, «Без звуку»); їжа й прибирання звучать під час дії, а не подією по завершенні. Ласощі
+ * й виснаження — без звуку: записи автор прибрав.
+ */
 const SILENT: GameEvent[] = [
+  { type: "treat", cat: 1, quality: "cheap" },
+  { type: "person-ill", illness: "exhaustion" },
   { type: "ate", satiety: 30, food: 2 },
   { type: "cleaned", what: "litter", sanity: -3 },
   ...MESSES.map((what): GameEvent => ({ type: "cleaned", what, sanity: -2 })),
@@ -108,17 +111,13 @@ describe("звуки персонажа (§11.4а, SOUND_PLAN «Хто що оз
     }
   });
 
-  it("їжа й прибирання звучать під час дії, з першої миті: мокре витирають, сухе підмітають, лоток — совок і наповнювач", () => {
+  it("їжа й прибирання звучать під час дії: сухе підмітають з першої миті, мокре витирають беззвучно, у лотку — лише наповнювач", () => {
     const state = fresh();
     state.home.messes.push({ id: 91, kind: "vomit", x: 5, y: 5, cat: null }, { id: 92, kind: "fur", x: 6, y: 5, cat: null });
     state.home.items.push({ id: 95, kind: "litter", quality: "cheap", slot: "litter-1", litter: "cheap", uses: 2 });
-    const wet = hold(state, "mess:91", 1000, 0.032);
-    expect(wet[0]).toBe("wipe");
-    expect(new Set(wet)).toEqual(new Set(["wipe"]));
+    expect(hold(state, "mess:91", 1000, 0.032)).toEqual([]);
     expect(hold(state, "mess:92", 1000, 0.032)).toContain("sweep");
-    const litter = hold(state, "item:95", 1500, 0.032);
-    expect(litter[0]).toBe("scoop");
-    expect(litter.filter((sound) => sound === "litter-pour")).toHaveLength(1);
+    expect(hold(state, "item:95", 1500, 0.032)).toEqual(["litter-pour"]);
     const meal = hold(state, "table", 5000, 0.032);
     expect(meal[0]).toBe("plate");
     expect(meal).toContain("swallow");

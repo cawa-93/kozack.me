@@ -18,15 +18,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "32ccaa7b1e4b43c21bd039e1b7e54f1f5a9cf55dc9f38ea5b1ec7fd1d92d51d1"
     },
-    "panting": {
-      "file": "archive/Designers-Choice-Collection-Human/HMNBrth-Blue_Snowball_Microphone_Panting_Slow_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Human",
-      "title": "The Designer's Choice UCS Collection - HUMAN — HUMAN/BREATH/HMNBrth-Blue Snowball Microphone_Panting, Slow_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "2a622da44921c0a10b38dc0e4b1bfc9184dee48b7c74531807e6b50c9b4c5cb0"
-    },
     "swallow": {
       "file": "archive/Designers-Choice-Collection-Human/HMNMisc-Blue_Snowball_Microphone_Swallow_Liquid_Nicholas_Judy_TDC.flac",
       "url": "https://archive.org/details/Designers-Choice-Collection-Human",
@@ -90,24 +81,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "f16397020ee91a0820000e33cdb15881194c41892f2d350fe439126f19428a61"
     },
-    "wipe": {
-      "file": "archive/Designers-Choice-Collection-Objects/OBJHsehld-Samsung_Galaxy_Smartphone_Window_Mirror_Wiping_Squeaks_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Objects",
-      "title": "The Designer's Choice UCS Collection - OBJECTS — OBJECTS/HOUSEHOLD/OBJHsehld-Samsung Galaxy Smartphone_Window, Mirror, Wiping Squeaks_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "367141a97c72a8418cbcd0708c7e1d9e2a4ac777d887388c3bc3ac13260dff67"
-    },
-    "scoop": {
-      "file": "archive/Designers-Choice-Collection-Objects/OBJMisc-Samsung_Galaxy_Smartphone_CU_Metal_Scooper_Scooping_Ice_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Objects",
-      "title": "The Designer's Choice UCS Collection - OBJECTS — OBJECTS/MISC/OBJMisc-Samsung Galaxy Smartphone, CU_Metal Scooper, Scooping Ice_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "660e72791cde2ca0741d04362009b1576d04c8b00acea06089da07654d5ba4f3"
-    },
     "brush": {
       "file": "archive/Designers-Choice-Collection-Objects/OBJMisc-Samsung_Galaxy_Smartphone_CU_Paintbrush_Brushing_Nicholas_Judy_TDC.flac",
       "url": "https://archive.org/details/Designers-Choice-Collection-Objects",
@@ -116,15 +89,6 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "ea5b9a8836b5f342878f7c28138f8cf91bf75590ab637efd6b9c2d7be5df541b"
-    },
-    "ziploc": {
-      "file": "archive/Designers-Choice-Collection-Objects/OBJZipr-Blue_Snowball_Microphone_MCU_Ziploc_Plastic_Bag_Zip_Unzip_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Objects",
-      "title": "The Designer's Choice UCS Collection - OBJECTS — OBJECTS/ZIPPER/OBJZipr-Blue Snowball Microphone, MCU_Ziploc Plastic Bag, Zip, Unzip_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "81c669ab8b15cc4072c26e04b713141a7fb0c9b2d35eaae43c9d62dfa0513fcd"
     },
     "pills": {
       "file": "archive/Designers-Choice-Collection-Cartoon/TOONShake-Samsung_Galaxy_Smartphone_CU_Pill_Bottle_01_Nicholas_Judy_TDC.flac",
@@ -414,20 +378,6 @@
       "loop": true,
       "note": "плюскіт у ванні: купання кота; кілька сплесків із тишею між ними — під шумом води"
     },
-    "scoop-1": {
-      "from": "scoop",
-      "start": 0,
-      "end": 1.05,
-      "filter": "lowpass=f=5000",
-      "fadeOut": 0.15,
-      "note": "совок у лотку"
-    },
-    "scoop-2": {
-      "from": "scoop",
-      "filter": "asplit[n0][s0];[n0]atrim=13.5:13.85,asetpts=PTS-STARTPTS[n];[s0]atrim=7:7.975,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,highpass=f=50,highpass=f=50,equalizer=f=119.0:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.3 afftdn sn stop',afftdn=nr=12:nf=-46,atrim=start=0.375,asetpts=PTS-STARTPTS,lowpass=f=5000",
-      "fadeOut": 0.15,
-      "note": "совок у лотку"
-    },
     "litter-pour": {
       "from": "lentils",
       "start": 32.6,
@@ -435,18 +385,6 @@
       "fadeIn": 0.05,
       "fadeOut": 0.25,
       "note": "свіжий наповнювач сиплеться в лоток: сочевиця густим струменем"
-    },
-    "wipe-1": {
-      "from": "wipe",
-      "fadeOut": 0.1,
-      "note": "витерти мокрий безлад",
-      "filter": "asplit[n0][s0];[n0]atrim=11.55:12.05,asetpts=PTS-STARTPTS[n];[s0]atrim=2.55:3.275,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,equalizer=f=45.0:t=q:w=8:g=-24,equalizer=f=119.5:t=q:w=8:g=-24,equalizer=f=164.5:t=q:w=8:g=-24,equalizer=f=289.0:t=q:w=8:g=-24,equalizer=f=292.5:t=q:w=8:g=-24,equalizer=f=330.0:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.45 afftdn sn stop',afftdn=nr=12:nf=-60,atrim=start=0.525,asetpts=PTS-STARTPTS"
-    },
-    "wipe-2": {
-      "from": "wipe",
-      "fadeOut": 0.1,
-      "note": "витерти мокрий безлад",
-      "filter": "asplit[n0][s0];[n0]atrim=11.55:12.05,asetpts=PTS-STARTPTS[n];[s0]atrim=7.05:8.125,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,equalizer=f=45.0:t=q:w=8:g=-24,equalizer=f=164.5:t=q:w=8:g=-24,equalizer=f=289.0:t=q:w=8:g=-24,equalizer=f=292.5:t=q:w=8:g=-24,equalizer=f=330.0:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.45 afftdn sn stop',afftdn=nr=12:nf=-60,atrim=start=0.525,asetpts=PTS-STARTPTS"
     },
     "sweep-1": {
       "from": "brush",
@@ -474,18 +412,6 @@
       "end": 0.6,
       "fadeOut": 0.06,
       "note": "Вода в миску"
-    },
-    "treat-1": {
-      "from": "ziploc",
-      "fadeOut": 0.05,
-      "note": "пакет ласощів відкрили",
-      "filter": "asplit[n0][s0];[n0]atrim=0.9:1.65,asetpts=PTS-STARTPTS[n];[s0]atrim=1.68:2.045,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,equalizer=f=120.5:t=q:w=8:g=-24,equalizer=f=269.0:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.7 afftdn sn stop',afftdn=nr=12:nf=-57,atrim=start=0.775,asetpts=PTS-STARTPTS"
-    },
-    "treat-2": {
-      "from": "ziploc",
-      "fadeOut": 0.05,
-      "note": "пакет ласощів відкрили",
-      "filter": "asplit[n0][s0];[n0]atrim=22.45:23.45,asetpts=PTS-STARTPTS[n];[s0]atrim=3.45:3.825,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,equalizer=f=120.0:t=q:w=8:g=-24,equalizer=f=269.0:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.95 afftdn sn stop',afftdn=nr=15:nf=-57,atrim=start=1.025,asetpts=PTS-STARTPTS"
     },
     "buckle-1": {
       "from": "snap",
@@ -535,18 +461,6 @@
       "end": 0.39,
       "fadeOut": 0.05,
       "note": "чхання: застуда (вона)"
-    },
-    "pant-he": {
-      "from": "panting",
-      "fadeOut": 0.12,
-      "note": "важко дихає: виснаження (він)",
-      "filter": "asplit[n0][s0];[n0]atrim=17.0:17.25,asetpts=PTS-STARTPTS[n];[s0]atrim=1.95:3.225,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,highpass=f=50,highpass=f=50,equalizer=f=122.0:t=q:w=8:g=-24,equalizer=f=207.0:t=q:w=8:g=-24,equalizer=f=370.0:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.2 afftdn sn stop',afftdn=nr=12:nf=-50,atrim=start=0.275,asetpts=PTS-STARTPTS"
-    },
-    "pant-she": {
-      "from": "panting",
-      "filter": "asplit[n0][s0];[n0]atrim=17.0:17.25,asetpts=PTS-STARTPTS[n];[s0]atrim=1.95:3.225,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,highpass=f=50,highpass=f=50,equalizer=f=122.0:t=q:w=8:g=-24,equalizer=f=207.0:t=q:w=8:g=-24,equalizer=f=370.0:t=q:w=8:g=-24,asendcmd=c='0.0 afftdn sn start;0.2 afftdn sn stop',afftdn=nr=12:nf=-50,atrim=start=0.275,asetpts=PTS-STARTPTS,asetrate=49392,aresample=48000",
-      "fadeOut": 0.12,
-      "note": "важко дихає (вона)"
     },
     "yawn-she-1": {
       "from": "yawn-2",

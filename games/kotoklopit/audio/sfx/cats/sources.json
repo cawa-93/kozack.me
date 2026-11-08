@@ -171,15 +171,6 @@
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "f470cf9de57b155a19e68e4d1fc4170d8e01db445266309656cdade05d4df896"
     },
-    "dc-hawk": {
-      "file": "archive/Designers-Choice-Collection-Human/HMNSpit-Samsung_Galaxy_Smartphone_CU_Hawk_Nicholas_Judy_TDC.flac",
-      "url": "https://archive.org/details/Designers-Choice-Collection-Human",
-      "title": "The Designer's Choice UCS Collection - HUMAN — HUMAN/SPIT/HMNSpit-Samsung Galaxy Smartphone, CU_Hawk_Nicholas Judy_TDC.flac",
-      "author": "Nicholas A. Judy",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "aedbb49a66533ce6dc21139c2731f6457db5fb27f4daeecb53a8d66e4f4c5b9a"
-    },
     "dc-crumple": {
       "file": "archive/Designers-Choice-Collection-Paper/PAPRHndl-Blue_Snowball_Microphone_CU_Paper_Crumple_Nicholas_Judy_TDC.mp3",
       "url": "https://archive.org/details/Designers-Choice-Collection-Paper",
@@ -757,13 +748,6 @@
       "note": "легке задоволене «мяв»",
       "level": -3
     },
-    "eat-loop": {
-      "from": "eating",
-      "start": 1.1,
-      "end": 5.7,
-      "filter": "highpass=f=250",
-      "loop": true
-    },
     "lap-loop": {
       "from": "fs-drinking",
       "start": 2,
@@ -824,21 +808,6 @@
       "end": 0.3,
       "fadeOut": 0.08,
       "note": "котяче «пчх»: короткий видих-плювок"
-    },
-    "hack-1": {
-      "from": "dc-hawk",
-      "start": 0.04,
-      "end": 0.4608,
-      "filter": "asetrate=70560,aresample=48000",
-      "fadeOut": 0.04,
-      "note": "кахикання перед грудкою: звучить трійкою"
-    },
-    "retch-1": {
-      "from": "dc-hawk",
-      "start": 0,
-      "end": 0.6,
-      "filter": "asetrate=55125,aresample=48000",
-      "fadeOut": 0.08
     },
     "spit-1": {
       "from": "dc-spit",

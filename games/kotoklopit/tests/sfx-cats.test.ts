@@ -29,8 +29,8 @@ const CAT_EVENTS = new Set<GameEvent["type"]>([
   "mess", "treat-snatched", "play-declined", "sulked", "cat-left",
 ]);
 
-/** Бабли «вголос» котів без звуку (`SOUND_PLAN.md`, «Без звуку»): звук лише засмічував. */
-const MUTE = new Set<GameEvent["type"]>(["stole", "treat-snatched"]);
+/** Бабли «вголос» котів без звуку (`SOUND_PLAN.md`, «Без звуку»): звук лише засмічував чи автор прибрав запис (кашель). */
+const MUTE = new Set<GameEvent["type"]>(["coughing", "stole", "treat-snatched"]);
 
 /** Приклади подій групи, яких немає серед прикладів баблів (`bubblecases.ts`). */
 const MORE: GameEvent[] = [
@@ -198,8 +198,9 @@ describe("звуки котів (§11.4а)", () => {
 
     a.act = act("eat", { goal: { x: 1, y: 1 } });
     expect(loops()).toEqual([]);
+    // Кіт їсть беззвучно: запис їжі автор прибрав.
     a.act = act("eat", { goal: null });
-    expect(sounds(loops())).toEqual(["eat-loop"]);
+    expect(loops()).toEqual([]);
     a.act = act("toilet", { refused: true });
     expect(loops()).toEqual([]);
     a.act = act("toilet");
@@ -227,14 +228,14 @@ describe("звуки котів (§11.4а)", () => {
   it("однакових петель — не більше двох водночас", () => {
     const s = state();
     const cats = Array.from({ length: 4 }, () => addCat(s, 3));
-    for (const cat of cats) cat.act = act("eat");
-    expect(sounds(group.loops?.(s) ?? [])).toEqual(["eat-loop", "eat-loop"]);
+    for (const cat of cats) cat.act = act("drink");
+    expect(sounds(group.loops?.(s) ?? [])).toEqual(["lap-loop", "lap-loop"]);
   });
 
-  it("код петлі не залежить від зайвого: кіт, що йде до мети, ще не їсть і не дряпає", () => {
+  it("код петлі не залежить від зайвого: кіт, що йде до мети, ще не п'є і не дряпає", () => {
     const s = withCats();
     const cat = s.cats[0]!;
-    for (const kind of ["eat", "drink", "toilet", "scratch", "chew", "groom"] as const) {
+    for (const kind of ["drink", "toilet", "scratch", "chew", "groom"] as const) {
       cat.act = act(kind, { goal: { x: 2, y: 2 } });
       expect(loopCode(s, cat), kind).toBe(0);
       cat.act = act(kind);
