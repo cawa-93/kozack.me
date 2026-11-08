@@ -1,4 +1,4 @@
-// Звуки дому (§11.4а, `SOUND_PLAN.md`, «Ефекти», рядок `home`): кожна подія групи звучить наявними разовими звуками в місці, яке
+// Звуки дому (§11.4а, `audio/SOUND.md`, «Хто що озвучує», рядок `home`): кожна подія групи звучить наявними разовими звуками в місці, яке
 // знаходить `soundPoint`; петлі техніки й мух з'являються й зникають разом зі станом.
 
 import { describe, expect, it } from "vitest";
@@ -26,7 +26,7 @@ function home(): GameState {
   return state;
 }
 
-/** Усі події групи `home` з `SOUND_PLAN.md`. */
+/** Усі події групи `home` з `audio/SOUND.md`. */
 const EVENTS: readonly GameEvent[] = [
   { type: "took", object: "fridge", item: { kind: "raw", quality: "cheap" } },
   { type: "took", object: "cat-cabinet", item: { kind: "catfood", quality: "cheap", sterile: false } },
@@ -69,7 +69,7 @@ const EVENTS: readonly GameEvent[] = [
   { type: "modifier", kind: "fireworks", value: 0 },
 ];
 
-/** Події дому без звуку (`SOUND_PLAN.md`, «Без звуку»): звук лише засмічував; дріт звучить, поки його лагодять, а не по завершенні. */
+/** Події дому без звуку (`audio/SOUND.md`, «Без звуку»): звук лише засмічував; дріт звучить, поки його лагодять, а не по завершенні. */
 const SILENT: readonly GameEvent[] = [
   { type: "wire-fixed" },
   { type: "vacuumed", by: "person", tufts: [0], dust: [], messes: [] },

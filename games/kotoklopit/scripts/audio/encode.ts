@@ -1,5 +1,5 @@
 // Готує музику радіо (§8.10): треки станцій із `audio/catalog.json` обрізає від тиші по краях, вирівнює за гучністю, кодує й ріже
-// на файли-шматки. Чому формат саме такий — `SOUND_PLAN.md`, «Як працює радіо».
+// на файли-шматки. Чому формат саме такий — `audio/SOUND.md`, «Радіо».
 //
 //   npm run audio:encode -w games/kotoklopit                         усе для хостингу: cloudflare-music/public/music/ і cloudflare-music/playlist.json
 //   npm run audio:encode -w games/kotoklopit -- --sample             два найкоротші треки станції в public/radio/ (перевірка в грі)

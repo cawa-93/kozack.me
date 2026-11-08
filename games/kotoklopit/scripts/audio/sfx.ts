@@ -1,5 +1,5 @@
 // Кодує звуки гри (§11.4а) за рецептами `audio/sfx/<група>/sources.json`: вирізає шматок оригіналу з `sfx-library/<група>/`,
-// вирівнює рівень, петлі замикає в коло, кодує моно MP3 і пише `encoded.json` поруч. Формат рецепта — `SOUND_PLAN.md`, «Ефекти».
+// вирівнює рівень, петлі замикає в коло, кодує моно MP3 і пише `encoded.json` поруч. Формат рецепта — `audio/SOUND.md`, «Ефекти».
 //
 //   npm run audio:sfx -w games/kotoklopit                 усі групи; незмінене не перекодовується
 //   npm run audio:sfx -w games/kotoklopit -- cats ui      лише ці групи

@@ -14,7 +14,7 @@ const fresh = (address: Address = "he"): GameState => newGame({ seed: 7, address
 
 const MESSES: MessKind[] = ["surprise", "vomit", "hairball", "litter", "broken", "fur", "mark", "pee", "puddle", "paper", "garbage"];
 
-/** Усі події групи `person` (`SOUND_PLAN.md`, «Хто що озвучує»), з кожним варіантом, що звучить інакше. */
+/** Усі події групи `person` (`audio/SOUND.md`, «Хто що озвучує»), з кожним варіантом, що звучить інакше. */
 const EVENTS: GameEvent[] = [
   { type: "dash" },
   { type: "tripped", cat: 1 },
@@ -35,7 +35,7 @@ const EVENTS: GameEvent[] = [
 ];
 
 /**
- * Події групи без звуку (`SOUND_PLAN.md`, «Без звуку»); їжа й прибирання звучать під час дії, а не подією по завершенні. Ласощі
+ * Події групи без звуку (`audio/SOUND.md`, «Без звуку»); їжа й прибирання звучать під час дії, а не подією по завершенні. Ласощі
  * й виснаження — без звуку: записи автор прибрав.
  */
 const SILENT: GameEvent[] = [
@@ -79,7 +79,7 @@ function hold(state: GameState, target: string, ms: number, perFrame: number, fr
 
 beforeEach(() => group.reset!());
 
-describe("звуки персонажа (§11.4а, SOUND_PLAN «Хто що озвучує»)", () => {
+describe("звуки персонажа (§11.4а, audio/SOUND.md, «Хто що озвучує»)", () => {
   it("група «person», файли — закодовані", () => {
     expect(group.id).toBe("person");
     expectPlayable(

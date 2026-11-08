@@ -1,4 +1,4 @@
-// Контракт звуків (§11.4а, `SOUND_PLAN.md`, «Ефекти»): кожна група — свій файл `groups/<група>.ts` з експортом `group`,
+// Контракт звуків (§11.4а, `audio/SOUND.md`, «Ефекти»): кожна група — свій файл `groups/<група>.ts` з експортом `group`,
 // реєстр знаходить її сам. Групи не знають про Web Audio: лише що й де звучить.
 
 import type { GameEvent } from "../../sim/events";
@@ -61,7 +61,7 @@ export interface SoundGroup {
   /** Збігається з назвою файлу групи й теки `audio/sfx/<id>/`. */
   id: string;
   sounds: Readonly<Record<string, SoundDef>>;
-  /** Звуки на подію симуляції. Подія з чужого переліку `SOUND_PLAN.md` — не цієї групи. */
+  /** Звуки на подію симуляції. Подія з чужого переліку `audio/SOUND.md` — не цієї групи. */
   onEvent?(event: GameEvent, state: GameState): readonly Cue[];
   /** Звуки на мить сцени. */
   onScene?(moment: SceneMoment, state: GameState): readonly Cue[];

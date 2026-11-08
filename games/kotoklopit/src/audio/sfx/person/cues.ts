@@ -1,4 +1,4 @@
-// Що звучить на події й моменти групи `person` (`SOUND_PLAN.md`, «Хто що озвучує»). Відповіді — сталі масиви: подій багато,
+// Що звучить на події й моменти групи `person` (`audio/SOUND.md`, «Хто що озвучує»). Відповіді — сталі масиви: подій багато,
 // а нових об'єктів на кожну не треба. Голос персонажа — без слів, за звертанням (§5.1): «він» і «вона». Їжа й прибирання
 // звучать під час дії (`chores.ts`), а не подією по завершенні.
 
@@ -63,7 +63,7 @@ const COLLAPSE = voiced((voice) => [
   { sound: `sigh-${voice}`, at, delayMs: 550 },
 ]);
 
-/** Події групи: решта — чужі (`SOUND_PLAN.md`). */
+/** Події групи: решта — чужі (`audio/SOUND.md`). */
 export function personEventCues(event: GameEvent, state: GameState): readonly Cue[] {
   const voice = state.character.address;
   switch (event.type) {

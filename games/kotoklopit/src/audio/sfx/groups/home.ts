@@ -1,4 +1,4 @@
-// Група «дім» (§11.4а): техніка, речі, двері й гості — що якій події звучить, `SOUND_PLAN.md`, «Ефекти», рядок `home`.
+// Група «дім» (§11.4а): техніка, речі, двері й гості — що якій події звучить, `audio/SOUND.md`, «Хто що озвучує», рядок `home`.
 
 import { Chores, type ChorePlan } from "../chores";
 import { homeCues } from "../home/cues";
