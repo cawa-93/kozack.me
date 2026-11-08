@@ -38,7 +38,6 @@ export const group: SoundGroup = {
     // Відмови бувають поспіль, коли гравець тисне знову й знову: пауза, щоб «бум» не тарабанив.
     refused: { files: ["refused-1", "refused-2"], gain: 0.28, pitch: 0.04, spread: 0.1, cooldownMs: 350, voices: 1, ui: true },
     "refused-empty": { files: ["empty-1", "empty-2"], gain: 0.6, pitch: 0.04, spread: 0.1, cooldownMs: 350, voices: 1, ui: true },
-    // Збій керування повторюється, поки здоровий глузд низький: не частіше, ніж раз на півтори секунди.
     notify: { files: ["notify"], gain: 0.35, cooldownMs: 600, voices: 1, ui: true },
     ordered: { files: ["ordered"], gain: 0.5, voices: 1, ui: true },
     bought: { files: ["bought"], gain: 0.6, pitch: 0.03, ui: true },
