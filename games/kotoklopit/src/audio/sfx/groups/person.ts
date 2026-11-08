@@ -1,7 +1,10 @@
-// Звуки персонажа (`SOUND_PLAN.md`, «Хто що озвучує», рядок `person`): ривок, падіння, їжа, душ і купання кота,
-// догляд за котами руками персонажа, хвороби, «Сонливість», засинання й падіння без сил. Звідки файли — `audio/sfx/person/`.
+// Звуки персонажа (`SOUND_PLAN.md`, «Хто що озвучує», рядок `person`): ривок, падіння, їжа й прибирання під час дії, душ
+// і купання кота, догляд за котами руками персонажа, хвороби, «Сонливість», засинання й падіння без сил. Звідки файли —
+// `audio/sfx/person/`.
 
 import type { GameState } from "../../../sim/types";
+import { Chores } from "../chores";
+import { personChore } from "../person/chores";
 import { personEventCues, personSceneCues, YAWN } from "../person/cues";
 import { Drowsiness } from "../person/drowsy";
 import type { Cue, LoopCue, SoundDef, SoundGroup } from "../types";
@@ -58,6 +61,7 @@ const BATH: readonly LoopCue[] = [
 ];
 
 const drowsiness = new Drowsiness();
+const chores = new Chores(personChore);
 
 function loops(state: GameState): readonly LoopCue[] {
   const activity = state.character.activity;
@@ -66,7 +70,10 @@ function loops(state: GameState): readonly LoopCue[] {
 }
 
 function tick(state: GameState, dtMs: number): readonly Cue[] {
-  return drowsiness.update(state, dtMs) ? YAWN[state.character.address] : NONE;
+  const chore = chores.tick(state, dtMs);
+  const yawn = drowsiness.update(state, dtMs) ? YAWN[state.character.address] : NONE;
+  // Обидва в одному кадрі — рідко: новий масив лише тоді.
+  return yawn.length === 0 ? chore : chore.length === 0 ? yawn : [...chore, ...yawn];
 }
 
 export const group: SoundGroup = {
@@ -78,5 +85,6 @@ export const group: SoundGroup = {
   tick,
   reset() {
     drowsiness.reset();
+    chores.reset();
   },
 };

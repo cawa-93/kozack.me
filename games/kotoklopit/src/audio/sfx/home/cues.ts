@@ -65,7 +65,6 @@ const STATIC = {
   carrier: one("carrier", CARRIER_SPOT),
   ready: one("timer", "stove"),
   burnt: one("burnt", "stove"),
-  wire: one("wire", "computer"),
   vacuumOn: one("vacuum-on", "person"),
 } as const;
 
@@ -111,8 +110,6 @@ export function homeCues(event: GameEvent, state: GameState): readonly HomeCue[]
       return ROBOT_BACK;
     case "broke":
       return one("broke", brokeAt(state, event.what));
-    case "wire-fixed":
-      return STATIC.wire;
     case "modifier":
       if (event.kind === "mom-food") return event.value === 1 ? MOM : NONE;
       return VISITS[event.kind] ?? NONE;

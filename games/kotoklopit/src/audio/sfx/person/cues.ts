@@ -1,8 +1,9 @@
 // Що звучить на події й моменти групи `person` (`SOUND_PLAN.md`, «Хто що озвучує»). Відповіді — сталі масиви: подій багато,
-// а нових об'єктів на кожну не треба. Голос персонажа — без слів, за звертанням (§5.1): «він» і «вона».
+// а нових об'єктів на кожну не треба. Голос персонажа — без слів, за звертанням (§5.1): «він» і «вона». Їжа й прибирання
+// звучать під час дії (`chores.ts`), а не подією по завершенні.
 
 import type { GameEvent } from "../../../sim/events";
-import type { Address, GameState, MessKind } from "../../../sim/types";
+import type { Address, GameState } from "../../../sim/types";
 import type { Cue, SceneMoment } from "../types";
 
 const NONE: readonly Cue[] = [];
@@ -30,15 +31,7 @@ const SLIP = voiced((voice) => [
   { sound: "fall", at, delayMs: 230 },
   { sound: "knock", at, delayMs: 250 },
 ]);
-// Поїв — тарілку відставили.
-const ATE: readonly Cue[] = [{ sound: "plate", at }];
 const SHOWERED: readonly Cue[] = [{ sound: "shower-off", at: "shower" }];
-const LITTER: readonly Cue[] = [
-  { sound: "scoop", at },
-  { sound: "litter-pour", at, delayMs: 650 },
-];
-const WIPE: readonly Cue[] = [{ sound: "wipe", at }];
-const SWEEP: readonly Cue[] = [{ sound: "sweep", at }];
 const FED: readonly Cue[] = [{ sound: "kibble", at }];
 const WATERED: readonly Cue[] = [{ sound: "water", at }];
 const WATERED_TANK: readonly Cue[] = [{ sound: "water-tank", at }];
@@ -66,21 +59,6 @@ const COLLAPSE = voiced((voice) => [
   { sound: `sigh-${voice}`, at, delayMs: 550 },
 ]);
 
-/** Мокрий безлад витирають, сухий — підмітають. */
-const WET: Readonly<Record<MessKind, boolean>> = {
-  surprise: true,
-  vomit: true,
-  hairball: true,
-  mark: true,
-  pee: true,
-  puddle: true,
-  litter: false,
-  broken: false,
-  fur: false,
-  paper: false,
-  garbage: false,
-};
-
 /** Події групи: решта — чужі (`SOUND_PLAN.md`). */
 export function personEventCues(event: GameEvent, state: GameState): readonly Cue[] {
   const voice = state.character.address;
@@ -93,12 +71,8 @@ export function personEventCues(event: GameEvent, state: GameState): readonly Cu
       return FALL[voice];
     case "slipped":
       return SLIP[voice];
-    case "ate":
-      return ATE;
     case "showered":
       return SHOWERED;
-    case "cleaned":
-      return event.what === "litter" ? LITTER : WET[event.what] ? WIPE : SWEEP;
     case "fed":
       return FED;
     case "watered":

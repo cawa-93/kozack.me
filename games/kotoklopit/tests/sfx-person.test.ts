@@ -21,11 +21,8 @@ const EVENTS: GameEvent[] = [
   { type: "slipped", mess: 1 },
   { type: "knocked-down", cat: 1 },
   { type: "ambushed", cat: 1 },
-  { type: "ate", satiety: 30, food: 2 },
   { type: "showered", hygiene: 40, quality: null, left: 0 },
   { type: "showered", hygiene: 40, quality: "premium", left: 3, cold: true },
-  { type: "cleaned", what: "litter", sanity: -3 },
-  ...MESSES.map((what): GameEvent => ({ type: "cleaned", what, sanity: -2 })),
   { type: "fed", item: 1, food: 2 },
   { type: "watered", item: 2 },
   { type: "treat", cat: 1, quality: "cheap" },
@@ -37,8 +34,11 @@ const EVENTS: GameEvent[] = [
   { type: "person-meds", quality: "cheap" },
 ];
 
-/** Події групи без звуку (`SOUND_PLAN.md`, «Без звуку»). */
+/** Події групи без звуку (`SOUND_PLAN.md`, «Без звуку»); їжа й прибирання звучать під час дії, а не подією по завершенні. */
 const SILENT: GameEvent[] = [
+  { type: "ate", satiety: 30, food: 2 },
+  { type: "cleaned", what: "litter", sanity: -3 },
+  ...MESSES.map((what): GameEvent => ({ type: "cleaned", what, sanity: -2 })),
   { type: "medicine", cat: 1, medicine: "drops", quality: "premium" },
   { type: "person-cured", illness: "cold" },
   { type: "sock-found", where: "vacuum" },
@@ -53,6 +53,23 @@ function expectPlayable(cues: readonly (Cue | LoopCue)[], loop: boolean, where: 
     expect(!!def?.loop, `${where}: ${cue.sound}`).toBe(loop);
     for (const file of def?.files ?? []) expect(soundFile("person", file), `${where}: ${file}`).not.toBeNull();
   }
+}
+
+/**
+ * Персонаж тримає тривалу дію з ціллю `target` `ms` мілісекунд кадрами по 16 мс; прогрес росте на `perFrame` ігрових хвилин за
+ * кадр (0 — кнопку відпустили). `fresh` — дія щойно почалась. Звуки дії — по порядку.
+ */
+function hold(state: GameState, target: string, ms: number, perFrame: number, fresh = true): string[] {
+  const current = state.character.activity;
+  const activity = fresh || current?.kind !== "use" ? { kind: "use" as const, target, progress: 0 } : current;
+  state.character.activity = activity;
+  const heard: string[] = [];
+  for (let t = 0; t < ms; t += 16) {
+    for (const cue of group.tick!(state, 16)) if (!cue.sound.startsWith("yawn")) heard.push(cue.sound);
+    activity.progress += perFrame;
+  }
+  if (fresh) state.character.activity = activity;
+  return heard;
 }
 
 beforeEach(() => group.reset!());
@@ -89,12 +106,28 @@ describe("звуки персонажа (§11.4а, SOUND_PLAN «Хто що оз
     }
   });
 
-  it("прибирання: лоток — совок і наповнювач, мокре витирають, сухе підмітають", () => {
+  it("їжа й прибирання звучать під час дії, з першої миті: мокре витирають, сухе підмітають, лоток — совок і наповнювач", () => {
     const state = fresh();
-    const sounds = (what: "litter" | MessKind): string[] => group.onEvent!({ type: "cleaned", what, sanity: 0 }, state).map((cue) => cue.sound);
-    expect(sounds("litter")).toEqual(["scoop", "litter-pour"]);
-    expect(sounds("vomit")).toEqual(["wipe"]);
-    expect(sounds("fur")).toEqual(["sweep"]);
+    state.home.messes.push({ id: 91, kind: "vomit", x: 5, y: 5, cat: null }, { id: 92, kind: "fur", x: 6, y: 5, cat: null });
+    state.home.items.push({ id: 95, kind: "litter", quality: "cheap", slot: "litter-1", litter: "cheap", uses: 2 });
+    const wet = hold(state, "mess:91", 1000, 0.032);
+    expect(wet[0]).toBe("wipe");
+    expect(new Set(wet)).toEqual(new Set(["wipe"]));
+    expect(hold(state, "mess:92", 1000, 0.032)).toContain("sweep");
+    const litter = hold(state, "item:95", 1500, 0.032);
+    expect(litter[0]).toBe("scoop");
+    expect(litter.filter((sound) => sound === "litter-pour")).toHaveLength(1);
+    const meal = hold(state, "table", 5000, 0.032);
+    expect(meal[0]).toBe("plate");
+    expect(meal).toContain("swallow");
+  });
+
+  it("відпустили кнопку — дія стоїть і мовчить; знову взяли — звучить одразу", () => {
+    const state = fresh();
+    state.home.messes.push({ id: 93, kind: "fur", x: 5, y: 5, cat: null });
+    expect(hold(state, "mess:93", 100, 0.032)).toEqual(["sweep"]);
+    expect(hold(state, "mess:93", 3000, 0, false)).toEqual([]);
+    expect(hold(state, "mess:93", 100, 0.032, false)).toEqual(["sweep"]);
   });
 
   it("вода: у поїлку — свій звук; з простим фонтанчиком — більша ємність, бак", () => {

@@ -61,7 +61,6 @@ const EVENTS: readonly GameEvent[] = [
   { type: "broke", what: "bowl" },
   { type: "broke", what: "carrier" },
   { type: "broke", what: "robot" },
-  { type: "wire-fixed" },
   { type: "modifier", kind: "guests", value: -2, guests: { mess: true, hissed: false, delighted: false } },
   { type: "modifier", kind: "inspection", value: 100, paid: 100 },
   { type: "modifier", kind: "home-vet", value: 1 },
@@ -70,8 +69,9 @@ const EVENTS: readonly GameEvent[] = [
   { type: "modifier", kind: "fireworks", value: 0 },
 ];
 
-/** Події дому без звуку (`SOUND_PLAN.md`, «Без звуку»): звук лише засмічував. */
+/** Події дому без звуку (`SOUND_PLAN.md`, «Без звуку»): звук лише засмічував; дріт звучить, поки його лагодять, а не по завершенні. */
 const SILENT: readonly GameEvent[] = [
+  { type: "wire-fixed" },
   { type: "vacuumed", by: "person", tufts: [0], dust: [], messes: [] },
   { type: "vacuumed", by: "robot", tufts: [], dust: [1], messes: [] },
   { type: "feeder", bowls: [3, 4] },
@@ -227,5 +227,23 @@ describe("петлі дому (§11.4а)", () => {
     expect(new Set(keys).size).toBe(keys.length);
     expect(keys).toEqual(["stove", "washer", "vacuum"]);
     for (const sound of loops(state)) expect(group.sounds[sound]?.loop, sound).toBe(true);
+  });
+
+  it("дріт звучить, поки його лагодять: стрічка з першої миті, далі смуга за смугою; відпустили — мовчить", () => {
+    const state = home();
+    group.reset?.();
+    state.character.activity = { kind: "use", target: "computer", progress: 0 };
+    const heard: string[] = [];
+    for (let t = 0; t < 7000; t += 16) {
+      for (const cue of group.tick?.(state, 16) ?? []) heard.push(`${t}:${cue.sound}`);
+      if (state.character.activity.kind === "use") state.character.activity.progress += 0.034;
+    }
+    expect(heard[0]).toMatch(/^(0|16):wire$/);
+    expect(heard.length).toBeGreaterThanOrEqual(3);
+    const paused = heard.length;
+    for (let t = 0; t < 5000; t += 16) for (const cue of group.tick?.(state, 16) ?? []) heard.push(cue.sound);
+    expect(heard.length).toBe(paused);
+    state.character.activity = null;
+    expect(group.tick?.(state, 16)).toEqual([]);
   });
 });
