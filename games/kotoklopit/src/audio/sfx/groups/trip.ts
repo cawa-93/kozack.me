@@ -1,6 +1,6 @@
 // Звуки поїздки (§8.5; `SOUND_PLAN.md`, «Ефекти», рядок `trip`): на виїзді персонаж сідає, заводить мотор і рушає, на місці
-// тягне ручник, глушить і виходить; у гонці мотор гарчить на газ (`trip/revs.ts`), а машини позаду сигналять (`trip/horns.ts`) —
-// обидва грає сцена гонки.
+// тягне ручник, глушить і виходить; аварія — удар; у гонці мотор гарчить на газ (`trip/revs.ts`), а машини позаду сигналять
+// (`trip/horns.ts`) — обидва грає сцена гонки.
 // У поїздці квартири не чути (режим `away`), тож звуки групи — на шині інтерфейсу (`ui`) і без місця.
 
 import type { GameEvent } from "../../../sim/events";
@@ -17,6 +17,7 @@ const ARRIVE: readonly Cue[] = [
   { sound: "engine-stop", delayMs: 450 },
   { sound: "car-door", delayMs: 1150 },
 ];
+const CRASH: readonly Cue[] = [{ sound: "crash" }];
 
 export const group: SoundGroup = {
   id: "trip",
@@ -26,6 +27,7 @@ export const group: SoundGroup = {
     "engine-start": { files: ["engine-start-1"], gain: 0.5, pitch: 0.03, voices: 1, ui: true },
     "engine-stop": { files: ["engine-stop-1"], gain: 0.45, pitch: 0.03, voices: 1, ui: true },
     // Газування: на виїзді й щоразу, як у гонці натиснули газ (`trip/revs.ts`), — але газ підтискають часто, тож пауза.
+    crash: { files: ["crash-1"], gain: 0.8, voices: 1, ui: true },
     rev: { files: ["rev-1", "rev-2", "rev-3"], gain: 0.4, pitch: 0.05, cooldownMs: 1500, voices: 1, ui: true },
     // Різні машини — різні клаксони.
     horn: { files: ["horn-1", "horn-2", "horn-3"], gain: 0.45, pitch: 0.03, cooldownMs: 600, voices: 2, ui: true },
@@ -37,6 +39,8 @@ export const group: SoundGroup = {
         return DEPART;
       case "trip-arrived":
         return ARRIVE;
+      case "trip-crashed":
+        return CRASH;
       default:
         return NONE;
     }

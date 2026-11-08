@@ -38,5 +38,9 @@
   "rev-3": {
     "hash": "a35e9ca2796ad3ef",
     "seconds": 0.6
+  },
+  "crash-1": {
+    "hash": "74fc7914d0c25ef3",
+    "seconds": 0.95
   }
 }

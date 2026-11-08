@@ -62,6 +62,15 @@
       "license": "CC-BY-4.0",
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
       "sha256": "2a8c264216e2484db2fb71d4155fa4e752cd61eda76fdda60a16d8fa4cd8b038"
+    },
+    "fs-crash": {
+      "file": "freesound/807437__logicogonist__car-crash-long-1.wav",
+      "url": "https://freesound.org/people/Logicogonist/sounds/807437/",
+      "title": "car crash long 1",
+      "author": "Logicogonist, squareal",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "eb18f9c0a27f4b2e6d54386affbe122cf74d91a69078bf5c6000fc420476f555"
     }
   },
   "files": {
@@ -138,6 +147,13 @@
       "end": 35.98,
       "fadeIn": 0.03,
       "fadeOut": 0.2
+    },
+    "crash-1": {
+      "from": "fs-crash",
+      "start": 0,
+      "end": 0.95,
+      "fadeOut": 0.1,
+      "note": "удар і уламки; переробка Car Crash (squareal, CC0)"
     }
   }
 }

@@ -19,6 +19,7 @@ describe("звуки поїздки", () => {
   it("на виїзді — двері, мотор заводиться й машина рушає; на місці — ручник, мотор глухне, двері", () => {
     expect(sounds({ type: "trip-started", destination: "shop" })).toEqual(["car-door", "engine-start", "rev"]);
     expect(sounds({ type: "trip-arrived", destination: "shop" })).toEqual(["handbrake", "engine-stop", "car-door"]);
+    expect(sounds({ type: "trip-crashed", losses: [], speed: 5, minutes: 30 })).toEqual(["crash"]);
     expect(sounds({ type: "doorbell" })).toEqual([]);
   });
 
