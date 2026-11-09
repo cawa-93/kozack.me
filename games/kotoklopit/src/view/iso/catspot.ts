@@ -20,6 +20,8 @@ import type { ArtId } from "../art/types";
 import type { RigFacing } from "../rig/types";
 import { ISO_KEYBOARD, isoCatPerch, isoObjectLook } from "../world/objects";
 import { carrierSlot } from "./looks";
+import { inBigBox } from "../../sim/bigbox";
+import { BIG_BOX_FOOTPRINT, BIG_BOX_ID, BIG_BOX_PERCH, bigBoxSeat } from "./bigboxlook";
 import { blanketEars, catSize } from "./catrig";
 import { ISO_DEPTH_SLOT } from "./depth";
 import { artOffset, footprintCenter } from "./geometry";
@@ -521,6 +523,8 @@ export function catSpot(state: GameState, cat: Cat, anim: CatAnimId, pair: PairP
   if (act.target === "robot" && act.elapsed > 0 && act.goal === null && robot) {
     return spot("robot", { x: cat.x, y: cat.y }, { offset: pointOf(`item/robot/${robot}`, "top"), above: { id: "robot", offset: ABOVE_ITEM } });
   }
+  // У великій коробці (§4.1) — як у ящиках біля входу: нижче за борт, передні стінки поверх (`bigboxlook.ts`).
+  if (inBigBox(state, cat)) return spot("furniture", bigBoxSeat(cat), { lift: BIG_BOX_PERCH, box: BIG_BOX_ID });
   // У парі (`catPairs`) — зсунутий уздовж горизонталі екрана: той самий зсув у клітинках дає і місце, і глибину.
   const tile = pair ? { x: cat.x + pair.tile.x, y: cat.y + pair.tile.y } : { x: cat.x, y: cat.y };
   const object = objectAt(state, Math.floor(cat.x), Math.floor(cat.y));
@@ -648,7 +652,8 @@ export function perchPlace(spot: CatSpot): PerchPlace | null {
   const box = spot.box;
   if (spot.kind === "furniture" && box === DESK) return deskPlace(spot.at);
   if (spot.kind === "furniture" && box) {
-    return perchPlaceOf(box, () => ({ ...isoObjectLook(box).footprint, margin: PERCH.margin, step: PERCH.step }));
+    // Велика коробка (§4.1) — не річ квартири: слід свій.
+    return perchPlaceOf(box, () => ({ ...(box === BIG_BOX_ID ? BIG_BOX_FOOTPRINT : isoObjectLook(box).footprint), margin: PERCH.margin, step: PERCH.step }));
   }
   if (spot.kind === "house" && spot.item) {
     const { x, y } = spot.at;

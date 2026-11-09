@@ -61,8 +61,8 @@ export type ModifierEvent =
   /** Сусідка забрала посилки (§4.1): `value` — компенсація за пошкоджені, `paid` — скільки з неї сплачено, решта — `parcels`. */
   | "parcels-taken";
 
-/** Де кіт точить кігті (§9.12, «Дряпання»). */
-export type ScratchSpot = "post" | "sofa" | "doorframe" | "rug" | "boxes";
+/** Де кіт точить кігті (§9.12, «Дряпання»); `big-box` — велика коробка (§4.1). */
+export type ScratchSpot = "post" | "sofa" | "doorframe" | "rug" | "boxes" | "big-box";
 
 /** Що треба мати в руках чи поруч, щоб дія вдалася (§11.4): продукти, страву, корм, кота, будь-що, брудний лоток. */
 export type Need = "raw" | "dish" | "catfood" | "cat" | "item" | "dirty-litter";

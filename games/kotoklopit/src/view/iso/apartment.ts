@@ -1,5 +1,6 @@
 // Ізометрична квартира (крок 16, F3b, `GRAPHICS_PLAN.md`): плити кімнат (підлога й задні стіни), вікна, внутрішні стіни й
-// передні плінтуси сегментами, поріг дверей, меблі `OBJECTS` зі станами, наповнення сховищ, ящики біля входу, страви на
+// передні плінтуси сегментами, поріг дверей, меблі `OBJECTS` зі станами, наповнення сховищ, ящики біля входу, велика коробка
+// дня «Велика коробка» (§4.1, `bigboxview.ts`), страви на
 // плиті й поверхнях, дрібнички на столах, туалетний папір, дріт комп'ютера, котячі сліди, павутина в кутах (§8.7), а також
 // декор, якого сим не знає (§8.9, §4.1; `src/view/decor.ts`, стани — `decorlook.ts`): кухонне вікно, бра, настільна лампа,
 // бойлер, зарядна станція, полички зі свічками й свічка на столі замість лампи дня відключення. Кадри — з маніфесту арту
@@ -34,6 +35,7 @@ import type { ApartmentPart, Point, WorldFrame } from "../world/part";
 import { ISO } from "../world/projection";
 import { decorLook, decorLookInit, type DecorLook } from "./decorlook";
 import { ISO_BACKDROP_DEPTH, isoDepth, type IsoBoxHandle, type IsoDepth, type IsoPointHandle } from "./depth";
+import { IsoBigBoxView } from "./bigboxview";
 import { IsoFxView } from "./fx";
 import { anchorLift, artOffset, BOXES_FRONT, DOOR_BOXES, objectAnchorAt, objectScreen, wallsToFade } from "./geometry";
 import { PERSON_DEPTH } from "./personlook";
@@ -233,6 +235,8 @@ export class IsoApartmentView implements ApartmentPart {
   private readonly door: OpenDoor;
   /** Передні стінки верхньої коробки купи ящиків: точка на коробці `boxes`, після кота в ній. */
   private readonly boxesFront: { piece: Piece; point: IsoPointHandle };
+  /** Велика коробка дня «Велика коробка» (§4.1). */
+  private readonly bigBox: IsoBigBoxView;
   private readonly chairs: Chair[] = [];
   /** Накладки котячих слідів поза речами (`TraceMark`) і на речах (`ObjectMark`). */
   private readonly marks: TraceMark[] = [];
@@ -323,6 +327,7 @@ export class IsoApartmentView implements ApartmentPart {
       { half: BOXES_FRONT.half },
     );
     this.boxesFront = { piece: { image: front, key: "", offset: 0 }, point: frontPoint };
+    this.bigBox = new IsoBigBoxView(ctx, this.depth);
     for (const seat of SEATS) this.chairs.push(this.chair(seat));
   }
 
@@ -455,6 +460,7 @@ export class IsoApartmentView implements ApartmentPart {
     }
     this.drawDoor(state, frame.time);
     this.drawStates(state, frame.time);
+    this.bigBox.update(state);
     this.drawTraces(state);
     const decor = decorLook(state, frame.lightMinute, this.decor);
     this.drawSurfaces(state, decor);
@@ -710,6 +716,7 @@ export class IsoApartmentView implements ApartmentPart {
     this.door.post.destroy();
     this.boxesFront.point.remove();
     this.boxesFront.piece.image.destroy();
+    this.bigBox.destroy();
     for (const mark of this.marks) mark.piece.image.destroy();
     this.marks.length = 0;
     this.wirePoint.remove();

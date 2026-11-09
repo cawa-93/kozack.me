@@ -1,0 +1,23 @@
+{
+ "name": "Велика коробка",
+ "description": "Середа другого тижня, 14:00, день «Велика коробка» (§4.1): на килимі у вітальні — велика порожня коробка. Коробочка спить у ній, Дряпка дере її збоку, а не диван, Рудик дрімає на дивані. Персонаж крізь коробку не пройде, коти в неї залазять; уночі її винесуть.",
+ "game": { "address": "she", "difficulty": "normal", "seed": 31 },
+ "state": {
+  "day": 9,
+  "minute": 840,
+  "modifiers": { "day": "big-box" },
+  "character": { "body": { "x": 9.5, "y": 7.5, "facing": { "x": 1, "y": 0 } } },
+  "home": { "supplies": { "catFood": { "cheap": 20, "premium": 0 }, "litter": { "cheap": 6, "premium": 0 } } }
+ },
+ "cats": [
+  { "source": "shelter", "ageWeeks": 30, "name": "Коробочка", "sex": "female", "arrivedDay": -10, "x": 11.5, "y": 8.5,
+    "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "fatigue": 90, "attention": 10, "play": 10 },
+    "act": { "kind": "sleep", "target": "big-box", "goal": null, "minutes": 240, "elapsed": 0 } },
+  { "source": "shelter", "ageWeeks": 40, "name": "Дряпка", "sex": "male", "arrivedDay": -10, "x": 12.5, "y": 8.5, "facing": -1,
+    "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "fatigue": 10, "attention": 10, "play": 60 },
+    "act": { "kind": "scratch", "target": "big-box", "goal": null, "minutes": 30, "elapsed": 0 } },
+  { "source": "shelter", "ageWeeks": 50, "name": "Рудик", "sex": "male", "arrivedDay": -10, "x": 14.5, "y": 10.5,
+    "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "fatigue": 90, "attention": 10, "play": 10 },
+    "act": { "kind": "sleep", "target": null, "goal": null, "minutes": 240, "elapsed": 0 } }
+ ]
+}

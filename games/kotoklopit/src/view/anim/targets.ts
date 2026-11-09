@@ -1,9 +1,10 @@
 // Де ціль дії кота (`cat.act.target`) на підлозі, у клітинках (крок 16): до неї кіт повертається, коли стоїть (`catFacing`).
 // Ціль у симі — рядок: інший кіт (`cat:`, `kitten:`, `licked:`, `declined:`, `pile:`, `cuddle:`), річ котячого кутка
 // (`item:`, `sniff:`, `shun:`, `guard:item:`), дрібничка (`trinket:`), річ квартири за id, місце (`rug`, `doorframe`, `paper`,
-// `wire`, `cabinet`) чи персонаж (`character`, `food`, `feet`). Без Phaser.
+// `wire`, `cabinet`, `big-box`) чи персонаж (`character`, `food`, `feet`). Без Phaser.
 
-import { centerOf, DOORFRAME, itemPoint, objectById, OBJECTS, RUG, TOILET_ROLL, trinketTile } from "../../sim/home";
+import { BIG_BOX_TARGET } from "../../sim/bigbox";
+import { BIG_BOX, centerOf, DOORFRAME, itemPoint, objectById, OBJECTS, RUG, TOILET_ROLL, trinketTile } from "../../sim/home";
 import type { Cat, GameState, TrinketKind, Vec } from "../../sim/types";
 
 /** Цілі-коти: префікс → інший кіт за id. */
@@ -51,6 +52,9 @@ export function targetPoint(state: GameState, target: string | null): Vec | null
     case "cabinet":
       // Лапає дверцята шафки з кормом, стоячи збоку від неї (§9.12, «Кмітливість у бешкеті»).
       return centerOf(objectById("cat-cabinet"));
+    case BIG_BOX_TARGET:
+      // Велика коробка (§4.1): дере її, стоячи збоку.
+      return center(BIG_BOX);
     default: {
       const object = OBJECTS.find((o) => o.id === target);
       return object ? centerOf(object) : null;

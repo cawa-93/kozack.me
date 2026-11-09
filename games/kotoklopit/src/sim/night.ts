@@ -1,6 +1,7 @@
 // Ніч — обробка між днями, поки персонаж спить (§4). Кроки йдуть строго в порядку §4.
 
 import { dropEverything, tickStove } from "./actions";
+import { binBigBox } from "./bigbox";
 import { newBody } from "./body";
 import { knownBreedHalves, shelterBreed } from "./breeds";
 import { observe, setWitnessing } from "./knowledge";
@@ -184,6 +185,7 @@ function plannedWakeUps(state: GameState, rng: Rng, from: number, to: number): P
  */
 function sleep({ state, report, rng }: Night): void {
   dropEverything(state);
+  binBigBox(state);
   const start = state.minute;
   // Галасливі сусіди будять раніше (§4.1).
   const planned = wakeMinute(state) + MINUTES_PER_DAY - state.today.earlyWake;

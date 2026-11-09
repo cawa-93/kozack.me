@@ -252,6 +252,7 @@ export function startModifiers(state: GameState, rng: Rng): void {
   today.earlyWake = 0;
   delete today.mom;
   delete today.guestsCame;
+  delete today.bigBoxGone;
   startParcels(state);
   // Гість, якому так і не відчинили (персонаж ліг, не дочекавшись), уже не під дверима (§9.12).
   clearGuest(state);

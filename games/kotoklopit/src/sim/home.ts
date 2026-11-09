@@ -267,6 +267,19 @@ export const VACUUM_HOME: Vec = { x: 16.5, y: 10.5 };
 /** База робота-пилососа (§8.7). */
 export const ROBOT_DOCK: Vec = { x: 17.6, y: 8.2 };
 
+/**
+ * Велика коробка дня «Велика коробка» (§4.1): клітинка килима вітальні між шляхами від дверей до ванної й до кухні. Речі сюди й
+ * так не ставлять (`NO_PLACE`): коробка не займає нічийого місця. Персонажу вона заступає дорогу (`isSolid`), коти в неї
+ * залазять. `BIG_BOX_SCRATCH` — звідки кіт її дере: праворуч, обличчям до неї, як ящики біля входу (`BOX_SCRATCH`).
+ */
+export const BIG_BOX: Vec = { x: 11, y: 8 };
+export const BIG_BOX_SCRATCH: Vec = { x: 12, y: 8 };
+
+/** Велика коробка стоїть у вітальні: увесь день «Великої коробки», доки персонаж не ліг спати (§4.1, `sim/bigbox.ts`). */
+export function hasBigBox(state: Pick<GameState, "modifiers" | "today">): boolean {
+  return state.modifiers.day === "big-box" && state.today.bigBoxGone !== true;
+}
+
 /** Де персонаж прокидається: біля ліжка (§8.7). */
 export const SPAWN: Vec = { x: 2.5, y: 2.5 };
 
@@ -360,8 +373,8 @@ export function isFixedSolid(x: number, y: number): boolean {
 const covers = (o: Rect, x: number, y: number): boolean => x >= o.x && x < o.x + o.w && y >= o.y && y < o.y + o.h;
 
 /** Клітинка непрохідна; усе за межами карти — теж. */
-export function isSolid(state: Pick<GameState, "home">, x: number, y: number): boolean {
-  return (SOLID[y]?.[x] ?? true) || OPTIONAL.some((o) => covers(o, x, y) && isPresent(state, o));
+export function isSolid(state: Pick<GameState, "home" | "modifiers" | "today">, x: number, y: number): boolean {
+  return (SOLID[y]?.[x] ?? true) || OPTIONAL.some((o) => covers(o, x, y) && isPresent(state, o)) || (x === BIG_BOX.x && y === BIG_BOX.y && hasBigBox(state));
 }
 
 /** Річ квартири на клітинці, якщо вона там є: на меблях коти сплять і ховаються. */

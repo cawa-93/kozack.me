@@ -40,7 +40,7 @@ function cleanerLine(home: boolean, visit: CleanerVisit): string {
   return `Прибиральниця${home ? "" : " (вас не було)"}: ${done.join(", ")}`;
 }
 /** Де кіт точить кігті (§9.12). */
-const SCRATCH_SPOTS = { post: "кігтеточка", sofa: "диван, ремонт до комунальних", doorframe: "одвірок, ремонт до комунальних", rug: "потягується на килимку", boxes: "коробки біля входу" } as const;
+const SCRATCH_SPOTS = { post: "кігтеточка", sofa: "диван, ремонт до комунальних", doorframe: "одвірок, ремонт до комунальних", rug: "потягується на килимку", boxes: "коробки біля входу", "big-box": "велика коробка" } as const;
 /** Котячі сліди в квартирі (§9.12, «Котячі сліди в квартирі»). */
 const TRACES: Record<CatTrace, string> = {
   sofa: "подертий диван",

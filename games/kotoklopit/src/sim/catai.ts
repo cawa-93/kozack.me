@@ -136,6 +136,8 @@ import { angryAtWindow, chatters, dogOnStairs, pigeonsFactor, strayMood, valeria
 import { handOn } from "./petpair";
 import { damageParcel, intactParcels } from "./parcels";
 import { addTrace, SCRATCH_TRACES, tidyBoxTraces } from "./traces";
+import { BIG_BOX_TARGET, bigBoxFree, bigBoxSpot, inBigBox, scratchesBigBox } from "./bigbox";
+import { BIG_BOX, BIG_BOX_SCRATCH } from "./home";
 import type { BowlItem, Cat, CatAct, CatActKind, Dish, ForbiddenZone, GameState, HomeItem, LitterItem, Mess, MessKind, PlayPhase, Product, Quality, ToyItem, TrinketKind, Vec, WaterItem } from "./types";
 import { exercise, gainWeight, settleWeight, weightSeen } from "./weight";
 import { isWorking, stopWork } from "./work";
@@ -731,10 +733,10 @@ function pileable(state: GameState, other: Cat): boolean {
   return onFloor(state, other);
 }
 
-/** Кіт на підлозі, ліжку чи дивані — туди за ним може прийти будь-який кіт (§9.4). */
+/** Кіт на підлозі, ліжку чи дивані — туди за ним може прийти будь-який кіт (§9.4); у великій коробці (§4.1) він сам. */
 function onFloor(state: GameState, cat: Cat): boolean {
   const o = objectAt(state, Math.floor(cat.x), Math.floor(cat.y));
-  return o === null || o.kind === "bed" || o.kind === "sofa";
+  return (o === null && !inBigBox(state, cat)) || o?.kind === "bed" || o?.kind === "sofa";
 }
 
 /**
@@ -766,7 +768,7 @@ function nearestCat(state: GameState, cat: Cat, fits: (other: Cat) => boolean): 
   return best;
 }
 
-/** Місця для сну з вагою (§9.3, §9.12): ліжко, диван, сонячна пляма, комп'ютер, будиночки, будь-де на підлозі. */
+/** Місця для сну з вагою (§9.3, §9.12): ліжко, диван, сонячна пляма, комп'ютер, будиночки, велика коробка (§4.1), будь-де на підлозі. */
 function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   const nest = nestSpot(state, cat);
   if (nest) return nest;
@@ -784,6 +786,8 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
     { weight: 1, value: at(randomFloor(rng)) },
     ...houseSpots(state),
   ];
+  const box = bigBoxSpot(state, cat);
+  if (box) options.push(box);
   // Сон купкою: до сплячого друга (§9.4); «Їжак» — рідше (§9.12, «Вилизування друзів»). «Товариський» лягає й до
   // кота, що не друг і не ворог (§9.12, «Товариськість»), «Нянька» — до кошеняти: ціль — `pile:<id>`, так видно, до кого ліг.
   const touch = Math.max(0, 1 + GROOMING.pileStep * Math.min(0, traitLevel(cat, "grooming")));
@@ -875,7 +879,10 @@ function loungerSpots(state: GameState, cat: Cat, climb: number): { weight: numb
     .map((post) => ({ weight: climb * LOUNGER.weight, value: { at: itemTile(post), target: `item:${post.id}` } }));
 }
 
-/** Сховатися під ліжком, диваном чи в будиночку (§9.6); верхолаз ховається нагорі — на холодильнику чи шафі (§9.12, «Лазіння»). */
+/**
+ * Сховатися під ліжком, диваном, у будиночку чи великій коробці (§9.6, §4.1); верхолаз ховається нагорі — на холодильнику чи шафі
+ * (§9.12, «Лазіння»).
+ */
 export function hideSpot(state: GameState, rng: Rng, cat?: Cat): Spot {
   const nest = cat ? nestSpot(state, cat) : null;
   if (nest) return nest;
@@ -884,6 +891,8 @@ export function hideSpot(state: GameState, rng: Rng, cat?: Cat): Spot {
     return { at: { x: high.x, y: high.y }, target: null };
   }
   const options: { weight: number; value: Spot }[] = houseSpots(state);
+  const box = bigBoxSpot(state, cat ?? null);
+  if (box) options.push(box);
   for (const id of ["bed", "sofa"]) {
     const o = objectById(id);
     options.push({ weight: 2, value: { at: { x: o.x + rng.int(0, o.w - 1), y: o.y + rng.int(0, o.h - 1) }, target: null } });
@@ -1296,6 +1305,8 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng, context: CatContext): 
   // Іграшку під меблями чи в зубах в іншого кота не поганяєш (§9.12, «Схованки»).
   const toy = nearest(cat, looseToys(state));
   if (toy) options.push({ weight: MISCHIEF.toy, value: active(() => start(cat, "toy", itemTile(toy), TOY.aloneMinutes, `item:${toy.id}`)) });
+  // Велика коробка (§4.1) — гра в ній, як з іграшкою наодинці.
+  if (bigBoxFree(state, cat)) options.push({ weight: MISCHIEF.toy, value: active(() => start(cat, "toy", { ...BIG_BOX }, TOY.aloneMinutes, BIG_BOX_TARGET)) });
   // Понести річ у схованку (§9.12, «Схованки»).
   const gift = giftWeight(cat);
   if (gift > 0 && (toy !== null || sockFree(state, cat))) options.push({ weight: gift, value: active(() => startCarry(state, cat, rng)) });
@@ -2020,19 +2031,21 @@ export function startScratch(state: GameState, cat: Cat, rng: Rng): void {
     return start(cat, "scratch", rugTile(state, rng), SCRATCH.minutes, "rug");
   }
   if (level >= 2 && rng.chance(SCRATCH.doorframe)) return start(cat, "scratch", { ...DOORFRAME }, SCRATCH.minutes, "doorframe");
+  // Велика коробка забирає частину дряпання дивана (§4.1).
+  if (scratchesBigBox(state, rng)) return start(cat, "scratch", { ...BIG_BOX_SCRATCH }, SCRATCH.minutes, BIG_BOX_TARGET);
   const sofa = objectById("sofa");
   start(cat, "scratch", { x: sofa.x + rng.int(0, sofa.w - 1), y: sofa.y - 1 }, SCRATCH.minutes, "sofa");
 }
 
 /**
- * Вільна клітинка килимка, де кіт потягується (§9.12, «Дряпання»): не під ящиками біля входу й не під річчю котячого кутка
- * (кігтеточка на килимку) — інакше він потягувався б на коробці згори чи на кігтеточці (перевірка етапу 2026-10-26).
+ * Вільна клітинка килимка, де кіт потягується (§9.12, «Дряпання»): не під ящиками біля входу, великою коробкою (§4.1) й річчю
+ * котячого кутка (кігтеточка на килимку) — інакше він потягувався б на коробці чи на кігтеточці.
  */
 export function rugTile(state: GameState, rng: Rng): Vec {
   const taken = new Set(state.home.items.flatMap((i) => ("slot" in i ? [`${slotById(i.slot).x},${slotById(i.slot).y}`] : [])));
   const tiles: Vec[] = [];
   for (let y = RUG.y; y < RUG.y + RUG.h; y++) {
-    for (let x = RUG.x; x < RUG.x + RUG.w; x++) if (objectAt(state, x, y) === null && !taken.has(`${x},${y}`)) tiles.push({ x, y });
+    for (let x = RUG.x; x < RUG.x + RUG.w; x++) if (objectAt(state, x, y) === null && !inBigBox(state, { x, y }) && !taken.has(`${x},${y}`)) tiles.push({ x, y });
   }
   return tiles[rng.int(0, tiles.length - 1)] ?? { x: RUG.x, y: RUG.y };
 }
@@ -2439,13 +2452,15 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         itemMood(state, cat, post);
         wearOut(state, post, rng);
       } else if (act.target === "sofa" || act.target === "doorframe") state.home.repairs += SOFA_REPAIR;
-      const where: ScratchSpot = post ? "post" : act.target === "doorframe" || act.target === "rug" || act.target === "boxes" ? act.target : "sofa";
+      const where: ScratchSpot = post ? "post" : act.target === "doorframe" || act.target === "rug" || act.target === "boxes" || act.target === BIG_BOX_TARGET ? act.target : "sofa";
       emit(state, { type: "scratched", cat: cat.id, where });
       // Перший раз на цьому місці — слід назавжди (§9.12, «Котячі сліди в квартирі»); кігтеточка слідів не лишає.
       const trace = SCRATCH_TRACES[where];
       if (trace) addTrace(state, trace);
       // Подер купу з сусідськими посилками — одна з цілих пошкоджена (§4.1).
       if (where === "boxes") damageParcel(state, cat.id, "scratched");
+      // Велику коробку (§4.1) дере будь-хто, хто подер би диван: про «Дряпання» вона нічого не каже.
+      if (where === BIG_BOX_TARGET) return;
       // Прояв — на місці, на очах персонажа (§9.9): «+» дере диван чи одвірок, «−» — кігтеточку, килимок чи коробки.
       observe(state, cat, "scratching", where === "sofa" || where === "doorframe" ? 1 : -1);
       return;
@@ -2545,6 +2560,8 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       const hunting = traitLevel(cat, "hunting");
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF * Math.max(HUNTING.soloMin, 1 + HUNTING.soloStep * hunting));
       exercise(cat);
+      // Награвся у великій коробці (§4.1) — як з іграшкою, лише зношувати й відкидати нічого.
+      if (act.target === BIG_BOX_TARGET) return changeMood(state, cat, 1);
       if (!toy) return;
       changeMood(state, cat, 1);
       // Іграшка відлітає трохи вбік і зношується — у мисливця швидше.
@@ -2917,6 +2934,8 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       // стіна одвірка праворуч.
       if (act.goal === null && act.target === "boxes") cat.facing = -1;
       if (act.goal === null && act.target === "doorframe") cat.facing = 1;
+      // Велика коробка (§4.1) — ліворуч, як і купа ящиків.
+      if (act.goal === null && act.target === BIG_BOX_TARGET) cat.facing = -1;
       return;
     case "keyboard":
       // Кіт на клавіатурі: працювати не вийде (§9.12).
