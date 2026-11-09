@@ -1,7 +1,7 @@
 // Короткий розклад дня в інтерфейсі (§8.4): заплановані події, про які персонаж знає, — спершу важливі, у межах групи за часом.
 
 import { constructionDustHours } from "../sim/cleaner";
-import { MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES, WORK_END_MINUTE, WORK_START_MINUTE } from "../sim/config";
+import { MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES, WORK_START_MINUTE } from "../sim/config";
 import { dayGuestLetIn } from "../sim/door";
 import { absoluteMinute, formatClock } from "../sim/time";
 import type { GameState } from "../sim/types";
@@ -20,16 +20,16 @@ const DAY_EVENTS: Record<string, [number, string]> = {
   guests: at(MODIFIERS.guests.minute, "гості"),
   festival: at(MODIFIERS.festival.minute, "феєрверки"),
   "home-vet": at(MODIFIERS.homeVetMinute, "ветеринарка"),
-  // Пара «Будівельний пил ↔ Прибиральниця» (§4.1, рішення автора 2026-11-03): пил — проміжок, як робота, і, як вона, лише до початку.
+  // Пара «Будівельний пил ↔ Прибиральниця» (§4.1): пил, як і робота, — лише початок і лише до нього (§8.4).
   cleaner: at(MODIFIERS.cleaner.minute, "прибиральниця"),
-  "construction-dust": [dust.from, `${formatClock(dust.from)}–${formatClock(dust.to)} пил`],
+  "construction-dust": at(dust.from, "пил"),
   office: [18 * 60, "до 18:00 офіс"],
 };
 
 /**
  * Розклад за важливістю (§8.4; загальна ревізія 2026-10-29): спершу летючка й подія дня — те, що можна пропустити
  * (нарада, перевірка ОСББ, збори в офісі, ветеринарка, гості…), — далі кур'єр, початок роботи й пакунок під дверима (над
- * дверима й так видно бабл-коробку). У межах групи — за часом. Панель показує два перші рядки: раніше «09:00–18:00 робота»
+ * дверима й так видно бабл-коробку). У межах групи — за часом. Панель показує два перші рядки: раніше «09:00 робота»
  * висіла до вечора, а кур'єр і пакунок ішли першими, і нарада, перевірка ОСББ чи офіс зникали з розкладу.
  * Кур'єр — один рядок, найближчий приїзд, навіть якщо в дорозі кілька замовлень.
  */
@@ -38,8 +38,8 @@ export function scheduleOf(state: GameState): string[] {
   const other: [number, string][] = [];
   const minute = state.minute;
   if (isWorkday(state)) {
-    // Робота вже йде — вона не «запланована»: рядок лише до її початку.
-    if (minute < WORK_START_MINUTE) other.push([WORK_START_MINUTE, `${formatClock(WORK_START_MINUTE)}–${formatClock(WORK_END_MINUTE)} робота`]);
+    // Робота вже йде — вона не «запланована»: рядок лише до її початку, і в ньому лише початок — проміжок не вміщався на аркуші (§8.4).
+    if (minute < WORK_START_MINUTE) other.push([WORK_START_MINUTE, `${formatClock(WORK_START_MINUTE)} робота`]);
     // У день без світла летючки немає (§4.1, рішення автора 2026-11-02).
     if (standupToday(state) && minute < STANDUP_MINUTE + STANDUP_MINUTES) important.push([STANDUP_MINUTE, `${formatClock(STANDUP_MINUTE)} летючка`]);
   }

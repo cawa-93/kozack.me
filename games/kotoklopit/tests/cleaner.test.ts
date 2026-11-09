@@ -450,7 +450,7 @@ describe("тексти, розклад і двері (§4.1, `TEXTS.md`)", () =>
     expect(cleanerText(visit({ litter: 3, hung: true, washing: true, fed: "full", watered: true }), true)).not.toMatch(/\d/);
   });
 
-  it("розклад: «13:00 прибиральниця» і «10:00–12:00 пил» — до події, як інші рядки", () => {
+  it("розклад: «13:00 прибиральниця» і «10:00 пил» — до події, як інші рядки", () => {
     const at = (day: string, hour: number): string[] => {
       const state = game(day).current;
       state.minute = hour * 60;
@@ -459,7 +459,7 @@ describe("тексти, розклад і двері (§4.1, `TEXTS.md`)", () =>
     expect(at("cleaner", 9.5)).toContain("13:00 прибиральниця");
     expect(at("cleaner", 12.9)).toContain("13:00 прибиральниця");
     expect(at("cleaner", 13.5)).not.toContain("13:00 прибиральниця");
-    expect(at("construction-dust", 8)).toContain("10:00–12:00 пил");
+    expect(at("construction-dust", 8)).toContain("10:00 пил");
     expect(at("construction-dust", 10.25).some((line) => line.includes("пил"))).toBe(false);
     // На панелі (два перші рядки) — серед важливого, разом із летючкою.
     expect(at("cleaner", 9.5).slice(0, 2)).toEqual(["10:00 летючка", "13:00 прибиральниця"]);
@@ -518,7 +518,7 @@ describe("сценарії", () => {
     const state = save.current;
     expect(state.modifiers.day).toBe("construction-dust");
     expect(dustOf(state)).toEqual([]);
-    expect(scheduleOf(state)).toContain("10:00–12:00 пил");
+    expect(scheduleOf(state)).toContain("10:00 пил");
     advance(save, 3);
     const living = DUST_SPOTS.flatMap((s, i) => (s.room === "living" ? [i] : []));
     expect([...dustOf(state)].sort((a, b) => a - b)).toEqual(living);

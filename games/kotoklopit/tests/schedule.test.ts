@@ -38,7 +38,7 @@ describe("розклад дня (§8.4)", () => {
   });
 
   it("робота в розкладі лише до 09:00: коли вона вже йде, вона не «запланована» (загальна ревізія 2026-10-29)", () => {
-    expect(scheduleOf(day(8))).toContain("09:00–18:00 робота");
+    expect(scheduleOf(day(8))).toContain("09:00 робота");
     expect(scheduleOf(day(9.5)).some((line) => line.includes("робота"))).toBe(false);
   });
 
@@ -57,6 +57,6 @@ describe("розклад дня (§8.4)", () => {
     const office = day(8, "office");
     courier(office, 9);
     expect(panel(office)).toEqual(["10:00 летючка", "до 18:00 офіс"]);
-    expect(scheduleOf(office).slice(2)).toEqual(["09:00–18:00 робота", "≈09:00 кур'єр"]);
+    expect(scheduleOf(office).slice(2)).toEqual(["09:00 робота", "≈09:00 кур'єр"]);
   });
 });
