@@ -106,9 +106,9 @@ describe("рахунок за комунальні у «Домі» (§6.4)", () 
     expect(bill(state)?.find("bill-line")?.textContent).toBe("ОСББ");
     expect(bill(state)?.find("bill-sum")?.textContent).toBe("61 ₴");
     const pay = (): FakeElement | undefined => bill(state)?.find("bill-pay");
-    expect([pay()?.textContent, pay()?.disabled]).toEqual(["Сплатити · 61 ₴", false]);
+    expect([pay()?.textContent, pay()?.disabled]).toEqual(["Сплатити", false]);
     state.character.money = 60;
-    expect([pay()?.textContent, pay()?.disabled]).toEqual(["Сплатити · 61 ₴", true]);
+    expect([pay()?.textContent, pay()?.disabled]).toEqual(["Сплатити", true]);
   });
 });
 

@@ -31,7 +31,8 @@ export function billCard(state: GameState, onPay: () => void): HTMLElement | nul
   const micr = element("p", "bill-micr", `|: ${String(week).padStart(4, "0")} |: ${String(bill).padStart(6, "0")} ||`);
   micr.setAttribute("aria-hidden", "true");
 
-  const pay = element("button", "button primary bill-pay", fill(BILL_TEXTS.pay, address, { сума: bill }));
+  // Сума — на чеку, а сплачують лише всю: на кнопці її немає.
+  const pay = element("button", "button primary bill-pay", BILL_TEXTS.pay);
   pay.disabled = state.character.money < bill;
   pay.addEventListener("click", onPay);
   box.append(head, date, payee, micr, pay);

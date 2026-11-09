@@ -40,7 +40,7 @@ export const BILL_TEXTS = {
   week: "тиждень {n}",
   payeeLabel: "Одержувач",
   payee: "ОСББ",
-  pay: "Сплатити · {сума} ₴",
+  pay: "Сплатити",
 } as const;
 
 /** Картка радіо (§8.10). */
