@@ -118,6 +118,8 @@ export class Bot {
   private readonly overdue = new Map<number, number>();
   /** Цілі, до яких не вдалося дійти: до якої хвилини дня їх пропускати. */
   private readonly skip = new Map<string, number>();
+  /** Скільки разів поспіль кіт заступав ціль (`goTo`): кіт, що вертається на місце, не має тримати бота весь день. */
+  private readonly blocked = new Map<string, number>();
   /** З якої хвилини дня бот ходить із пилососом (§8.7). */
   private vacuumSince = 0;
 
@@ -821,7 +823,7 @@ export class Bot {
       for (const tile of path) this.walkToTile(tile);
       this.face(rect);
       let target = targetOf(this.state);
-      if (target?.id === id) return true;
+      if (target?.id === id) return this.blocked.delete(id) || true;
       // Кіт під ногами, а персонаж дивиться на річ поруч (комп'ютер): відвернутися від неї.
       if (target && id.startsWith("cat:")) {
         const body = this.state.character.body;
@@ -829,7 +831,7 @@ export class Bot {
         const length = Math.hypot(c.x - body.x, c.y - body.y);
         if (length > 1e-6) body.facing = { x: (body.x - c.x) / length, y: (body.y - c.y) / length };
         target = targetOf(this.state);
-        if (target?.id === id) return true;
+        if (target?.id === id) return this.blocked.delete(id) || true;
       }
       // Безлад заступає ціль (його прибирають порожніми руками): прибрати тут же — він і є ціль дії — і підійти ще раз. Не
       // `hold`: той знову йшов до безладу, звідти ціллю ставав сусідній, і goTo ↔ hold без меж водили бота між двома купками
@@ -842,6 +844,13 @@ export class Bot {
       // `handleHeld` — і підійти ще раз. Інакше бот годинами стояв перед котом і помирав від голоду з повним холодильником
       // (повний баланс блоку «День і ніч», 2026-11-02: жайворонок, «Реалістичний», seed 303, д159–160).
       if (target?.type === "cat" && !id.startsWith("cat:") && this.state.character.held === null) {
+        // Кіт, що вертається (охороняє лоток у «Котячі розбірки», §4.1), — після кількох разів пропустити ціль, як недосяжну.
+        const times = (this.blocked.get(id) ?? 0) + 1;
+        this.blocked.set(id, times);
+        if (times > 3) {
+          this.blocked.delete(id);
+          break;
+        }
         interact(this.save);
         if (this.state.character.held !== null) return false;
       }
