@@ -1,23 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 51" width="30" height="51">
-<!-- person/top-front/tank/front — глибокий виріз майки, ракурс front (¾ спереду).
-size 30×51; pivot (15, 51) — таз (клаптик торса person/torso/1 від (14, 3)); points: немає.
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 58 51" width="58" height="51">
+<!-- person/top-front/tank/front — глибокий виріз майки й плечі шкірою за проймою, ракурс front (¾ спереду).
+size 58×51; pivot (29, 51) — таз (клаптик торса person/torso/1 від (0, 3)); points: немає.
 Шари: fill-skin, shade, ink.
-Шкіра (fill-skin) лягає у виріз торса спереду й ззаду; решта майки — сам торс (fill-top), рук немає (person/arm/tank). Краї шиї під шкірою повторено, щоб контур не тоншав. Полотно — до таза: pivot має лежати на ньому.
+Шкіра (fill-skin) лягає у виріз торса й на плечі за проймою: від торса лишаються вузькі бретелі й сама майка (fill-top); рук немає (person/arm/tank). Краї шиї й контур плечей під шкірою повторено, щоб контур не тоншав. Полотно — до таза: pivot має лежати на ньому.
 -->
 <defs>
-<clipPath id="person-top-front-tank-front-clip"><path d="M6.4 8.27C7.2 14.4 10.6 19.2 14.7 19.2C18.8 19.2 22.8 14.6 23.8 7.99C22.73 7.66 21.73 7.47 21 7.6C20.96 7.39 20.82 6.87 20.68 6.3C17.6 5.8 12.4 5.8 8.84 6.3C8.5 7.08 8.16 7.89 8 8.2C7.57 8.15 7.02 8.18 6.4 8.27Z"/></clipPath>
+<clipPath id="person-top-front-tank-front-clip"><path d="M20.4 8.27C21.2 14.4 24.6 19.2 28.7 19.2C32.8 19.2 36.8 14.6 37.8 7.99C36.73 7.66 35.73 7.47 35 7.6C34.96 7.39 34.82 6.87 34.68 6.3C31.6 5.8 26.4 5.8 22.84 6.3C22.5 7.08 22.16 7.89 22 8.2C21.57 8.15 21.02 8.18 20.4 8.27Z"/></clipPath>
 </defs>
 <g id="fill-skin">
-<path d="M6.4 8.27C7.2 14.4 10.6 19.2 14.7 19.2C18.8 19.2 22.8 14.6 23.8 7.99C22.73 7.66 21.73 7.47 21 7.6C20.96 7.39 20.82 6.87 20.68 6.3C17.6 5.8 12.4 5.8 8.84 6.3C8.5 7.08 8.16 7.89 8 8.2C7.57 8.15 7.02 8.18 6.4 8.27Z" fill="#ffffff"/>
+<path d="M20.4 8.27C21.2 14.4 24.6 19.2 28.7 19.2C32.8 19.2 36.8 14.6 37.8 7.99C36.73 7.66 35.73 7.47 35 7.6C34.96 7.39 34.82 6.87 34.68 6.3C31.6 5.8 26.4 5.8 22.84 6.3C22.5 7.08 22.16 7.89 22 8.2C21.57 8.15 21.02 8.18 20.4 8.27Z" fill="#ffffff"/>
+<path d="M16.8 9.17C15.97 9.43 15.17 9.73 14.5 10C12.3 10.9 10.3 11.9 9 13.4C7.7 14.9 7.1 16.7 6.6 19C6.33 20.26 6.2 21.7 6.16 23.2C7.2 22.43 10.63 20.94 12.4 18.6C14.17 16.26 16.07 10.74 16.8 9.17Z" fill="#ffffff"/>
+<path d="M41.6 9.44C41.74 9.49 41.87 9.55 42 9.6C44.2 10.5 46.6 11.6 48 13.2C49.4 14.8 49.8 16.7 50.2 19C50.39 20.09 50.47 21.31 50.49 22.6C49.5 21.73 46.08 19.59 44.6 17.4C43.12 15.21 42.1 10.76 41.6 9.44Z" fill="#ffffff"/>
 </g>
 <g id="shade" clip-path="url(#person-top-front-tank-front-clip)">
-<path d="M27.9 10.4C27.9 11.3 27 12.4 25.7 13.1C24.4 13.8 22.1 14.5 20 14.8C17.8 15.1 15 15.1 12.8 14.8C10.7 14.5 8.4 13.8 7.1 13.1C5.8 12.4 4.9 11.3 4.9 10.4C4.9 9.5 5.8 8.4 7.1 7.7C8.4 7 10.7 6.3 12.8 6C15 5.7 17.8 5.7 20 6C22.1 6.3 24.4 7 25.7 7.7C27 8.4 27.9 9.5 27.9 10.4Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M41.9 10.4C41.9 11.3 41 12.4 39.7 13.1C38.4 13.8 36.1 14.5 34 14.8C31.8 15.1 29 15.1 26.8 14.8C24.7 14.5 22.4 13.8 21.1 13.1C19.8 12.4 18.9 11.3 18.9 10.4C18.9 9.5 19.8 8.4 21.1 7.7C22.4 7 24.7 6.3 26.8 6C29 5.7 31.8 5.7 34 6C36.1 6.3 38.4 7 39.7 7.7C41 8.4 41.9 9.5 41.9 10.4Z" fill="#3f2541" fill-opacity="0.3"/>
 </g>
 <g id="ink">
-<path d="M8 8.2C8.19 7.82 8.66 6.71 9.06 5.8" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M21 7.6C20.95 7.33 20.74 6.54 20.55 5.8" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M8 8.2C7.57 8.15 7.02 8.18 6.4 8.27" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M21 7.6C21.73 7.47 22.73 7.66 23.8 7.99" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M6.4 8.27C7.2 14.4 10.6 19.2 14.7 19.2C18.8 19.2 22.8 14.6 23.8 7.99" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M22 8.2C22.19 7.82 22.66 6.71 23.06 5.8" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M35 7.6C34.95 7.33 34.74 6.54 34.55 5.8" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M22 8.2C21.57 8.15 21.02 8.18 20.4 8.27" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M35 7.6C35.73 7.47 36.73 7.66 37.8 7.99" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M20.4 8.27C21.2 14.4 24.6 19.2 28.7 19.2C32.8 19.2 36.8 14.6 37.8 7.99" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M16.8 9.17C15.97 9.43 15.17 9.73 14.5 10C12.3 10.9 10.3 11.9 9 13.4C7.7 14.9 7.1 16.7 6.6 19C6.33 20.26 6.2 21.7 6.16 23.2" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M41.6 9.44C41.74 9.49 41.87 9.55 42 9.6C44.2 10.5 46.6 11.6 48 13.2C49.4 14.8 49.8 16.7 50.2 19C50.39 20.09 50.47 21.31 50.49 22.6" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M6.16 23.2C7.2 22.43 10.63 20.94 12.4 18.6C14.17 16.26 16.07 10.74 16.8 9.17" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M50.49 22.6C49.5 21.73 46.08 19.59 44.6 17.4C43.12 15.21 42.1 10.76 41.6 9.44" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
 </g>
 </svg>

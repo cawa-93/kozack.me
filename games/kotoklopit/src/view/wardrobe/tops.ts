@@ -50,7 +50,7 @@ export const TOP_CUTS: readonly TopCut[] = [
   { name: "майка", group: "повсякденне", arm: "person/arm/tank", armFar: "person/arm-far/tank", front: "person/top-front/tank" },
   { name: "сорочка", group: "ділове", ...SHIRT },
   { name: "сорочка з коротким рукавом", group: "ділове", ...SHIRT, ...TEE },
-  { name: "поло", group: "повсякденне", ...TEE, front: COLLAR, hem: "person/top-hem/polo" },
+  { name: "поло", group: "повсякденне", ...TEE, front: "person/top-front/polo", hem: "person/top-hem/polo" },
   { name: "водолазка", group: "затишне", front: "person/top-front/turtleneck" },
   { name: "худі", group: "повсякденне", front: "person/top-front/hoodie", hem: "person/top-hem/hoodie", hood: HOOD },
   { name: "худі на блискавці", group: "повсякденне", front: "person/top-front/zip-hoodie", hood: HOOD, inner: WHITE },

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 52" width="29" height="52">
+<!-- person/top-front/polo/back — комір поло із заокругленими кінцями, ракурс back (¾ ззаду).
+size 29×52; pivot (14, 52) — таз (клаптик торса person/torso/1 від (15, 2)); points: немає.
+Шари: fill-top, ink.
+Менший за комір сорочки, кінці заокруглені; планка — person/top-hem/polo. Ззаду — низька стійка. Без шару тіні (бюджет атласу).
+-->
+<g id="fill-top">
+<path d="M5.8 10.4C5.9 8.6 6.7 7.2 7.9 6.8C11.5 7.6 16.5 7.7 21.2 6.8C22.4 7.4 23.1 8.8 23.2 10.4C18.8 13.4 10.2 13.4 5.8 10.4Z" fill="#ffffff"/>
+</g>
+<g id="ink">
+<path d="M5.8 10.4C5.9 8.6 6.7 7.2 7.9 6.8" fill="none" stroke="#2e1f29" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7.9 6.8C11.5 7.6 16.5 7.7 21.2 6.8" fill="none" stroke="#2e1f29" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M21.2 6.8C22.4 7.4 23.1 8.8 23.2 10.4" fill="none" stroke="#2e1f29" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M23.2 10.4C18.8 13.4 10.2 13.4 5.8 10.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

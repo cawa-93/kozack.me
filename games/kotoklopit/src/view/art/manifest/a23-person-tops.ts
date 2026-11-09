@@ -69,18 +69,21 @@ export const MANIFEST: readonly ArtEntry[] = [
   { id: "person/arm/tee-inner", ...ARM, layers: INNER_SLEEVE, views: PART_VIEWS },
   { id: "person/arm-far/tee-inner", ...ARM, layers: INNER_SLEEVE, views: PART_VIEWS },
 
-  // Майка: шкіра у глибокому вирізі спереду й ззаду.
-  overlay("person/top-front/tank", patch(14, 3, 30, 51), ["fill-skin", "shade", "ink"]),
-  // Комір сорочки — спільний для сорочки, поло й комбінезона; планки — на поясі: повна (сорочка) і коротка (поло).
+  // Майка: шкіра у глибокому вирізі й на плечах за проймою, спереду й ззаду.
+  overlay("person/top-front/tank", patch(0, 3, 58, 51), ["fill-skin", "shade", "ink"]),
+  // Комір сорочки — спільний для сорочки й комбінезона; планки — на поясі: повна (сорочка) і коротка (поло).
   overlay("person/top-front/collar", patch(15, 2, 29, 52), COLLAR),
+  // Комір поло — менший, із заокругленими кінцями.
+  overlay("person/top-front/polo", patch(15, 2, 29, 52), COLLAR),
   overlay("person/top-hem/shirt", patch(23, 10, 14, 48), LINES),
   overlay("person/top-hem/polo", patch(22, 10, 15, 48), LINES),
   // Водолазка: високий комір із відворотом.
   overlay("person/top-front/turtleneck", patch(14, -2, 30, 56), COLLAR),
-  // Худі: край капюшона й шнурки; кишеня-кенгуру — на поясі; капюшон на спині (спереду його ховають голова й плечі).
+  // Худі: край капюшона й шнурки; кишеня-кенгуру — на поясі; капюшон: ззаду — лініями на спині, спереду — горб за шиєю (видно
+  // між головою й плечем, тож полотно сягає вище за торс).
   overlay("person/top-front/hoodie", patch(14, 2, 29, 52), COLLAR),
   overlay("person/top-hem/hoodie", patch(6, 30, 46, 27), LINES),
-  overlay("person/hood/hoodie", patch(9, 3, 41, 51), LINES),
+  overlay("person/hood/hoodie", patch(2, -4, 48, 58), COLLAR),
   // Худі на блискавці: краї капюшона, борти й футболка між ними (`fill-inner`).
   overlay("person/top-front/zip-hoodie", patch(14, 2, 29, 56), ["fill-top", "fill-inner", "ink"]),
   // Жилет: виріз із сорочкою (`fill-inner`) і її коміром, борт і ґудзики.
