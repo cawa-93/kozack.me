@@ -1452,6 +1452,25 @@
   font: 400 19px / 1.2 var(--hand);
 }
 
+/* Складність: підпис і вибір в один ряд; на вузькій картці вибір переноситься під підпис. */
+.game-difficulty {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  margin: 0 0 10px;
+}
+
+.game-difficulty > .game-player {
+  margin: 0;
+}
+
+.game-difficulty > .choices {
+  flex: 1 1 auto;
+  justify-content: flex-start;
+  margin: 0;
+}
+
 .game-note {
   margin: 2px 0 0;
   color: var(--ink-soft);
@@ -1845,6 +1864,24 @@
   .game-player {
     margin: 4px 0;
     font-size: 17px;
+  }
+
+  /* Вибір складності нижчий за звичайну кнопку й без переносу назви: ряд не відсуває кнопки збереження за край. */
+  .game-difficulty {
+    margin-bottom: 4px;
+  }
+
+  .game-difficulty > .choices > .button {
+    min-width: 0;
+    min-height: 36px;
+    padding: 3px 10px 10px;
+    font-size: 17px;
+    white-space: nowrap;
+  }
+
+  .game-difficulty > .choices > .button:active:not(:disabled),
+  .game-difficulty > .choices > .button.choice[aria-checked="true"] {
+    padding: 7px 10px 6px;
   }
 
   .game-credits {

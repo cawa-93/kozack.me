@@ -53,7 +53,13 @@ class FakeElement {
   setAttribute(name: string, value: string): void {
     this.attributes[name] = value;
   }
-  addEventListener(): void {}
+  private readonly listeners: Record<string, () => void> = {};
+  addEventListener(type: string, listener: () => void): void {
+    this.listeners[type] = listener;
+  }
+  click(): void {
+    this.listeners.click?.();
+  }
   find(className: string): FakeElement | undefined {
     for (const child of this.children) {
       if (typeof child === "string") continue;
@@ -66,7 +72,7 @@ class FakeElement {
 }
 
 const noop = (): void => undefined;
-const handlers: PhoneHandlers = { checkout: noop, payUtilities: noop, discard: noop, discardThing: noop, advertise: noop, cancelAd: noop, newGame: noop, exportSave: noop, importSave: noop, tab: noop, close: noop, effects: { volume: 1, set: noop } };
+const handlers: PhoneHandlers = { checkout: noop, payUtilities: noop, discard: noop, discardThing: noop, advertise: noop, cancelAd: noop, newGame: noop, exportSave: noop, importSave: noop, tab: noop, close: noop, effects: { volume: 1, set: noop }, difficulty: noop };
 const TABS: PhoneTab[] = ["shop", "home", "cats", "album", "profile", "game"];
 
 /** Гра з котом і записом в альбомі: у телефоні всі шість вкладок. */
@@ -233,5 +239,25 @@ describe("телефон — смартфон набік", () => {
     // Без котів і альбому — лише Магазин, Речі, Профіль і Гра.
     const fresh = labels(newGame({ address: "she", difficulty: "normal", seed: 8 }).current);
     expect(fresh).toEqual([full[0], full[1], full[4], full[5]]);
+  });
+});
+
+describe("вкладка «Гра»: складність (§5.2)", () => {
+  it("угорі — вибір складності, обрано поточну; вибір іншої передає її обробнику", () => {
+    const state = newGame({ address: "she", difficulty: "hard", seed: 8 }).current;
+    const chosen: string[] = [];
+    const parts = phoneCard(state, "game", { ...handlers, difficulty: (d) => chosen.push(d) }).body.filter((p) => typeof p !== "string") as unknown as FakeElement[];
+    // Перший елемент — рядок стану телефона, далі — вміст вкладки.
+    expect(parts[1]?.className).toBe("game-difficulty");
+    const group = parts[1]?.find("choices");
+    const buttons = (group?.children ?? []) as FakeElement[];
+    expect(group?.attributes.role).toBe("radiogroup");
+    expect(buttons.map((b) => [b.textContent, b.attributes["aria-checked"]])).toEqual([
+      ["Мамина царапка", "false"],
+      ["Як у всіх", "false"],
+      ["Реалістичний", "true"],
+    ]);
+    buttons[0]?.click();
+    expect(chosen).toEqual(["easy"]);
   });
 });

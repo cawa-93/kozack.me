@@ -867,7 +867,7 @@ export const PROFILE_TEXTS = {
 } as const;
 
 /** Вкладка «Гра» телефона (§4.2): складність цієї гри. */
-export const GAME_TEXTS = { tab: "Гра", difficulty: "Складність: {складність}" } as const;
+export const GAME_TEXTS = { tab: "Гра", difficulty: "Складність" } as const;
 
 /** Котові сьогодні дали ліки, що діють на його хворобу (§9.5): біля назви хвороби в картці кота. */
 export const CAT_DOSE_TODAY: Record<Medicine, string> = { pills: "таблетку сьогодні дано", drops: "краплі сьогодні дано" };

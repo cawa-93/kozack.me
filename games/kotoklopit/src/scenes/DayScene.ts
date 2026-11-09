@@ -8,6 +8,7 @@ import { inStandoff, isDirty } from "../sim/catai";
 import { LOW_STAT, MODIFIERS, SUPPLY_FLIGHT } from "../sim/config";
 import { carrierRoom, discardCarrier } from "../sim/carriers";
 import { discard, discardAppliance, discardLock, payUtilities, seePhoneHints, supplyCount } from "../sim/economy";
+import { setDifficulty } from "../sim/difficulty";
 import { checkout } from "../sim/shop";
 import { onEvent, type CleanerVisit, type GameEvent, type GuestsVisit, type ModifierEvent } from "../sim/events";
 import { advance, carryFoundling, goHome, interact, newGame, newSeed, replayDay, replayWeek, rewindAccident } from "../sim/game";
@@ -1480,6 +1481,10 @@ export class DayScene extends Phaser.Scene {
           tab: show,
           close: () => this.overlay.close(),
           effects: { volume: this.sounds.volume, set: (volume) => this.sounds.setVolume(volume) },
+          difficulty: (difficulty) => {
+            setDifficulty(this.state, difficulty);
+            show(tab);
+          },
         }),
       );
     show(tab);

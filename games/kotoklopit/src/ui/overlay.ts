@@ -292,16 +292,8 @@ export class Overlay {
       else for (const paragraph of part.split("\n\n")) panel.append(element("p", "card-text", paragraph));
     }
     if (card.choices) {
-      const group = element("div", "choices");
-      group.setAttribute("role", "radiogroup");
+      const group = choiceGroup(card.choices);
       if (title) group.setAttribute("aria-labelledby", title.id);
-      for (const choice of card.choices) {
-        const button = element("button", "button choice", choice.label);
-        button.setAttribute("role", "radio");
-        button.setAttribute("aria-checked", String(choice.chosen));
-        button.addEventListener("click", () => choice.onSelect());
-        group.append(button);
-      }
       panel.append(group);
     }
     if (card.bar) panel.append(card.bar);
@@ -381,6 +373,20 @@ function cardAside(card: Card): HTMLElement | null {
   for (const part of parts) note.append(element("span", "card-aside-part", part));
   if (card.awayClock) note.append(element("span", "card-aside-part card-clock", `🕐 ${card.awayClock}`));
   return note;
+}
+
+/** Ряд варіантів вибору (`Card.choices`, складність у вкладці «Гра» телефона): обраний — «натиснута» клавіша з галочкою. */
+export function choiceGroup(choices: readonly CardChoice[]): HTMLElement {
+  const group = element("div", "choices");
+  group.setAttribute("role", "radiogroup");
+  for (const choice of choices) {
+    const button = element("button", "button choice", choice.label);
+    button.setAttribute("role", "radio");
+    button.setAttribute("aria-checked", String(choice.chosen));
+    button.addEventListener("click", () => choice.onSelect());
+    group.append(button);
+  }
+  return group;
 }
 
 export function element<K extends keyof HTMLElementTagNameMap>(

@@ -45,7 +45,7 @@ import {
 import { allControls, homeControls } from "./controls";
 import { creditsLink } from "./creditslink";
 import { destinationLabel, diseaseLabel, iconImage, named, productLabel } from "./icons";
-import { element, type Card, type CardAction, type TitleSection } from "./overlay";
+import { choiceGroup, element, type Card, type CardAction, type TitleSection } from "./overlay";
 import { shopCatalog, variantLabel } from "./shop";
 import { phoneStatusBar } from "./phonebar";
 import type { CartLine } from "../sim/shop";
@@ -263,6 +263,8 @@ export interface PhoneHandlers {
   close: () => void;
   /** Гучність звуків (§11.4а) — вподобання гравця, як і радіо. */
   effects: { volume: number; set: (volume: number) => void };
+  /** Змінити складність посеред гри (§5.2). */
+  difficulty: (difficulty: Difficulty) => void;
 }
 
 /** Вкладки телефона по порядку: за місцем вкладки `phone.css` фарбує її плитку, тож порядок і іконки — разом із ним. */
@@ -300,7 +302,7 @@ export function phoneCard(state: GameState, wanted: PhoneTab, handlers: PhoneHan
 }
 
 /**
- * Меню гри (§4.2, §5): складність, керування — щоб перечитати підказку першого дня (§11.3а), гучність звуків, нова гра, експорт і
+ * Меню гри (§4.2, §5): вибір складності, керування — щоб перечитати підказку першого дня (§11.3а), гучність звуків, нова гра, експорт і
  * імпорт збереження; унизу — посилання на титри (§2.1). Хто персонаж і його посада — у «Профілі» (`profile.ts`).
  */
 function gameMenu(state: GameState, handlers: PhoneHandlers): (string | HTMLElement)[] {
@@ -329,8 +331,14 @@ function gameMenu(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
   effects.addEventListener("input", () => handlers.effects.set(Number(effects.value) / 100));
   const sound = element("label", "sound-volume-box", SOUND_TEXTS.effects);
   sound.append(effects);
+  const difficulty = element("div", "game-difficulty");
+  const caption = element("span", "game-player", GAME_TEXTS.difficulty);
+  caption.id = "game-difficulty";
+  const choices = choiceGroup(DIFFICULTIES.map((d) => ({ label: DIFFICULTY_TITLES[d], chosen: d === state.difficulty, onSelect: () => handlers.difficulty(d) })));
+  choices.setAttribute("aria-labelledby", caption.id);
+  difficulty.append(caption, choices);
   return [
-    element("p", "game-player", fill(GAME_TEXTS.difficulty, state.character.address, { складність: DIFFICULTY_TITLES[state.difficulty] })),
+    difficulty,
     allControls(isTouch()),
     sound,
     box,
@@ -833,6 +841,8 @@ export function nameCard(address: Address, start: string, onDone: (name: string)
   };
 }
 
+const DIFFICULTIES: readonly Difficulty[] = ["easy", "normal", "hard"];
+
 /** Створення персонажа (§5.2), крок 5: складність; спершу обрано середню. Останній крок — «Почати гру» замість «Далі». */
 export function difficultyCard(chosen: Difficulty, onChoose: (difficulty: Difficulty) => void, onStart: () => void, onBack: () => void): Card {
   return {
@@ -840,7 +850,7 @@ export function difficultyCard(chosen: Difficulty, onChoose: (difficulty: Diffic
     solid: true,
     title: "Складність",
     body: [],
-    choices: (["easy", "normal", "hard"] as const).map((difficulty) => ({ label: DIFFICULTY_TITLES[difficulty], chosen: difficulty === chosen, onSelect: () => onChoose(difficulty) })),
+    choices: DIFFICULTIES.map((difficulty) => ({ label: DIFFICULTY_TITLES[difficulty], chosen: difficulty === chosen, onSelect: () => onChoose(difficulty) })),
     actions: [back(onBack), { label: "Почати гру", primary: true, onSelect: onStart }],
     steps: true,
     onDismiss: onBack,
