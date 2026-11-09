@@ -2,7 +2,7 @@
 
 import { PALETTE } from "../../art/palette";
 import "./phone.css";
-import { MODIFIERS, NAME_MAX_LENGTH, WAKE_MINUTE, WAKE_UP } from "../sim/config";
+import { MODIFIERS, NAME_MAX_LENGTH, WAKE_UP } from "../sim/config";
 import { supplyCount, utilitiesDue } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
 import { giveAwayBlocker } from "../sim/farewell";
@@ -590,10 +590,16 @@ export function titleCard(state: GameState, onContinue: () => void, onNew: () =>
   };
 }
 
+/** «Назад» кроку нової гри: ліворуч, не головна дія (`Card.steps`). */
+const back = (onSelect: () => void): CardAction => ({ label: "Назад", onSelect });
+
+/** «Далі» кроку нової гри: праворуч, головна дія; вимкнена, поки не обрано варіант. */
+const next = (onSelect: () => void, disabled = false): CardAction => ({ label: "Далі", primary: true, disabled, onSelect });
+
 /**
  * Створення персонажа (§5.1), крок 1: зовнішність — портрет на весь зріст і повзунки; портрет змінюється одразу. Редактор один для
- * всіх: будь-які частини в будь-якому поєднанні, без статі (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4). «Випадково» —
- * нова випадкова зовнішність (`shuffle`); з такої редактор і починає.
+ * всіх: будь-які частини в будь-якому поєднанні, без статі. «Випадково» — під повзунками, нова випадкова зовнішність (`shuffle`);
+ * з такої редактор і починає. Перший крок — без «Назад».
  */
 export function lookCard(start: Look, onDone: (look: Look) => void, shuffle: () => Look): Card {
   const editor = lookEditor(start, shuffle);
@@ -602,10 +608,8 @@ export function lookCard(start: Look, onDone: (look: Look) => void, shuffle: () 
     solid: true,
     title: LOOK_TITLE,
     body: [editor.root],
-    actions: [
-      { label: "Далі", primary: true, onSelect: () => onDone({ ...editor.look }) },
-      { label: "Випадково", onSelect: editor.randomize },
-    ],
+    actions: [next(() => onDone({ ...editor.look }))],
+    steps: true,
   };
 }
 
@@ -616,17 +620,15 @@ export function wardrobeCard(start: Look, onDone: (look: Look) => void, onCancel
     kicker: "Шафа",
     title: LOOK_TITLE,
     body: [editor.root],
-    actions: [
-      { label: "Готово", primary: true, onSelect: () => onDone({ ...editor.look }) },
-      { label: "Випадково", onSelect: editor.randomize },
-    ],
+    actions: [{ label: "Готово", primary: true, onSelect: () => onDone({ ...editor.look }) }],
+    steps: true,
     closable: true,
     onDismiss: onCancel,
   };
 }
 
 /** Редактор зовнішності (§5.1): портрет і повзунки; `look` — те, що обрано зараз. */
-function lookEditor(start: Look, shuffle: () => Look): { root: HTMLElement; look: Look; randomize: () => void } {
+function lookEditor(start: Look, shuffle: () => Look): { root: HTMLElement; look: Look } {
   const look: Look = { ...start };
   const editor = element("div", "look-editor");
   const canvas = portraitCanvas(130, 220);
@@ -660,20 +662,21 @@ function lookEditor(start: Look, shuffle: () => Look): { root: HTMLElement; look
     row.append(head, slider);
     sliders.append(row);
   }
-  editor.append(canvas, sliders);
   const randomize = (): void => {
     Object.assign(look, shuffle());
     for (const show of sync) show();
     redraw();
   };
-  return { root: editor, look, randomize };
+  const random = element("button", "button look-random", "Випадково");
+  random.addEventListener("click", randomize);
+  const side = element("div", "look-side");
+  side.append(sliders, random);
+  editor.append(canvas, side);
+  return { root: editor, look };
 }
 
-/**
- * Крок 2: звертання «він / вона» (§5.1) — лише граматика текстів, на гру не впливає (рішення автора 2026-10-29,
- * `GENERAL_REVIEW.md`, А4). Над вибором — портрет щойно складеної зовнішності; обране раніше (повернулися «Назад») — головна кнопка.
- */
-export function addressCard(look: Look, chosen: Address | null, onPick: (address: Address) => void, onBack: () => void): Card {
+/** Крок 2: звертання «він / вона» (§5.1). Над вибором — портрет щойно складеної зовнішності; поки не обрано, «Далі» вимкнене. */
+export function addressCard(look: Look, chosen: Address | null, onChoose: (address: Address) => void, onNext: (address: Address) => void, onBack: () => void): Card {
   const canvas = portraitCanvas(90, 150);
   canvas.classList.add("address-portrait");
   drawPortrait(canvas, look);
@@ -681,39 +684,30 @@ export function addressCard(look: Look, chosen: Address | null, onPick: (address
     kicker: "Нова гра · 2 з 5",
     solid: true,
     title: ADDRESS_TEXTS.title,
-    body: [canvas, ADDRESS_TEXTS.text],
-    actions: [
-      ...(["he", "she"] as const).map((address) => ({
-        label: ADDRESS_TEXTS.options[address],
-        primary: address === chosen,
-        onSelect: () => onPick(address),
-      })),
-      { label: "Назад", onSelect: onBack },
-    ],
+    body: [canvas],
+    choices: (["he", "she"] as const).map((address) => ({ label: ADDRESS_TEXTS.options[address], chosen: address === chosen, onSelect: () => onChoose(address) })),
+    actions: [back(onBack), next(() => chosen && onNext(chosen), chosen === null)],
+    steps: true,
     onDismiss: onBack,
   };
 }
 
 /**
- * Крок 3: сова чи жайворонок (§5.1) — незалежно від звертання. Хронотип — лише час пробудження (рішення автора 2026-10-29, А4).
- * Головна кнопка — обраний раніше хронотип (повернулися «Назад» з кроку «Ім'я»), а спершу — жайворонок, як і без вибору: інакше Enter
- * після «Назад» тихо міняв би сову на жайворонка, а хронотип у грі вже не змінити.
+ * Крок 3: сова чи жайворонок (§5.1) — незалежно від звертання; без пояснень, лише вибір. Спершу обрано жайворонка, як і без
+ * вибору; повернувшись «Назад», гравець бачить свій.
  */
-export function chronotypeCard(chosen: Chronotype | null, onPick: (chronotype: Chronotype) => void, onBack: () => void): Card {
-  const primary = chosen ?? "lark";
+export function chronotypeCard(chosen: Chronotype, onChoose: (chronotype: Chronotype) => void, onNext: () => void, onBack: () => void): Card {
   return {
     kicker: "Нова гра · 3 з 5",
     solid: true,
     title: "Сова чи жайворонок?",
-    body: [
-      `Жайворонок прокидається о ${formatClock(WAKE_MINUTE.lark)}.`,
-      `Сова прокидається о ${formatClock(WAKE_MINUTE.owl)}.`,
+    body: [],
+    choices: [
+      { label: "Жайворонок", chosen: chosen === "lark", onSelect: () => onChoose("lark") },
+      { label: "Сова", chosen: chosen === "owl", onSelect: () => onChoose("owl") },
     ],
-    actions: [
-      { label: "Жайворонок", primary: primary === "lark", onSelect: () => onPick("lark") },
-      { label: "Сова", primary: primary === "owl", onSelect: () => onPick("owl") },
-      { label: "Назад", onSelect: onBack },
-    ],
+    actions: [back(onBack), next(onNext)],
+    steps: true,
     onDismiss: onBack,
   };
 }
@@ -735,42 +729,44 @@ export function startName(address: Address, entered: EnteredName | null): string
   return own !== "" && own !== DEFAULT_NAME[entered.address] ? own : DEFAULT_NAME[address];
 }
 
-/** Крок 4: ім'я героя; заголовок — за звертанням. «Назад» віддає введене, щоб, повернувшись, гравець побачив його знову. */
-export function nameCard(address: Address, start: string, onDone: (name: string) => void, onBack: (name: string) => void): Card {
+/**
+ * Крок 4: ім'я героя; заголовок — за звертанням. Поруч із полем — «Випадково» (`shuffle` дає інше ім'я за звертанням). «Назад»
+ * віддає введене, щоб, повернувшись, гравець побачив його знову.
+ */
+export function nameCard(address: Address, start: string, onDone: (name: string) => void, onBack: (name: string) => void, shuffle: (current: string) => string): Card {
   const input = element("input");
   input.type = "text";
   input.value = start;
   input.maxLength = NAME_MAX_LENGTH;
   input.className = "button name-input";
   input.setAttribute("aria-label", "Ім'я");
+  const random = element("button", "button", "Випадково");
+  random.addEventListener("click", () => {
+    input.value = shuffle(input.value);
+  });
+  const row = element("div", "name-row");
+  row.append(input, random);
   return {
     kicker: "Нова гра · 4 з 5",
     solid: true,
     title: address === "she" ? "Як її звати?" : "Як його звати?",
-    body: [input],
-    actions: [
-      { label: "Далі", primary: true, onSelect: () => onDone(input.value) },
-      { label: "Назад", onSelect: () => onBack(input.value) },
-    ],
+    body: [row],
+    actions: [back(() => onBack(input.value)), next(() => onDone(input.value))],
+    steps: true,
     onDismiss: () => onBack(input.value),
   };
 }
 
-/** Створення персонажа (§5.2), крок 5: складність. */
-export function difficultyCard(onPick: (difficulty: Difficulty) => void, onBack: () => void): Card {
+/** Створення персонажа (§5.2), крок 5: складність; спершу обрано середню. Останній крок — «Почати гру» замість «Далі». */
+export function difficultyCard(chosen: Difficulty, onChoose: (difficulty: Difficulty) => void, onStart: () => void, onBack: () => void): Card {
   return {
     kicker: "Нова гра · 5 з 5",
     solid: true,
     title: "Складність",
     body: ["Змінити її потім не вийде."],
-    actions: [
-      ...(["easy", "normal", "hard"] as const).map((difficulty) => ({
-        label: DIFFICULTY_TITLES[difficulty],
-        primary: difficulty === "normal",
-        onSelect: () => onPick(difficulty),
-      })),
-      { label: "Назад", onSelect: onBack },
-    ],
+    choices: (["easy", "normal", "hard"] as const).map((difficulty) => ({ label: DIFFICULTY_TITLES[difficulty], chosen: difficulty === chosen, onSelect: () => onChoose(difficulty) })),
+    actions: [back(onBack), { label: "Почати гру", primary: true, onSelect: onStart }],
+    steps: true,
     onDismiss: onBack,
   };
 }

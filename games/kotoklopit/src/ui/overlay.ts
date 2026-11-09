@@ -15,6 +15,13 @@ export interface CardAction {
   onSelect: () => void;
 }
 
+/** Варіант вибору на кроці (`Card.choices`): обраний лише позначається, а далі веде навігація в `actions`. */
+export interface CardChoice {
+  label: string;
+  chosen: boolean;
+  onSelect: () => void;
+}
+
 /** Вкладка картки: компактний рядок угорі замість кнопок унизу. */
 export interface CardTab {
   label: string;
@@ -45,6 +52,8 @@ export interface Card {
   tabs?: CardTab[];
   /** Абзаци тексту або готові елементи. */
   body: (string | HTMLElement)[];
+  /** Вибір на кроці нової гри (§5.1): варіанти в ряд під тілом, обраний — «натиснутий», окремо від навігації. */
+  choices?: CardChoice[];
   /**
    * Смуга, що липне до низу картки, зі своїми кнопками: кошик магазину з «Додому» чи «Купити» (§6.4, «Бірка знижки й кошик
    * унизу»). Стоїть після тіла й перед кнопками дій (`actions`), якщо ті є.
@@ -56,6 +65,11 @@ export interface Card {
    * кошика магазину, ветеринара й лікаря (рецензія 2026-11-03, GAME_DESIGN §8.5, «Картки поїздок без «Поїздка»»).
    */
   actionsEnd?: boolean;
+  /**
+   * Навігація кроків нової гри (§5.1): «Назад» (не головна дія) завжди ліворуч, головна — «Далі» чи «Почати гру» — праворуч,
+   * навіть коли «Назад» немає. Так кнопки не міняють місць від кроку до кроку.
+   */
+  steps?: boolean;
   /** Esc закриває картку. */
   onDismiss?: () => void;
   /** Хрестик у кутку замість кнопки «Скасувати» чи «Закрити»; натискання — як Esc. */
@@ -274,8 +288,21 @@ export class Overlay {
       if (typeof part !== "string") panel.append(part);
       else for (const paragraph of part.split("\n\n")) panel.append(element("p", "card-text", paragraph));
     }
+    if (card.choices) {
+      const group = element("div", "choices");
+      group.setAttribute("role", "radiogroup");
+      if (title) group.setAttribute("aria-labelledby", title.id);
+      for (const choice of card.choices) {
+        const button = element("button", "button choice", choice.label);
+        button.setAttribute("role", "radio");
+        button.setAttribute("aria-checked", String(choice.chosen));
+        button.addEventListener("click", () => choice.onSelect());
+        group.append(button);
+      }
+      panel.append(group);
+    }
     if (card.bar) panel.append(card.bar);
-    const actions = element("div", card.actionsEnd ? "card-actions end" : "card-actions");
+    const actions = element("div", card.steps ? "card-actions steps" : card.actionsEnd ? "card-actions end" : "card-actions");
     for (const action of card.actions) {
       const button = element("button", action.primary ? "button primary" : "button", action.label);
       button.disabled = action.disabled ?? false;

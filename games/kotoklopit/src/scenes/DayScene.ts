@@ -21,12 +21,13 @@ import { objectById } from "../sim/home";
 import { canGoToSleep, collapseMinute, isDrowsy } from "../sim/sleep";
 import { CARRIER_TARGET, targetOf } from "../sim/targets";
 import { clockFrame, weekOf } from "../sim/time";
-import type { Address, Chronotype, Difficulty, GameState, HomeItem, Look, Quality, Save, ThingKind } from "../sim/types";
+import type { Address, Chronotype, Difficulty, GameState, HomeItem, Quality, Save, ThingKind } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel, standupToday, workGoesOn } from "../sim/work";
 import { RADIO } from "../audio/config";
 import type { Radio } from "../audio/radio/radio";
 import type { SoundMode, Sounds } from "../audio/sfx/sounds";
 import type { Session } from "../session";
+import { randomName, nameRng } from "../ui/charname";
 import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, addressCard, startName, wardrobeCard, type EnteredName, type PhoneTab } from "../ui/cards";
 import { catIntroCard } from "../ui/catintro";
 import { radioCard } from "../ui/radio";
@@ -1269,52 +1270,93 @@ export class DayScene extends Phaser.Scene {
   }
 
   /**
-   * Нова гра (§5.1): зовнішність (з випадкової), звертання «він / вона», хронотип, ім'я, потім складність. Кожен крок, крім першого, —
-   * з «Назад»; повернувшись, гравець бачить свій вибір. Статі немає (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4).
+   * Нова гра (§5.1): зовнішність (з випадкової), звертання «він / вона», хронотип, ім'я, потім складність. Вибір на кроці лише
+   * позначається, а далі ведуть «Назад» і «Далі»; повернувшись, гравець бачить свій вибір.
    */
   private chooseNewGame(): void {
     // Створення персонажа — ще не гра: радіо мовчить, а нова гра почнеться з вимкненим (§8.10).
     this.radio.hold();
-    // Seed нової гри — наперед: з нього й випадкова зовнішність редактора.
+    // Seed нової гри — наперед: з нього й випадкова зовнішність редактора, і випадкові імена.
     const seed = newSeed();
     const looks = lookRng(seed);
-    // Що гравець уже обрав: повернувшись «Назад», він бачить свій вибір.
+    const names = nameRng(seed);
+    let look = randomLook(looks);
+    let address: Address | null = null;
+    let chronotype: Chronotype = "lark";
+    // Що гравець лишив у полі імені: повернувшись «Назад», він бачить його знову.
     let entered: EnteredName | null = null;
-    let addressed: Address | null = null;
-    let chronotyped: Chronotype | null = null;
-    const pickLook = (look: Look): void => this.overlay.show(lookCard(look, pickAddress, () => randomLook(looks)));
-    const pickAddress = (look: Look): void =>
-      this.overlay.show(addressCard(look, addressed, (address) => pickChronotype(look, address), () => pickLook(look)));
-    const pickChronotype = (look: Look, address: Address): void => {
-      addressed = address;
-      this.overlay.show(chronotypeCard(chronotyped, (chronotype) => pickName(look, address, chronotype), () => pickAddress(look)));
-    };
-    const pickName = (look: Look, address: Address, chronotype: Chronotype): void => {
-      chronotyped = chronotype;
-      this.overlay.show(
-        nameCard(
+    let difficulty: Difficulty = "normal";
+    const show = (card: Card): void => this.overlay.show(card);
+    const pickLook = (): void =>
+      show(
+        lookCard(
+          look,
+          (chosen) => {
+            look = chosen;
+            pickAddress();
+          },
+          () => randomLook(looks),
+        ),
+      );
+    const pickAddress = (): void =>
+      show(
+        addressCard(
+          look,
           address,
-          startName(address, entered),
+          (chosen) => {
+            address = chosen;
+            pickAddress();
+          },
+          pickChronotype,
+          pickLook,
+        ),
+      );
+    const pickChronotype = (): void =>
+      show(
+        chronotypeCard(
+          chronotype,
+          (chosen) => {
+            chronotype = chosen;
+            pickChronotype();
+          },
+          pickName,
+          pickAddress,
+        ),
+      );
+    const pickName = (): void => {
+      const addressed = address ?? "she";
+      show(
+        nameCard(
+          addressed,
+          startName(addressed, entered),
           (name) => {
-            entered = { name, address };
-            this.overlay.show(
-              difficultyCard(
-                (difficulty: Difficulty) => {
-                  this.radio.switchOff();
-                  this.session.replace(newGame({ address, difficulty, name, look, chronotype, seed }));
-                },
-                () => pickName(look, address, chronotype),
-              ),
-            );
+            entered = { name, address: addressed };
+            pickDifficulty();
           },
           (name) => {
-            entered = { name, address };
-            pickChronotype(look, address);
+            entered = { name, address: addressed };
+            pickChronotype();
           },
+          (current) => randomName(addressed, current, names),
         ),
       );
     };
-    pickLook(randomLook(looks));
+    const pickDifficulty = (): void =>
+      show(
+        difficultyCard(
+          difficulty,
+          (chosen) => {
+            difficulty = chosen;
+            pickDifficulty();
+          },
+          () => {
+            this.radio.switchOff();
+            this.session.replace(newGame({ address: address ?? "she", difficulty, name: entered?.name ?? "", look, chronotype, seed }));
+          },
+          pickName,
+        ),
+      );
+    pickLook();
   }
 
   /** Новий кіт удома (§9.7): картка знайомства — щойно нічого не заважає, по одній на кота. */

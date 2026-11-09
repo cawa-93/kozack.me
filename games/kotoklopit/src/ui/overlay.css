@@ -287,6 +287,35 @@
   justify-content: flex-end;
 }
 
+/* Кроки нової гри (`Card.steps`, §5.1): «Назад» завжди ліворуч, головна дія — праворуч, хоч би чи є «Назад»; обидві однакової
+   ширини, тож від кроку до кроку не зсуваються. */
+.card-actions.steps {
+  justify-content: flex-end;
+}
+
+.card-actions.steps > .button {
+  min-width: 8.5em;
+}
+
+.card-actions.steps > .button:not(.primary) {
+  margin-right: auto;
+}
+
+/* Вибір на кроці (`Card.choices`): варіанти в ряд однакової ширини, обраний — «натиснута» клавіша. */
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 12px;
+  margin: 4px 0 6px;
+}
+
+.choices > .button {
+  flex: 1 1 0;
+  min-width: 7em;
+  max-width: 13em;
+}
+
 /* Кнопка — «клавіша»: верх і губа знизу; натиснута опускається на висоту губи (текст теж). */
 .button {
   min-height: 46px;
@@ -306,9 +335,15 @@
   border-image-source: url("../../art/ui/button/primary.svg");
 }
 
-.button:active:not(:disabled) {
+.button:active:not(:disabled),
+.button.choice[aria-checked="true"] {
   padding: 10px 18px 10px;
   border-image-source: url("../../art/ui/button/pressed.svg");
+}
+
+/* Обраний варіант: «натиснутий» і з галочкою — щоб його було видно й без порівняння з сусідом. */
+.button.choice[aria-checked="true"]::before {
+  content: "✓ ";
 }
 
 .button.primary:active:not(:disabled) {
@@ -479,8 +514,17 @@
   top: 0;
 }
 
-.look-sliders {
+/* Повзунки й під ними «Випадково»: кнопка — біля того, що змінює, а не серед навігації кроку. */
+.look-side {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.look-sliders {
+  align-self: stretch;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 2px 14px;
@@ -550,6 +594,18 @@
 .look-slider:focus-visible {
   outline: 3px solid var(--orange);
   outline-offset: 2px;
+}
+
+/* Поле імені й «Випадково» — в один рядок, однакової висоти. */
+.name-row {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.name-row > .name-input {
+  flex: 1;
+  min-width: 0;
 }
 
 /* Поле імені — заглиблене поле з лінійкою, ім'я пишеться рукописним шрифтом. Клас `button` у нього — від спільних правил
@@ -1435,7 +1491,8 @@
     font-size: 18px;
   }
 
-  .button:active:not(:disabled) {
+  .button:active:not(:disabled),
+  .button.choice[aria-checked="true"] {
     padding: 9px 16px 8px;
   }
 
