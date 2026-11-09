@@ -660,9 +660,62 @@ function fitFigure(placed: readonly { part: PortraitPart; source: FrameLayers }[
   return { k, ox: (W - bw * k) / 2 - minX * k, oy: (align === "bottom" ? H - pad - bh * k : (H - bh * k) / 2) - minY * k };
 }
 
+/** Намальоване на полотні фігури: межі й центр ваги непрозорих пікселів (одиниці фігури), `mass` — їхня кількість. */
+export interface FigureInk {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+  cx: number;
+  cy: number;
+  mass: number;
+}
+
+/** Непрозорим вважаємо піксель від цієї альфи: м'які краї й тіні майже не важать. */
+const INK_ALPHA = 64;
+/** Поле від намальованого до дна й боків полотна живого портрета, частка меншої сторони (`placeInk`). */
+const INK_PAD = 0.06;
+
+/** Намальоване на полотні частини (пікселі полотна); null — порожнє. Читає пікселі — лише раз на кадр частини. */
+function inkOf(ctx: Canvas2D, w: number, h: number): FigureInk | null {
+  const data = ctx.getImageData(0, 0, w, h).data;
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  let sx = 0;
+  let sy = 0;
+  let mass = 0;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if ((data[(y * w + x) * 4 + 3] ?? 0) < INK_ALPHA) continue;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+      sx += x;
+      sy += y;
+      mass++;
+    }
+  }
+  return mass === 0 ? null : { minX, minY, maxX: maxX + 1, maxY: maxY + 1, cx: sx / mass + 0.5, cy: sy / mass + 0.5, mass };
+}
+
+/**
+ * Куди зсунути фігуру масштабу `k` на полотні `W` × `H`, щоб намальоване `ink` стояло на дні з полем `pad`, а його центр ваги —
+ * посередині по горизонталі, не виходячи за поля. Межі полотен частин тут не годяться: під котом і з боку хвоста в них порожньо, тож
+ * кіт за ними висів угорі, а хвіст відтягував тулуб убік (§9.7).
+ */
+export function placeInk(ink: FigureInk, k: number, W: number, H: number, pad: number): { ox: number; oy: number } {
+  const want = W / 2 - ink.cx * k;
+  const ox = Math.min(W - pad - ink.maxX * k, Math.max(pad - ink.minX * k, want));
+  return { ox, oy: H - pad - ink.maxY * k };
+}
+
 /**
  * Фігура, що рухається (живий портрет кота, §9.7). Складати шари кадру щокадру задорого, тож кожен кадр частини тонується лише раз, а
- * далі його готове полотно тільки перекладають. Масштаб — за першою позою: рухи не міняють розміру фігури.
+ * далі його готове полотно тільки перекладають. Масштаб — за межами полотен частин першої пози (рухам є куди), а місце — за
+ * намальованим (`placeInk`): кіт сидить на дні, а не висить.
  */
 export class FigureCanvas {
   private readonly tinted = new Map<string, Canvas2D>();
@@ -692,30 +745,72 @@ export class FigureCanvas {
       placed.push({ part, source });
     }
     const { width: W, height: H } = this.canvas;
-    const { k, ox, oy } = (this.fit ??= fitFigure(placed, W, H, this.padding, "center"));
+    const tinted = placed.map(({ part, source }, i) => this.tint(`${frames[i]}|${part.far === true}`, source, part.far === true));
+    const { k, ox, oy } = (this.fit ??= this.place(placed, tinted, W, H));
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, W, H);
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
     for (const [i, { part, source }] of placed.entries()) {
-      const key = `${frames[i]}|${part.far === true}`;
-      let tinted = this.tinted.get(key);
-      if (!tinted) {
-        const made = createCtx(source.w, source.h);
-        if (!made) continue;
-        composeFrame(made, source.source, part.far === true ? this.far : this.recipe, { w: source.w, h: source.h });
-        this.tinted.set(key, made);
-        tinted = made;
-      }
+      const canvas = tinted[i];
+      if (!canvas) continue;
       const m = partMatrix(part, source.frame.pivot);
       const sx = source.frame.size.w / source.w;
       const sy = source.frame.size.h / source.h;
       ctx.setTransform(m.a * k * sx, m.b * k * sx, m.c * k * sy, m.d * k * sy, m.e * k + ox, m.f * k + oy);
-      ctx.drawImage(tinted.canvas, 0, 0);
+      ctx.drawImage(canvas.canvas, 0, 0);
     }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     return true;
   }
+
+  /** Тонований кадр частини — раз на кадр (кеш `tinted`); null — полотна не створити. */
+  private tint(key: string, source: FrameLayers, far: boolean): Canvas2D | null {
+    const cached = this.tinted.get(key);
+    if (cached) return cached;
+    const made = createCtx(source.w, source.h);
+    if (!made) return null;
+    composeFrame(made, source.source, far ? this.far : this.recipe, { w: source.w, h: source.h });
+    this.tinted.set(key, made);
+    return made;
+  }
+
+  /** Масштаб — за полотнами частин (`fitFigure`), місце — за намальованим (`placeInk`); нічого не намальовано — як у `fitFigure`. */
+  private place(placed: readonly { part: PortraitPart; source: FrameLayers }[], tinted: readonly (Canvas2D | null)[], W: number, H: number): { k: number; ox: number; oy: number } {
+    const fit = fitFigure(placed, W, H, this.padding, "center");
+    const ink = figureInk(placed, tinted);
+    return ink ? { k: fit.k, ...placeInk(ink, fit.k, W, H, Math.min(W, H) * INK_PAD) } : fit;
+  }
+}
+
+/** Намальоване всіх частин в одиницях фігури: межі — кутами намальованого кожної частини, центр ваги — зважений її пікселями. */
+function figureInk(placed: readonly { part: PortraitPart; source: FrameLayers }[], tinted: readonly (Canvas2D | null)[]): FigureInk | null {
+  let all: FigureInk | null = null;
+  let sx = 0;
+  let sy = 0;
+  for (const [i, { part, source }] of placed.entries()) {
+    const ctx = tinted[i];
+    const ink = ctx ? inkOf(ctx, source.w, source.h) : null;
+    if (!ink) continue;
+    const m = partMatrix(part, source.frame.pivot);
+    const fx = source.frame.size.w / source.w;
+    const fy = source.frame.size.h / source.h;
+    const at = (x: number, y: number): [number, number] => [m.a * x * fx + m.c * y * fy + m.e, m.b * x * fx + m.d * y * fy + m.f];
+    const corners = [at(ink.minX, ink.minY), at(ink.maxX, ink.minY), at(ink.minX, ink.maxY), at(ink.maxX, ink.maxY)];
+    const [cx, cy] = at(ink.cx, ink.cy);
+    sx += cx * ink.mass;
+    sy += cy * ink.mass;
+    all ??= { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity, cx: 0, cy: 0, mass: 0 };
+    for (const [x, y] of corners) {
+      all.minX = Math.min(all.minX, x);
+      all.minY = Math.min(all.minY, y);
+      all.maxX = Math.max(all.maxX, x);
+      all.maxY = Math.max(all.maxY, y);
+    }
+    all.mass += ink.mass;
+  }
+  if (!all) return null;
+  return { ...all, cx: sx / all.mass, cy: sy / all.mass };
 }
 
 /** Перетворення полотна частини (одиниці арту від лівого верхнього кута) у простір фігури: pivot → (x, y), поворот, масштаб. */
