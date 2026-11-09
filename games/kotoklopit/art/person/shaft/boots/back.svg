@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 34 38" width="34" height="38">
+<!-- person/shaft/boots/back — халява чобіт до коліна (слоти shaft-far і shaft-near, на кістці ноги), ракурс back (¾ ззаду). Гардероб, взуття.
+size 34×38; pivot (17, 31) — кісточка (точка foot ноги); верх — на 24 вище, під коліном; низ без контуру лягає на стопу person/shoe/boots.
+Шари: fill-shoes, shade, ink. Ширша за штанину (заправлені штани не визирають), литка ліворуч, відворот угорі, ззаду — шов.
+-->
+<defs>
+<path id="person-shaft-boots-back-shape" d="M7.4 7C11.6 8.6 22 8.6 26.4 6.8C26.2 11 25.8 15 25.6 19C25.4 22.6 25.2 25.4 25.2 28C25.2 29.4 25.3 30.6 25.4 31.6C21 32.4 13.4 32.4 9.2 31.6C9.2 30.2 9 28.6 8.8 27C8.4 23 6.6 19 6.8 15C6.9 12 7.2 9.4 7.4 7Z"/>
+<clipPath id="person-shaft-boots-back-clip"><use href="#person-shaft-boots-back-shape"/></clipPath>
+</defs>
+<g id="fill-shoes">
+<use href="#person-shaft-boots-back-shape" fill="#ffffff"/>
+</g>
+<g id="shade" clip-path="url(#person-shaft-boots-back-clip)">
+<path d="M4 9C10 11.4 22 11.4 30 8.6L30 12C22 14.6 10 14.6 4 12.4Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M4 14C8.6 16 11.4 22 12.2 34L4 34Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<g id="ink">
+<path d="M7.2 10C11.6 11.6 22 11.6 26.2 9.8" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M13.4 12.4Q14.4 22 14.4 31.4" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M9.2 31.6C9.2 30.2 9 28.6 8.8 27C8.4 23 6.6 19 6.8 15C6.9 12 7.2 9.4 7.4 7C11.6 8.6 22 8.6 26.4 6.8C26.2 11 25.8 15 25.6 19C25.4 22.6 25.2 25.4 25.2 28C25.2 29.4 25.3 30.6 25.4 31.6" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

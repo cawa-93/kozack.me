@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 20" width="25" height="20">
+<!-- person/shaft/sock/front — коротка шкарпетка над низьким взуттям на голій нозі (слоти shaft-far і shaft-near), ракурс front (¾ спереду). Гардероб, взуття.
+size 25×20; pivot (13, 14) — кісточка (точка foot ноги); верх — на 8 вище; низ — лінія верху черевика (контур черевика під нею повторено).
+Шари: fill-shoes, detail, shade, ink. Шкарпетка — detail paper; fill-shoes під нею — лише силует, щоб дальню шкарпетку затінив farRecipe.
+-->
+<defs>
+<path id="person-shaft-sock-front-shape" d="M6.4 6.2C9.8 7.4 16 7.4 18.9 6C18.6 8.4 18.6 10.8 18.8 12.8C16 13.4 10 13.4 7 12.8C7 10.8 6.6 8.4 6.4 6.2Z"/>
+<clipPath id="person-shaft-sock-front-clip"><use href="#person-shaft-sock-front-shape"/></clipPath>
+</defs>
+<g id="fill-shoes">
+<use href="#person-shaft-sock-front-shape" fill="#ffffff"/>
+</g>
+<g id="detail">
+<use href="#person-shaft-sock-front-shape" fill="#f2e7d0"/>
+</g>
+<g id="shade" clip-path="url(#person-shaft-sock-front-clip)">
+<path d="M5 6C7.6 7.4 9.6 10 10.2 14L5 14Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<g id="ink">
+<path d="M6.4 6.2C9.8 7.4 16 7.4 18.9 6" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18.9 6C18.6 8.4 18.6 10.8 18.8 12.8C16 13.4 10 13.4 7 12.8C7 10.8 6.6 8.4 6.4 6.2" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 21" width="30" height="21">
+<!-- person/hem/cuff/front — підкат джинсів над взуттям (слоти hem-far і hem-near), ракурс front (¾ спереду). Гардероб, низ.
+size 30×21; pivot (15, 14) — кісточка (точка foot ноги); верх підкату на 7 вище, низ лягає на верх черевика.
+Шари: fill-bottom, detail, shade, ink. Підвернута смуга ширша за штанину; гірчична строчка; згин — внутрішня лінія.
+-->
+<defs>
+<path id="person-hem-cuff-front-shape" d="M6.2 7C9 8.4 20.6 8.4 23.6 6.8C23.9 8.8 24.2 11 24 13C20.6 14.8 9.4 15 5.8 13.4C5.8 11.2 6 9 6.2 7Z"/>
+<clipPath id="person-hem-cuff-front-clip"><use href="#person-hem-cuff-front-shape"/></clipPath>
+</defs>
+<g id="fill-bottom">
+<use href="#person-hem-cuff-front-shape" fill="#ffffff"/>
+</g>
+<g id="detail" clip-path="url(#person-hem-cuff-front-clip)">
+<path d="M7.6 11.6C11 13 19 13 22.4 11.4" fill="none" stroke="#d4a54c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="shade" clip-path="url(#person-hem-cuff-front-clip)">
+<path d="M4 7C9 9 21 9 26 6.6L26 9.6C21 11.6 9 11.6 4 9.8Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<g id="ink">
+<path d="M6.2 7C9 8.4 20.6 8.4 23.6 6.8" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M23.6 6.8C23.9 8.8 24.2 11 24 13C20.6 14.8 9.4 15 5.8 13.4C5.8 11.2 6 9 6.2 7" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

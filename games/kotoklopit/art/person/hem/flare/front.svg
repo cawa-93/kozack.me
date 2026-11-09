@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 38 38" width="38" height="38">
+<!-- person/hem/flare/front — розтруб кльошу над взуттям (слоти hem-far і hem-near), ракурс front (¾ спереду). Гардероб, низ.
+size 38×38; pivot (19, 28) — кісточка (точка foot ноги); верх (на 22 вище, під коліном) — ширина штанини person/leg, без контуру.
+Шари: fill-bottom, shade, ink. Розширюється донизу й накриває верх черевика; носок і підошва визирають.
+-->
+<defs>
+<path id="person-hem-flare-front-shape" d="M11 6.6C10.6 16.6 8.4 23.4 6.6 28.8C12 31.6 26 31.8 30.8 28.4C29 23 27.2 15.6 26.8 6.6C22 6 15.6 6 11 6.6Z"/>
+<clipPath id="person-hem-flare-front-clip"><use href="#person-hem-flare-front-shape"/></clipPath>
+</defs>
+<g id="fill-bottom">
+<use href="#person-hem-flare-front-shape" fill="#ffffff"/>
+</g>
+<g id="shade" clip-path="url(#person-hem-flare-front-clip)">
+<path d="M4 18C7.6 21 10.4 26.4 12.4 35L4 35Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M4 28.6C10 25.2 27 25 34 28.2L34 35L4 35Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<g id="ink">
+<path d="M15 14Q14.2 22 12.6 28Q15.4 22 15 14Z" fill="#2e1f29"/>
+<path d="M22.2 15Q23.6 22 25.2 27.8Q22.8 22 22.2 15Z" fill="#2e1f29"/>
+<path d="M9.2 27.2C14 25.4 24 25.2 28.8 26.8" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11 6.6C10.6 16.6 8.4 23.4 6.6 28.8C12 31.6 26 31.8 30.8 28.4C29 23 27.2 15.6 26.8 6.6" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

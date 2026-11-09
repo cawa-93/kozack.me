@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 48" width="64" height="48">
+<!-- person/skirt/mini/front — міні-спідниця (слот skirt на кістці hips), ракурс front (¾ спереду). Гардероб, низ.
+size 64×48; pivot (32, 17) — таз, як у person/torso/1 (полотно торса, зсунуте на (3, −37)); верх — лінія подолу сорочки торса.
+Шари: fill-bottom, shade, ink. Стани: st-stand — до середини стегна; st-sit — сидячи (стегно вперед, нахил ≈ 7°): накриває таз і край
+стегна, поділ упоперек стегна; st-squat — присів (нахил ≈ 45°, ноги ×0,54): поділ упоперек ніг, ззаду не стирчить.
+-->
+<defs>
+<path id="person-skirt-mini-front-stand" d="M11 12.6C12.5 14.7 16 14.3 19 14.8C22 15.3 25.7 15.3 29 15.4C32.3 15.5 36 15.5 39 15.4C42 15.3 44.9 15.1 47 14.6C49.1 14.1 50.7 14.5 51.6 12.4C52.4 17 53.4 23 54.4 29C55 33 55.6 36 55.8 38.4C49 41.2 39 42.2 31 42C23 41.8 13 40.6 7.8 38.2C8.4 35 9 31 9.6 26C10.2 21 10.6 16.4 11 12.6Z"/>
+<path id="person-skirt-mini-front-sit" d="M11 12.6C12.5 14.7 16 14.3 19 14.8C22 15.3 25.7 15.3 29 15.4C32.3 15.5 36 15.5 39 15.4C42 15.3 44.9 15.1 47 14.6C49.1 14.1 50.7 14.5 51.6 12.4C53 12 54.4 12.2 55.4 12.6C55.6 17 55.8 24 55.4 29.6C48 31.4 38 31.6 30 31.4C22 31.2 16 31.2 13.4 30.6C10.8 30 9.6 28.2 9.6 25.6C9.6 21 10.2 17 11 12.6Z"/>
+<path id="person-skirt-mini-front-squat" d="M11 12.6C12.5 14.7 16 14.3 19 14.8C22 15.3 25.7 15.3 29 15.4C32.3 15.5 36 15.5 39 15.4C42 15.3 44.9 15.1 47 14.6C49.1 14.1 50.7 14.5 51.6 12.4C53.2 15.4 55.2 18.4 56.4 21C53 24.4 49.6 28 46.4 31.2C43.4 34.4 40.4 38.2 37.4 41.6C32.6 40.6 27 38.6 22.4 36.4C17.6 34.2 12.6 31.4 9.6 28C9.6 22.8 10.4 17.4 11 12.6Z"/>
+<clipPath id="person-skirt-mini-front-stand-clip"><use href="#person-skirt-mini-front-stand"/></clipPath>
+<clipPath id="person-skirt-mini-front-sit-clip"><use href="#person-skirt-mini-front-sit"/></clipPath>
+<clipPath id="person-skirt-mini-front-squat-clip"><use href="#person-skirt-mini-front-squat"/></clipPath>
+</defs>
+<g id="fill-bottom">
+<use href="#person-skirt-mini-front-stand" fill="#ffffff" class="st-stand"/>
+<use href="#person-skirt-mini-front-sit" fill="#ffffff" class="st-sit"/>
+<use href="#person-skirt-mini-front-squat" fill="#ffffff" class="st-squat"/>
+</g>
+<g id="shade">
+<g class="st-stand" clip-path="url(#person-skirt-mini-front-stand-clip)">
+<path d="M8 12.4C14 16 46 16 56 12L56 19.8C46 22 14 22 8 19.6Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M6 18C10 22 13 30 14.4 44L6 44Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<g class="st-sit" clip-path="url(#person-skirt-mini-front-sit-clip)">
+<path d="M8 12.4C14 16 46 16 56 12L56 19.8C46 22 14 22 8 19.6Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M8 25C20 27 40 27 58 25L58 34L8 34Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<g class="st-squat" clip-path="url(#person-skirt-mini-front-squat-clip)">
+<path d="M8 12.4C14 16 46 16 56 12L56 19.8C46 22 14 22 8 19.6Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M6 24C14 30 26 36 40 44L6 44Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+</g>
+<g id="ink">
+<g class="st-stand">
+<path d="M11.2 15.4C12.6 17.4 16 17 19 17.6C22 18 25.7 18.1 29 18.2C32.3 18.3 36 18.3 39 18.2C42 18.1 44.9 17.9 47 17.4C49 16.9 50.6 17.2 51.8 15.2" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M23 30Q24.4 36 23.4 41.4Q25.2 36 23 30Z" fill="#2e1f29"/>
+<path d="M40 28.6Q41.8 35 41.4 41.8Q43.2 35 40 28.6Z" fill="#2e1f29"/>
+<path d="M14 30Q13.6 35.4 12 39.8Q15 35 14 30Z" fill="#2e1f29"/>
+<path d="M11 12.6C12.5 14.7 16 14.3 19 14.8C22 15.3 25.7 15.3 29 15.4C32.3 15.5 36 15.5 39 15.4C42 15.3 44.9 15.1 47 14.6C49.1 14.1 50.7 14.5 51.6 12.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M51.6 12.4C52.4 17 53.4 23 54.4 29C55 33 55.6 36 55.8 38.4C49 41.2 39 42.2 31 42C23 41.8 13 40.6 7.8 38.2C8.4 35 9 31 9.6 26C10.2 21 10.6 16.4 11 12.6" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g class="st-sit">
+<path d="M11.2 15.4C12.6 17.4 16 17 19 17.6C22 18 25.7 18.1 29 18.2C32.3 18.3 36 18.3 39 18.2C42 18.1 44.9 17.9 47 17.4C49 16.9 50.6 17.2 51.8 15.2" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M47.6 18.6Q50.6 22 51.4 28.4Q49.6 22.4 47.6 18.6Z" fill="#2e1f29"/>
+<path d="M11 12.6C12.5 14.7 16 14.3 19 14.8C22 15.3 25.7 15.3 29 15.4C32.3 15.5 36 15.5 39 15.4C42 15.3 44.9 15.1 47 14.6C49.1 14.1 50.7 14.5 51.6 12.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M51.6 12.4C53 12 54.4 12.2 55.4 12.6C55.6 17 55.8 24 55.4 29.6C48 31.4 38 31.6 30 31.4C22 31.2 16 31.2 13.4 30.6C10.8 30 9.6 28.2 9.6 25.6C9.6 21 10.2 17 11 12.6" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g class="st-squat">
+<path d="M11.2 15.4C12.6 17.4 16 17 19 17.6C22 18 25.7 18.1 29 18.2C32.3 18.3 36 18.3 39 18.2C42 18.1 44.9 17.9 47 17.4C49 16.9 50.6 17.2 51.8 15.2" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M30 26Q33.4 31.4 34.4 38.2Q32 31.8 30 26Z" fill="#2e1f29"/>
+<path d="M43.4 21.6Q45.4 25.4 45.6 30.2Q44 26 43.4 21.6Z" fill="#2e1f29"/>
+<path d="M11 12.6C12.5 14.7 16 14.3 19 14.8C22 15.3 25.7 15.3 29 15.4C32.3 15.5 36 15.5 39 15.4C42 15.3 44.9 15.1 47 14.6C49.1 14.1 50.7 14.5 51.6 12.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M51.6 12.4C53.2 15.4 55.2 18.4 56.4 21C53 24.4 49.6 28 46.4 31.2C43.4 34.4 40.4 38.2 37.4 41.6C32.6 40.6 27 38.6 22.4 36.4C17.6 34.2 12.6 31.4 9.6 28C9.6 22.8 10.4 17.4 11 12.6" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+</svg>

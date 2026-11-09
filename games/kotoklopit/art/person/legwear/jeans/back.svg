@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33 74" width="33" height="74">
+<!-- person/legwear/jeans/back — бічний шов джинсів поверх штанини person/leg (слоти legwear-far і legwear-near), ракурс back (¾ ззаду). Гардероб, низ.
+size 33×74; pivot (16, 18) — кульшовий суглоб, як у person/leg.
+Шар: detail — гірчична строчка вздовж зовнішнього боку ближньої ноги (ззаду — праворуч), від промежини до підкату.
+-->
+<g id="detail">
+<path d="M21.8 26.4C21.6 31 21.4 36.4 21.2 41C21 46 20.9 51.6 20.8 56.4C20.7 59 20.7 60.6 20.6 62" fill="none" stroke="#d4a54c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>
