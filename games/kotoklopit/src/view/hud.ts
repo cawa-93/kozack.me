@@ -55,7 +55,7 @@ const STATS: readonly { name: StatName; icon: IconName }[] = [
 /** Просвіти в ряду показників: від грошей до квитанції, від кружечка до суми, від суми до розкладу. */
 const ROW_GAP = { bill: 26, amount: 4, due: 6, schedule: 12 } as const;
 /** Аркуш розкладу (`ui/hud/note`): відступ праворуч за рядками, одиниці кадру; лівий край рядків — точки запису. */
-const NOTE_PAD_RIGHT = 12;
+const NOTE_PAD_RIGHT = 16;
 /** Листок дня списання (`ui/hud/due`): масштаб кадру на десктопі (на телефоні ще × `hudTextScale`) і кегль напису на ньому. */
 const DUE = { scale: 0.95, font: 14 } as const;
 /** Штрихування частини шкали над межею (§6.3): крок смужок. */
@@ -85,7 +85,9 @@ const HINT = { x: 19, y: 19, r: 15 } as const;
  */
 const HINT_BIG = { x: 15, y: 14 } as const;
 /** Дрібні написи панелі: розмір шрифту на полотні до збільшення (`hudTextScale`). Гроші й комунальні — одного розміру. */
-const SMALL_TEXT = { effects: 18, schedule: 18, news: 17, amount: 20 } as const;
+const SMALL_TEXT = { effects: 18, schedule: 19, news: 17, amount: 20 } as const;
+/** Запис від руки на аркуші розкладу (`theme.css`): Caveat вужчий і дрібніший за системний того самого кегля. */
+const HANDWRITING = { family: "Caveat, system-ui, sans-serif", weight: "600" } as const;
 /** Кружечок підказки (`statDisc`, `HINT.r` з контуром 2): іконка менша за папір — довкола неї лишається просвіт. */
 const HINT_DISC = statDisc(2 * HINT.r + 2);
 
@@ -215,8 +217,14 @@ export class Hud {
       day: keep(scene.add.text(0, 0, BILL_DAY, { fontFamily: UI_FONT, fontSize: `${DUE.font}px`, fontStyle: "bold", color: UI_TEXT.onPaper, resolution })).setOrigin(0.5),
     };
     const handwriting = (): Phaser.GameObjects.Text =>
-      keep(scene.add.text(0, 0, "", { fontFamily: UI_FONT, fontSize: `${SMALL_TEXT.schedule}px`, color: UI_TEXT.onPaper, resolution })).setOrigin(0, 0.5);
+      keep(scene.add.text(0, 0, "", { fontFamily: HANDWRITING.family, fontStyle: HANDWRITING.weight, fontSize: `${SMALL_TEXT.schedule}px`, color: UI_TEXT.onPaper, resolution })).setOrigin(0, 0.5);
     this.schedule = [handwriting(), handwriting()];
+    // Шрифт вантажить браузер, а полотно малює рядок одразу: щойно шрифт готовий — перемалювати рядки й розкласти аркуш наново.
+    // Зразок — і з кирилицею: інакше браузер довантажує лише латинську частину (`unicode-range` у `theme.css`).
+    void document.fonts?.load(`${HANDWRITING.weight} ${SMALL_TEXT.schedule}px Caveat`, "09:00 робота").then(() => {
+      for (const line of this.schedule) line.updateText();
+      this.placeBill();
+    });
     this.left = scene.add
       .container(0, 0, [this.calendar.root, this.clock.root, ...this.discs.flatMap((disc) => [disc.ring, disc.icon]), this.bars])
       .setDepth(DEPTH)

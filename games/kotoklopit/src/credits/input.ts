@@ -9,6 +9,7 @@ import path from "node:path";
 import gamePackage from "../../package.json";
 import playlist from "../audio/radio/playlist.json";
 import type { Sources } from "../audio/sfx/sourcetypes";
+import caveatLicense from "../ui/fonts/OFL-caveat.txt?raw";
 import pangolinLicense from "../ui/fonts/OFL.txt?raw";
 import type { CatalogSource, CatalogTrack, CreditsInput, FontInput, PackageInput, ToolInput } from "./credits";
 
@@ -21,6 +22,7 @@ export const FONT_FILES = Object.keys(import.meta.glob("/src/ui/fonts/*.woff2", 
 /** Шрифти гри (`src/ui/theme.css`); `files` — початок назв їхніх файлів у `src/ui/fonts/`. */
 export const FONTS: readonly (FontInput & { files: string })[] = [
   { family: "Pangolin", designer: "Kevin Burke", license: "OFL-1.1", licenseText: pangolinLicense, files: "pangolin-" },
+  { family: "Caveat", designer: "Pablo Impallari", license: "OFL-1.1", licenseText: caveatLicense, files: "caveat-" },
 ];
 
 /** Як назвати пакет у титрах; без запису — як у npm. */
