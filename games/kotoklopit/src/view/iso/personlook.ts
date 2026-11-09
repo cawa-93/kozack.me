@@ -14,7 +14,7 @@ import type { PERSON_RIG } from "../rig/defs/person";
 import type { AnimOf } from "../rig/types";
 import type { Point } from "../world/part";
 import { ISO_DEPTH_SLOT } from "./depth";
-import { dishFrame, feederFrame, placedFrame, type IsoFrame } from "./looks";
+import { dishFrame, feederFrame, foodLook, placedFrame, type IsoFrame } from "./looks";
 import { NO_EXTRAS, type MixExtras } from "./personmix";
 
 type PersonAnim = AnimOf<typeof PERSON_RIG>;
@@ -195,7 +195,7 @@ export function heldFrame(item: Item | null, anim: PersonAnimId | null = null, t
     case "toy":
       return { socket: "rod", frame: { id: `item/toy/${item.toy.quality}`, state: "hand" }, scale: 1 };
     case "catfood":
-      return { socket: "held", frame: { id: "item/scoop", state: item.sterile ? "sterile" : item.quality }, scale: 1 };
+      return { socket: "held", frame: { id: "item/scoop", state: foodLook(item.sterile, item.quality) }, scale: 1 };
     case "raw":
     case "meal":
     case "burnt":

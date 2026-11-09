@@ -63,8 +63,9 @@ import { waterCapacity } from "./resources";
 import { stateRng } from "./rng";
 import { canGoToSleep } from "./sleep";
 import { absoluteMinute } from "./time";
+import { isDish } from "./dish";
 import { targetById, targetOf, type Target } from "./targets";
-import type { BowlItem, Cat, Dish, GameState, HomeItem, Item, PetActivity, PlayActivity, Quality, UseActivity, Vec } from "./types";
+import type { BowlItem, Cat, GameState, HomeItem, Item, PetActivity, PlayActivity, Quality, UseActivity, Vec } from "./types";
 import { exercise } from "./weight";
 import { startWork, stopWork } from "./work";
 
@@ -87,10 +88,6 @@ function refuse(state: GameState, target: string, refusal: Refusal | BareRefusal
   const detail = typeof refusal === "string" ? ({ reason: refusal } as Refusal) : refusal;
   emit(state, { type: "refused", object: target, ...detail });
   return null;
-}
-
-export function isDish(item: Item | null): item is Dish {
-  return item?.kind === "raw" || item?.kind === "meal" || item?.kind === "burnt";
 }
 
 /** Запас холодильника в руках (§6.4): сира порція — продукти, мамин судочок — судочки; інше — null. */

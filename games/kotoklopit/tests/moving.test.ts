@@ -134,6 +134,20 @@ describe("взяти річ (§8.7)", () => {
 });
 
 describe("поставити річ (§8.7)", () => {
+  // Зовнішня передня стіна — низький плінтус, нічого не закриває: кігтеточка стає впритул до нижньої лівої стіни вітальні.
+  it("кігтеточка стає впритул до нижньої лівої стіни", () => {
+    const save = game();
+    const state = save.current;
+    const post = place(state, "scratcher", "cheap");
+    if (post?.kind !== "scratcher") throw new Error("Немає місця для кігтеточки");
+    state.home.items.push(post);
+    lift(save, post);
+    stand(state, { x: 4.5, y: 9.4 }, { x: 0, y: 1 });
+    expect(thingSpot(state)?.id).toBe("floor-4-10");
+    moveThing(state);
+    expect(item(state, "scratcher").slot).toBe("floor-4-10");
+  });
+
   it("річ стає на підсвічену клітинку, у її центрі", () => {
     const save = game();
     const state = save.current;

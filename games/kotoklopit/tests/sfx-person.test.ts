@@ -118,6 +118,8 @@ describe("звуки персонажа (§11.4а, audio/SOUND.md, «Хто що
     expect(hold(state, "mess:91", 1000, 0.032)).toEqual([]);
     expect(hold(state, "mess:92", 1000, 0.032)).toContain("sweep");
     expect(hold(state, "item:95", 1500, 0.032)).toEqual(["litter-pour"]);
+    // Їдять страву зі столу: порожній стіл — не ціль (§10).
+    state.home.surfaces["table"] = { kind: "meal", quality: "cheap" };
     const meal = hold(state, "table", 5000, 0.032);
     expect(meal[0]).toBe("plate");
     expect(meal).toContain("swallow");

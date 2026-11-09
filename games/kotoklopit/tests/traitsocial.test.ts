@@ -266,6 +266,8 @@ describe("«Котяча м'ята» (§9.12, рішення автора 2026-1
     stop();
     expect(events.some((e) => e.type === "hissed" && e.cat === cat.id)).toBe(true);
     expect(cat.act.kind).toBe("fight");
+    // Стосунки псуються, коли нападник добіг і коти зчепилися.
+    live(save, 2);
     expect(relation(save.current, cat, other)).toBeLessThan(0);
   });
 

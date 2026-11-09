@@ -350,7 +350,8 @@ describe("«Схованки» (§9.12, рішення автора 2026-10-25)"
     };
     // Перед холодильником — і впритул, і на крок далі.
     for (const [x, y] of [[13.5, 2.3], [13.5, 2.5], [13.5, 2.7], [13.3, 2.4], [13.6, 2.4]] as const) expect(targetAt(x, y), `${x}, ${y}`).toBe("fridge");
-    // Перед кухонною поверхнею праворуч — вона.
+    // Перед кухонною поверхнею праворуч — вона (на ній страва: порожня — не ціль, §10).
+    save.current.home.surfaces["counter-left"] = { kind: "raw", quality: "cheap" };
     expect(targetAt(14.6, 2.4)).toBe("counter-left");
     // Біля самої пір'їнки — іграшка.
     expect(targetAt(STASHES.fridge.at.x, 2.4)).toBe(`item:${toy.id}`);

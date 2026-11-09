@@ -469,6 +469,10 @@ describe("кадри квартири й підлоги (iso/looks.ts)", () => {
     expect(bowlFrame(bowl(2, "premium"), 1.5).state).toBe("premium-1");
     expect(bowlFrame(bowl(1, "premium", { half: true }), 0.5).state).toBe("empty");
     expect(bowlFrame(bowl(2, "cheap", { sterile: true })).state).toBe("sterile-2");
+    // Кожна якість корму — свій вигляд, і для стерилізованих теж.
+    expect(bowlFrame(bowl(2, "premium", { sterile: true })).state).toBe("sterile-premium-2");
+    const looks = new Set((["cheap", "premium"] as const).flatMap((q) => [false, true].map((sterile) => bowlFrame(bowl(2, q, { sterile })).state)));
+    expect(looks.size).toBe(4);
     for (const q of QUALITIES) {
       for (let food = 0; food <= BOWL_CAPACITY; food += 0.25) {
         for (const kind of [null, "cheap", "premium"] as const) {

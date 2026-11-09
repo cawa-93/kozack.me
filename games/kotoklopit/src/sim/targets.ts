@@ -3,6 +3,7 @@
 
 import { highPlaceOf, isCarried } from "./catai";
 import { FACING_PRIORITY, MOVING, REACH } from "./config";
+import { isDish } from "./dish";
 import { CARRIER_SPOT, centerOf, distanceToRect, isSolid, isWall, itemPoint, objectAt, objectsOf, slotById, type HomeObject } from "./home";
 import type { Body, Cat, GameState, HomeItem, Mess, PlacedItem, Vec } from "./types";
 
@@ -60,10 +61,20 @@ function catOnWardrobe(state: GameState, object: HomeObject): boolean {
   return object.kind === "wardrobe" && state.cats.some((c) => c.away === null && highPlaceOf(state, c)?.id === object.id);
 }
 
+/**
+ * Порожній стіл чи стільниця без страви в руках — не ціль (§10): дія там лише відмовила б, а плиту між ними й поруч зі столом
+ * було б важко обрати.
+ */
+function idleSurface(state: GameState, object: HomeObject): boolean {
+  return (object.kind === "table" || object.kind === "counter") && (state.home.surfaces[object.id] ?? null) === null && !isDish(state.character.held);
+}
+
 /** Усі цілі, з якими зараз можна взаємодіяти. */
 function candidates(state: GameState): Target[] {
   const targets: Target[] = [];
-  for (const object of objectsOf(state)) if (object.interactive && !catOnWardrobe(state, object)) targets.push({ type: "object", id: object.id, object });
+  for (const object of objectsOf(state)) {
+    if (object.interactive && !catOnWardrobe(state, object) && !idleSurface(state, object)) targets.push({ type: "object", id: object.id, object });
+  }
   // Будиночок і кігтеточка — для котів: персонажу з ними робити нічого.
   // Іграшку з повними руками не підняти, тож вона не заступає плиту чи стіл (§10).
   const handsFull = state.character.held !== null;

@@ -143,12 +143,13 @@ describe("маніфест: правила записів", () => {
   it("сумарне полотно атласу в межах оцінки бюджету", () => {
     // Площа всіх шарів усіх кадрів до обрізки, пікселі атласу: верхня межа того, що піде на сторінки. Оцінка на хвилю 1 —
     // ≈ 34 Мпкс (`art/INVENTORY.md`); межа з запасом на те, що додасть хвиля 2. Перевищення — сигнал переглянути `res`.
+    // З кормом для стерилізованих кожної якості (9 кадрів) оцінка — 48,55 Мпкс, а атлас — ті самі 8 сторінок (4,19 МБ).
     let area = 0;
     for (const e of ENTRIES) {
       const res = e.res ?? DEFAULT_RES;
       area += framesOf(e).length * (e.layers?.length ?? 1) * e.size.w * res * e.size.h * res;
     }
-    expect(area).toBeLessThan(48.5e6);
+    expect(area).toBeLessThan(49e6);
   });
 
   it("маніфест — без Phaser і DOM", () => {
@@ -415,7 +416,8 @@ describe("маніфест: речі котів, у руках, бруд", () =>
     for (const kind of ["raw", "meal", "burnt"] as const satisfies readonly Dish["kind"][]) expect(states(`item/dish/${kind}`)).toEqual(keys(QUALITIES));
     // Мамин судочок (`Dish.mom`) і совок корму для стерилізованих (`CatFoodScoop.sterile`).
     entry("item/dish/mom");
-    expect(states("item/scoop")).toEqual([...keys(QUALITIES), "sterile"]);
+    // Корм для стерилізованих — теж кожної якості свій (`foodLook`).
+    expect(states("item/scoop")).toEqual([...keys(QUALITIES), "sterile", "sterile-premium"]);
   });
 
   it("кожен вид бруду, дрібнички зі столів, жмути шерсті", () => {

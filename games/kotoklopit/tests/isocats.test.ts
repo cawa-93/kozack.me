@@ -659,7 +659,7 @@ describe("де кіт (`catSpot`)", () => {
     cat.x = premium.x;
     cat.y = premium.y;
     cat.act = act("toilet", { target: "item:812" });
-    expect(catSpot(save.current, cat, "squat", null, SPOT)).toMatchObject({ kind: "litter", at: { x: premium.x + LITTER_SEAT.premium, y: premium.y }, above: { id: "item:812" } });
+    expect(catSpot(save.current, cat, "squat", null, SPOT)).toMatchObject({ kind: "litter", at: { x: premium.x + LITTER_SEAT.premium, y: premium.y }, lift: LITTER_SEAT.premiumLift, above: { id: "item:812" } });
     // Після туалету сим лишає кота в лотку (кричить від болю, §9.5, чи ще не пішов) — він і далі в лотку, а не за бортом.
     cat.act = act("idle");
     expect(catSpot(save.current, cat, "sit", null, SPOT)).toMatchObject({ kind: "litter", above: { id: "item:812" } });
