@@ -51,8 +51,11 @@ const STATS: readonly { name: StatName; icon: IconName; column: 0 | 1; row: 0 | 
 
 /** Просвіти в ряду показників: від кружечка до суми, від суми до розкладу. */
 const ROW_GAP = { amount: 4, schedule: 12 } as const;
-/** Аркуш розкладу (`ui/hud/note`): відступ праворуч за рядками, одиниці кадру; лівий край рядків — точки запису. */
-const NOTE_PAD_RIGHT = 16;
+/**
+ * Аркуш розкладу (`ui/hud/note`): `pad` — відступ за рядками, одиниці кадру (у Caveat хвости літер виходять за виміряну ширину
+ * рядка); `gap` — від аркуша до телефона, одиниці панелі. Лівий край рядків — точки запису.
+ */
+const NOTE = { pad: 28, gap: 14 } as const;
 /** Штрихування частини шкали над межею (§6.3): крок смужок. */
 const HATCH_STEP = 6;
 /** Кнопки праворуч: відстань від правого краю до їхнього центру. */
@@ -333,7 +336,7 @@ export class Hud {
     return layout;
   }
 
-  /** Іконки станів — під грошима; розклад — на своєму місці за ними, хіба що довгі суми чи багато станів дійшли до нього. */
+  /** Іконки станів — під грошима; розклад — праворуч біля телефона, але не лівіше за гроші й стани. */
   private placeRight(): void {
     const { columns } = this;
     if (!columns) return;
@@ -382,10 +385,10 @@ export class Hud {
   }
 
   /**
-   * Аркуш розкладу від `x` (§8.4): заввишки й на тій самій висоті, що календарик, завширшки — за довшим рядком; довгий розклад не
-   * заходить під телефон — рядки стискаються вшир однаково. Розкладу немає — немає й аркуша.
+   * Аркуш розкладу праворуч, не лівіше за `min` (§8.4): заввишки й на тій самій висоті, що календарик, завширшки — за довшим
+   * рядком; довгий розклад не заходить під телефон — рядки стискаються вшир однаково. Розкладу немає — немає й аркуша.
    */
-  private placeNote(x: number): void {
+  private placeNote(min: number): void {
     const { shape } = this;
     if (!shape) return;
     const shown = this.schedule[0].text !== "";
@@ -394,11 +397,14 @@ export class Hud {
     const entry = uiEntry(HUD_ART.note);
     const s = shape.clock.scale;
     const left = (entry.points?.["line1"]?.x ?? 0) * s;
-    const pad = NOTE_PAD_RIGHT * s;
+    const pad = NOTE.pad * s;
+    const right = this.room - NOTE.gap * this.textScale;
     const widest = Math.max(1, ...this.schedule.map((line) => line.width));
-    const squeeze = Math.min(1, (this.room - x - left - pad) / widest);
+    const squeeze = Math.min(1, (right - min - left - pad) / widest);
+    const w = left + widest * squeeze + pad;
+    const x = Math.max(min, right - w);
     const top = shape.height / 2 - CALENDAR_LIFT * s - (entry.size.h / 2) * s;
-    this.note.place({ x, y: top, w: left + widest * squeeze + pad, h: entry.size.h * s });
+    this.note.place({ x, y: top, w, h: entry.size.h * s });
     this.schedule.forEach((line, i) => {
       const at = entry.points?.[i === 0 ? "line1" : "line2"]?.y ?? 0;
       line.setPosition(x + left, top + at * s).setScale(squeeze, 1);
