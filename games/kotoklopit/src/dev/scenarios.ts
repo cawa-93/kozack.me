@@ -25,6 +25,8 @@ export interface Scenario {
   cats?: CatSpec[];
   /** Стосунки котів сценарію (§9.4): [номер кота, номер кота, значення], номери — з `cats`. */
   relations?: [number, number, number][];
+  /** Персонаж знає про котів сценарію все (§9.9): риси, породу, стерилізацію, хвороби й вагітність — щоб перевірити картки котів. */
+  knowAll?: boolean;
   /**
    * Одразу вирушити від дверей у цей пункт, як вибір у «Куди поїхати?» (`leaveHome`): показ починається з виїзду з дому (§8.5
    * «Виїзд із дому»). Персонаж у стані сценарію має стояти біля дверей.
@@ -60,6 +62,15 @@ export function addCatCorner(state: GameState): void {
   );
 }
 
+/** Усе, що персонаж може дізнатися про кота (§9.9), — відоме. */
+function knowEverything(cat: Cat): void {
+  for (const trait of cat.traits) trait.known = true;
+  cat.breedKnown = [true, true];
+  cat.sterilizedKnown = true;
+  for (const disease of cat.diseases) disease.known = true;
+  if (cat.pregnancy) cat.pregnancy.known = true;
+}
+
 /** Нова гра в стані сценарію. Знімки перегравання починаються з нього. */
 export function applyScenario(scenario: Scenario): Save {
   const save = newGame({ ...DEFAULT_GAME, ...scenario.game });
@@ -83,6 +94,7 @@ export function applyScenario(scenario: Scenario): Save {
     addCat(state, deepMerge(cat, structuredClone(spec)));
   }
   const added = state.cats.slice(-(scenario.cats?.length ?? 0));
+  if (scenario.knowAll) for (const cat of added) knowEverything(cat);
   for (const [i, j, value] of scenario.relations ?? []) {
     const a = added[i];
     const b = added[j];

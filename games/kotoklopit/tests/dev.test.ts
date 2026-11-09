@@ -49,6 +49,19 @@ describe("сценарії (§11.5)", () => {
     expect(save.weekStart.day).toBe(7);
   });
 
+  it("«22 коти»: персонаж знає про всіх котів усе — риси, породу й стерилізацію (`knowAll`)", () => {
+    const scenario = FILE_SCENARIOS["many-cats"];
+    if (!scenario) throw new Error("немає сценарію");
+    const { cats } = applyScenario(scenario).current;
+    expect(cats).toHaveLength(22);
+    for (const cat of cats) {
+      expect(cat.traits.every((t) => t.known), cat.name).toBe(true);
+      expect(cat.breedKnown, cat.name).toEqual([true, true]);
+      expect(cat.sterilizedKnown, cat.name).toBe(true);
+      expect(cat.diseases.every((d) => d.known), cat.name).toBe(true);
+    }
+  });
+
   it("«Здоровий глузд 29 увечері»: уранці приходить кошеня з притулку", () => {
     const scenario = FILE_SCENARIOS["sanity-29-evening"];
     if (!scenario) throw new Error("немає сценарію");
