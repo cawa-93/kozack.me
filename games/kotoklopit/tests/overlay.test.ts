@@ -214,10 +214,10 @@ describe("картка на місці: тло й положення (§8.5 «Н
     expect(rule(".overlay.away:not(.aside) .card-clock")).toContain("display: inline;");
   });
 
-  it("CSS: назва рядка — рукописна, а підпис під нею й опис риси (притулок, розплідник) — звичайним шрифтом", () => {
+  it("CSS: назва рядка — рукописна, а підпис під нею й опис риси (бабл над рисою скрізь) — звичайним шрифтом", () => {
     expect(rule(".shop-name")).toContain("var(--hand)");
     expect(rule(".shop-stock")).toContain("system-ui");
-    expect(rule(".shop-name .trait-about")).toContain("system-ui");
+    expect(rule(".trait-about")).toContain("system-ui");
   });
 
   it("кнопки дій праворуч — лише за actionsEnd (картка пункту), решта карток — як були", () => {
