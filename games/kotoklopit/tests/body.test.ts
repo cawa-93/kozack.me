@@ -247,6 +247,8 @@ describe("квартира", () => {
       save.current.home.acquired = ["food", "hygiene", "catFood", "sterileFood", "litter", "pills", "drops", "humanMeds", "treats", "collar", "shampoo", "detergent"];
       // Ящики біля входу стоять, лише коли в них щось є (§6.4).
       save.current.home.boxes = { food: { cheap: 1, premium: 0 } };
+      // Порожні стіл і стільниці — не ціль (§10): на кожній стоїть страва.
+      if (o.kind === "table" || o.kind === "counter") save.current.home.surfaces[o.id] = { kind: "meal", quality: "cheap" };
       walkTo(save, o.id);
       expect(targetOf(save.current)?.id).toBe(o.id);
     }
@@ -254,10 +256,29 @@ describe("квартира", () => {
 
   it("з двох речей поруч ціль — та, на яку персонаж дивиться", () => {
     const save = game();
+    save.current.home.surfaces["counter-left"] = { kind: "raw", quality: "cheap" };
     place(save, 14, 2.35, { x: -1, y: 0 });
     expect(targetOf(save.current)?.id).toBe("fridge");
     place(save, 14, 2.35, { x: 1, y: 0 });
     expect(targetOf(save.current)?.id).toBe("counter-left");
+  });
+
+  // Порожні стіл і стільниці лише відмовили б, а плиту між ними й поруч зі столом було б важко обрати (§10).
+  it("порожні стіл і стільниці — ціль, лише коли в руках страва; із чимось на них — завжди", () => {
+    const save = game();
+    const state = save.current;
+    // Між плитою й столом, обличчям до столу: порожній стіл не заступає плиту.
+    place(save, 15.2, 2.5, { x: -0.6, y: 0.8 });
+    expect(targetOf(state)?.id).toBe("stove");
+    state.character.held = { kind: "meal", quality: "cheap" };
+    expect(targetOf(state)?.id).toBe("table");
+    state.character.held = null;
+    state.home.surfaces["table"] = { kind: "meal", quality: "cheap" };
+    expect(targetOf(state)?.id).toBe("table");
+    // Біля стільниці праворуч від плити з порожніми руками — плита.
+    state.home.surfaces["table"] = null;
+    place(save, 16.3, 2.3, { x: 0, y: -1 });
+    expect(targetOf(state)?.id).toBe("stove");
   });
 
   it("далеко від речей цілі немає", () => {

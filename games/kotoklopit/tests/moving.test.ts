@@ -139,7 +139,7 @@ describe("поставити річ (§8.7)", () => {
     const save = game();
     const state = save.current;
     const post = place(state, "scratcher", "cheap");
-    if (!post) throw new Error("Немає місця для кігтеточки");
+    if (post?.kind !== "scratcher") throw new Error("Немає місця для кігтеточки");
     state.home.items.push(post);
     lift(save, post);
     stand(state, { x: 4.5, y: 9.4 }, { x: 0, y: 1 });
