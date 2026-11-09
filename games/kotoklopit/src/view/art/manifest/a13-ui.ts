@@ -44,11 +44,14 @@ export const MANIFEST: readonly ArtEntry[] = [
   { id: "ui/button-step/plus", ...dom(40, 40) },
   { id: "ui/button-step/minus-disabled", ...dom(40, 40) },
   { id: "ui/button-step/plus-disabled", ...dom(40, 40) },
+  { id: "ui/button-step/minus-pressed", ...dom(40, 40) },
+  { id: "ui/button-step/plus-pressed", ...dom(40, 40) },
   // Вкладка телефону (`.card-tab`): звичайна — пласка й заглиблена, активна — піднята жовта (на ній видно чорнильні гліфи).
   { id: "ui/tab/normal", ...dom(96, 40, 14) },
   { id: "ui/tab/active", ...dom(96, 40, 14) },
   // Хрестик у кутку картки (`.card-close`): закриває її, як Esc.
   { id: "ui/close", ...dom(40, 40) },
+  { id: "ui/close-pressed", ...dom(40, 40) },
   // Доріжка повзунка редактора зовнішності (`.look-slider`) — заглиблений жолоб, дев'ять частин.
   { id: "ui/slider/track", ...dom(160, 20, 10) },
   // Повзунок, який тягнуть: кругла «лапка».

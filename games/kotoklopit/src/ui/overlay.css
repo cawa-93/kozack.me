@@ -137,8 +137,9 @@
   cursor: pointer;
 }
 
+/* Натиснутий — своя картинка, як у звичайної кнопки: лице опущене, без губи. Зсув на 2 px натискання майже не показував. */
 .card-close:active {
-  transform: translateY(2px);
+  background-image: url("../../art/ui/close-pressed.svg");
 }
 
 /* Рядок вкладок липне до верху картки (телефон): те, що прокручується, ховається під ним, а не пропливає під хрестиком, —
@@ -1512,6 +1513,22 @@
   margin: 1px auto 0;
 }
 
+/* «Викинути» в рядку речі (§8.7): кнопка-іконка смітника, як «Очистити» — гліф по висоті над губою; ширина однакова в
+   усіх станах (натиснута й вимкнена кнопка мають свої поля). */
+.button.discard,
+.button.discard:active:not(:disabled),
+.button.discard:disabled {
+  padding-right: 12px;
+  padding-left: 12px;
+  font-size: 21px;
+  line-height: 1;
+}
+
+.button.discard .glyph {
+  display: block;
+  margin: 1px auto 0;
+}
+
 .button.shop-pay {
   margin-left: auto;
   white-space: nowrap;
@@ -1553,8 +1570,13 @@
   inset: -2px;
 }
 
+/* Натиснутий степер — своя картинка, як у звичайної кнопки (`ui/button/pressed`): лице опущене, без губи. */
 .button.step:active:not(:disabled) {
-  transform: translateY(2px);
+  background-image: url("../../art/ui/button-step/plus-pressed.svg");
+}
+
+.shop-item > .button.step:first-of-type:active:not(:disabled) {
+  background-image: url("../../art/ui/button-step/minus-pressed.svg");
 }
 
 /* Вимкнений степер — своя пласка сіра картинка, як і вимкнена кнопка (не напівпрозорість). */

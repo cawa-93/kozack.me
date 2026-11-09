@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- ui/glyph/discard — викинути річ (🗑, кнопка без тексту в рядку речі вкладки «Дім» телефона, `src/ui/cards.ts`, §8.7): сірий
+металевий смітник із ребрами стоїть рівно, кришка-купол із ручкою піднята й нахилена ліворуч — «кинути сюди».
+size 64×64; pivot (32, 32) — центр; points: —. Без станів і шарів. Гліф DOM (src/ui/glyphs.ts): стоїть на кнопці ≈ 24 px на папері.
+Той самий смітник, що на кухні (env/trash): метал grey, світла смуга grey-hi, ребра grey-lo; контур 6 / важкий низ 8,5 / ребра 3,5.
+Не перекинутий котом смітник (icon/bin-tipped: лежить на боці, кришка відлетіла).
+-->
+<defs><clipPath id="ui-glyph-discard-can"><path d="M15.5 27H48.5L45.5 54Q45 55.5 43 55.5H21Q19 55.5 18.5 54Z"/></clipPath></defs>
+<g id="p-can">
+<path d="M15.5 27H48.5L45.5 54Q45 55.5 43 55.5H21Q19 55.5 18.5 54Z" fill="#a69f9b"/>
+<g clip-path="url(#ui-glyph-discard-can)"><path d="M10 22H54V32H10Z" fill="#cdc6be"/><path d="M10 50Q32 53 54 50V62H10Z" fill="#3f2541" fill-opacity="0.16"/></g>
+<path d="M25 33.5L25.8 49.5M32 33.5V49.5M39 33.5L38.2 49.5" fill="none" stroke="#716869" stroke-width="3.5" stroke-linecap="round"/>
+<path d="M15.5 27H48.5L45.5 54Q45 55.5 43 55.5H21Q19 55.5 18.5 54Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linejoin="round"/>
+<path d="M45.5 54Q45 55.5 43 55.5H21Q19 55.5 18.5 54" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-lid" transform="translate(0 2.5) rotate(-10 13 21)">
+<path d="M28.5 12Q28.5 8.5 32 8.5Q35.5 8.5 35.5 12" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round"/>
+<path d="M12.5 21Q13.5 12.5 32 12.5Q50.5 12.5 51.5 21Z" fill="#a69f9b"/>
+<path d="M17 18.5Q20 15.5 30 15.2" fill="none" stroke="#cdc6be" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M12.5 21Q13.5 12.5 32 12.5Q50.5 12.5 51.5 21Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linejoin="round"/>
+</g>
+</svg>

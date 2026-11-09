@@ -270,7 +270,8 @@ const MARKS: Record<Mark, true> = { no: true, ask: true, ok: true };
 /**
  * Гліфи DOM (`src/ui/glyphs.ts`): символ-позначка в тексті карток → назва запису `ui/glyph/<назва>`. `❓` (риса, про яку
  * ще нічого не відомо, `cards.ts`) гліфа досі не мав. `⌫` — кнопка «Очистити кошик» у смузі кошика (`src/ui/shop.ts`; рішення
- * автора 2026-11-03, GAME_DESIGN §6.4): кошик із червоним бейджем-хрестиком.
+ * автора 2026-11-03, GAME_DESIGN §6.4): кошик із червоним бейджем-хрестиком. `🗑` — кнопка «Викинути» в рядку речі вкладки «Дім»
+ * (§8.7): стоячий смітник із піднятою кришкою.
  */
 export const GLYPH_ART: Readonly<Record<string, string>> = {
   "💻": "laptop",
@@ -284,6 +285,7 @@ export const GLYPH_ART: Readonly<Record<string, string>> = {
   "🚗": "car",
   "❓": "question",
   "⌫": "cart-clear",
+  "🗑": "discard",
 };
 
 export const MANIFEST: readonly ArtEntry[] = [

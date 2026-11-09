@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
+<!-- ui/close-pressed — хрестик у кутку картки, натиснутий (`.card-close:active`): як ui/button/pressed — тон enamel, губи немає,
+знизу тінь shade 0,16; коло лишається колом, а лице опущене: верх кільця товщий, хрест нижче на 2.
+size 40×40; pivot (20, 20) — центр; без points (ціла картинка).
+-->
+<defs><clipPath id="ui-close-pressed-in"><path d="M20 4.6C28.39 4.6 35.2 11.32 35.2 19.6C35.2 28.1 28.39 35 20 35C11.66 35 4.9 28.1 4.9 19.6C4.9 11.32 11.66 4.6 20 4.6Z"/></clipPath></defs>
+<g id="p-body">
+<path d="M20 4.6C28.39 4.6 35.2 11.32 35.2 19.6C35.2 28.1 28.39 35 20 35C11.66 35 4.9 28.1 4.9 19.6C4.9 11.32 11.66 4.6 20 4.6Z" fill="#e0d4b9"/>
+<path d="M4 28H36V36H4Z" fill="#3f2541" fill-opacity="0.16" clip-path="url(#ui-close-pressed-in)"/>
+</g>
+<g id="p-cross">
+<path d="M14.4 14Q20.6 19 25.6 24.4M25.8 14.2Q19.4 19.6 14.2 24" fill="none" stroke="#2e1f29" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-ink">
+<path d="M20 4.6C28.39 4.6 35.2 11.32 35.2 19.6C35.2 28.1 28.39 35 20 35C11.66 35 4.9 28.1 4.9 19.6C4.9 11.32 11.66 4.6 20 4.6ZM20 10.6C25.8 10.6 30.4 14.95 30.4 20.3C30.4 25.85 25.8 30.3 20 30.3C14.25 30.3 9.7 25.85 9.7 20.3C9.7 14.95 14.25 10.6 20 10.6Z" fill="#2e1f29" fill-rule="evenodd"/>
+</g>
+</svg>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
+<!-- ui/button-step/minus-pressed — кнопка степера магазину «−», натиснута (`.button.step:active`): як ui/button/pressed —
+верх опущено на висоту губи (4), тон enamel, губи немає, знизу тінь shade 0,16; знак опущено разом із верхом (3).
+size 40×40; pivot (20, 20) — центр; без points (ціла картинка, background-size 100%). Контур кільцем ink (4, низ 5,2).
+-->
+<defs><clipPath id="ui-button-step-minus-pressed-in"><path d="M13.6 8.6L26.9 8.6C31.15 8.6 35.4 12.85 35.4 17.1L35.4 25.9C35.4 31.13 31.13 35.4 25.9 35.4L13.6 35.4C8.2 35.4 4.6 31.8 4.6 26.4L4.6 17.6C4.6 12.38 8.38 8.6 13.6 8.6Z"/></clipPath></defs>
+<g id="p-body">
+<path d="M13.6 8.6L26.9 8.6C31.15 8.6 35.4 12.85 35.4 17.1L35.4 25.9C35.4 31.13 31.13 35.4 25.9 35.4L13.6 35.4C8.2 35.4 4.6 31.8 4.6 26.4L4.6 17.6C4.6 12.38 8.38 8.6 13.6 8.6Z" fill="#e0d4b9"/>
+<path d="M4 29H36V36H4Z" fill="#3f2541" fill-opacity="0.16" clip-path="url(#ui-button-step-minus-pressed-in)"/>
+</g>
+<g id="p-sign">
+<path d="M13.4 20.4Q20 19.5 26.6 19.7" fill="none" stroke="#2e1f29" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-ink">
+<path d="M13.6 8.6L26.9 8.6C31.15 8.6 35.4 12.85 35.4 17.1L35.4 25.9C35.4 31.13 31.13 35.4 25.9 35.4L13.6 35.4C8.2 35.4 4.6 31.8 4.6 26.4L4.6 17.6C4.6 12.38 8.38 8.6 13.6 8.6ZM14.6 12.4L25.9 12.4C28.65 12.4 31.4 15.15 31.4 17.9L31.4 24.6C31.4 27.68 28.88 30.2 25.8 30.2L13.7 30.2C10.64 30.2 8.6 28.16 8.6 25.1L8.6 18.4C8.6 14.92 11.12 12.4 14.6 12.4Z" fill="#2e1f29" fill-rule="evenodd"/>
+</g>
+</svg>

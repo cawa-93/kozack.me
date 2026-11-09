@@ -28,6 +28,7 @@ import {
   farewellText,
   fill,
   GAME_TEXTS,
+  DISCARD_LABEL,
   HOME_FIXTURE_TITLES,
   KITTEN_MESSAGE,
   LEDGER_TEXTS,
@@ -466,9 +467,7 @@ function myThings(state: GameState, handlers: PhoneHandlers): HTMLElement {
   for (const item of state.home.items) {
     const row = element("div", "shop-row");
     row.append(element("span", "shop-name", variantLabel({ thing: item.kind }, item.quality)));
-    const button = element("button", "button", "Викинути");
-    button.addEventListener("click", () => handlers.discard(item));
-    row.append(button);
+    row.append(discardButton(() => handlers.discard(item)));
     shop.append(row);
   }
   // Техніка й автогодівниці теж (§8.7): раніше їх тут не було, тож викинути їх не можна було зовсім (перевірка побуту 2026-10-28);
@@ -486,14 +485,21 @@ function myThings(state: GameState, handlers: PhoneHandlers): HTMLElement {
   for (const { kind, quality, thing } of extra) {
     const row = element("div", "shop-row");
     row.append(element("span", "shop-name", variantLabel({ thing: kind }, quality)));
-    const button = element("button", "button", "Викинути");
-    button.addEventListener("click", () => handlers.discardThing(thing, quality));
-    row.append(button);
+    row.append(discardButton(() => handlers.discardThing(thing, quality)));
     shop.append(row);
   }
   return shop;
 }
 
+
+/** «Викинути» (§8.7): кнопка-іконка смітника (гліф 🗑 малює `Overlay`); назва — підказкою й для читача екрана. */
+function discardButton(onClick: () => void): HTMLButtonElement {
+  const button = element("button", "button discard", "🗑");
+  button.title = DISCARD_LABEL;
+  button.setAttribute("aria-label", DISCARD_LABEL);
+  button.addEventListener("click", onClick);
+  return button;
+}
 
 export type CareChoice = { medicine: Medicine } | { treat: Quality } | { catnip: Quality } | "collar";
 
