@@ -16,7 +16,7 @@ export interface HairStyle extends WardrobeEntry {
   readonly accent?: boolean;
 }
 
-/** Кіберпанк і лиса — рідше за звичайні зачіски у «Випадково». */
+/** Кіберпанк, лиса й вінчик — рідше за звичайні зачіски у «Випадково». */
 const RARE = 0.5;
 
 export const HAIR_STYLES: readonly HairStyle[] = [
@@ -37,6 +37,18 @@ export const HAIR_STYLES: readonly HairStyle[] = [
   // Дешеві: лише нова передня частина, задня — каре й «довгої».
   { name: "каре з чубчиком", group: "пряме", back: "person/hair-back/bob", front: "person/hair-front/bob-bangs" },
   { name: "довге з прямим проділом", group: "пряме", back: "person/hair-back/1", front: "person/hair-front/middle-part" },
+  // Пучок і маллет спереду — «хвостик» і скуйовджена: різниця лише ззаду.
+  { name: "низький пучок", group: "пряме", back: "person/hair-back/bun", front: "person/hair-front/2" },
+  { name: "хвиляста кучма", group: "хвилясте", back: "person/hair-back/mop", front: "person/hair-front/mop" },
+  { name: "короткі кучері", group: "кучеряве", back: "person/hair-back/curls-short", front: "person/hair-front/curls-short" },
+  { name: "маллет", group: "кудлате", back: "person/hair-back/mullet", front: "person/hair-front/shaggy" },
+  { name: "кукурудзяні кіски", group: "дреди й коси", back: "person/hair-back/cornrows", front: "person/hair-front/cornrows" },
+  { name: "під машинку", group: "коротко", back: "person/hair-back/buzz", front: "person/hair-front/buzz" },
+  { name: "їжачок", group: "коротко", back: "person/hair-back/spiky", front: "person/hair-front/spiky" },
+  { name: "вінчик", group: "коротко", back: "person/hair-back/horseshoe", front: "person/hair-front/horseshoe", weight: RARE },
+  { name: "неоновий ірокез", group: "кіберпанк", back: "person/hair-back/mohawk", front: "person/hair-front/mohawk", accent: true, weight: RARE },
+  { name: "асиметричне каре", group: "кіберпанк", back: "person/hair-back/asym-bob", front: "person/hair-front/asym-bob", accent: true, weight: RARE },
+  { name: "шипи", group: "кіберпанк", back: "person/hair-back/spikes", front: "person/hair-front/spikes", accent: true, weight: RARE },
 ];
 
 /**

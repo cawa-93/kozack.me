@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 63 57" width="63" height="57">
+<!-- person/hair-front/spikes/back — шипи, передня частина: гострі шипи вгору й навсібіч, лоб відкритий, ракурс back (¾ ззаду). Рукою еталонів F1b (art/STYLE.md).
+size 63×57; pivot (34, 56) — шия, як у person/head/*; points: top (33.5, 5.5).
+Шари: fill-hair, fill-accent, shade, ink.
+Акцент — кінчики шипів; бачки перед вухом.
+back — порожні шари: скелет ховає передню частину зачіски ззаду.
+-->
+<g id="fill-hair"/>
+<g id="fill-accent"/>
+<g id="shade"/>
+<g id="ink"/>
+</svg>

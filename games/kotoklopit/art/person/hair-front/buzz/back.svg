@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 41 36" width="41" height="36">
+<!-- person/hair-front/buzz/back — під машинку, передня частина: тісна шапочка, лінія росту відкриває лоб, вища на скронях, ракурс back (¾ ззаду). Рукою еталонів F1b (art/STYLE.md).
+size 41×36; pivot (21, 35) — шия, як у person/head/*; points: top (21.5, -6.5).
+Шари: fill-hair, shade, ink.
+Бачки перед вухом; фактура — кілька коротких дужок; тінь soft — над лобом і над вухом.
+back — порожні шари: скелет ховає передню частину зачіски ззаду.
+-->
+<g id="fill-hair"/>
+<g id="shade"/>
+<g id="ink"/>
+</svg>

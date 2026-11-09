@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 57 60" width="57" height="60">
+<!-- person/hair-front/mohawk/back — неоновий ірокез, передня частина: високий гребінь шипами від лоба до потилиці, скроні виголені, ракурс back (¾ ззаду). Рукою еталонів F1b (art/STYLE.md).
+size 57×60; pivot (34, 59) — шия, як у person/head/*; points: top (35, 5).
+Шари: fill-hair, fill-accent, shade, ink.
+Шипи загнуті назад; акцент — гребінь над коренями; скроні — рисочки щетини на шкірі.
+back — порожні шари: скелет ховає передню частину зачіски ззаду.
+-->
+<g id="fill-hair"/>
+<g id="fill-accent"/>
+<g id="shade"/>
+<g id="ink"/>
+</svg>

@@ -2,7 +2,8 @@
 // зачісок, у обох ракурсах. Полотно кожної — своє, обрізане довкола малюнка (бюджет атласу), а pivot — та сама шия, що в
 // голови (`person/head/*`: полотно 64 × 70, pivot (32, 46)): тож зачіска стає на будь-яку голову без зсувів
 // (`art/STYLE.md`, §9). Точка `top` — маківка зачіски, над нею бабли (якір `head` скелета). Кіберпанк — з маскою акценту
-// `fill-accent`. «Лиса» кадрів не має; «каре з чубчиком» і «довге з прямим проділом» беруть задню частину каре й «довгої».
+// `fill-accent`. «Лиса» кадрів не має; «каре з чубчиком» і «довге з прямим проділом» беруть задню частину каре й «довгої»,
+// «низький пучок» і «маллет» — передню «хвостика» й скуйовдженої.
 
 import type { ArtEntry, ArtId, ArtLayer, ArtPoint } from "../types";
 import { PART_VIEWS } from "./lib/geometry";
@@ -33,6 +34,14 @@ const TOP_AFRO: ArtPoint = { x: 31.5, y: -4 };
 const TOP_SHAGGY: ArtPoint = { x: 33, y: 2 };
 /** Чуб андеркату здіймається над лобом. */
 const TOP_QUIFF: ArtPoint = { x: 35, y: -1.5 };
+/** Хвиляста кучма пишніша за голову й угорі. */
+const TOP_MOP: ArtPoint = { x: 32.5, y: 3.5 };
+/** Шпичаки їжачка стирчать над маківкою. */
+const TOP_SPIKY: ArtPoint = { x: 32.5, y: 2 };
+/** Гребінь ірокезу — найвища маківка з усіх (бабли й смуга лагодження дроту, `FIX_HEAD`). */
+const TOP_MOHAWK: ArtPoint = { x: 33, y: -8 };
+/** Шипи — вищі за афро, нижчі за ірокез. */
+const TOP_SPIKES: ArtPoint = { x: 31.5, y: -4.5 };
 
 export const MANIFEST: readonly ArtEntry[] = [
   // Каре (`HAIR_STYLES` «каре», «каре з чубчиком»): у front — маса за головою до підборіддя в тіні, у back — уся потилиця з
@@ -79,4 +88,44 @@ export const MANIFEST: readonly ArtEntry[] = [
   // Довге з прямим проділом, передня частина (задня — «довгої», `person/hair-back/1`): пасма нижче плечей — ближнє на грудях
   // між рукою й шиєю, дальнє на дальньому плечі.
   part("person/hair-front/middle-part", 62, 75, 1, 2, TOP, PLAIN),
+  // Низький пучок: пасма сходяться до пучка на потилиці (передня частина — «хвостика», `person/hair-front/2`).
+  part("person/hair-back/bun", 58, 53, -1, 3, TOP, PLAIN),
+  // Хвиляста кучма: об'ємні хвилі ширші за голову, вище плечей.
+  part("person/hair-back/mop", 69, 60, -3, -1, TOP_MOP, PLAIN),
+  // Хвиляста кучма, передня частина: хвилястий чубчик набік.
+  part("person/hair-front/mop", 68, 61, -3, -1, TOP_MOP, PLAIN),
+  // Короткі кучері: шапочка дрібних кучерів.
+  part("person/hair-back/curls-short", 53, 49, 4, 2, TOP, PLAIN),
+  // Короткі кучері, передня частина.
+  part("person/hair-front/curls-short", 53, 45, 5, 2, TOP, PLAIN),
+  // Маллет: коротка маківка й довгі пасма з потилиці (передня частина — скуйовдженої, тож і маківка її).
+  part("person/hair-back/mullet", 61, 69, -1, -1, TOP_SHAGGY, PLAIN),
+  // Кукурудзяні кіски: рядки кісок до потилиці, на шиї — короткі кіски.
+  part("person/hair-back/cornrows", 52, 52, 5, 4, TOP, PLAIN),
+  // Кукурудзяні кіски, передня частина: рядки від лінії росту назад.
+  part("person/hair-front/cornrows", 51, 43, 6, 4, TOP, PLAIN),
+  // Під машинку: волосся на черепі всередині лінії голови, без власного силуету.
+  part("person/hair-back/buzz", 39, 37, 13, 11, TOP, PLAIN),
+  // Під машинку, передня частина.
+  part("person/hair-front/buzz", 41, 36, 11, 11, TOP, PLAIN),
+  // Їжачок: короткі шпичаки вгору.
+  part("person/hair-back/spiky", 56, 54, 3, -3, TOP_SPIKY, PLAIN),
+  // Їжачок, передня частина.
+  part("person/hair-front/spiky", 57, 50, 3, -3, TOP_SPIKY, PLAIN),
+  // Вінчик: лисина, волосся вінцем по потилиці (маківка — як у голови).
+  part("person/hair-back/horseshoe", 40, 30, 12, 18, TOP, PLAIN),
+  // Вінчик, передня частина: над ближнім вухом і бачки.
+  part("person/hair-front/horseshoe", 22, 30, 11, 17, TOP, PLAIN),
+  // Неоновий ірокез: гребінь до потилиці, боки виголені; акцент — гребінь; високе полотно.
+  part("person/hair-back/mohawk", 51, 65, 7, -13, TOP_MOHAWK, ACCENT),
+  // Неоновий ірокез, передня частина.
+  part("person/hair-front/mohawk", 57, 60, -2, -13, TOP_MOHAWK, ACCENT),
+  // Асиметричне каре: ближній бік довгий, зріз косо; акцент — нижній шар по краю зрізу.
+  part("person/hair-back/asym-bob", 60, 63, 2, 2, TOP, ACCENT),
+  // Асиметричне каре, передня частина: акцент — ще й уздовж ближнього пасма біля щоки.
+  part("person/hair-front/asym-bob", 59, 59, 2, 2, TOP, ACCENT),
+  // Шипи: гострі шипи вгору й навсібіч; акцент — шипи над шапочкою.
+  part("person/hair-back/spikes", 62, 60, -2, -9, TOP_SPIKES, ACCENT),
+  // Шипи, передня частина.
+  part("person/hair-front/spikes", 63, 57, -2, -10, TOP_SPIKES, ACCENT),
 ];

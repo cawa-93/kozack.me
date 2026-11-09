@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 63" width="60" height="63">
+<!-- person/hair-back/asym-bob/front — асиметричне каре, задня частина: ближній бік (праворуч) довгий до плеча, дальній — до щелепи, зріз косо, ракурс front (¾ спереду). Рукою еталонів F1b (art/STYLE.md).
+size 60×63; pivot (30, 44) — шия, як у person/head/*; points: top (30.5, 2.5).
+Шари: fill-hair, fill-accent, shade, ink.
+Акцент `fill-accent` — нижній шар по краю зрізу (≈5 завширшки), межа — лінією inner; без акценту — кольору волосся. У front — маса за головою в тіні base, ближній бік довгий.
+-->
+<defs>
+<path id="person-hair-back-asym-bob-front-shape" d="M25 20C24.7 23.9 22.8 28.3 22 32C21.2 35.7 20.4 39.1 20.2 42C20 44.9 21 47.4 20.6 49.6C20.2 51.8 18.9 53.3 18 55.2C16.5 54.7 14.9 53.8 13.4 53.8C11.9 53.8 10.3 54.6 8.8 55C8.3 52.7 7.7 50.5 7.4 48C7.1 45.5 6.9 42.8 6.8 40C6.7 37.2 6.7 33.8 7 31C7.3 28.2 7.6 25.5 8.4 23C9.2 20.5 10.2 18 11.6 16C13 14 14.9 12.3 17 11C19.1 9.7 22.7 6.9 24 8.4C25.3 9.9 25.3 16.1 25 20Z"/>
+<clipPath id="person-hair-back-asym-bob-front-clip"><use href="#person-hair-back-asym-bob-front-shape"/></clipPath>
+</defs>
+<g id="fill-hair">
+<use href="#person-hair-back-asym-bob-front-shape" fill="#ffffff"/>
+</g>
+<g id="fill-accent" clip-path="url(#person-hair-back-asym-bob-front-clip)">
+<path d="M2 47.6C3 45.7 6 48.3 8 48.4C10 48.5 12 48.1 14 48C16 47.9 18.3 47.4 20 47.6C21.7 47.8 23.3 46.9 24 49C24.7 51.1 27.7 58.2 24 60C20.3 61.8 5.7 62.1 2 60C-1.7 57.9 1 49.5 2 47.6Z" fill="#ffffff"/>
+</g>
+<g id="shade" clip-path="url(#person-hair-back-asym-bob-front-clip)">
+<path d="M-42 -42C-17 -67 83 -67 108 -42C133 -17 133 83 108 108C83 133 -17 133 -42 108C-67 83 -67 -17 -42 -42Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="ink">
+<use href="#person-hair-back-asym-bob-front-shape" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7.4 48.4C9.5 48.3 11.4 48.1 13.6 48C15.8 47.9 18.1 47.9 20.4 47.8" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 53 45" width="53" height="45">
+<!-- person/hair-front/curls-short/back — короткі кучері, передня частина: шапочка кучерів, лінія росту над лобом — горбиками, ракурс back (¾ ззаду). Рукою еталонів F1b (art/STYLE.md).
+size 53×45; pivot (27, 44) — шия, як у person/head/*; points: top (27.5, 2.5).
+Шари: fill-hair, shade, ink.
+Лоб відкритий; тінь soft — над лобом і над вухом.
+back — порожні шари: скелет ховає передню частину зачіски ззаду.
+-->
+<g id="fill-hair"/>
+<g id="shade"/>
+<g id="ink"/>
+</svg>

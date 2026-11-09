@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 30" width="22" height="30">
+<!-- person/hair-front/horseshoe/back — вінчик, передня частина: волосся над ближнім вухом і бачки, на дальній скроні — клаптик, ракурс back (¾ ззаду). Рукою еталонів F1b (art/STYLE.md).
+size 22×30; pivot (21, 29) — шия, як у person/head/*; points: top (21.5, -12.5).
+Шари: fill-hair, shade, ink.
+Тім'я лисе (шкіра голови); тінь soft — над вухом.
+back — порожні шари: скелет ховає передню частину зачіски ззаду.
+-->
+<g id="fill-hair"/>
+<g id="shade"/>
+<g id="ink"/>
+</svg>

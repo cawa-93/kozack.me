@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 30" width="22" height="30">
+<!-- person/hair-front/horseshoe/front — вінчик, передня частина: волосся над ближнім вухом і бачки, на дальній скроні — клаптик, ракурс front (¾ спереду). Рукою еталонів F1b (art/STYLE.md).
+size 22×30; pivot (21, 29) — шия, як у person/head/*; points: top (21.5, -12.5).
+Шари: fill-hair, shade, ink.
+Тім'я лисе (шкіра голови); тінь soft — над вухом.
+-->
+<defs>
+<path id="person-hair-front-horseshoe-front-shape" d="M6.6 12.2C6.6 11.3 7.1 10 7.3 9.2C7.5 8.4 7.6 8 7.8 7.4C8 6.8 8.2 5.7 8.6 5.6C9 5.5 9.5 6.3 10 6.6C10.5 6.3 11.2 5.6 11.6 5.8C12 6 12.5 7.2 12.6 8C12.7 8.8 12.3 9.8 12.2 10.8C12.1 11.8 11.9 12.8 11.8 13.8C11.7 14.8 11.6 15.9 11.4 16.6C11.2 17.3 11 17.5 10.8 18C10.2 17.5 9.5 17.2 9 16.6C8.5 16 8 15.1 7.6 14.4C7.2 13.7 6.7 13.1 6.6 12.2Z"/>
+<clipPath id="person-hair-front-horseshoe-front-clip"><use href="#person-hair-front-horseshoe-front-shape"/></clipPath>
+</defs>
+<g id="fill-hair">
+<use href="#person-hair-front-horseshoe-front-shape" fill="#ffffff"/>
+</g>
+<g id="shade" clip-path="url(#person-hair-front-horseshoe-front-clip)">
+<path d="M1 9C2.3 7 7 8.3 9 9C11 9.7 12.3 11 13 13C13.7 15 15 19.7 13 21C11 22.3 3 23 1 21C-1 19 -0.3 11 1 9Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<g id="ink">
+<path d="M8.2 6.2C8.8 6.3 9.4 6.7 10 6.6C10.6 6.5 11.2 5.6 11.6 5.8C12 6 12.5 7.2 12.6 8C12.7 8.8 12.3 9.8 12.2 10.8C12.1 11.8 11.9 12.8 11.8 13.8C11.7 14.8 11.6 15.9 11.4 16.6C11.2 17.3 11.2 18 10.8 18C10.4 18 9.5 17.2 9 16.6C8.5 16 8 15.1 7.6 14.4C7.2 13.7 6.9 13.2 6.6 12.6" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M9.4 8.4L9.3 8.6L9.2 8.9L9.2 9.1L9.1 9.3L9.1 9.6L9 9.8L9 10L9 10.3L9 10.5L9 10.7L9 10.9L9 11.2L9 11.4L9 11.6L9 11.8L9 12.1L9 12.3L9 12.5L9 12.8L9 13L9 13.3L9 13.5L9.1 13.7L9.1 14L9.2 14.2L9.2 14.5L9.3 14.7L9.4 15L9.4 15L9.6 14.8L9.7 14.5L9.7 14.3L9.8 14.1L9.9 13.8L10 13.6L10 13.3L10.1 13.1L10.1 12.8L10.2 12.6L10.2 12.3L10.2 12.1L10.2 11.8L10.3 11.6L10.2 11.4L10.2 11.1L10.2 10.9L10.2 10.6L10.1 10.4L10.1 10.2L10 9.9L10 9.7L9.9 9.5L9.8 9.3L9.7 9.1L9.7 8.8L9.6 8.6L9.4 8.4Z" fill="#2e1f29"/>
+</g>
+</svg>

@@ -49,6 +49,25 @@ describe("акцент зачіски", () => {
   it("усі зачіски «кіберпанк» мають маску акценту", () => {
     for (const style of HAIR_STYLES) if (style.group === "кіберпанк") expect(style.accent, style.name).toBe(true);
   });
+
+  it("у зачіски з акцентом маска fill-accent — у кожному її кадрі, без акценту — ні в жодному", () => {
+    for (const style of HAIR_STYLES) {
+      for (const id of [style.back, style.front]) {
+        if (id === null) continue;
+        expect(artEntry(id)?.layers?.includes("fill-accent"), `${style.name}: ${id}`).toBe(style.accent === true);
+      }
+    }
+  });
+});
+
+describe("реєстр зачісок", () => {
+  it("номери наявних зачісок не міняються: нові — лише в кінці (збереження показує ту саму зачіску)", () => {
+    expect(HAIR_STYLES.slice(0, 16).map((s) => s.name)).toEqual([
+      "коротка", "довга", "хвостик", "кучері", "каре", "хвилі до плечей", "афро", "скуйовджена", "дреди", "коса на плече", "лиса",
+      "андеркат із чубом", "неонові пасма", "візерунок на скроні", "каре з чубчиком", "довге з прямим проділом",
+    ]);
+    expect(new Set(HAIR_STYLES.map((s) => s.name)).size).toBe(HAIR_STYLES.length);
+  });
 });
 
 describe("кадри зачісок", () => {
@@ -85,6 +104,32 @@ describe("кадри зачісок", () => {
       }
       // Маківка зачіски — над маківкою голови, не нижче.
       for (const top of tops) expect(top!.y, style.name).toBeLessThanOrEqual(local(head.id, "top")!.y);
+    }
+  });
+
+  it("гребінь ірокезу й шипи — своя маківка, вища за афро; ірокез — найвищий: під нього `FIX_HEAD`", () => {
+    const topOf = (name: string): number => {
+      const style = HAIR_STYLES.find((s) => s.name === name)!;
+      const e = artEntry(style.front!)!;
+      return e.points!["top"]!.y - e.pivot.y;
+    };
+    const afro = topOf("афро");
+    expect(topOf("неоновий ірокез")).toBeLessThan(topOf("шипи"));
+    expect(topOf("шипи")).toBeLessThan(afro);
+    for (const style of HAIR_STYLES) if (style.front) expect(topOf(style.name), style.name).toBeGreaterThanOrEqual(topOf("неоновий ірокез"));
+  });
+
+  it("маківка (якір бабла) — не всередині волосся: висока зачіска без своєї `top` ховала б бабл у гребені", () => {
+    // Полотно обрізане довкола малюнка з полем ≈4 (`art/STYLE.md`, §2): верх малюнка з контуром — на ≈4 нижче за верх
+    // полотна; маківка — не глибше за пів лінії під ним.
+    const FIELD = 4;
+    const HALF_LINE = 2;
+    for (const style of HAIR_STYLES) {
+      for (const id of [style.back, style.front]) {
+        if (id === null) continue;
+        const e = artEntry(id)!;
+        expect(e.points!["top"]!.y, `${style.name}: ${id}`).toBeLessThanOrEqual(FIELD + HALF_LINE);
+      }
     }
   });
 });

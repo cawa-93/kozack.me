@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 57 50" width="57" height="50">
+<!-- person/hair-front/spiky/back — їжачок, передня частина: короткі шпичаки вгору, над лобом — коротка щіточка, ракурс back (¾ ззаду). Рукою еталонів F1b (art/STYLE.md).
+size 57×50; pivot (29, 49) — шия, як у person/head/*; points: top (29.5, 5).
+Шари: fill-hair, shade, ink.
+Лоб відкритий; штрихи — у кожному другому шпичаку.
+back — порожні шари: скелет ховає передню частину зачіски ззаду.
+-->
+<g id="fill-hair"/>
+<g id="shade"/>
+<g id="ink"/>
+</svg>

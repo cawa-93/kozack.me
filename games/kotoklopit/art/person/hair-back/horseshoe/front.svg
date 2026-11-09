@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 30" width="40" height="30">
+<!-- person/hair-back/horseshoe/front — вінчик, задня частина: лисина, волосся вінцем від скроні до скроні по потилиці, ракурс front (¾ спереду). Рукою еталонів F1b (art/STYLE.md).
+size 40×30; pivot (20, 28) — шия, як у person/head/*; points: top (20.5, -13.5).
+Шари: fill-hair, shade, ink.
+Над вінцем — шкіра голови; вухо праворуч не закрите; у front — вінець за вухом у тіні base.
+front — порожні шари: за головою в цьому ракурсі волосся немає.
+-->
+<g id="fill-hair"/>
+<g id="shade"/>
+<g id="ink"/>
+</svg>
