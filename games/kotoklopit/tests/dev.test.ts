@@ -11,6 +11,8 @@ import { dispatch } from "../src/sim/economy";
 import { TRIPS } from "../src/sim/config";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
+import { fill, TRAIT_AREAS, TRAIT_HINTS } from "../src/texts";
+import { catFacts } from "../src/ui/cards";
 import { hours, recordEvents } from "./helpers";
 
 const CHAOS_LOOK = { face: 0, skin: 1, hair: 0, hairColor: 0, eyes: 0, build: 1, top: 1, bottom: 0, shoes: 0 };
@@ -47,6 +49,17 @@ describe("сценарії (§11.5)", () => {
     expect(weekOf(save.current.day)).toBe(2);
     expect(weekdayOf(save.current.day)).toBe(0);
     expect(save.weekStart.day).toBe(7);
+  });
+
+  it("«Що відомо про риси»: відкрита — назвою, підказка й помічена — «…?» з баблом, непомічена — не видно (§9.9)", () => {
+    const scenario = FILE_SCENARIOS["trait-knowledge"];
+    if (!scenario) throw new Error("немає сценарію");
+    const state = applyScenario(scenario).current;
+    const cat = state.cats[0]!;
+    const chips = catFacts(state, cat).chips;
+    expect(chips.map((c) => c.label)).toEqual(["Наколінник", "…?", "…?", "…?"]);
+    expect(chips[1]?.about).toBe(`Здається, ${fill(TRAIT_HINTS["warmth"] ?? "", "female")}.`);
+    expect(chips[3]?.about).toBe(fill(TRAIT_AREAS.food, "female"));
   });
 
   it("«22 коти»: персонаж знає про всіх котів усе — риси, породу й стерилізацію (`knowAll`)", () => {

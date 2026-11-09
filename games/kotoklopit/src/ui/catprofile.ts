@@ -3,21 +3,21 @@
 
 import { renameCat } from "../sim/cat";
 import { NAME_MAX_LENGTH } from "../sim/config";
-import type { Cat, Trait } from "../sim/types";
+import type { Cat } from "../sim/types";
 import { CAT_INTRO_TEXTS } from "../texts";
 import { liveCatPortrait } from "./liveportrait";
 import { element } from "./overlay";
 import { portraitCanvas } from "./portrait";
-import { traitChips } from "./traits";
+import { chipRow, type TraitChip } from "./traits";
 
 /** Сторона портрета, px CSS. */
 const PORTRAIT_SIZE = 200;
 
-/** Що показати про кота: вік, порода й стерилізація одним рядком, решта відомого й риси, відомі цілком. */
+/** Що показати про кота: вік, порода й стерилізація одним рядком, решта відомого й чипи помічених рис (§9.9). */
 export interface CatFacts {
   head: string;
   lines: readonly string[];
-  known: readonly Trait[];
+  chips: readonly TraitChip[];
 }
 
 /** Поле імені: нове ім'я діє одразу, з кожною літерою; порожнє поле, коли з нього вийшли, повертає ім'я кота. */
@@ -87,7 +87,7 @@ export function catProfile(
   const about = element("div", "cat-profile-facts");
   about.append(element("p", "cat-profile-line cat-profile-head", facts.head));
   for (const line of facts.lines) about.append(element("p", "cat-profile-line", line));
-  if (facts.known.length > 0) about.append(traitChips(facts.known, cat.sex));
+  if (facts.chips.length > 0) about.append(chipRow(facts.chips));
 
   const side = element("div", "cat-profile-side");
   if (more.rename === "title") {

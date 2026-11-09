@@ -201,10 +201,10 @@ const SAME: Record<string, { why: string; ids: string[] }> = {
 const ALSO: Partial<Record<Product, { why: string; ids: string[] }>> = {
   food: { why: "ситість поповнюють продукти: показник на панелі й у думці — їхня іконка; сирі продукти на столі — вони ж", ids: ["stat:satiety", "thought:person:satiety", "table:raw"] },
   hygiene: { why: "гігієну поповнюють засоби гігієни — та сама іконка на панелі й у думці", ids: ["stat:hygiene", "thought:person:hygiene"] },
-  catFood: { why: "голод кота — корм: думка, прохання вголос біля миски й «Терплячий зранку» біля ліжка (кіт хоче саме корму)", ids: ["thought:cat:hunger", "ask:bowl", "ask:bed"] },
+  catFood: { why: "голод кота — корм: думка, прохання вголос біля миски й «Дає доспати» біля ліжка (кіт хоче саме корму)", ids: ["thought:cat:hunger", "ask:bowl", "ask:bed"] },
   momMeal: { why: "мамин судочок — та сама річ на плиті, на столі й у холодильнику", ids: ["stove:mom", "table:mom"] },
   catnip: { why: "котяча м'ята: кіт блаженствує саме від неї", ids: ["event:catnip:reaction=roll"] },
-  treats: { why: "ласощі: «Заздрісник» хрумтить саме ними", ids: ["event:treat-snatched"] },
+  treats: { why: "ласощі: «Зелений від заздрощів» хрумтить саме ними", ids: ["event:treat-snatched"] },
 };
 for (const [product, extra] of Object.entries(ALSO)) {
   const group = SAME[`запас:${product}`];

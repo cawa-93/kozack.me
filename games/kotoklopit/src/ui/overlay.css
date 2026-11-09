@@ -98,6 +98,12 @@
   border-image-source: url("../../art/ui/chip/active.svg");
 }
 
+/* Ще не відкрита риса (§9.9): той самий чип, але «…?» блідіше — видно, що про неї знають мало. */
+.trait.hidden {
+  color: var(--ink-soft);
+  letter-spacing: 0.08em;
+}
+
 .trait-about {
   position: absolute;
   z-index: 3;

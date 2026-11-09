@@ -330,7 +330,7 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
         return null;
       }
       if (held !== null) return refuse(state, target.id, "hands-full");
-      // Увімкнули воду: «Водобоязнь» тікає з ванної — персонаж ще бачить це, заходячи в кабіну (§9.12).
+      // Увімкнули воду: «Жахається води» тікає з ванної — персонаж ще бачить це, заходячи в кабіну (§9.12).
       waterFright(state);
       character.activity = { kind: "use", target: target.id, progress: 0, inside: true };
       return null;
@@ -575,7 +575,7 @@ export function putDownCat(state: GameState, catId: number): void {
   }
 }
 
-/** Скільки триває купання кота на руках (§8.7, рішення автора 2026-10-28): «Боїться води» й «Водобоязнь» — довше. */
+/** Скільки триває купання кота на руках (§8.7, рішення автора 2026-10-28): «Боїться води» й «Жахається води» — довше. */
 export function bathMinutes(state: GameState): number {
   const held = state.character.held;
   const cat = held?.kind === "cat" ? state.cats.find((c) => c.id === held.cat) : undefined;
@@ -657,7 +657,7 @@ export function catFeeling(state: GameState, cat: Cat): CatFeeling | null {
     return cat.needs.attention >= PET.wantsAttention ? "content" : "reluctant";
   }
   if (activity?.kind === "play" && activity.cat === cat.id && !activity.done) return "content";
-  // «Нудьгує біля вікна» сіпає хвостом і мружиться на птахів за склом (§9.12, «Вікно»).
+  // «Злиться на вікно» сіпає хвостом і мружиться на птахів за склом (§9.12, «Вікно»).
   if (cat.act.kind === "window" && cat.act.goal === null && traitLevel(cat, "window") <= -2) return "reluctant";
   return null;
 }

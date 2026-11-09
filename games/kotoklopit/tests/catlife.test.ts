@@ -548,7 +548,7 @@ describe("догляд персонажа (§9.12)", () => {
     expect(woken(stroked.events)).toBe(false);
   });
 
-  it("на руках: «Коліночний» радіє, без риси — терпить, «Не чіпай мене» пручається", () => {
+  it("на руках: «Наколінник» радіє, без риси — терпить, «Не чіпай мене» пручається", () => {
     const moodAfter = (lap: TraitLevel | 0): { mood: number; attention: number; feeling: string | null } => {
       const save = game();
       const cat = withCat(save);

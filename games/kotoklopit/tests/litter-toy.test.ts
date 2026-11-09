@@ -106,7 +106,7 @@ describe("промах повз відкритий лоток (§9.12)", () => {
     expect(misses({ scatter: 2 }, "premium")).toBe(0);
   });
 
-  it("шанс змінює «Розкидання наповнювача»: «Землекоп» частіше, «Акуратний» рідше, «Ювелір» ніколи", () => {
+  it("шанс змінює «Розкидання наповнювача»: «Екскаватор» частіше, «Акуратний» рідше, «Ювелір» ніколи", () => {
     const digger = misses({ scatter: 2 }, "cheap");
     const neat = misses({ scatter: -1 }, "cheap");
     expect(digger).toBeGreaterThan(400 * LITTER_MISS * (1 + SCATTER_CHANCE.step * 2) * 0.6);

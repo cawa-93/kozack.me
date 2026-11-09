@@ -177,10 +177,10 @@ export function vetExam(state: GameState): VisitLog["exam"] {
   if (cat.pregnancy) cat.pregnancy.known = true;
   cat.sterilizedKnown = true;
   cat.breedKnown = [true, true];
-  // «Ветеринар»: улюбленець майже не ображається на огляд, «Жах клініки» — удвічі більше.
+  // «Ветеринар»: улюбленець майже не ображається на огляд, «Кошмар ветеринара» — удвічі більше.
   const vet = traitLevel(cat, "vet");
   offend(state, cat, VET.love * Math.max(0, 1 - TRAIT_EFFECTS.vetStep * vet), "ветеринар");
-  // Спокійний чи наляканий на огляді — персонаж поруч і бачить, а картка каже це рядком (§9.9, §9.12). «Жах клініки»
+  // Спокійний чи наляканий на огляді — персонаж поруч і бачить, а картка каже це рядком (§9.9, §9.12). «Кошмар ветеринара»
   // виривається й забивається під шафу: огляд довший. Час огляду минає лише тоді, коли огляд був
   // (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6).
   const manner = vetManner(cat);
@@ -308,7 +308,7 @@ export function groom(state: GameState, quality: Quality, rng: Rng): boolean {
   if (!cat || trip?.destination !== "groomer" || !spend(state, GROOMER.price[quality], "other")) return false;
   cat.groomedUntil = state.day + GROOMER.days[quality];
   // Час грумінгу минає лише за грумінг (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6). Як і на огляді,
-  // «Ветеринар» видно в картці грумера (§9.12): «Жах клініки» затягує грумінг.
+  // «Ветеринар» видно в картці грумера (§9.12): «Кошмар ветеринара» затягує грумінг.
   trip.visit += TRIPS.groomer.visit;
   const log = (trip.log ??= { exam: null, done: [] });
   log.done.push("groom");

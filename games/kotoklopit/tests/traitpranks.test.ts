@@ -99,7 +99,7 @@ describe("«Засідки» (§9.12, рішення автора 2026-10-25)", 
     expect(events.some((e) => e.type === "ambushed")).toBe(true);
     expect(save.current.character.body.stun).toBeGreaterThan(0);
     expect(cat.act.kind).toBe("zoomies");
-    // Прояв — раз за засідку, а «Засідник» (+1) не дряпає: ні здоров'я, ні бабла «кігті».
+    // Прояв — раз за засідку, а «Партизан» (+1) не дряпає: ні здоров'я, ні бабла «кігті».
     expect(seen(cat, "ambush")).toBe(1);
     expect(save.current.character.stats.health).toBe(health);
     expect(events.some((e) => e.type === "clawed")).toBe(false);

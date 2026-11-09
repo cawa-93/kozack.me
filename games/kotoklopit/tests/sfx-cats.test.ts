@@ -109,7 +109,7 @@ describe("звуки котів (§11.4а)", () => {
     const mute: string[] = [];
     for (const event of SAMPLES) {
       const cues = group.onEvent?.(event, s) ?? [];
-      // «Тихоня» відкриває рота, а звуку немає (§9.12): бабл уголос, але беззвучний.
+      // «Німе кіно» відкриває рота, а звуку немає (§9.12): бабл уголос, але беззвучний.
       const silent = event.type === "meow" && event.silent === true;
       const aloud = !silent && eventBubbles(event).some((b) => b.kind === "say");
       if (aloud && cues.length === 0) mute.push(event.type);

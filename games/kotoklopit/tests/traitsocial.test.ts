@@ -288,11 +288,11 @@ describe("«Котяча м'ята» (§9.12, рішення автора 2026-1
     expect(seen(cat, "catnip")).toBe(0);
   });
 
-  it("підказки й описи — за рівнем: «Байдужий» і «Шаленіє від м'яти» різні", () => {
+  it("описи — за рівнем: «Байдужий» і «Шаленіє від м'яти» різні; підказка — одна для всіх рівнів, без боку (§9.9)", () => {
     const cat = { name: "Мурка", sex: "female" as const };
-    expect(traitHint(cat, { group: "catnip", level: -1 })).not.toBe(traitHint(cat, { group: "catnip", level: -2 }));
     expect(traitAbout({ group: "catnip", level: -1 }, "female")).not.toBe(traitAbout({ group: "catnip", level: -2 }, "female"));
-    expect(traitHint(cat, { group: "catnip", level: -1 })).toContain("байдужа");
+    const hints = ([2, 1, -1, -2] as const).map((level) => traitHint(cat, { group: "catnip", level }));
+    expect(new Set(hints).size).toBe(1);
   });
 });
 
@@ -383,7 +383,7 @@ describe("«Вікно» (§9.12, рішення автора 2026-10-25)", () =
     expect(seen(lover, "window")).toBe(1);
   });
 
-  it("«Нудьгує біля вікна» злиться — прояв «−» — і шипить на кота поруч, а сам — дере диван", () => {
+  it("«Злиться на вікно» злиться — прояв «−» — і шипить на кота поруч, а сам — дере диван", () => {
     const save = game();
     Object.assign(save.current.character.body, { x: 2.5, y: 8.5 });
     const angry = withCat(save, { window: -2 });
@@ -461,9 +461,9 @@ describe("«Вікно» (§9.12, рішення автора 2026-10-25)", () =
     }
   });
 
-  it("описи: «Не дивиться у вікно» й «Нудьгує біля вікна» різні", () => {
+  it("описи: «Не дивиться у вікно» й «Злиться на вікно» різні", () => {
     expect(traitAbout({ group: "window", level: -1 }, "male")).not.toBe(traitAbout({ group: "window", level: -2 }, "male"));
-    expect(traitAbout({ group: "window", level: -2 }, "male")).toContain("злиться");
+    expect(traitAbout({ group: "window", level: -2 }, "male")).toContain("сіпає хвостом");
   });
 });
 
@@ -813,7 +813,7 @@ describe("«Товариськість» і «Вилизування друзі�
     expect(piles("house")).toBe(0);
   });
 
-  it("«Не терпить дотиків» відсторонюється, коли друг прийшов його вилизати: стосунки −1 замість +2, прояв «−»", () => {
+  it("«Їжак» відсторонюється, коли друг прийшов його вилизати: стосунки −1 замість +2, прояв «−»", () => {
     let refused = 0;
     for (let seed = 1; seed <= 30; seed++) {
       const save = game(seed);
@@ -908,7 +908,7 @@ describe("«Ревнивість» (§9.4, §9.12, рішення автора 2
     expect(came).toBeLessThan(25);
   });
 
-  it("«Ревнивець» (+2) зганяє суперника з колін і лягає сам", () => {
+  it("«Отелло» (+2) зганяє суперника з колін і лягає сам", () => {
     let took = 0;
     for (let seed = 1; seed <= 20; seed++) {
       const save = game(seed);
@@ -1180,7 +1180,7 @@ describe("«Територіальність» (§9.4, §9.12, рішення а
     expect(guarded(-80, { territorial: -1 })).toBeGreaterThan(8);
   });
 
-  it("«Господар території» після їди ще 10 хвилин вартує біля миски", () => {
+  it("«Цербер» після їди ще 10 хвилин вартує біля миски", () => {
     const save = game();
     const bowl = fullBowl(save);
     const guard = withCat(save, { territorial: 2 });
@@ -1293,7 +1293,7 @@ describe("«Турбота про кошенят» (§9.4, §9.12, рішенн�
     expect(kitten.mood).toBeGreaterThan(50);
   });
 
-  it("мати щоночі тішить новонароджених, «Сам ще кошеня» — засмучує", () => {
+  it("мати щоночі тішить новонароджених, «Гроза кошенят» — засмучує", () => {
     for (const level of [1, -1] as const) {
       const save = game();
       const mother = withCat(save, { nurturing: level });
@@ -1307,7 +1307,7 @@ describe("«Турбота про кошенят» (§9.4, §9.12, рішенн�
     }
   });
 
-  it("«Сам ще кошеня» шипить і б'є лапою кошеня, що лізе до нього, — прояв «−»", () => {
+  it("«Гроза кошенят» шипить і б'є лапою кошеня, що лізе до нього, — прояв «−»", () => {
     let swatted = 0;
     for (let seed = 1; seed <= 30; seed++) {
       const save = game(seed);
@@ -1332,7 +1332,7 @@ describe("«Турбота про кошенят» (§9.4, §9.12, рішенн�
 });
 
 describe("сценарій «Гра й стосунки котів» (`scenarios/play-social.json`)", () => {
-  it("«Орнітолог» «кекає» на підвіконні, «Нудьгує біля вікна» злиться й шипить, «Фанат м'яти» накатався й спить", () => {
+  it("«Орнітолог» «кекає» на підвіконні, «Злиться на вікно» злиться й шипить, «Фанат м'яти» накатався й спить", () => {
     const scenario = FILE_SCENARIOS["play-social"];
     if (!scenario) throw new Error("немає сценарію");
     const save = applyScenario(scenario);

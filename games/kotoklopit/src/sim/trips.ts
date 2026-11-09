@@ -84,7 +84,7 @@ export function startTrip(state: GameState, destination: Destination): boolean {
   for (const rider of riders) {
     const passenger = state.cats.find((c) => c.id === rider.cat);
     if (!passenger) continue;
-    // «Переноска» дзеркальна: «+» втрачає менше, «Сам лізе в переноску» — нічого.
+    // «Переноска» дзеркальна: «+» втрачає менше, «Пасажир першого класу» — нічого.
     changeMood(state, passenger, Math.min(0, CARRIER_MOOD[rider.place] + CARRIER_MOOD.traitStep * traitLevel(passenger, "carrier")), "переноска");
     stress(state, passenger);
   }

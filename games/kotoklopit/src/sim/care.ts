@@ -33,7 +33,7 @@ export function giveTreat(state: GameState, quality: Quality, rng: Rng): boolean
   useSupply(state, "treats", quality);
   const now = absoluteMinute(state.day, state.minute);
   cat.interacted = true;
-  // «Заздрісник» поруч може вихопити ласощі й з'їсти сам (§9.12, «Заздрісність»): тоді вони дістаються йому, а не коту на руках.
+  // «Зелений від заздрощів» поруч може вихопити ласощі й з'їсти сам (§9.12, «Заздрісність»): тоді вони дістаються йому, а не коту на руках.
   const thief = snatchTreat(state, cat, rng);
   if (thief) {
     changeMood(state, thief, TREATS.mood[quality], "вихопив ласощі");
@@ -43,12 +43,12 @@ export function giveTreat(state: GameState, quality: Quality, rng: Rng): boolean
   changeMood(state, cat, TREATS.mood[quality]);
   changeLove(state, cat, TREATS.love, "ласощі");
   if (cat.hurt && now - cat.hurt.at <= TREATS.hurtMinutes) {
-    // «Поступливий» і «Добряк» оттають більше (§9.12).
+    // «Прощає за ласощі» і «Добряк» оттають більше (§9.12).
     const refund = TREATS.refund + REVENGE.refundStep * Math.max(0, -traitLevel(cat, "vengeful"));
     changeLove(state, cat, cat.hurt.amount * refund, "ласощі після неприємного");
     cat.hurt = null;
   }
-  // «Поступливий» протягом години після неприємного від персонажа чи стресу одразу відтає й муркоче — це видно (§9.9),
+  // «Прощає за ласощі» протягом години після неприємного від персонажа чи стресу одразу відтає й муркоче — це видно (§9.9),
   // і образа минає. Ласощі — дія гравця, тож «Жебракування» вони не відкривають (рішення автора 2026-10-25).
   const grudge = grudgeAt(cat);
   if (traitLevel(cat, "vengeful") < 0 && grudge !== null && now - grudge <= TREATS.hurtMinutes) {
@@ -107,7 +107,7 @@ export function putCollar(state: GameState): boolean {
 /**
  * Купання (§8.7): кота на руках — до душу; потрібен шампунь. Дорогий шампунь лікує дерматит. «Любов до води» — дзеркально
  * (рішення автора 2026-10-25): «Водолаз» радіє й муркоче, «Любить воду» — терпить із задоволенням, кіт без риси
- * ображається, «Боїться води» ображається сильніше й може подряпати, «Водобоязнь» — ще сильніше, а потім виривається з рук
+ * ображається, «Боїться води» ображається сильніше й може подряпати, «Жахається води» — ще сильніше, а потім виривається з рук
  * і ховається. Прояви — те, що видно: муркотіння у ванні («+»), подряпина чи втеча («−»).
  */
 export function bathe(state: GameState, rng: Rng): boolean {
@@ -152,7 +152,7 @@ export function bathe(state: GameState, rng: Rng): boolean {
 export function nightlyCare(state: GameState, rng: Rng): void {
   for (const cat of state.cats) {
     cat.treatsToday = 0;
-    // Мати з «Турботою про кошенят» щодня тішить новонароджених, «Сам ще кошеня» — засмучує (§9.12).
+    // Мати з «Турботою про кошенят» щодня тішить новонароджених, «Гроза кошенят» — засмучує (§9.12).
     const mother = isNewborn(cat) ? motherOf(state, cat) : null;
     const care = mother && mother.away === null ? Math.sign(traitLevel(mother, "nurturing")) : 0;
     if (care !== 0) changeMood(state, cat, NURTURING.motherMood * care);

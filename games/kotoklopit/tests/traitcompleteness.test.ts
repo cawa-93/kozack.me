@@ -6,7 +6,7 @@
 import { describe, expect, it } from "vitest";
 
 import { TRAIT_GROUPS } from "../src/sim/traits";
-import { TRAIT_ABOUT_LEVEL } from "../src/texts";
+import { TRAIT_ABOUT_LEVEL, TRAIT_HINTS } from "../src/texts";
 
 const sources = Object.values(
   import.meta.glob<string>("../src/sim/**/*.ts", {
@@ -55,32 +55,24 @@ describe("повнота рис (рішення автора 2026-10-25)", () =>
     }
   });
 
-  it("у кожного боку своя підказка; тиха половина без підказки не проявляється", () => {
+  it("видимий бік (`shows`) — той, що проявляється; у нетихої групи — одна підказка, у тихої — ні", () => {
     for (const group of TRAIT_GROUPS) {
       if (group.quiet) {
-        expect(group.signs, group.id).toBeUndefined();
+        expect(group.shows, group.id).toBeUndefined();
+        expect(TRAIT_HINTS[group.id], group.id).toBeUndefined();
         continue;
       }
-      const [plus, minus] = group.signs ?? [null, null];
-      expect(plus !== null || minus !== null, `${group.id}: немає підказок`).toBe(true);
-      if (plus !== null && minus !== null) expect(plus, group.id).not.toBe(minus);
+      const [plus, minus] = group.shows ?? [false, false];
+      expect(plus || minus, `${group.id}: не видно жодного боку`).toBe(true);
+      expect(TRAIT_HINTS[group.id], `${group.id}: немає підказки`).toBeTruthy();
+      // Бік, що не проявляється, підказки не дає: вона ніколи не з'явилася б у картці; і навпаки.
       const sides = observed.get(group.id) ?? new Set();
-      if (plus === null) expect(sides.has(1), `${group.id}: «+» проявляється, а підказки немає`).toBe(false);
-      if (minus === null) expect(sides.has(-1), `${group.id}: «−» проявляється, а підказки немає`).toBe(false);
-      // Підказка без прояву ніколи не з'явиться в картці кота (фінальна перевірка рис 2026-10-26).
-      if (plus !== null) expect(sides.has(1), `${group.id}: є підказка «+», а прояву «+» немає`).toBe(true);
-      if (minus !== null) expect(sides.has(-1), `${group.id}: є підказка «−», а прояву «−» немає`).toBe(true);
+      expect(sides.has(1), `${group.id}: «+» — видно ${plus}, а проявляється ${sides.has(1)}`).toBe(plus);
+      expect(sides.has(-1), `${group.id}: «−» — видно ${minus}, а проявляється ${sides.has(-1)}`).toBe(minus);
     }
   });
 
-  it("окремі підказки й описи рівнів — лише для рівнів свого боку, що проявляється", () => {
-    for (const group of TRAIT_GROUPS) {
-      for (const key of Object.keys(group.levelSigns ?? {})) {
-        const level = Number(key);
-        expect([2, 1, -1, -2], group.id).toContain(level);
-        expect(observed.get(group.id)?.has(Math.sign(level) as 1 | -1), `${group.id}: підказка рівня ${level} без прояву`).toBe(true);
-      }
-    }
+  it("окремі описи рівнів — лише для наявних груп і рівнів", () => {
     for (const [id, levels] of Object.entries(TRAIT_ABOUT_LEVEL)) {
       expect(TRAIT_GROUPS.some((g) => g.id === id), id).toBe(true);
       for (const key of Object.keys(levels)) expect([2, 1, -1, -2], id).toContain(Number(key));

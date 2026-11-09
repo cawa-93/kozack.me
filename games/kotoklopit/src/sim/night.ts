@@ -166,7 +166,7 @@ function plannedWakeUps(state: GameState, rng: Rng, from: number, to: number): P
       wakes.push({ cat, minute: from + Math.floor(rng.next() * (to - from)), reason: "night", trait: "nocturnal" });
     }
     // Чи кіт справді будить, вирішиться о 05:00: якщо він голодний, а миски порожні. «Живий будильник» будить і
-    // заради ритуалу — удвічі рідше; «Терплячий зранку» не будить ніколи (рішення автора 2026-10-25).
+    // заради ритуалу — удвічі рідше; «Дає доспати» не будить ніколи (рішення автора 2026-10-25).
     const morning = traitLevel(cat, "morning");
     const chance = morning < 0 ? 0 : WAKE_UP.morningBase + WAKE_UP.morningStep * morning;
     if (dawn > from && dawn < to && rng.chance(chance)) {
@@ -294,8 +294,8 @@ function sleepsOnBed(cat: Cat, bed: { x: number; y: number; w: number; h: number
 }
 
 /**
- * Що персонаж бачить, щойно прокинувся (§9.12, рішення автора 2026-10-25): «Нічний сплюх» спить у нього на ліжку,
- * проспавши там майже всю ніч, — прояв «Нічної активності −»; голодний «Терплячий зранку» сидить біля ліжка й чекає
+ * Що персонаж бачить, щойно прокинувся (§9.12, рішення автора 2026-10-25): «Грілка в ногах» спить у нього на ліжку,
+ * проспавши там майже всю ніч, — прояв «Нічної активності −»; голодний «Дає доспати» сидить біля ліжка й чекає
  * сніданку (дія «просить» біля ліжка) — прояв «Ранкової побудки −». Раз за ранок.
  */
 function wakingSight(state: GameState, bed: { x: number; y: number; w: number; h: number }, onBed: Map<number, number>, nightMinutes: number): void {

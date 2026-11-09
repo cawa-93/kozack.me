@@ -10,8 +10,7 @@ import { advance, newGame } from "../src/sim/game";
 import { tapWasher } from "../src/sim/household";
 import { absoluteMinute } from "../src/sim/time";
 import { decideFoundling } from "../src/sim/modifiers";
-import { TRAIT_GROUPS } from "../src/sim/traits";
-import { fill } from "../src/texts";
+import { fill, TRAIT_HINTS } from "../src/texts";
 import { traitNews } from "../src/ui/traits";
 import { observe, visibility, witnesses } from "../src/sim/knowledge";
 import { addCat } from "../src/sim/night";
@@ -82,7 +81,7 @@ describe("свідок (§9.9)", () => {
 });
 
 describe("прояв — лише того боку, що показала поведінка (пошук багів 2026-10-25)", () => {
-  it("«Тихоня» не відкривається тим, що нявкає інший бік групи; «Балакучий» — відкривається", () => {
+  it("«Німе кіно» не відкривається тим, що нявкає інший бік групи; «Балакучий» — відкривається", () => {
     const save = game();
     const quiet = withCat(save, { talkative: -2 });
     const loud = withCat(save, { talkative: 2 });
@@ -161,7 +160,7 @@ describe("чесні прояви (рішення автора 2026-10-25, `TRAI
     expect(zero.traits[0]?.seen).toBe(0);
   });
 
-  it("ласощі — дія гравця: «Жебракування» не відкривають, а «Поступливий» після неприємного відтає й муркоче", () => {
+  it("ласощі — дія гравця: «Жебракування» не відкривають, а «Прощає за ласощі» після неприємного відтає й муркоче", () => {
     const save = game();
     save.current.home.supplies.treats.cheap = 5;
     const cat = withCat(save, { begging: 2, vengeful: -1 }, { x: 9.5, y: 8.5 });
@@ -169,7 +168,7 @@ describe("чесні прояви (рішення автора 2026-10-25, `TRAI
     giveTreat(save.current, "cheap", createRng(1));
     expect(cat.traits[0]?.seen).toBe(0);
     expect(cat.traits[1]?.seen).toBe(0);
-    // Неприємне від персонажа (§9.12): за брудний лоток чи день без уваги «Поступливий» не «відтає» — образи не було.
+    // Неприємне від персонажа (§9.12): за брудний лоток чи день без уваги «Прощає за ласощі» не «відтає» — образи не було.
     cat.hurt = { at: absoluteMinute(save.current.day, save.current.minute), amount: 2 };
     giveTreat(save.current, "cheap", createRng(1));
     expect(cat.traits[1]?.seen).toBe(0);
@@ -264,7 +263,7 @@ describe("чесні прояви (рішення автора 2026-10-25, `TRAI
 });
 
 describe("рівні видимості (§9.9)", () => {
-  it("на середній складності: 2 прояви — «❓», 4 — підказка, 6 — риса відкрита", () => {
+  it("на середній складності: 2 прояви — помічено, 4 — підказка, 6 — риса відкрита", () => {
     const save = game();
     const cat = withCat(save, { thief: 2 });
     const trait = cat.traits[0];
@@ -315,22 +314,25 @@ describe("що видно про кота з самого початку (пош
     }
   });
 
-  it("прояви в картці — у роді кота й до гравця на «ви»", () => {
-    for (const group of TRAIT_GROUPS) for (const sign of group.signs ?? []) if (sign !== null) expect(sign, group.id).not.toMatch(/персонаж/);
-    const lap = TRAIT_GROUPS.find((g) => g.id === "lap")?.signs?.[0] ?? "";
-    expect(fill(lap, "female")).toBe("сама застрибує на коліна й муркоче на руках");
+  it("підказки в картці — до гравця на «ви», без незаповнених форм; з малої, без крапки — їх продовжує «Здається, …»", () => {
+    for (const [id, hint] of Object.entries(TRAIT_HINTS)) {
+      expect(hint, id).not.toMatch(/персонаж/);
+      expect(hint, id).toMatch(/^[а-яіїєґ'«[]/);
+      expect(hint, id).not.toMatch(/\.$/);
+      for (const sex of ["male", "female"] as const) expect(fill(hint, sex), id).not.toMatch(/[[\]|]/);
+    }
   });
 });
 
 describe("телефон каже, що стало відомо про кота (§9.9, правка автора 2026-10-25)", () => {
-  it("підказка — «Здається, …», відкрита риса — назва й опис, «❓» — нічого", () => {
+  it("підказка — «Здається, …», відкрита риса — назва й опис, лише помічена — нічого", () => {
     const save = game();
     const cat = withCat(save, { lap: 2 });
     Object.assign(cat, { name: "Мурка", sex: "female" });
     expect(traitNews(save.current, cat.id, "lap", 1)).toBeNull();
-    expect(traitNews(save.current, cat.id, "lap", 2)).toEqual({ title: "Мурка", text: "Здається, сама застрибує на коліна й муркоче на руках." });
+    expect(traitNews(save.current, cat.id, "lap", 2)).toEqual({ title: "Мурка", text: `Здається, ${fill(TRAIT_HINTS["lap"] ?? "", "female")}.` });
     const known = traitNews(save.current, cat.id, "lap", 3);
-    expect(known?.title).toBe("Мурка — Коліночна");
+    expect(known?.title).toBe("Мурка — Наколінник");
     expect(known?.text.length).toBeGreaterThan(10);
   });
 });

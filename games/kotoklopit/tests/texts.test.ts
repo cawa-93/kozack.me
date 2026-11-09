@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { newGame } from "../src/sim/game";
-import { TRAIT_GROUPS } from "../src/sim/traits";
+import { TRAIT_GROUPS, traitName } from "../src/sim/traits";
 import { BREEDS, MIXED } from "../src/sim/breeds";
 import { createCat } from "../src/sim/cat";
 import { createRng } from "../src/sim/rng";
@@ -9,7 +9,7 @@ import type { Cat } from "../src/sim/types";
 import { breedAbout, breedText } from "../src/ui/cards";
 import { traitAbout } from "../src/ui/traits";
 import { DISEASES, POSITIONS } from "../src/sim/config";
-import { BREED_ABOUT, BREED_HALF, endingText, fill, HOME_VET_NOBODY, homeVetText, KITTEN_MESSAGE, POSITION_TITLES, TRAIT_ABOUT, VET_ADVICE } from "../src/texts";
+import { BREED_ABOUT, BREED_HALF, endingText, fill, HOME_VET_NOBODY, homeVetText, KITTEN_MESSAGE, POSITION_TITLES, TRAIT_ABOUT, TRAIT_HINTS, VET_ADVICE } from "../src/texts";
 
 describe("тексти (TEXTS.md)", () => {
   it("підставляє значення й обирає форму за статтю", () => {
@@ -73,27 +73,25 @@ describe("тексти (TEXTS.md)", () => {
 });
 
 describe("опис рис для картки кота (§9.9)", () => {
-  it("у кожної групи є опис для «+» і для «−» (порожній — назва каже все сама), без незаповнених форм", () => {
+  it("опис є в кожного рівня кожної групи — речення без незаповнених форм, що не переказує назву (§9.9)", () => {
     for (const group of TRAIT_GROUPS) {
-      const about = TRAIT_ABOUT[group.id];
-      expect(about, group.id).toBeDefined();
-      for (const text of about ?? []) {
-        if (text === "") continue;
+      for (const level of [2, 1, -1, -2] as const) {
         for (const sex of ["male", "female"] as const) {
-          const filled = fill(text, sex);
-          expect(filled.length, group.id).toBeGreaterThan(5);
-          expect(filled, group.id).not.toMatch(/[[\]|]/);
+          const about = traitAbout({ group: group.id, level }, sex);
+          const name = fill(traitName({ group: group.id, level }), sex);
+          expect(about.length, `${group.id} ${level}`).toBeGreaterThan(15);
+          expect(about, `${group.id} ${level}`).toMatch(/[.!?…]$/);
+          expect(about, `${group.id} ${level}`).not.toMatch(/[[\]|]/);
+          expect(about.toLowerCase(), `${group.id} ${level}: опис переказує назву`).not.toBe(`${name.toLowerCase()}.`);
         }
       }
     }
   });
 
-  it("загальна ревізія 2026-10-29: «Стрункий» і «Не мерзне» (−1) мають свій опис, без «ніколи» рівня −2", () => {
+  it("рівні одного боку, що поводяться по-різному, мають різні описи: «Стрункий» і «Не товстіє», «Не мерзне» й «Полярник»", () => {
     const about = (group: string, level: -1 | -2): string => traitAbout({ group, level }, "female");
-    // «Не товстіє» (−2) — без опису: назва каже все сама.
-    expect(about("chubby", -2)).toBe("");
     expect(about("chubby", -1)).not.toBe(about("chubby", -2));
-    expect(about("chubby", -1)).toContain("набирає вагу");
+    expect(about("chubby", -1)).toContain("кругліє");
     expect(about("warmth", -2)).toContain("не шукає зовсім");
     expect(about("warmth", -1)).toContain("шукає рідко");
   });
@@ -101,7 +99,7 @@ describe("опис рис для картки кота (§9.9)", () => {
   it("опис і підказки про кішку — у жіночому роді: без «сам» і «голодним» (перевірка 2026-10-25: «Образливість +» казала «сам не приходить», «Злодійство −» — «навіть голодним»)", () => {
     const masculine = /(^|[^а-яіїєґ'])(сам|голодним)(?![а-яіїєґ'])/iu;
     for (const group of TRAIT_GROUPS) {
-      const texts: (string | null)[] = [...(TRAIT_ABOUT[group.id] ?? []), ...(group.signs ?? [])];
+      const texts: (string | null)[] = [...(TRAIT_ABOUT[group.id] ?? []), TRAIT_HINTS[group.id] ?? null];
       for (const text of texts) if (text !== null) expect(fill(text, "female"), group.id).not.toMatch(masculine);
     }
   });

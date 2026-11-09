@@ -54,7 +54,8 @@ import { LOOK_OPTIONS } from "./look";
 import { catProfile, type CatFacts } from "./catprofile";
 import { drawPortrait, portraitCanvas } from "./portrait";
 import { billCard } from "./bill";
-import { traitChips, traitHint } from "./traits";
+import { HIDDEN_TRAIT, traitAbout, traitArea, traitChips, traitHint, type TraitChip } from "./traits";
+import { traitName } from "../sim/traits";
 import { profileTab } from "./profile";
 import { DESTINATION_ICONS, HOME_FIXTURE_ICONS } from "../view/symbols";
 
@@ -390,23 +391,21 @@ export function catFacts(state: GameState, cat: Cat): CatFacts {
   // Хворобу могла знайти й ветеринарка вдома; назви посеред речення — з малої (крок 17, вичитка 2026-10-29); іконка — як у картці
   // ветеринара (§11.4 «Іконка біля назви»).
   if (found.length > 0) lines.push(`Хвороби: ${found.join(", ").toLowerCase()}.`);
-  // Відомі риси — назвами-чипами з описом під ними; помічене — здогадкою (§9.9).
-  const known = cat.traits.filter((t) => visibility(state, t) === 3);
+  // Помічені риси — чипами (§9.9): відомі — назвою, решта — «…?»; бабл каже опис, підказку без боку чи лише розділ. Ім'я вже в
+  // заголовку картки, тож підказка — без нього, як у новині телефона.
+  const chips: TraitChip[] = [];
+  const hidden: TraitChip[] = [];
   for (const trait of cat.traits) {
     const seen = visibility(state, trait);
-    if (seen === 2) {
-      // Ім'я вже в заголовку картки: «Здається, {прояв}.», як у новині телефона.
-      const hint = traitHint(cat, trait, null);
-      if (hint) lines.push(hint);
-    }
+    if (seen === 3) chips.push({ label: fill(traitName(trait), cat.sex), about: traitAbout(trait, cat.sex) });
+    else if (seen > 0) hidden.push({ label: HIDDEN_TRAIT, about: (seen === 2 ? traitHint(cat, trait, null) : null) ?? traitArea(trait, cat.sex), hidden: true });
   }
-  // Помічене — один рядок, хоч би скільки рис (§9.9).
-  if (cat.traits.some((t) => visibility(state, t) === 1)) lines.push("❓ Помічено щось дивне.");
-  if (cat.traits.every((t) => visibility(state, t) === 0)) lines.push("Характер: ?");
+  chips.push(...hidden);
+  if (chips.length === 0) lines.push("Характер: ?");
   // Вік, порода й стерилізація — одним рядком (стать — знаком за ім'ям); невідоме — без нього.
   const breed = breedText(cat.breed, cat.breedKnown, cat.sex);
   const sterilized = cat.sterilized && cat.sterilizedKnown ? [cat.sex === "male" ? "кастрований" : "стерилізована"] : [];
-  return { head: [weeks(cat.ageWeeks), ...(breed === null ? [] : [breed]), ...sterilized].join(" · "), lines, known };
+  return { head: [weeks(cat.ageWeeks), ...(breed === null ? [] : [breed]), ...sterilized].join(" · "), lines, chips };
 }
 
 /** Картки котів (§9.7, §9.9): та сама картка, що й у знайомстві, а під нею — оголошення. */

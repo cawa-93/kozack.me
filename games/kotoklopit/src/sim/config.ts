@@ -644,7 +644,7 @@ export const CATNIP = {
   fightReach: 3,
   refractoryMinutes: 120,
 } as const;
-/** «Вікно» (§9.12): `from`, `to` — години; `anger*` — «Нудьгує біля вікна»; `contest` — обидва підвіконня зайняті. */
+/** «Вікно» (§9.12): `from`, `to` — години; `anger*` — «Злиться на вікно»; `contest` — обидва підвіконня зайняті. */
 export const WINDOW = {
   contest: 0.5,
   takenMinutes: 0.5,
@@ -906,7 +906,7 @@ export const CARRIER = {
 } as const;
 /** Поїздка в робочий час (§8.6): поїздок за 7 днів × репутація за годину / стільки. */
 export const TRIP_REPUTATION_DIVIDER = 3;
-/** Ветеринар (§8.5): `exam`, `cheap`, `premium` — ціни; `hideMinutes`, `homeHideMinutes` — «Жах клініки». */
+/** Ветеринар (§8.5): `exam`, `cheap`, `premium` — ціни; `hideMinutes`, `homeHideMinutes` — «Кошмар ветеринара». */
 export const VET = {
   exam: 60,
   cheap: 45,
@@ -969,7 +969,7 @@ export const TOOL_REACH: Record<CleaningTool, { floor: number; web: number }> = 
 export const DUST = { everyMinutes: 36 * 60 } as const;
 /** Ласощі (§7): `refund` — частка втрати в межах `hurtMinutes`; понад `perDay` — шанс «Шлунка» `stomach`. */
 export const TREATS = { mood: { cheap: 3, premium: 5 } as Record<Quality, number>, love: 2, hurtMinutes: 60, refund: 0.5, perDay: 2, stomach: 0.2 } as const;
-/** Купання (§8.7): «Боїться води» ×(1 + `fearStep`), «Водобоязнь» ×(1 + 2 × `fearStep`). */
+/** Купання (§8.7): «Боїться води» ×(1 + `fearStep`), «Жахається води» ×(1 + 2 × `fearStep`). */
 export const BATH = { catchSanity: -3, bathSanity: -3, minutes: 10, fearStep: 0.5, hairlessDays: 7, dermatitis: 0.3, hideMinutes: 30 } as const;
 /** Купання за «Любов'ю до води» (§8.7), за рівнем; `scratch` — шанс `CLAW`. */
 export const BATH_FEEL: Record<-2 | -1 | 0 | 1 | 2, { mood: number; love: number; scratch: number }> = {

@@ -511,7 +511,7 @@ export function homeVetVisit(state: GameState): void {
     cat.sterilizedKnown = true;
     cat.breedKnown = [true, true];
     // Як кіт поводився на огляді (§9.12 «Переноска й ветеринар»): ветеринарка оглядає його при персонажі, тож це видно, де
-    // б кіт не був, — якщо персонаж удома. «Жах клініки» вирвався й потім ховається.
+    // б кіт не був, — якщо персонаж удома. «Кошмар ветеринара» вирвався й потім ховається.
     const manner = vetManner(cat);
     if (manner !== null) observe(state, cat, "vet", manner === "calm" ? 1 : -1, true);
     if (manner === "hid") {

@@ -42,7 +42,7 @@ function burn(cat: Cat, amount: number): void {
   else cat.weight = next;
 }
 
-/** «Пухкенький» помітно гладшає (§9.9): вага від 60, і кіт на очах персонажа — прояв «+», раз на день. */
+/** «Колобок» помітно гладшає (§9.9): вага від 60, і кіт на очах персонажа — прояв «+», раз на день. */
 export function weightSeen(state: GameState, cat: Cat): void {
   if (weightOf(cat) >= WEIGHT.visible) observe(state, cat, "chubby", 1, false, MINUTES_PER_DAY);
 }

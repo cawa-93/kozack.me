@@ -470,7 +470,7 @@ export function basketState(clothes: number): string {
   return `load-${Math.ceil(Math.max(0, Math.min(5, 5 - clothes)) - 1e-9)}`;
 }
 
-/** Кіт спить у переносці (§9.12, «Сам лізе в переноску»): поверх нього — дверцята з ґратками. */
+/** Кіт спить у переносці (§9.12, «Пасажир першого класу»): поверх нього — дверцята з ґратками. */
 export function carrierOccupied(state: GameState): boolean {
   return state.cats.some((cat) => cat.away === null && cat.act.kind === "sleep" && cat.act.target === "carrier");
 }

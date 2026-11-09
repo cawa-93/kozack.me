@@ -231,7 +231,7 @@ describe("«Балакучість» (рішення автора 2026-10-25)", 
   it("мовчазний за 10 хвилин прохання нявкає на два рази менше — прояв «−»; тихоня — лише беззвучно", () => {
     expect(seen(asking({ talkative: -1 }, 12).cat, "talkative")).toBe(1);
     expect(seen(asking({ talkative: -2 }, 12).cat, "talkative")).toBe(1);
-    // Мовчить, бо «Невибагливий», а не «Мовчазний», — не прояв.
+    // Мовчить, бо «Сама скромність», а не «Мовчазний», — не прояв.
     expect(seen(asking({ talkative: -1, demanding: -2 }, 12).cat, "talkative")).toBe(0);
   });
 
@@ -374,7 +374,7 @@ describe("«Робочий помічник» (рішення автора 2026-
     expect(respectful).toBe(0);
   });
 
-  it("«Байдужий до техніки» на комп'ютері не спить, «Поважає роботу» — рідше", () => {
+  it("«Технофоб» на комп'ютері не спить, «Поважає роботу» — рідше", () => {
     const onComputer = (helper: TraitLevel | 0): number => {
       let count = 0;
       const computer = objectById("computer");
@@ -410,7 +410,7 @@ describe("«Коліна» на руках (рішення автора 2026-10-
     return { cat, purrs: events.filter((e) => e.type === "purr" && e.cat === cat.id).length };
   };
 
-  it("«Любить на руки» хвилину муркоче й топчеться на руках — прояв «+», раз за взяття", () => {
+  it("«Ручна» хвилину муркоче й топчеться на руках — прояв «+», раз за взяття", () => {
     expect(held({ lap: 1 }, () => undefined, CARRY.seenContent - 0.2).cat.traits[0]?.seen).toBe(0);
     const fond = held({ lap: 1 }, () => undefined, CARRY.seenContent * 3);
     expect(fond.purrs).toBe(1);
@@ -438,7 +438,7 @@ describe("«Коліна» на руках (рішення автора 2026-10-
     expect(seen(cat, "lap")).toBe(2);
   });
 
-  it("«Не на руки» пручається через рису — прояв «−»; узятий проти волі чи нелюбий — ні", () => {
+  it("«Виривається з рук» пручається через рису — прояв «−»; узятий проти волі чи нелюбий — ні", () => {
     expect(seen(held({ lap: -1 }, () => undefined, CARRY.seenStruggle + 0.1).cat, "lap")).toBe(1);
     const asleep = held({ lap: -1 }, (cat) => (cat.act = { kind: "sleep", target: null, goal: null, minutes: 300, elapsed: 0 }), 1);
     expect(seen(asleep.cat, "lap")).toBe(0);
@@ -650,7 +650,7 @@ describe("«Мстивість» (рішення автора 2026-10-25)", () =
     expect(laundry).toBeGreaterThan(0);
   });
 
-  it("«Поступливий» після бійки від ласощів одразу відтає й муркоче — прояв «−»", () => {
+  it("«Прощає за ласощі» після бійки від ласощів одразу відтає й муркоче — прояв «−»", () => {
     const save = game();
     save.current.home.supplies.treats.cheap = 3;
     const cat = withCat(save, { vengeful: -1 }, { x: 9.5, y: 8.5 });

@@ -571,7 +571,6 @@ describe("маніфест: іконки й гліфи", () => {
       .filter(([file]) => !file.endsWith("/glyphs.ts"))
       .map(([, source]) => source)
       .join("\n");
-    expect(Object.keys(GLYPH_ART)).toContain("❓");
     for (const [symbol, name] of Object.entries(GLYPH_ART)) {
       entry(`ui/glyph/${name}`);
       expect(cards.includes(symbol), symbol).toBe(true);

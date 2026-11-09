@@ -1,0 +1,24 @@
+{
+  "name": "Що відомо про риси",
+  "description": "Вівторок другого тижня, 10:00. У Мурки п'ять рис на різних рівнях знання (§9.9), у вкладці «Коти» телефона: «Наколінник» відкрита — назва й опис; «Теплолюбка» й «Німе кіно» — підказка: чип «…?», бабл «Здається, …» без боку й сили; «Помірна» — лише помічена: чип «…?», бабл каже тільки розділ; «Ігрива» ще не помічена — її не видно зовсім.",
+  "game": { "address": "she", "difficulty": "normal", "seed": 3 },
+  "state": { "day": 8, "minute": 600, "modifiers": { "day": null } },
+  "cats": [
+    {
+      "source": "shelter",
+      "ageWeeks": 30,
+      "name": "Мурка",
+      "sex": "female",
+      "arrivedDay": 0,
+      "x": 9.5,
+      "y": 8.5,
+      "traits": [
+        { "group": "lap", "level": 2, "seen": 0, "known": true },
+        { "group": "warmth", "level": 1, "seen": 4, "known": false },
+        { "group": "talkative", "level": -2, "seen": 4, "known": false },
+        { "group": "appetite", "level": -1, "seen": 2, "known": false },
+        { "group": "playful", "level": 1, "seen": 0, "known": false }
+      ]
+    }
+  ]
+}

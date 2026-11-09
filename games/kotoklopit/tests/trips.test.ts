@@ -926,7 +926,7 @@ describe("пункти призначення (§8.5)", () => {
     expect(save.current.character.body.x).toBeCloseTo(HOME_DOOR.x);
   });
 
-  it("«Ветеринар»: улюбленець не ображається на огляд, «Жах клініки» — удвічі більше (§9.12)", () => {
+  it("«Ветеринар»: улюбленець не ображається на огляд, «Кошмар ветеринара» — удвічі більше (§9.12)", () => {
     const loss = (level: TraitLevel | 0): number => {
       const save = game(9 * 60);
       save.current.day = 5;

@@ -383,7 +383,7 @@ describe("«Допитливість»: коробки й нові речі (§9
     expect(curious.act.target).toBe(`sniff:${bowl.id}`);
   });
 
-  it("«Байдужий до нового» 2 години × |рівень| обходить нову миску, поки є стара з кормом", () => {
+  it("«Консерватор» 2 години × |рівень| обходить нову миску, поки є стара з кормом", () => {
     const save = game();
     const cat = withCat(save, { curiosity: -2 }, { x: 15.5, y: 2.5 });
     const old = save.current.home.items.find((i): i is BowlItem => i.kind === "bowl");

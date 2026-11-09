@@ -767,7 +767,7 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   const bed = objectById("bed");
   const sofa = objectById("sofa");
   const at = (p: Vec): Spot => ({ at: p, target: null });
-  // «Нічний сплюх» уночі спить у персонажа в ногах (§9.12, рішення автора 2026-10-25).
+  // «Грілка в ногах» уночі спить у персонажа в ногах (§9.12, рішення автора 2026-10-25).
   const owl = isNight(state.minute) ? 1 + NOCTURNAL.bedStep * Math.max(0, -traitLevel(cat, "nocturnal")) : 1;
   // «Теплолюбність» (§9.12): холод тягне теплолюбів до ліжка й комп'ютера сильніше, а «Холодостійкого» — ніяк.
   const warmth = traitLevel(cat, "warmth");
@@ -778,7 +778,7 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
     { weight: 1, value: at(randomFloor(rng)) },
     ...houseSpots(state),
   ];
-  // Сон купкою: до сплячого друга (§9.4); «Не терпить дотиків» — рідше (§9.12, «Вилизування друзів»). «Товариський» лягає й до
+  // Сон купкою: до сплячого друга (§9.4); «Їжак» — рідше (§9.12, «Вилизування друзів»). «Товариський» лягає й до
   // кота, що не друг і не ворог (§9.12, «Товариськість»), «Нянька» — до кошеняти: ціль — `pile:<id>`, так видно, до кого ліг.
   const touch = Math.max(0, 1 + GROOMING.pileStep * Math.min(0, traitLevel(cat, "grooming")));
   const social = traitLevel(cat, "sociability");
@@ -817,7 +817,7 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
     options.push({ weight: (climb + CLIMBING.warmStep * Math.max(0, traitLevel(cat, "warmth"))) * up, value: at({ x: fridge.x, y: fridge.y }) });
     options.push({ weight: climb * up, value: at({ x: wardrobe.x, y: wardrobe.y }) });
   }
-  // Відчинена переноска біля дверей — будиночок для «Сам лізе в переноску» (§9.12, «Переноска»).
+  // Відчинена переноска біля дверей — будиночок для «Пасажир першого класу» (§9.12, «Переноска»).
   // Поки переноска з котом у дорозі, у ній не поспиш (перевірка етапу 2026-10-26).
   const carrier = traitLevel(cat, "carrier");
   if (carrier > 0 && state.home.carriers.length > 0 && (state.trip?.riders?.length ?? 0) === 0) options.push({ weight: CARRIER_HOME.sleepStep * carrier, value: { at: { ...CARRIER_TILE }, target: "carrier" } });
@@ -840,10 +840,10 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   // Пам'ятає «ні» про комп'ютер — там не спить (§9.12, «Слухняність»).
   if (!isWorking(state) && !catOnComputer(state) && noGo(state, cat, "desk") === "go") {
     const computer = objectById("computer");
-    // «Поважає роботу» спить на комп'ютері вдвічі рідше, «Байдужий до техніки» — ніколи (рішення автора 2026-10-25).
+    // «Поважає роботу» спить на комп'ютері вдвічі рідше, «Технофоб» — ніколи (рішення автора 2026-10-25).
     const helper = traitLevel(cat, "helper");
     const respect = Math.max(0, 1 + COMPUTER_SLEEP.helperStep * Math.min(0, helper));
-    // «Не мерзне» на теплому комп'ютері спить рідше, «Холодостійкий» — ніколи (§9.12, «Теплолюбність»).
+    // «Не мерзне» на теплому комп'ютері спить рідше, «Полярник» — ніколи (§9.12, «Теплолюбність»).
     const cool = Math.max(0, 1 + WARMTH.coolStep * Math.min(0, warmth));
     const weight = (COMPUTER_SLEEP.base + cold + COMPUTER_SLEEP.step * (Math.max(0, warmth) + Math.max(0, helper))) * respect * cool;
     options.push({ weight, value: at({ x: computer.x + rng.int(0, computer.w - 1), y: computer.y }) });
@@ -902,7 +902,7 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   }
   delete cat.stuck;
   if (n.toilet >= NEED_THRESHOLD.toilet) {
-    // «Байдужий до нового» обходить новий лоток, поки є старий, — навіть брудний (§9.12, «Допитливість»).
+    // «Консерватор» обходить новий лоток, поки є старий, — навіть брудний (§9.12, «Допитливість»).
     const boxes = avoidNew(state, cat, itemsOf(state, "litter"));
     const box = nearest(cat, boxes.filter((b) => !dirtyFor(cat, b))) ?? nearest(cat, boxes);
     if (box) return start(cat, "toilet", itemTile(box), CAT_ACT_MINUTES.toilet, `item:${box.id}`);
@@ -1036,14 +1036,14 @@ function wantsFood(state: GameState, cat: Cat): boolean {
  */
 function startAttention(state: GameState, cat: Cat, forFood = false): void {
   if (cat.act.kind === "attention" && cat.act.minutes > 0) return;
-  // «Вимогливий» ходить слідом довше, «Скромний» — менше (§9.9); «Хвостик» тривалості не змінює (2026-10-25).
+  // «Вимогливий» ходить слідом довше, «Тактовний» — менше (§9.9); «Хвостик» тривалості не змінює (2026-10-25).
   const demanding = Math.max(0.25, 1 + TRAIT_EFFECTS.demandingStep * traitLevel(cat, "demanding"));
   start(cat, "attention", attentionGoal(state, cat), CAT_ACT_MINUTES.attention * demanding, "character");
   if (forFood) cat.act.forFood = true;
 }
 
 /**
- * Куди кіт іде по увагу: до персонажа; «Сам по собі» — лише до виходу зі своєї кімнати в бік персонажа, звідки
+ * Куди кіт іде по увагу: до персонажа; «Чекає на місці» — лише до виходу зі своєї кімнати в бік персонажа, звідки
  * кличе й чекає (§9.12).
  */
 function attentionGoal(state: GameState, cat: Cat): Vec {
@@ -1742,7 +1742,7 @@ function callable(cat: Cat, other: Cat): boolean {
 
 /**
  * Дорослий з «Турботою про кошенят» «−» відганяє це кошеня (§9.12): шипить і б'є лапою, коли воно лізе, — якщо вони не друзі
- * (`swatKitten`). Тож і гратися вони разом не кличуть (перевірка блоку 2, 2026-10-26: кошеня кликало «Сам ще кошеня», і той
+ * (`swatKitten`). Тож і гратися вони разом не кличуть (перевірка блоку 2, 2026-10-26: кошеня кликало «Гроза кошенят», і той
  * слухняно грався).
  */
 const shoos = (state: GameState, adult: Cat, kitten: Cat): boolean =>
@@ -2155,7 +2155,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       if (bowl.food <= 0) bowl.foodQuality = null;
       cat.needs.hunger = Math.max(0, cat.needs.hunger - PORTION_HUNGER * portion);
       changeMood(state, cat, quality === "premium" ? MOOD.premiumFood : MOOD.cheapFood, quality === "premium" ? "дорогий корм" : undefined);
-      // «Їсть усе» наминає простий корм і тішиться ним, як дорогим, — прояв «Перебірливості −» (раз на годину).
+      // «Всеїдна» наминає простий корм і тішиться ним, як дорогим, — прояв «Перебірливості −» (раз на годину).
       if (quality === "cheap" && picky < 0) {
         changeMood(state, cat, PICKY.cheapJoy * -picky, "радіє простому корму");
         observe(state, cat, "picky", -1, false, MINUTES_PER_HOUR);
@@ -2202,7 +2202,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         observe(state, cat, "begging", -1, false, MINUTES_PER_HOUR);
         return;
       }
-      // «Господар території» після їди ще вартує біля миски (§9.12, «Територіальність»).
+      // «Цербер» після їди ще вартує біля миски (§9.12, «Територіальність»).
       if (traitLevel(cat, "territorial") >= TERRITORY.guardLevel && bowl.food > 0) start(cat, "idle", null, TERRITORY.guardMinutes, `guard:${act.target ?? ""}`);
       return;
     }
@@ -2479,7 +2479,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       if (act.envy === true) return enviousArrived(state, cat);
       return jealousArrived(state, cat, rng);
     case "window":
-      // «Нудьгує біля вікна» зриває злість (§9.12, «Вікно»).
+      // «Злиться на вікно» зриває злість (§9.12, «Вікно»).
       if (act.refused === true) windowRage(state, cat, rng);
       return;
     case "catnip":
@@ -2524,7 +2524,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
     }
     case "toy": {
       const toy = itemById<ToyItem>(state, act.target);
-      // Мисливець награється іграшкою досхочу, а «Пацифіст» — ледве (§9.12, «Мисливський інстинкт»).
+      // Мисливець награється іграшкою досхочу, а «Мух не ловить» — ледве (§9.12, «Мисливський інстинкт»).
       const hunting = traitLevel(cat, "hunting");
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF * Math.max(HUNTING.soloMin, 1 + HUNTING.soloStep * hunting));
       exercise(cat);
@@ -2757,7 +2757,7 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       return;
     case "beg":
     case "attention":
-      // «Терплячий зранку» біля ліжка чекає мовчки, як і каже підказка (§9.12, рішення автора 2026-10-26).
+      // «Дає доспати» біля ліжка чекає мовчки, як і каже підказка (§9.12, рішення автора 2026-10-26).
       if (act.kind !== "beg" || act.target !== "bed") askAloud(state, cat, minutes);
       // «Втікач» дійшов до вхідних дверей і кричить під ними — дряпає їх знизу (§9.12, «Котячі сліди в квартирі»): слід лишається,
       // хоч би персонаж цього й не бачив.
@@ -2807,7 +2807,7 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
           act.minutes = 0;
           return;
         }
-        // Друг прийшов вилизати «Не терпить дотиків» — той може відсторонитися (§9.12, «Вилизування друзів»).
+        // Друг прийшов вилизати «Їжак» — той може відсторонитися (§9.12, «Вилизування друзів»).
         act.refused = act.target?.startsWith("cat:") === true && refusesGrooming(state, other, cat, rng);
         if (act.refused) {
           act.minutes = 0;
@@ -2929,7 +2929,7 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
 }
 
 /**
- * Голос кота (§9.12, «Балакучість»): у скільки разів частіше за звичайне він нявкає, просячи, і чи чути це. «Тихоня»
+ * Голос кота (§9.12, «Балакучість»): у скільки разів частіше за звичайне він нявкає, просячи, і чи чути це. «Німе кіно»
  * (−2 і менше) відкриває рота так само часто, як «Мовчазний», але беззвучно.
  */
 export function meowVoice(cat: Cat): { rate: number; silent: boolean } {
@@ -3206,7 +3206,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   if (cat.act.kind === "attention") {
     if (!context.present) cat.act.minutes = 0;
     else {
-      // Іти слідом за персонажем; «Сам по собі» не ходить слідом, а чекає, поки підійдуть.
+      // Іти слідом за персонажем; «Чекає на місці» не ходить слідом, а чекає, поки підійдуть.
       const body = state.character.body;
       const near = Math.hypot(body.x - cat.x, body.y - cat.y) <= ARRIVED + keepDistance(cat);
       // Похід «через голод» — поки кіт голодний, а миски порожні: зголоднів дорогою — тепер через голод, наївся — вже ні (рішення
@@ -3225,7 +3225,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
           cat.offense = { ...cat.offense!, seen: true };
           observe(state, cat, "touchy", -1);
         }
-        // «Сам по собі» не пішов слідом, а чекав, поки персонаж повернеться (§9.12).
+        // «Чекає на місці» не пішов слідом, а чекав, поки персонаж повернеться (§9.12).
         if (cat.act.goal === null && cat.act.elapsed >= FOLLOWER.waited) observe(state, cat, "follower", -1);
       }
       if (traitLevel(cat, "follower") >= 0) approach(state, cat);
@@ -3474,7 +3474,7 @@ function tickRelations(state: GameState, minutes: number, rng: Rng): void {
         if (together) changeRelation(state, a, b, RELATIONS.sleepTogether.perHour * hours);
         continue;
       }
-      // Кошеня лізе до «Сам ще кошеня» — той шипить і б'є лапою (§9.12, «Турбота про кошенят»).
+      // Кошеня лізе до «Гроза кошенят» — той шипить і б'є лапою (§9.12, «Турбота про кошенят»).
       swatKitten(state, a, b, rng);
       swatKitten(state, b, a, rng);
       // Новий дорослий кіт проходить повз — перші 2 дні на нього шиплять (§9.4, рішення автора 2026-10-26, Б5 а).
@@ -3840,7 +3840,7 @@ function enviousArrived(state: GameState, cat: Cat): void {
 }
 
 /**
- * «Заздрісник» (+2) вихоплює ласощі (§9.12, «Заздрісність», рішення автора 2026-10-25): ви даєте ласощі котові на руках, а він
+ * «Зелений від заздрощів» (+2) вихоплює ласощі (§9.12, «Заздрісність», рішення автора 2026-10-25): ви даєте ласощі котові на руках, а він
  * поруч з вами (до 1,5 клітинки), не спить і нічим важливим не зайнятий, — з шансом 20% вихоплює їх і з'їдає сам. Тоді ласощі
  * дістаються йому, а той, кого пригощали, лишається ні з чим. Прояв «+».
  */
@@ -3960,7 +3960,7 @@ export function showerDrops(state: GameState): void {
 }
 
 /**
- * Увімкнули воду — душ чи кран (§9.12): «Водобоязнь», що не спить у ванній, перелякано тікає з неї у вітальню — прояв
+ * Увімкнули воду — душ чи кран (§9.12): «Жахається води», що не спить у ванній, перелякано тікає з неї у вітальню — прояв
  * «Любові до води −» (раз на годину).
  */
 export function waterFright(state: GameState): void {
@@ -3980,7 +3980,7 @@ function freshAt(state: GameState, item: HomeItem): number | null {
 }
 
 /**
- * «Обачний» обходить нову річ (§9.12, «Допитливість», рішення автора 2026-10-25): 2 години × |рівень| не бере нової миски,
+ * «Насторожений» обходить нову річ (§9.12, «Допитливість», рішення автора 2026-10-25): 2 години × |рівень| не бере нової миски,
  * води, лотка чи кігтеточки, поки серед цих речей є стара. Немає старої — бере нову.
  */
 function avoidNew<T extends HomeItem>(state: GameState, cat: Cat, items: T[]): T[] {
@@ -4194,7 +4194,7 @@ function getsAttention(state: GameState, cat: Cat): boolean {
 
 /**
  * Ревнивець шипить на щасливця — це видно й чути (§9.4); щойно шипів — мовчить (§9.12), а стосунки вже впали в `jealousy`.
- * Поруч (до 2 клітинок) щасливець з шансом 50% іде: пестощі чи гра перериваються, з колін зганяють; «Ревнивець» (+2) лягає
+ * Поруч (до 2 клітинок) щасливець з шансом 50% іде: пестощі чи гра перериваються, з колін зганяють; «Отелло» (+2) лягає
  * на коліна сам.
  */
 function confront(state: GameState, cat: Cat, lucky: Cat, rng: Rng): void {
@@ -4296,7 +4296,7 @@ function catnipFight(state: GameState, cat: Cat, rng: Rng): void {
 
 /**
  * Вага «подивитися у вікно» серед спокійних варіантів (§9.12, «Вікно», рішення автора 2026-10-25): удень 0,4 × (1 + 0,5 × рівень);
- * «Не дивиться у вікно» (−1) — ніколи, «Нудьгує біля вікна» (−2 і менше) — як кіт без риси; новонароджене — ніколи.
+ * «Не дивиться у вікно» (−1) — ніколи, «Злиться на вікно» (−2 і менше) — як кіт без риси; новонароджене — ніколи.
  */
 export function windowWeight(state: GameState, cat: Cat): number {
   const hour = hourOf(state.minute);
@@ -4349,7 +4349,7 @@ export function startWindow(state: GameState, cat: Cat, rng: Rng): boolean {
 
 /**
  * Кіт на підвіконні (§9.12, «Вікно»): дивиться у вікно — потреба гри потроху знімається, настрій росте, «+» «кекає» на птахів
- * (прояв «+»); «Нудьгує біля вікна» сіпає хвостом і за кілька хвилин злиться (прояв «−»), і дивитися у вікно йому кінець.
+ * (прояв «+»); «Злиться на вікно» сіпає хвостом і за кілька хвилин злиться (прояв «−»), і дивитися у вікно йому кінець.
  */
 function watchWindow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const act = cat.act;
@@ -4386,7 +4386,7 @@ function watchWindow(state: GameState, cat: Cat, minutes: number, rng: Rng): voi
 }
 
 /**
- * «Нудьгує біля вікна» зриває злість (§9.12, «Вікно»): перенаправлена агресія — шипить на найближчого кота, що не спить, поруч
+ * «Злиться на вікно» зриває злість (§9.12, «Вікно»): перенаправлена агресія — шипить на найближчого кота, що не спить, поруч
  * (стосунки падають, той відходить), а нікого поруч — іде дерти диван.
  */
 function windowRage(state: GameState, cat: Cat, rng: Rng): void {
@@ -4595,7 +4595,7 @@ function refusesGrooming(state: GameState, cat: Cat, by: Cat, rng: Rng): boolean
   return true;
 }
 
-/** З цієї миски вже їсть інший кіт чи її вартує «Господар території» (§9.12, «Територіальність»). */
+/** З цієї миски вже їсть інший кіт чи її вартує «Цербер» (§9.12, «Територіальність»). */
 function bowlTaken(state: GameState, cat: Cat, bowl: BowlItem): boolean {
   const target = `item:${bowl.id}`;
   return state.cats.some((o) => o.id !== cat.id && o.away === null && ((o.act.kind === "eat" && o.act.target === target) || o.act.target === `guard:${target}`));
@@ -4705,7 +4705,7 @@ function warmKittens(state: GameState, minutes: number): void {
 }
 
 /**
- * Кошеня лізе до «Сам ще кошеня» (§9.12, «Турбота про кошенят», рішення автора 2026-10-25): той, не сплячи, з шансом 50% × |рівень|
+ * Кошеня лізе до «Гроза кошенят» (§9.12, «Турбота про кошенят», рішення автора 2026-10-25): той, не сплячи, з шансом 50% × |рівень|
  * шипить і б'є лапою — кошеняті настрій −2, і воно відскакує; на це кошеня — година спокою. Прояв «−».
  */
 function swatKitten(state: GameState, cat: Cat, kitten: Cat, rng: Rng): void {

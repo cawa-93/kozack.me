@@ -460,7 +460,7 @@ describe("взаємність (§9.4, рішення автора 2026-10-26, �
     expect(back / runs).toBeLessThan(0.52);
   });
 
-  it("сплячий друг і «Не терпить дотиків» (−2) у відповідь не вилизують", () => {
+  it("сплячий друг і «Їжак» (−2) у відповідь не вилизують", () => {
     for (let seed = 1; seed <= 60; seed++) {
       expect(groomAndSee(seed, sleeping()).back).toBe(false);
       expect(groomAndSee(seed, idleAct(60), { grooming: -2 }).back).toBe(false);

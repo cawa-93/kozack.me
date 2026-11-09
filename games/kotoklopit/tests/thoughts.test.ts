@@ -85,7 +85,7 @@ describe("про що думає кіт (§11.4)", () => {
     if (!bowl) throw new Error("немає миски");
     cat.act = { ...act("beg"), target: `item:${bowl.id}` };
     expect(catAsk(save.current, cat)).toEqual({ kind: "say", icon: hunger });
-    // «Терплячий зранку» біля ліжка чекає сніданку мовчки — думкою, тим самим кормом.
+    // «Дає доспати» біля ліжка чекає сніданку мовчки — думкою, тим самим кормом.
     cat.act = { ...act("beg"), target: "bed" };
     expect(catAsk(save.current, cat)).toEqual({ kind: "think", icon: hunger });
   });
