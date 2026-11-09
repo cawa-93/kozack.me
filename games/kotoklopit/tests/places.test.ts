@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest";
 
 import { freeSlots, place, utilitiesDue } from "../src/sim/economy";
 import { newGame } from "../src/sim/game";
-import { CARRIER_TILE, hiddenTile, isWall, LAUNDRY_BASKET, nearestFreePlace, OBJECTS, PLACES, ROBOT_DOCK, roomAt, slotById, SLOTS } from "../src/sim/home";
+import { CARRIER_TILE, hiddenTile, isWall, LAUNDRY_BASKET, MAP_HEIGHT, nearestFreePlace, OBJECTS, PLACES, ROBOT_DOCK, roomAt, slotById, SLOTS } from "../src/sim/home";
+import { WALL_HEIGHT, WALL_SEGMENTS } from "../src/view/art/manifest/lib/geometry";
 import type { GameState, HomeItem, Vec } from "../src/sim/types";
 import { boxCovers } from "../src/view/iso/geometry";
 import { SEATS, seatAt } from "../src/view/iso/personseat";
@@ -42,7 +43,7 @@ describe("клітинки для речей (§8.7)", () => {
     for (const slot of SLOTS) expect(placeTiles.has(tile(slot)), slot.id).toBe(true);
   });
 
-  it("немає стін, проходів, меблів, зокрема сховищ, що з'являються пізніше, і клітинок під передньою стіною", () => {
+  it("немає стін, проходів, меблів, зокрема сховищ, що з'являються пізніше, і клітинок за внутрішньою стіною", () => {
     for (const place of PLACES) {
       expect(isWall(place.x, place.y), place.id).toBe(false);
       expect(hiddenTile(place.x, place.y), place.id).toBe(false);
@@ -62,6 +63,18 @@ describe("клітинки для речей (§8.7)", () => {
       for (const o of OBJECTS) {
         const look = isoObjectLook(o.id);
         expect(boxCovers(look.footprint, look.tall, center(place), BOWL), `${place.id}: ${o.id}`).toBe(false);
+      }
+    }
+  });
+
+  // Зовнішня передня стіна — низький плінтус: ряд під нижньою лівою стіною вітальні видно, туди ставлять речі (кігтеточку до стіни).
+  it("ряд під зовнішньою передньою стіною — для речей, і плінтус їх не закриває", () => {
+    expect(hiddenTile(3, MAP_HEIGHT - 2)).toBe(false);
+    expect(PLACES.some((p) => p.y === MAP_HEIGHT - 2)).toBe(true);
+    for (const place of PLACES) {
+      for (const wall of WALL_SEGMENTS.filter((w) => w.kind === "front")) {
+        const { x, y, w, h } = wall.rect;
+        expect(boxCovers({ x0: x, y0: y, x1: x + w, y1: y + h }, WALL_HEIGHT.front, center(place), BOWL), `${place.id}: ${wall.id}`).toBe(false);
       }
     }
   });
