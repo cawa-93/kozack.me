@@ -1,4 +1,4 @@
-// Симуляція балансу (§11.2, крок 8 плану): бот-гравець проживає тижні гри для всіх 6 комбінацій хронотипу
+// Симуляція балансу (§11.2, крок 8 плану): бот-гравець проживає тижні гри для всіх 8 комбінацій хронотипу
 // й складності на кількох seed. Стать персонажа ні на що не впливає, тож її не перебирають: звертання — лише граматика текстів
 // (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4). Звіт — у консоль і `balance/REPORT.md`.
 // Запуск: `npm run balance -w games/kotoklopit`; тижні й seed — змінні BALANCE_WEEKS, BALANCE_SEEDS.
@@ -261,10 +261,10 @@ function moneyCurves(combos: Map<string, Run[]>): MoneyCurve[] {
   });
 }
 
-it("баланс: 6 комбінацій хронотипу й складності (§11.2)", () => {
+it("баланс: 8 комбінацій хронотипу й складності (§11.2)", () => {
   const runs: Run[] = [];
   for (const chronotype of ["lark", "owl"] as const) {
-    for (const difficulty of ["easy", "normal", "hard"] as const) {
+    for (const difficulty of Object.keys(DIFFICULTY_TITLES) as Difficulty[]) {
       for (let seed = 1; seed <= SEEDS; seed++) runs.push(simulate(chronotype, difficulty, seed * 101));
     }
   }
