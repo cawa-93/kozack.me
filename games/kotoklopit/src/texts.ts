@@ -485,6 +485,7 @@ export const DIFFICULTY_TITLES = {
   easy: "Мамина царапка",
   normal: "Як у всіх",
   hard: "Реалістичний",
+  ukro: "Укро Кіт",
 } as const;
 
 /** Крок «Звертання» нової гри (§5.1, `TEXTS.md`, «Нова гра»). */

@@ -20,7 +20,7 @@ function emptyRace() {
   return race;
 }
 
-const DIFFICULTIES: Difficulty[] = ["easy", "normal", "hard"];
+const DIFFICULTIES: Difficulty[] = ["easy", "normal", "hard", "ukro"];
 /** Множник потоку дня: звичайний, «Затори» (найгустіший) і «Порожні дороги». */
 const TRAFFIC = [1, MODIFIERS.traffic["traffic"] ?? 1, MODIFIERS.traffic["empty-roads"] ?? 1];
 

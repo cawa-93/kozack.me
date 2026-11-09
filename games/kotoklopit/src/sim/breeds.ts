@@ -121,10 +121,10 @@ export function riskHalves(breed: readonly [string, string], risk: string): numb
   return breed.filter((id) => breedById(id).risks.includes(risk)).length;
 }
 
-/** Що видно про породу (§9.11): легка — усе, середня — чистокровна повністю, напівкровка — половина; важка — нічого. */
+/** Що видно про породу (§9.11): легка — усе, середня — чистокровна повністю, напівкровка — половина; важка й «Укро Кіт» — нічого. */
 export function knownBreedHalves(state: GameState, breed: readonly [string, string], rng: Rng): [boolean, boolean] {
   if (state.difficulty === "easy") return [true, true];
-  if (state.difficulty === "hard") return [false, false];
+  if (state.difficulty === "hard" || state.difficulty === "ukro") return [false, false];
   if (breed[0] === breed[1]) return [true, true];
   // Напівкровка з безпородною половиною — видно саму породу, а не «безпородний × ?» (крок 17, звірка з довідниками 2026-10-28).
   if (breed[0] === MIXED || breed[1] === MIXED) return [breed[0] !== MIXED, breed[1] !== MIXED];

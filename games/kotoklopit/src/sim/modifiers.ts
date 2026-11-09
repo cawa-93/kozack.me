@@ -227,6 +227,7 @@ export function chooseDayModifier(state: GameState, day: number, rng: Rng): stri
   // «Застуда» застудженому нічого не дала б, а титулка писала б про нову хворобу (§4.1).
   const possible = (id: string, when: When, group: Pair["group"]): boolean =>
     !(group === "work" && sick) && fits(state, day, when) && !contradicts(week, id, group) && id !== previous && !(id === "sick" && isIll(state, "cold"));
+  if (state.difficulty === "ukro") return ukroDayModifier(state, day, possible);
   const sides = order.map((i) => {
     const p = DAY_CATALOG[i]!;
     const easy = possible(p.easy, p.whenEasy, p.group) ? p.easy : null;
@@ -236,6 +237,20 @@ export function chooseDayModifier(state: GameState, day: number, rng: Rng): stri
   if (wanted) return wantHard ? wanted.hard : wanted.easy;
   const any = sides.find((s) => s.hard !== null || s.easy !== null);
   return any ? (any.hard ?? any.easy) : null;
+}
+
+/** Зерно зваженого вибору «Укро Кіт» (§4.1): своє, щоб кидки звичайного вибору лишалися тими самими. */
+const UKRO_SALT = 12;
+
+/**
+ * Модифікатор дня на «Укро Кіт» (§4.1): лише важкий бік пар. Перший можливий у зваженій перестановці (ключ u^(1/вага), більший —
+ * раніше) випадає з імовірністю, пропорційною вазі серед можливих сьогодні.
+ */
+function ukroDayModifier(state: GameState, day: number, possible: (id: string, when: When, group: Pair["group"]) => boolean): string | null {
+  const rng = createRng(deriveSeed(state.seed, UKRO_SALT, day));
+  const keyed = DAY_PAIRS.map((p) => ({ p, key: rng.next() ** (1 / (MODIFIERS.ukroWeight[p.hard ?? ""] ?? 1)) }));
+  keyed.sort((a, b) => b.key - a.key);
+  return keyed.find(({ p }) => p.hard !== null && possible(p.hard, p.whenHard, p.group))?.p.hard ?? null;
 }
 
 /** Ранок нового дня (§4.1): вибір модифікаторів і їхні ранкові ефекти. */

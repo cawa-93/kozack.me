@@ -114,7 +114,10 @@ export const KITTEN_AGE_WEEKS = 1;
 /** Найдовше ім'я, яке можна ввести: персонажа й кошеняти. */
 export const NAME_MAX_LENGTH = 20;
 
-/** Складність (§5.2): `earnings`, `catSanity` — множники, решта — здоровий глузд за кота. */
+/**
+ * Складність (§5.2): `earnings`, `catSanity` — множники, решта — здоровий глузд за кота. Тут і в кожному числі за складністю нижче
+ * `ukro` («Укро Кіт») — удвічі гірше за `hard`.
+ */
 export const DIFFICULTY: Record<
   Difficulty,
   { earnings: number; catSanity: number; newCatSanity: number; lostCatSanity: number; givenCatSanity: number }
@@ -122,6 +125,7 @@ export const DIFFICULTY: Record<
   easy: { earnings: 1.25, catSanity: 1.25, newCatSanity: 62, lostCatSanity: -20, givenCatSanity: -12 },
   normal: { earnings: 1, catSanity: 1, newCatSanity: 50, lostCatSanity: -25, givenCatSanity: -15 },
   hard: { earnings: 0.8, catSanity: 0.8, newCatSanity: 40, lostCatSanity: -31, givenCatSanity: -19 },
+  ukro: { earnings: 0.4, catSanity: 0.4, newCatSanity: 20, lostCatSanity: -62, givenCatSanity: -38 },
 };
 /** Частка `lostCatSanity` за другу й наступні смерті тієї самої ночі (§6.2): старий виводок відходить разом. */
 export const LOST_CAT_REPEAT = 0.75;
@@ -147,7 +151,7 @@ export const INPUT_DEADZONE = 0.15;
 // Побут (§8.7).
 export const COOK_MINUTES = 20;
 /** Від того, як поставили сиру. */
-export const BURN_MINUTES: Record<Difficulty, number> = { easy: COOK_MINUTES + 45, normal: COOK_MINUTES + 30, hard: COOK_MINUTES + 15 };
+export const BURN_MINUTES: Record<Difficulty, number> = { easy: COOK_MINUTES + 45, normal: COOK_MINUTES + 30, hard: COOK_MINUTES + 15, ukro: COOK_MINUTES + 7.5 };
 export const EAT_MINUTES = 10;
 export const SHOWER_MINUTES = 10;
 export const MEAL_SATIETY: Record<Quality, number> = { cheap: 40, premium: 55 };
@@ -231,7 +235,7 @@ export const STORAGE_LIMITS: Record<Product, number> = {
 /** Стартовий пакет кота з притулку (§9.12). */
 export const SHELTER_STARTER_PACK = { catFood: 8, litter: PRODUCTS.litter.units.cheap };
 /** Доставка: `share` — частка ціни кожного товару, `fee` — надбавка за замовлення. */
-export const DELIVERY = { share: 0.1, fee: { easy: 12, normal: 15, hard: 18 } as Record<Difficulty, number> } as const;
+export const DELIVERY = { share: 0.1, fee: { easy: 12, normal: 15, hard: 18, ukro: 36 } as Record<Difficulty, number> } as const;
 export const DELIVERY_HOURS = 6;
 /** Якщо персонаж спить, привезуть у цю хвилину наступного дня. */
 export const DELIVERY_NEXT_DAY_MINUTE = 9 * MINUTES_PER_HOUR;
@@ -284,7 +288,7 @@ export const CALL_HYGIENE_REPUTATION = 0.5;
 export const CALL_DIRTY_CLOTHES = { reputation: 0.5, noticeMinute: 5 } as const;
 export const HIGH_HYGIENE = 75;
 /** Пошук роботи: `sanityShare` — частка від найнижчої посади; `stages` — етапів вакансії. */
-export const JOB_SEARCH = { hours: { easy: 16, normal: 20, hard: 24 } as Record<Difficulty, number>, sanityShare: 0.5, stages: 4 } as const;
+export const JOB_SEARCH = { hours: { easy: 16, normal: 20, hard: 24, ukro: 48 } as Record<Difficulty, number>, sanityShare: 0.5, stages: 4 } as const;
 
 /** Множник `POSITIONS.reputation` за години роботи: кар'єра вміщується в гру; штрафи й події — без нього. */
 export const CAREER_PACE = 3.5;
@@ -548,7 +552,7 @@ export const THOUGHTS = {
   personSeconds: 40,
   apartSeconds: 2,
   jitter: 0.2,
-  frequency: { easy: 1.25, normal: 1, hard: 0.8 } as Record<Difficulty, number>,
+  frequency: { easy: 1.25, normal: 1, hard: 0.8, ukro: 0.4 } as Record<Difficulty, number>,
 } as const;
 /** Настрій з поведінки (§11.4). */
 export const MOOD_LOOK = { blinkMood: 70, blinkDistance: 4, blinkSeconds: 8, nudgeDistance: 1.2 } as const;
@@ -777,7 +781,7 @@ export const ILLNESS = {
   friendContagion: 0.2,
   litterContagion: 0.1,
   hardinessStep: 0.1,
-  difficulty: { easy: 0.8, normal: 1, hard: 1.25 } as Record<Difficulty, number>,
+  difficulty: { easy: 0.8, normal: 1, hard: 1.25, ukro: 2.5 } as Record<Difficulty, number>,
   moodPerDay: -3,
 } as const;
 /** Симптоми (§9.5): множники потреб, сну й ходи; шанси. */
@@ -843,21 +847,21 @@ export const RACE = {
   carSpeed: 0.5,
   /** Середній проміжок між машинами, хвилини дороги; `traffic` — множник густоти. */
   gap: 1.5,
-  traffic: { easy: 0.8, normal: 1, hard: 1.25 } as Record<Difficulty, number>,
+  traffic: { easy: 0.8, normal: 1, hard: 1.25, ukro: 2.5 } as Record<Difficulty, number>,
   /** Довжина кузова на малюнку (`art/race/car/*.svg`, 58 одиниць арту, `racePixelsPerUnit`): аварія — коли кузови торкаються. */
   carLength: 0.27,
   view: 2.5,
 } as const;
 /** Аварія (§8.5): `chance` — шанс кожної втрати, `max` — найбільше втрат. */
 export const ACCIDENT = {
-  chance: { easy: 0.4, normal: 0.5, hard: 0.625 } as Record<Difficulty, number>,
-  max: { easy: 2, normal: 3, hard: 4 } as Record<Difficulty, number>,
+  chance: { easy: 0.4, normal: 0.5, hard: 0.625, ukro: 1 } as Record<Difficulty, number>,
+  max: { easy: 2, normal: 3, hard: 4, ukro: 8 } as Record<Difficulty, number>,
   /** Шанс травми кота за місцем (§8.5): `maybeFallIll` кладе поверх складність. */
   catInjury: { hands: 0.4, cheap: 0.2, premium: 0.1 },
   /** Ремонт і години аварії: × `scale` × множник швидкості (§5.2). */
   repair: 90,
   hours: 10,
-  scale: { easy: 0.8, normal: 1, hard: 1.25 } as Record<Difficulty, number>,
+  scale: { easy: 0.8, normal: 1, hard: 1.25, ukro: 2.5 } as Record<Difficulty, number>,
   /** Множник швидкості: `speedBase` + швидкість × `speedStep`, до `speedMax`. */
   speedBase: 0.5,
   speedStep: 0.25,
@@ -939,7 +943,7 @@ export const HOUSEHOLD = {
   robotMinutes: 64 * BODY_PACE,
   breakPerUse: 1 / 150,
   applianceBreakPerDay: 0.01,
-  difficulty: { easy: 0.8, normal: 1, hard: 1.25 } as Record<Difficulty, number>,
+  difficulty: { easy: 0.8, normal: 1, hard: 1.25, ukro: 2.5 } as Record<Difficulty, number>,
 } as const;
 /**
  * Перестановка речей (§8.7), клітинки: `take` — до краю речі, яку беруть; `ahead` — точка перед персонажем, біля якої шукають вільну
@@ -1014,7 +1018,7 @@ export const SHELTER = {
   cats: 3,
   minAge: 1,
   maxAge: 5,
-  visibleTraits: { easy: 3, normal: 2, hard: 1 } as Record<Difficulty, number>,
+  visibleTraits: { easy: 3, normal: 2, hard: 1, ukro: 0 } as Record<Difficulty, number>,
   /** З цього віку (тижні) — стерилізований із шансом `sterilized`. */
   sterilizedFromAge: 3,
   sterilized: 0.5,
@@ -1038,11 +1042,14 @@ export const SHOP_WINDOW: Record<Difficulty, { min: number; max: number }> = {
   easy: { min: -0.35, max: 0.05 },
   normal: { min: -0.25, max: 0.15 },
   hard: { min: -0.15, max: 0.25 },
+  ukro: { min: -0.075, max: 0.5 },
 };
 /** Модифікатори (§4.1, `DAY_MODIFIERS.md`): спершу шанси вибору, далі ефекти; `decay` — множник спаду терпіння. */
 export const MODIFIERS = {
   noneShare: 1 / 6,
-  hardShare: { easy: 0.4, normal: 0.5, hard: 0.6 } as Record<Difficulty, number>,
+  hardShare: { easy: 0.4, normal: 0.5, hard: 0.6, ukro: 1 } as Record<Difficulty, number>,
+  /** Вага модифікатора дня у виборі на «Укро Кіт» (§4.1); решта — 1. */
+  ukroWeight: { outage: 10 } as Readonly<Record<string, number>>,
   weekShare: 1,
   foundling: 0.03,
   foundlingGapDays: 14,
@@ -1164,7 +1171,7 @@ export const SUFFERED_LIFE = 70;
 /** Кар'єра на пенсії (§4.2): посада (від 1), нижче `middle` — низька. */
 export const CAREER_AXIS = { middle: 11, high: 19 } as const;
 /** Проявів риси, щоб відкрити її (§9.9). */
-export const OBSERVATIONS: Record<Difficulty, number> = { easy: 3, normal: 6, hard: 9 };
+export const OBSERVATIONS: Record<Difficulty, number> = { easy: 3, normal: 6, hard: 9, ukro: 18 };
 /** Свідок у проході між кімнатами (§9.9). */
 export const WITNESS_DISTANCE = 3;
 /** Хвороби персонажа (§6.5): як `DISEASES`; `doses` — днів із ліками; `sickLeave` — днів лікарняного. */
@@ -1179,7 +1186,7 @@ export const ILLNESS_EFFECTS = {
   slow: 0.8,
   carrySlow: 0.8,
   injuryOnStun: 0.05,
-  difficulty: { easy: 0.8, normal: 1, hard: 1.25 } as Record<Difficulty, number>,
+  difficulty: { easy: 0.8, normal: 1, hard: 1.25, ukro: 2.5 } as Record<Difficulty, number>,
   // Виснаження (§6.5, §8.8): короткі ночі поспіль; `rest*` — минає.
   shortSleepHours: 6,
   shortNights: 3,

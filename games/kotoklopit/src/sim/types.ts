@@ -9,7 +9,7 @@ export type Sex = "female" | "male";
  */
 export type Address = "he" | "she";
 export type Chronotype = "lark" | "owl";
-export type Difficulty = "easy" | "normal" | "hard";
+export type Difficulty = "easy" | "normal" | "hard" | "ukro";
 
 /** Якість речей і запасів: дешеве чи дороге (§6.4). */
 export type Quality = "cheap" | "premium";

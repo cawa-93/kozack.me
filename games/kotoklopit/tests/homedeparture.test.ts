@@ -58,7 +58,7 @@ import { DESTINATION_ICONS } from "../src/view/symbols";
 const HEIGHTS = [720, 960, 1440];
 /** Ширини кадру при висоті 720 (у вищого кадру — пропорційно). */
 const WIDTHS = [1280, 1556, 2000];
-const DIFFICULTIES: Difficulty[] = ["easy", "normal", "hard"];
+const DIFFICULTIES: Difficulty[] = ["easy", "normal", "hard", "ukro"];
 const TRAFFIC = [1, MODIFIERS.traffic["traffic"] ?? 1, MODIFIERS.traffic["empty-roads"] ?? 1];
 
 /** Свіжа гонка, як після `startTrip`. */

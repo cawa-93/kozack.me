@@ -14,7 +14,7 @@ import { createRng } from "../src/sim/rng";
 import type { Difficulty, GameState, Trait } from "../src/sim/types";
 import { searchProgress } from "../src/sim/work";
 
-const DIFFICULTIES: Difficulty[] = ["easy", "normal", "hard"];
+const DIFFICULTIES: Difficulty[] = ["easy", "normal", "hard", "ukro"];
 
 const game = (difficulty: Difficulty = "normal"): GameState => newGame({ address: "she", difficulty, seed: 3 }).current;
 
@@ -78,7 +78,7 @@ describe("зміна складності (§5.2)", () => {
         { group: "talkative", level: 2, seen: 0, known: true },
       ]);
       const stages = traits.map((t) => visibility(state, t));
-      for (const next of ["hard", "easy", "normal", "easy", "hard", "normal", "hard", "easy"] as const) {
+      for (const next of ["hard", "ukro", "easy", "normal", "ukro", "easy", "hard", "normal", "hard", "easy", "ukro"] as const) {
         setDifficulty(state, next);
         expect(traits.map((t) => visibility(state, t))).toEqual(stages);
       }

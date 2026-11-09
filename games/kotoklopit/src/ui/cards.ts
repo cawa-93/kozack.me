@@ -841,7 +841,7 @@ export function nameCard(address: Address, start: string, onDone: (name: string)
   };
 }
 
-const DIFFICULTIES: readonly Difficulty[] = ["easy", "normal", "hard"];
+const DIFFICULTIES: readonly Difficulty[] = ["easy", "normal", "hard", "ukro"];
 
 /** Створення персонажа (§5.2), крок 5: складність; спершу обрано середню. Останній крок — «Почати гру» замість «Далі». */
 export function difficultyCard(chosen: Difficulty, onChoose: (difficulty: Difficulty) => void, onStart: () => void, onBack: () => void): Card {
