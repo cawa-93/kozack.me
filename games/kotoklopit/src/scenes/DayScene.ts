@@ -21,12 +21,13 @@ import { objectById } from "../sim/home";
 import { canGoToSleep, collapseMinute, isDrowsy } from "../sim/sleep";
 import { CARRIER_TARGET, targetOf } from "../sim/targets";
 import { clockFrame, weekOf } from "../sim/time";
-import type { Address, Chronotype, Difficulty, GameState, HomeItem, Look, Quality, Save, ThingKind } from "../sim/types";
+import type { Address, Chronotype, Difficulty, GameState, HomeItem, Quality, Save, ThingKind } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel, standupToday, workGoesOn } from "../sim/work";
 import { RADIO } from "../audio/config";
 import type { Radio } from "../audio/radio/radio";
 import type { SoundMode, Sounds } from "../audio/sfx/sounds";
 import type { Session } from "../session";
+import { randomName, nameRng } from "../ui/charname";
 import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, addressCard, startName, wardrobeCard, type EnteredName, type PhoneTab } from "../ui/cards";
 import { catIntroCard } from "../ui/catintro";
 import { radioCard } from "../ui/radio";
@@ -189,7 +190,13 @@ export class DayScene extends Phaser.Scene {
 
     this.cleanup.push(onEvent((event) => this.onGameEvent(event)));
     this.sounds.attach({ mode: () => this.soundMode(), state: () => this.state });
-    this.cleanup.push(this.session.onReset(() => this.restart()));
+    // Гру замінено — нова, перегравання, з файлу: вона почалася, тож радіо знову звучить, якщо ввімкнене (§8.10).
+    this.cleanup.push(
+      this.session.onReset(() => {
+        this.radio.release();
+        this.restart();
+      }),
+    );
     // Телефон повернули вертикально — гра на паузі (§10), а утримання дії й джойстик скидаються: інакше після повороту
     // дія тривала б сама, бо палець відпустили вже під заглушкою.
     this.cleanup.push(
@@ -212,7 +219,17 @@ export class DayScene extends Phaser.Scene {
       // Зовсім нова гра — одразу вибір персонажа (§5.1); збережена — меню.
       const start = (): void => {
         if (state.day === 0 && state.minute === state.dayStartMinute) this.chooseNewGame();
-        else this.overlay.show(titleCard(state, () => this.restart(), () => this.chooseNewGame()));
+        else
+          this.overlay.show(
+            titleCard(
+              state,
+              () => {
+                this.radio.release();
+                this.restart();
+              },
+              () => this.chooseNewGame(),
+            ),
+          );
       };
       // Збереження не вдалося відкрити — спершу запропонувати зберегти його файлом (§4.2, Ц3).
       const unreadable = this.session.unreadable;
@@ -826,7 +843,7 @@ export class DayScene extends Phaser.Scene {
       else this.bubbles.setState(id, "say", null, 0, 0);
     };
     const working = isWorking(state);
-    // Летучки в день без світла немає (§4.1, рішення автора 2026-11-02) — і камера над комп'ютером її не обіцяє.
+    // Летючки в день без світла немає (§4.1, рішення автора 2026-11-02) — і камера над комп'ютером її не обіцяє.
     const standup = standupToday(state) && state.minute >= STANDUP_MINUTE && state.minute < STANDUP_MINUTE + STANDUP_MINUTES;
     let computer: IconName | null = null;
     const day = state.minute % 1440;
@@ -1072,7 +1089,7 @@ export class DayScene extends Phaser.Scene {
         // Бабл камери над комп'ютером — `eventBubbles`.
         return;
       case "meeting-missed":
-        this.notice("Нараду пропущено", "Керівництво чекало на дзвінку, а вас не було.");
+        this.notice("Нараду пропущено", "Керівництво чекало вас на відеодзвінку.");
         return;
       case "home-vet": {
         // Ветеринарка оглянула всіх котів, що вдома (рішення автора 2026-10-27, Х7), і як кожен поводився (§9.12); хвороби — id:
@@ -1088,17 +1105,17 @@ export class DayScene extends Phaser.Scene {
       case "inspection": {
         const paid = Math.floor(paidNow ?? value);
         const fine = money > 0 ? `Представник ОСББ поморщився й виписав штраф: ${money} ₴.${paid < money ? ` Заплатили ${paid} ₴ — усе, що було.` : ""}` : "Представник ОСББ не знайшов, до чого причепитися.";
-        this.notice("Перевірка від ОСББ", fine);
+        this.notice("Перевірка ОСББ", fine);
         return;
       }
       case "guests":
         this.notice("Прийшли гості", guestsText(guests));
         return;
       case "inspection-away":
-        this.notice("Перевірка від ОСББ", "Представник ОСББ дзвонив у двері, але вдома нікого не було.");
+        this.notice("Перевірка ОСББ", "Представник ОСББ дзвонив у двері, але вдома нікого не було.");
         return;
       case "guests-away":
-        this.notice("Гості не застали", "Гості дзвонили в двері, але вдома нікого не було, і вони пішли.");
+        this.notice("Гості не застали", "Гості дзвонили в двері, але вдома нікого не було.");
         return;
       case "home-vet-away":
         this.notice("Ветеринарка не застала", "Ветеринарка дзвонила в двері, але вдома нікого не було.");
@@ -1160,7 +1177,7 @@ export class DayScene extends Phaser.Scene {
       this.overlay.close();
       after?.();
     };
-    this.queueCard({ kicker, title, body: [text], actions: [{ label: "Зрозуміло", primary: true, onSelect: close }], onDismiss: close });
+    this.queueCard({ kicker, title, body: [text], actions: [{ label: "Зрозуміло", primary: true, onSelect: close }], steps: true, onDismiss: close });
   }
 
   private showEnd(): void {
@@ -1187,10 +1204,12 @@ export class DayScene extends Phaser.Scene {
       kicker: "Нова гра",
       title: "Почати заново?",
       body: ["Поточну гру буде втрачено, якщо її не зберегти файлом."],
+      // Незворотне — без головної дії: пробіл чи Enter, затиснуті в грі, не почнуть нову гру за гравця.
       actions: [
-        { label: "Почати нову гру", primary: true, onSelect: () => this.chooseNewGame() },
         { label: "Повернутися", onSelect: back },
+        { label: "Почати нову гру", onSelect: () => this.chooseNewGame() },
       ],
+      steps: true,
       onDismiss: back,
     });
   }
@@ -1210,10 +1229,12 @@ export class DayScene extends Phaser.Scene {
       kicker: IMPORT_SAVE.kicker,
       title: IMPORT_SAVE.title,
       body: [file, IMPORT_SAVE.body],
+      // Поточну гру буде втрачено — без головної дії, як і в «Почати заново?».
       actions: [
-        { label: IMPORT_SAVE.load, primary: true, onSelect: () => this.session.replace(save) },
         { label: IMPORT_SAVE.back, onSelect: back },
+        { label: IMPORT_SAVE.load, onSelect: () => this.session.replace(save) },
       ],
+      steps: true,
       onDismiss: back,
     });
   }
@@ -1225,10 +1246,10 @@ export class DayScene extends Phaser.Scene {
       next();
     };
     this.overlay.show({
-      kicker: UNREADABLE_SAVE.kicker,
       title: UNREADABLE_SAVE.title,
       body: [UNREADABLE_SAVE.body],
       actions: [
+        { label: UNREADABLE_SAVE.fresh, onSelect: done },
         {
           label: UNREADABLE_SAVE.save,
           primary: true,
@@ -1237,55 +1258,101 @@ export class DayScene extends Phaser.Scene {
             done();
           },
         },
-        { label: UNREADABLE_SAVE.fresh, onSelect: done },
       ],
+      steps: true,
       // Гра ще не почалася: квартиру й панель заглушки нової гри за карткою не видно, як і в картках вибору персонажа.
       solid: true,
     });
   }
 
   /**
-   * Нова гра (§5.1): зовнішність (з випадкової), звертання «він / вона», хронотип, ім'я, потім складність. Кожен крок, крім першого, —
-   * з «Назад»; повернувшись, гравець бачить свій вибір. Статі немає (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4).
+   * Нова гра (§5.1): зовнішність (з випадкової), звертання «він / вона», хронотип, ім'я, потім складність. Вибір на кроці лише
+   * позначається, а далі ведуть «Назад» і «Далі»; повернувшись, гравець бачить свій вибір.
    */
   private chooseNewGame(): void {
-    // Seed нової гри — наперед: з нього й випадкова зовнішність редактора.
+    // Створення персонажа — ще не гра: радіо мовчить, а нова гра почнеться з вимкненим (§8.10).
+    this.radio.hold();
+    // Seed нової гри — наперед: з нього й випадкова зовнішність редактора, і випадкові імена.
     const seed = newSeed();
     const looks = lookRng(seed);
-    // Що гравець уже обрав: повернувшись «Назад», він бачить свій вибір.
+    const names = nameRng(seed);
+    let look = randomLook(looks);
+    let address: Address | null = null;
+    let chronotype: Chronotype = "lark";
+    // Що гравець лишив у полі імені: повернувшись «Назад», він бачить його знову.
     let entered: EnteredName | null = null;
-    let addressed: Address | null = null;
-    let chronotyped: Chronotype | null = null;
-    const pickLook = (look: Look): void => this.overlay.show(lookCard(look, pickAddress, () => randomLook(looks)));
-    const pickAddress = (look: Look): void =>
-      this.overlay.show(addressCard(look, addressed, (address) => pickChronotype(look, address), () => pickLook(look)));
-    const pickChronotype = (look: Look, address: Address): void => {
-      addressed = address;
-      this.overlay.show(chronotypeCard(chronotyped, (chronotype) => pickName(look, address, chronotype), () => pickAddress(look)));
-    };
-    const pickName = (look: Look, address: Address, chronotype: Chronotype): void => {
-      chronotyped = chronotype;
-      this.overlay.show(
-        nameCard(
+    let difficulty: Difficulty = "normal";
+    const show = (card: Card): void => this.overlay.show(card);
+    const pickLook = (): void =>
+      show(
+        lookCard(
+          look,
+          (chosen) => {
+            look = chosen;
+            pickAddress();
+          },
+          () => randomLook(looks),
+        ),
+      );
+    const pickAddress = (): void =>
+      show(
+        addressCard(
+          look,
           address,
-          startName(address, entered),
+          (chosen) => {
+            address = chosen;
+            pickAddress();
+          },
+          pickChronotype,
+          pickLook,
+        ),
+      );
+    const pickChronotype = (): void =>
+      show(
+        chronotypeCard(
+          chronotype,
+          (chosen) => {
+            chronotype = chosen;
+            pickChronotype();
+          },
+          pickName,
+          pickAddress,
+        ),
+      );
+    const pickName = (): void => {
+      const addressed = address ?? "she";
+      show(
+        nameCard(
+          addressed,
+          startName(addressed, entered),
           (name) => {
-            entered = { name, address };
-            this.overlay.show(
-              difficultyCard(
-                (difficulty: Difficulty) => this.session.replace(newGame({ address, difficulty, name, look, chronotype, seed })),
-                () => pickName(look, address, chronotype),
-              ),
-            );
+            entered = { name, address: addressed };
+            pickDifficulty();
           },
           (name) => {
-            entered = { name, address };
-            pickChronotype(look, address);
+            entered = { name, address: addressed };
+            pickChronotype();
           },
+          (current) => randomName(addressed, current, names),
         ),
       );
     };
-    pickLook(randomLook(looks));
+    const pickDifficulty = (): void =>
+      show(
+        difficultyCard(
+          difficulty,
+          (chosen) => {
+            difficulty = chosen;
+            pickDifficulty();
+          },
+          () => {
+            this.radio.switchOff();
+            this.session.replace(newGame({ address: address ?? "she", difficulty, name: entered?.name ?? "", look, chronotype, seed }));
+          },
+          pickName,
+        ),
+      );
+    pickLook();
   }
 
   /** Новий кіт удома (§9.7): картка знайомства — щойно нічого не заважає, по одній на кота. */
@@ -1333,18 +1400,19 @@ export class DayScene extends Phaser.Scene {
         kicker: "Речі",
         title: `Викинути: ${variantTitle({ thing: kind }, quality).toLowerCase()}?`,
         // Без прогнозу комунальних: тексти не пояснюють механік (§11.3а; крок 17, вичитка 2026-10-28).
-        body: ["Повернути не можна."],
+        body: [],
+        // Викинути — назавжди: без головної дії, пробіл чи Enter нічого не викинуть.
         actions: [
+          { label: "Повернутися", onSelect: () => show("mine") },
           {
             label: "Викинути",
-            primary: true,
             onSelect: () => {
               done();
               show("mine");
             },
           },
-          { label: "Повернутися", onSelect: () => show("mine") },
         ],
+        steps: true,
         onDismiss: () => show("mine"),
       });
     const show = (tab: PhoneTab): void =>
@@ -1366,12 +1434,12 @@ export class DayScene extends Phaser.Scene {
           // без чисел ефекту — тексти не називають прихованих чисел (§11.3а; крок 17, вичитка 2026-10-28).
           advertise: (cat) =>
             this.overlay.show({
-              kicker: "Віддати в добрі руки",
               title: "Віддати в добрі руки?",
               body: [
                 `${cat.name} завтра вранці поїде до нових господарів. ${recentlyArrived(cat, this.state.day + 1) ? GIVE_AWAY_RECENT : GIVE_AWAY_LATER}`,
               ],
               actions: [
+                { label: "Повернутися", onSelect: () => show(tab) },
                 {
                   label: "Дати оголошення",
                   primary: true,
@@ -1380,8 +1448,8 @@ export class DayScene extends Phaser.Scene {
                     show(tab);
                   },
                 },
-                { label: "Повернутися", onSelect: () => show(tab) },
               ],
+              steps: true,
               onDismiss: () => show(tab),
             }),
           cancelAd: (cat) => {
@@ -1396,7 +1464,7 @@ export class DayScene extends Phaser.Scene {
               (save) => this.confirmImport(save, () => show(tab)),
               () => {
                 this.overlay.close();
-                this.notice("Не вдалося завантажити", "Цей файл не схожий на збереження Котоклопіту або збережений старою версією гри.", "Гра");
+                this.notice("Не вдалося завантажити", "Цей файл не схожий на збереження «Котоклопіту» або збережений старою версією гри.", "Гра");
               },
             );
           },

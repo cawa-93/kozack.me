@@ -22,6 +22,7 @@ import { iconArt, type IconName } from "./iconnames";
 import { StretchArt } from "./iso/hudart";
 import {
   bandRect,
+  CALENDAR_LIFT,
   HUD_ART,
   HUD_BAND,
   HUD_LAYOUT,
@@ -51,8 +52,6 @@ const STATS: readonly { name: StatName; icon: IconName }[] = [
   { name: "sanity", icon: STAT_ICONS.sanity },
 ];
 
-/** Верх розкладу на десктопі; на телефоні — на `HudLayout.drop` нижче. */
-const SCHEDULE_Y = 4;
 /** Просвіти в ряду показників: від грошей до квитанції, від кружечка до суми, від суми до розкладу. */
 const ROW_GAP = { bill: 26, amount: 4, schedule: 12 } as const;
 /** Неділя: цієї ночі комунальні й знімуть (§6.4). */
@@ -63,6 +62,13 @@ const HATCH_STEP = 6;
 const BUTTONS_INSET = 44;
 /** Скільки лишити вільним ліворуч від центру телефона: він пульсує, коли є підказка. */
 const PHONE_CLEARANCE = 36;
+/**
+ * Поле дотику кнопок праворуч, одиниці кадру: більше за малюнок (телефон 60, повний екран 48), бо на телефоні набік і
+ * збільшені (`hudTextScale`) вони менші за палець (ревізія інтерфейсу: ≈26 і ≈22 px CSS на 844 × 390).
+ */
+const TOUCH = { phone: 72, fullscreen: 64 } as const;
+/** Кнопка повного екрана — під телефоном, на стільки нижче за смугу (одиниці кадру, до масштабу кнопок). */
+const FULLSCREEN_DROP = 34;
 /**
  * «Балакучий» бабл телефона (§9.9, правка автора 2026-10-25): ширина тексту, відступи, скільки висить —
  * основа й за кожен символ, найдовше, — і як довго згасає, мс.
@@ -77,7 +83,7 @@ const HINT = { x: 19, y: 19, r: 15 } as const;
  */
 const HINT_BIG = { x: 15, y: 14 } as const;
 /** Дрібні написи панелі: розмір шрифту на полотні до збільшення (`hudTextScale`). Гроші й комунальні — одного розміру. */
-const SMALL_TEXT = { billWhen: 17, effects: 18, schedule: 18, news: 17, amount: 20 } as const;
+const SMALL_TEXT = { billWhen: 18, effects: 18, schedule: 18, news: 17, amount: 20 } as const;
 /** Кружечок підказки (`statDisc`, `HINT.r` з контуром 2): іконка менша за папір — довкола неї лишається просвіт. */
 const HINT_DISC = statDisc(2 * HINT.r + 2);
 
@@ -138,7 +144,11 @@ export class Hud {
   /** Планові комунальні: квитанція на кружечку, сума й під ними — коли її знімуть. */
   private readonly bill: { ring: Phaser.GameObjects.Image; icon: Phaser.GameObjects.Image; amount: Phaser.GameObjects.Text; when: Phaser.GameObjects.Text };
   private readonly effects: Phaser.GameObjects.Text;
-  private readonly schedule: Phaser.GameObjects.Text;
+  /**
+   * Розклад — два рядки на лініях панелі: перший — посередині ряду показників і грошей, другий — на рядку станів і підпису
+   * квитанції (ревізія інтерфейсу: одним блоком розклад «плив» на власній сітці).
+   */
+  private readonly schedule: readonly [Phaser.GameObjects.Text, Phaser.GameObjects.Text];
   private readonly phone: Phaser.GameObjects.Container;
   /** Кадр телефона (стан `hint`, коли є підказка). */
   private readonly phoneArt: Phaser.GameObjects.Image;
@@ -161,6 +171,8 @@ export class Hud {
   private readonly hintUnder: Phaser.GameObjects.Image;
   /** У скільки разів зараз збільшені дрібні написи й підказка (`hudTextScale`); 1 — як на десктопі. */
   private textScale = 1;
+  /** Масштаб кнопок праворуч (телефон, повний екран): той самий, що в дрібних написів (`hudTextScale`). */
+  private buttonScale = 1;
   /** Усі написи панелі: їхню роздільність веде зум камери інтерфейсу (`textResolution`). */
   private readonly texts: Phaser.GameObjects.Text[] = [];
   /** Роздільність написів зараз. */
@@ -198,14 +210,14 @@ export class Hud {
       amount: text(0, 0, SMALL_TEXT.amount).setFontStyle("bold").setOrigin(0, 0.5),
       when: text(0, 0, SMALL_TEXT.billWhen, UI_TEXT.muted),
     };
-    this.schedule = text(0, 0, SMALL_TEXT.schedule, UI_TEXT.muted);
+    this.schedule = [text(0, 0, SMALL_TEXT.schedule, UI_TEXT.muted).setOrigin(0, 0.5), text(0, 0, SMALL_TEXT.schedule, UI_TEXT.muted)];
     this.left = scene.add
       .container(0, 0, [this.calendar.root, this.clock.root, ...this.discs.flatMap((disc) => [disc.ring, disc.icon]), this.bars])
       .setDepth(DEPTH)
       .addToDisplayList(layer);
     // Рамки шкал — «три частини» над заливкою.
     this.barFrames = STATS.map(() => new StretchArt(scene, this.left, HUD_ART.bar));
-    this.left.add([this.effects, this.wallet.ring, this.wallet.icon, this.money, this.bill.ring, this.bill.icon, this.bill.amount, this.bill.when, this.schedule]);
+    this.left.add([this.effects, this.wallet.ring, this.wallet.icon, this.money, this.bill.ring, this.bill.icon, this.bill.amount, this.bill.when, ...this.schedule]);
     this.arrange(HUD_LAYOUT.desktop, BASE_WIDTH);
 
     // Телефон персонажа: доставка (§6.4).
@@ -215,8 +227,7 @@ export class Hud {
     const under = addArt(scene, null, HUD_ART.stat).setPosition(HINT.x, HINT.y).setDisplaySize(ring, ring);
     this.hintUnder = under;
     this.hint = scene.add.container(0, 0, [under, this.hintIcon]).setVisible(false);
-    const size = uiEntry(HUD_ART.phone).size;
-    this.phone = scene.add.container(0, 0, [this.phoneArt, this.hint]).setSize(size.w, size.h).setDepth(DEPTH).addToDisplayList(layer);
+    this.phone = scene.add.container(0, 0, [this.phoneArt, this.hint]).setSize(TOUCH.phone, TOUCH.phone).setDepth(DEPTH).addToDisplayList(layer);
     this.phone.setInteractive({ useHandCursor: true }).on("pointerdown", (_p: unknown, _x: number, _y: number, event: EventData) => {
       event.stopPropagation();
       onPhone();
@@ -237,7 +248,7 @@ export class Hud {
       const show = (active: boolean): void => {
         setArt(icon, HUD_ART.fullscreen, { state: active ? HUD_STATES.fullscreen.exit : HUD_STATES.fullscreen.enter });
       };
-      const button = scene.add.container(0, 0, [icon]).setSize(48, 48).setDepth(DEPTH).addToDisplayList(layer);
+      const button = scene.add.container(0, 0, [icon]).setSize(TOUCH.fullscreen, TOUCH.fullscreen).setDepth(DEPTH).addToDisplayList(layer);
       button
         .setInteractive({ useHandCursor: true })
         // Дотик до кнопки не запускає джойстик; а повний екран браузер вмикає, лише коли палець відпустили.
@@ -250,18 +261,21 @@ export class Hud {
   /** Розкласти інтерфейс по екрану: ні ліва частина, ні кнопки праворуч не заходять під виріз камери. */
   layout({ width, safe, ui }: Frame): void {
     const cssPerUnit = 1 / canvasNow().unit;
-    this.scaleSmall(hudTextScale(cssPerUnit));
-    const shape = this.arrange(hudLayout(cssPerUnit), width - safe.left - safe.right - BUTTONS_INSET - PHONE_CLEARANCE);
+    const k = hudTextScale(cssPerUnit);
+    this.scaleSmall(k);
+    // Кнопки праворуч — у тому самому масштабі, що й дрібні написи: на телефоні набік інакше вони менші за палець.
+    this.buttonScale = k;
+    const shape = this.arrange(hudLayout(cssPerUnit), width - safe.left - safe.right - (BUTTONS_INSET + PHONE_CLEARANCE) * k);
     this.sharpen(textResolution(ui));
     const height = shape.height;
     this.band(width, safe.top + height);
     this.left.setPosition(safe.left, safe.top);
-    const x = width - safe.right - BUTTONS_INSET;
-    this.phone.setPosition(x, safe.top + height / 2 - 1);
+    const x = width - safe.right - BUTTONS_INSET * k;
+    this.phone.setPosition(x, safe.top + height / 2 - 1).setScale(k);
     // Під телефоном, уже над квартирою: у смузі інтерфейсу на екрані 16:9 місця немає.
-    this.fullscreen?.button.setPosition(x, safe.top + height + 34);
+    this.fullscreen?.button.setPosition(x, safe.top + height + FULLSCREEN_DROP * k).setScale(k);
     // Бабл телефона — правим верхнім кутом під телефоном, лівіше кнопки повного екрана.
-    this.news.setPosition(x - 30, safe.top + height + 10);
+    this.news.setPosition(x - 30 * k, safe.top + height + 10);
   }
 
   /**
@@ -275,7 +289,7 @@ export class Hud {
     const columns = hudColumns(layout, room);
     this.columns = columns;
     this.clock.root.setPosition(layout.clock.x, layout.height / 2).setScale(layout.clock.scale);
-    this.calendar.root.setPosition(layout.calendarX, layout.height / 2).setScale(layout.clock.scale);
+    this.calendar.root.setPosition(layout.calendarX, layout.height / 2 - CALENDAR_LIFT * layout.clock.scale).setScale(layout.clock.scale);
     const { ring, icon } = statDisc(layout.disc.outer, layout.disc.fill);
     this.discs.forEach((disc, i) => {
       const x = layout.stats + i * columns.step + layout.disc.x;
@@ -297,7 +311,8 @@ export class Hud {
     this.money.setPosition(columns.money + layout.disc.outer + ROW_GAP.amount, layout.disc.y);
     this.bill.ring.setDisplaySize(ring, ring);
     this.bill.icon.setDisplaySize(icon, icon);
-    this.schedule.setY(SCHEDULE_Y + layout.drop);
+    this.schedule[0].setY(layout.disc.y);
+    this.schedule[1].setY(layout.effectsY);
     this.placeBill();
     return layout;
   }
@@ -312,12 +327,13 @@ export class Hud {
     this.bill.ring.setPosition(disc, y);
     this.bill.icon.setPosition(disc, y);
     this.bill.amount.setPosition(disc + r + ROW_GAP.amount, y);
-    // Рядок має поле над літерами: трохи заходить на кружечок, зате не впирається в нижній край смуги телефона.
-    this.bill.when.setPosition(disc - r, y + r * 0.8);
+    // На рядку станів: той самий кегль і та сама лінія.
+    this.bill.when.setPosition(disc - r, shape.effectsY);
     const right = Math.max(this.bill.amount.x + this.bill.amount.width, this.bill.when.x + this.bill.when.width);
-    this.schedule.setX(Math.max(columns.schedule, right + ROW_GAP.schedule));
-    // Довгий розклад не заходить під телефон: стискається вшир.
-    this.schedule.setScale(Math.min(1, (this.room - this.schedule.x) / Math.max(1, this.schedule.width)), 1);
+    const x = Math.max(columns.schedule, right + ROW_GAP.schedule);
+    // Довгий розклад не заходить під телефон: стискається вшир — обидва рядки однаково.
+    const scale = Math.min(1, (this.room - x) / Math.max(1, ...this.schedule.map((line) => line.width)));
+    for (const line of this.schedule) line.setX(x).setScale(scale, 1);
     this.fitEffects();
   }
 
@@ -336,7 +352,7 @@ export class Hud {
     this.textScale = k;
     const px = (size: number): number => Math.round(size * k);
     this.effects.setFontSize(px(SMALL_TEXT.effects));
-    this.schedule.setFontSize(px(SMALL_TEXT.schedule));
+    for (const line of this.schedule) line.setFontSize(px(SMALL_TEXT.schedule));
     this.money.setFontSize(px(SMALL_TEXT.amount));
     this.bill.amount.setFontSize(px(SMALL_TEXT.amount));
     this.bill.when.setFontSize(px(SMALL_TEXT.billWhen));
@@ -373,8 +389,10 @@ export class Hud {
     const pad = NEWS.pad;
     this.newsTitle.setText(title);
     this.newsText.setText(text);
+    // Без тексту — лише заголовок: у відкритої риси, чия назва каже все сама, опису немає (§9.9).
+    const body = text === "" ? 0 : this.newsText.height + 2;
     const width = Math.max(this.newsTitle.width, this.newsText.width) + pad * 2;
-    const height = this.newsTitle.height + this.newsText.height + pad * 2 + 2;
+    const height = this.newsTitle.height + body + pad * 2;
     // Контейнер стоїть у правому верхньому куті бабла: усе всередині — ліворуч і нижче.
     this.newsTitle.setPosition(-width + pad, pad);
     this.newsText.setPosition(-width + pad, pad + this.newsTitle.height + 2);
@@ -448,8 +466,8 @@ export class Hud {
     const hints = state.home.phoneHints ?? [];
     const product = hints[hints.length - 1];
     if (product !== this.hinted) this.showHint(product);
-    if (product !== undefined) this.phone.setScale(1 + 0.1 * (0.5 + 0.5 * Math.sin(time / 160)));
-    else this.phone.setScale(1);
+    if (product !== undefined) this.phone.setScale(this.buttonScale * (1 + 0.1 * (0.5 + 0.5 * Math.sin(time / 160))));
+    else this.phone.setScale(this.buttonScale);
   }
 
   /** Те, що змінюється не частіше за хвилину гри: годинник, календарик, планові комунальні й розклад. */
@@ -462,7 +480,9 @@ export class Hud {
     this.bill.amount.setText(planned > 0 ? `−${planned} ₴` : "0 ₴");
     this.bill.when.setText(planned > 0 ? (weekday === SUNDAY ? BILL_WHEN.sunday : BILL_WHEN.other) : "");
     // Два найважливіші пункти (§8.4): на телефоні третій рядок дрібнішим шрифтом уже не прочитати.
-    this.schedule.setText(scheduleOf(state).slice(0, 2).join("\n"));
+    const [first = "", second = ""] = scheduleOf(state);
+    this.schedule[0].setText(first);
+    this.schedule[1].setText(second);
     this.placeBill();
   }
 

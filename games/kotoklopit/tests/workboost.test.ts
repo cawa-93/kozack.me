@@ -181,7 +181,7 @@ describe("великі кроки часу не ламають симуляці�
     };
   };
 
-  it("ранок роботи на ×10 і ×60 кадрами по 0,1 с (120 ігрових хвилин за кадр) — як із розгону з ×1 кадрами по 1/60 с: зарплата, летучка, терпіння", () => {
+  it("ранок роботи на ×10 і ×60 кадрами по 0,1 с (120 ігрових хвилин за кадр) — як із розгону з ×1 кадрами по 1/60 с: зарплата, летючка, терпіння", () => {
     const slow = workday({ seconds: 1 / 60, speed: 1 });
     const fast = workday({ seconds: 0.1, speed: 60 }, WORK_BOOST.rampSeconds);
     expect(clockFrame(WORK_BOOST.rampSeconds, { seconds: 0.1, speed: 60, running: true, working: true }).minutes).toBeCloseTo(120);
@@ -191,7 +191,7 @@ describe("великі кроки часу не ламають симуляці�
       expect(run.started).toBe(1);
       expect(run.save.current.job.patience).toBe(100);
     }
-    // Кадр не перетинає хвилину за раз: межі (летучка, кінець кадру) — точно; гроші — ті самі за ту саму кількість ігрових годин.
+    // Кадр не перетинає хвилину за раз: межі (летючка, кінець кадру) — точно; гроші — ті самі за ту саму кількість ігрових годин.
     const hoursWorked = (run: typeof slow): number => (run.save.current.minute - hours(8.5)) / 60;
     expect(fast.money / hoursWorked(fast)).toBeCloseTo(slow.money / hoursWorked(slow), 6);
   });

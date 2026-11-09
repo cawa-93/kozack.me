@@ -13,6 +13,7 @@ export function catIntroCard(state: GameState, cat: Cat, onDone: () => void): Ca
     title: CAT_INTRO_TEXTS.title,
     body: [catProfile(cat, catFacts(state, cat))],
     actions: [{ label: CAT_INTRO_TEXTS.done, primary: true, onSelect: onDone }],
+    steps: true,
     onDismiss: onDone,
   };
 }

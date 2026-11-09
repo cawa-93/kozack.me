@@ -17,7 +17,7 @@ import type { GameState, Save } from "../src/sim/types";
 import { isWorkday, standupToday, startWork, stopWork } from "../src/sim/work";
 import { recordEvents } from "./helpers";
 
-/** Будній день без модифікаторів: летучка, робота й нарада — лише з того, що задав тест. */
+/** Будній день без модифікаторів: летючка, робота й нарада — лише з того, що задав тест. */
 function game(): Save {
   const save = newGame({ address: "she", difficulty: "normal", seed: 5 });
   save.current.modifiers.day = null;
@@ -128,7 +128,7 @@ describe("звуки роботи: петлі зі стану (§8.6, §4.1)", (
     expect(typed.some((cue) => cue.sound === "mouse")).toBe(false);
   });
 
-  it("летучка з симуляції: гудок виклику, голоси колег замість клавіатури, потім знову клавіатура", () => {
+  it("летючка з симуляції: гудок виклику, голоси колег замість клавіатури, потім знову клавіатура", () => {
     const save = game();
     const state = save.current;
     expect(isWorkday(state) && standupToday(state)).toBe(true);

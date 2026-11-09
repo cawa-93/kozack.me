@@ -288,7 +288,7 @@ describe("панель на низькому екрані (hudLayout; ui-r1-9)",
     expect(hudLayout(cssPerUnit(1280, 720))).toBe(d);
     expect(hudLayout(cssPerUnit(1920, 1080))).toBe(d);
     expect(d.height).toBe(HUD_HEIGHT);
-    expect(d).toMatchObject({ drop: 0, disc: { outer: 36, fill: HUD_STAT_FILL, x: 15, y: 26 }, bar: { x: 34, y: 20, w: 116, h: 12 }, effectsY: 44 });
+    expect(d).toMatchObject({ disc: { outer: 36, fill: HUD_STAT_FILL, x: 15, y: 26 }, bar: { x: 34, y: 20, w: 116, h: 12 }, effectsY: 44 });
   });
 
   it("телефон набік (там, де написи збільшено): іконки показників ≥ 18 px CSS на 844 × 390 (були ≈ 12)", () => {
@@ -333,13 +333,15 @@ describe("панель на низькому екрані (hudLayout; ui-r1-9)",
     }
   });
 
-  it("телефон: найбільші написи вміщуються в смугу — дата над годинником, два рядки розкладу, рядок станів під кружечками", () => {
+  it("телефон: найбільші написи вміщуються в смугу — два рядки розкладу на лініях ряду й рядка станів, рядок станів під кружечками", () => {
     const k = HUD_TEXT_MAX;
     const p = HUD_LAYOUT.phone;
     // Чорнильний край смуги — останні ≈ 9 одиниць (`HUD_BAND`: край 62,6–69 з 64,4 намальованих).
     const paper = p.height - ((HUD_BAND.edge - 62.6) * p.height) / (HUD_BAND.edge - HUD_BAND.top);
-    expect(p.drop + 26 + Math.round(17 * k) - 17 + 36 * 1.2).toBeLessThanOrEqual(p.height);
-    expect(p.drop + 4 + 2 * Math.round(18 * k) * 1.25).toBeLessThanOrEqual(paper);
+    const font = Math.round(18 * k);
+    // Перший рядок розкладу — посередині ряду кружечків, другий (і підпис квитанції) — на рядку станів тим самим кеглем.
+    expect(p.disc.y - font / 2).toBeGreaterThanOrEqual(0);
+    expect(p.effectsY + font).toBeLessThanOrEqual(paper);
     // Рядок станів — так само далеко від чорнильного краю, як був на телефоні в смузі 76 (± 0,25).
     const paperOf = (height: number): number => height - ((HUD_BAND.edge - 62.6) * height) / (HUD_BAND.edge - HUD_BAND.top);
     expect(paper).toBeCloseTo(paperOf(p.height), 9);

@@ -1,6 +1,6 @@
 // Картки поїздок (§8.5): куди поїхати, подія на місці, аварія.
 
-import { DISEASES, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, STORE_GOODS, TRIPS, VET, WEIGHT } from "../sim/config";
+import { DISEASES, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STORE_GOODS, TRIPS, VET, WEIGHT } from "../sim/config";
 import { breederCatPrice, breederCats, groomerWashes, knownSterilizeBlocker, nextTripRider, shelterCats, sterilizeMinutes, sterilizePrice, tripCat, tripCatPlace, vetManner } from "../sim/destinations";
 import { breedById, MIXED } from "../sim/breeds";
 import { visibility } from "../sim/knowledge";
@@ -23,7 +23,7 @@ import "./tripmap.css";
 import "./places.css";
 
 /** Невдале дешеве лікування цієї поїздки не повторюють — ні у ветеринара, ні в лікаря (§8.5; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6). */
-const NO_RETRY = "не допомогло — повторно лише наступного разу";
+const NO_RETRY = "не допомогло";
 
 /**
  * Ціна на кнопці: число й «₴» нерозривно, а з назвою послуги — «Звичайне лікування · 30 ₴»: якщо не вміщується, рядок
@@ -178,7 +178,9 @@ export function accidentCard(state: GameState, onClose: () => void): Card {
     kicker: "Аварія",
     title: "Бам!",
     body: accidentLines(state),
+    // «Додому» праворуч, як у картках пунктів (`actionsEnd`).
     actions: [{ label: "Додому", primary: true, onSelect: onClose }],
+    steps: true,
   };
 }
 
@@ -246,12 +248,11 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers, sto
     if (!cat) return null;
     const title = cat.sex === "male" ? "Кастрація" : "Стерилізація";
     const done = cat.sex === "male" ? "кастрований" : "стерилізована";
-    const age = STERILIZATION.minAge;
     const why = {
       sterilized: log.done.includes("sterilize") ? `✓ ${done}` : `уже ${done}`,
-      young: `замале: оперують з ${age} ${plural(age, "тижня", "тижнів", "тижнів")}`,
-      pregnant: "вагітна: стерилізувати можна після пологів",
-      nursing: "годує кошенят: після тижня годування",
+      young: "замале",
+      pregnant: "вагітна",
+      nursing: "годує кошенят",
     };
     const blocker = knownSterilizeBlocker(state, cat);
     if (blocker !== null) return row(title, why[blocker]);
@@ -422,7 +423,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers, sto
     }
     case "office":
       // Звільнили дорогою — зборів немає, і персонаж одразу їде назад (`officeMeeting`).
-      body.push(trip?.visit === 0 ? "На збори вас уже не пустили: ви тут більше не працюєте." : `Збори в офісі тривали ${minutesText(TRIPS.office.visit)}. Керівництво бачило вас особисто.`);
+      body.push(trip?.visit === 0 ? "На збори вас уже не пустили: ви тут більше не працюєте." : "Керівництво бачило вас особисто.");
       break;
   }
   // Коти йдуть по черзі (§8.5): наступного кличуть, коли з цим закінчили чи нічого не хочуть робити.

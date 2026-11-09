@@ -1,6 +1,6 @@
 // «Планове відключення» — день без світла (§4.1, рішення автора 2026-11-02; скасовує частину А14 від 2026-10-29, коли
 // відключали лише інтернет з 11:00 до 15:00): світла немає весь день, від пробудження до пробудження. Робота доступна, але
-// повільніша, терпіння не спадає, летучки немає; про відсутній інтернет персонаж думає.
+// повільніша, терпіння не спадає, летючки немає; про відсутній інтернет персонаж думає.
 
 import { describe, expect, it } from "vitest";
 
@@ -38,7 +38,7 @@ function game(day: string | null): Save {
   return save;
 }
 
-/** Прожити хвилини від `from` п'ятихвилинними кроками робочого часу (без решти дня — лише робота й летучка). */
+/** Прожити хвилини від `from` п'ятихвилинними кроками робочого часу (без решти дня — лише робота й летючка). */
 function workMinutes(save: Save, from: number, minutes: number): void {
   for (let m = from; m < from + minutes; m += 5) {
     save.current.minute = m;
@@ -61,7 +61,7 @@ describe("«Планове відключення» — день без світ
   it("титулка — ситуація без пояснення ефекту (TEXTS.md §11.3а): світло вимкнуть на весь день, без годин і без інтернету", () => {
     const text = DAY_MODIFIER_TEXTS["outage"];
     expect(text?.title).toBe("Планове відключення");
-    expect(text?.situation).toBe("Сьогодні в районі на весь день планово вимкнуть світло.");
+    expect(text?.situation).toBe("У районі на весь день вимкнуть світло.");
     expect(text?.situation).not.toMatch(/\d|інтернет/u);
   });
 
@@ -121,7 +121,7 @@ describe("«Планове відключення» — день без світ
     expect(searched("outage")).toBeCloseTo(2 * 0.75, 6);
   });
 
-  it("летучку о 10:00 скасовано: ні події, ні штрафу за пропуск, ні бонусу; у розкладі її немає, персонаж за комп'ютером не на дзвінку", () => {
+  it("летючку о 10:00 скасовано: ні події, ні штрафу за пропуск, ні бонусу; у розкладі її немає, персонаж за комп'ютером не на дзвінку", () => {
     const run = (day: string | null, work: boolean): { events: string[]; reputation: number } => {
       const save = game(day);
       save.current.minute = STANDUP_MINUTE - 5;
@@ -132,7 +132,7 @@ describe("«Планове відключення» — день без світ
       stop();
       return { events: events.map((e) => e.type).filter((t) => t.startsWith("standup")), reputation: save.current.job.reputation - before };
     };
-    // Звичайного дня — летучка є: пропуск штрафує.
+    // Звичайного дня — летючка є: пропуск штрафує.
     expect(run(null, false).events).toEqual(["standup-started", "standup"]);
     expect(run(null, false).reputation).toBeLessThan(0);
     // Без світла — нічого: пропуск не штрафує, присутність дає лише саму роботу.
@@ -145,9 +145,9 @@ describe("«Планове відключення» — день без світ
     expect(standupToday(save.current)).toBe(false);
     expect(standupToday(game(null).current)).toBe(true);
     save.current.minute = 8 * 60;
-    expect(scheduleOf(save.current).some((line) => line.includes("летучка"))).toBe(false);
+    expect(scheduleOf(save.current).some((line) => line.includes("летючка"))).toBe(false);
     expect(scheduleOf(save.current).some((line) => line.includes("інтернет"))).toBe(false);
-    expect(scheduleOf(game(null).current).some((line) => line.includes("летучка"))).toBe(true);
+    expect(scheduleOf(game(null).current).some((line) => line.includes("летючка"))).toBe(true);
     save.current.minute = STANDUP_MINUTE + 5;
     startWork(save.current);
     expect(inMeeting(save.current)).toBe(false);
@@ -353,7 +353,7 @@ describe("«Планове відключення» — день без світ
     expect(save.current.home.washer.state).toBe("idle");
   });
 
-  it("бот балансу проживає день без світла: працює, на летучку не чекає, по відмову до пральної машини не ходить і не застрягає", () => {
+  it("бот балансу проживає день без світла: працює, на летючку не чекає, по відмову до пральної машини не ходить і не застрягає", () => {
     const live = (day: string | null): { save: Save; bot: Bot; tasks: string[]; events: GameEvent[]; night: unknown } => {
       const save = newGame({ address: "she", difficulty: "normal", seed: 101 });
       save.current.day = 8;

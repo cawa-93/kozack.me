@@ -7,16 +7,17 @@ import { changeStat } from "../src/sim/character";
 import { createCat } from "../src/sim/cat";
 import { DASH_COOLDOWN_MINUTES } from "../src/sim/config";
 import { addSupply } from "../src/sim/economy";
-import { advance, DEFAULT_LOOK, goToSleep, interact, newGame } from "../src/sim/game";
+import { advance, DEFAULT_LOOK, DEFAULT_NAME, goToSleep, interact, newGame } from "../src/sim/game";
 import { hygieneFactor } from "../src/sim/household";
 import { addCat } from "../src/sim/night";
 import { hoursUntilWake } from "../src/sim/sleep";
 import { createRng } from "../src/sim/rng";
 import { fallIllPerson } from "../src/sim/illness";
-import { fill } from "../src/texts";
+import { CHARACTER_NAMES, fill } from "../src/texts";
 import type { GameState, Look, Save } from "../src/sim/types";
 import { callImpression } from "../src/sim/work";
 import { chronotypeCard, startName } from "../src/ui/cards";
+import { nameRng, randomName } from "../src/ui/charname";
 import { LOOK_OPTIONS, lookRng, randomLook } from "../src/ui/look";
 import { BUILDS, FACES, HAIR_STYLES, PALETTE } from "../src/view/palette";
 import { bodyMinutes, hours, recordEvents, standAt, withCatCorner } from "./helpers";
@@ -85,20 +86,43 @@ describe("бороди немає (рішення автора 2026-10-29, А4)"
 });
 
 describe("хронотип — лише час пробудження (рішення автора 2026-10-29, А4)", () => {
-  it("картка хронотипу називає час пробудження й не обіцяє бадьорості в якісь години", () => {
-    const card = chronotypeCard(null, () => undefined, () => undefined);
-    expect(card.body).toEqual(["Жайворонок прокидається о 06:00.", "Сова прокидається о 08:00."]);
+  it("картка хронотипу — лише вибір, без пояснень: спершу обрано жайворонка", () => {
+    const card = chronotypeCard("lark", () => undefined, () => undefined, () => undefined);
+    expect(card.body).toEqual([]);
+    expect(card.choices?.filter((c) => c.chosen).map((c) => c.label)).toEqual(["Жайворонок"]);
   });
 
-  it("повернувшись «Назад» з кроку «Ім'я», гравець бачить обраний хронотип: головна кнопка — його, а спершу — жайворонок", () => {
-    const primary = (chosen: "lark" | "owl" | null): string[] =>
-      chronotypeCard(chosen, () => undefined, () => undefined)
-        .actions.filter((a) => a.primary)
-        .map((a) => a.label);
-    expect(primary(null)).toEqual(["Жайворонок"]);
-    expect(primary("lark")).toEqual(["Жайворонок"]);
-    // Інакше Enter після «Назад» тихо міняв би сову на жайворонка.
-    expect(primary("owl")).toEqual(["Сова"]);
+  it("вибір лише позначає хронотип, а далі ведуть «Назад» ліворуч і «Далі» праворуч", () => {
+    const picked: string[] = [];
+    let advanced = 0;
+    const card = chronotypeCard("owl", (c) => picked.push(c), () => advanced++, () => undefined);
+    expect(card.choices?.filter((c) => c.chosen).map((c) => c.label)).toEqual(["Сова"]);
+    card.choices?.[0]?.onSelect();
+    expect(picked).toEqual(["lark"]);
+    expect(advanced).toBe(0);
+    expect(card.steps).toBe(true);
+    // Інакше Enter після «Назад» обирав би за гравця: головна дія — лише «Далі».
+    expect(card.actions.map((a) => [a.label, a.primary ?? false])).toEqual([["Назад", false], ["Далі", true]]);
+  });
+});
+
+describe("випадкове ім'я персонажа (§5.1)", () => {
+  it("за звертанням і щоразу інше, ніж у полі", () => {
+    const rng = nameRng(7);
+    for (const address of ["he", "she"] as const) {
+      let name = DEFAULT_NAME[address];
+      for (let i = 0; i < 30; i++) {
+        const next = randomName(address, name, rng);
+        expect(CHARACTER_NAMES[address]).toContain(next);
+        expect(next).not.toBe(name);
+        name = next;
+      }
+    }
+  });
+
+  it("ім'я за замовчуванням — перше в переліку свого звертання", () => {
+    expect(CHARACTER_NAMES.he[0]).toBe(DEFAULT_NAME.he);
+    expect(CHARACTER_NAMES.she[0]).toBe(DEFAULT_NAME.she);
   });
 });
 

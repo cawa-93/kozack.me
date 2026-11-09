@@ -87,7 +87,7 @@ describe("бабли вголос і думки (§11.4, правка автор
     expect(only({ type: "keyboard", cat: 1 }).icon).toBe(only({ type: "refused", object: "computer", reason: "cat-on-computer" }).icon);
   });
 
-  it("пропущеної летучки немає — бабла немає", () => {
+  it("пропущеної летючки немає — бабла немає", () => {
     expect(eventBubbles({ type: "standup", attended: true, reputation: 2 })).toEqual([]);
     expect(eventBubbles({ type: "modifier", kind: "reputation", value: 3 })).toEqual([]);
   });

@@ -1,4 +1,4 @@
-// Робота за комп'ютером (§8.6): гроші, репутація, терпіння керівництва, щоденна летучка.
+// Робота за комп'ютером (§8.6): гроші, репутація, терпіння керівництва, щоденна летючка.
 
 import type { Input } from "./actions";
 import { isMoving } from "./body";
@@ -144,7 +144,7 @@ export function stopWork(state: GameState): void {
   emit(state, { type: "work-stopped", minutes, money, reputation, sanity });
 }
 
-/** Минули хвилини від `from`: робота, терпіння й летучка. */
+/** Минули хвилини від `from`: робота, терпіння й летючка. */
 export function tickWork(state: GameState, from: number, minutes: number): void {
   const job = state.job;
   const position = positionOf(state);
@@ -216,7 +216,7 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
 }
 
 /**
- * Чи буде сьогодні летучка о 10:00 (§8.6): лише в робочий день, і не в день «Планового відключення» — без світла її скасовано: ні
+ * Чи буде сьогодні летючка о 10:00 (§8.6): лише в робочий день, і не в день «Планового відключення» — без світла її скасовано: ні
  * штрафу, ні бонусу, ні камери над комп'ютером (§4.1, рішення автора 2026-11-02). Читають і вигляд (розклад, камера, персонаж на
  * дзвінку), і бот.
  */
@@ -224,7 +224,7 @@ export function standupToday(state: GameState): boolean {
   return isWorkday(state) && !powerOut(state);
 }
 
-/** Летучка о 10:00 (§8.6) чи важлива нарада дня (§4.1) саме зараз: за комп'ютером персонаж говорить у камеру. Читають вигляд і звук. */
+/** Летючка о 10:00 (§8.6) чи важлива нарада дня (§4.1) саме зараз: за комп'ютером персонаж говорить у камеру. Читають вигляд і звук. */
 export function inMeeting(state: GameState): boolean {
   if (!isWorkday(state)) return false;
   const minute = ((state.minute % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
@@ -233,13 +233,13 @@ export function inMeeting(state: GameState): boolean {
   return state.modifiers.day === "meeting" && minute >= meeting.from && minute < meeting.from + meeting.minutes;
 }
 
-/** Щоденна летучка о 10:00 на 15 хвилин (§8.6). */
+/** Щоденна летючка о 10:00 на 15 хвилин (§8.6). */
 function tickStandup(state: GameState, from: number, to: number): void {
   if (!standupToday(state)) return;
   const start = STANDUP_MINUTE;
   const end = STANDUP_MINUTE + STANDUP_MINUTES;
   if (from < start && to >= start) emit(state, { type: "standup-started" });
-  // На зборах в офісі персонаж і так на роботі: летучка — там (§8.5); з аварії дорогою туди — ні (перевірка поїздок 2026-10-28).
+  // На зборах в офісі персонаж і так на роботі: летючка — там (§8.5); з аварії дорогою туди — ні (перевірка поїздок 2026-10-28).
   const present = isWorking(state) || toOffice(state);
   if (present) state.job.standupMinutes += Math.max(0, Math.min(to, end) - Math.max(from, start));
   noticeCallLook(state, from, to, start);

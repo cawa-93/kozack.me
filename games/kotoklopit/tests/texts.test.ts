@@ -73,11 +73,12 @@ describe("тексти (TEXTS.md)", () => {
 });
 
 describe("опис рис для картки кота (§9.9)", () => {
-  it("у кожної групи є опис для «+» і для «−», без незаповнених форм", () => {
+  it("у кожної групи є опис для «+» і для «−» (порожній — назва каже все сама), без незаповнених форм", () => {
     for (const group of TRAIT_GROUPS) {
       const about = TRAIT_ABOUT[group.id];
       expect(about, group.id).toBeDefined();
       for (const text of about ?? []) {
+        if (text === "") continue;
         for (const sex of ["male", "female"] as const) {
           const filled = fill(text, sex);
           expect(filled.length, group.id).toBeGreaterThan(5);
@@ -89,7 +90,8 @@ describe("опис рис для картки кота (§9.9)", () => {
 
   it("загальна ревізія 2026-10-29: «Стрункий» і «Не мерзне» (−1) мають свій опис, без «ніколи» рівня −2", () => {
     const about = (group: string, level: -1 | -2): string => traitAbout({ group, level }, "female");
-    expect(about("chubby", -2)).toBe("Тримає форму, хоч скільки їсть.");
+    // «Не товстіє» (−2) — без опису: назва каже все сама.
+    expect(about("chubby", -2)).toBe("");
     expect(about("chubby", -1)).not.toBe(about("chubby", -2));
     expect(about("chubby", -1)).toContain("набирає вагу");
     expect(about("warmth", -2)).toContain("не шукає зовсім");
@@ -113,12 +115,13 @@ describe("опис порід і поради ветеринара (рішенн
       c.breedKnown = known;
       return c;
     };
-    expect(breedAbout(cat(["sfinks", MIXED], [true, true]))).toEqual([fill(BREED_HALF, "female", { порода: "сфінкс" }), BREED_ABOUT["sfinks"]]);
-    expect(breedAbout(cat(["sfinks", MIXED], [true, true]))[0]).toMatch(/^Наполовину сфінкс:/);
+    // Напівкровка: «Наполовину {порода}.» і опис — одним абзацом.
+    expect(breedAbout(cat(["sfinks", MIXED], [true, true]))).toEqual([`${fill(BREED_HALF, "female", { порода: "сфінкс" })} ${BREED_ABOUT["sfinks"]}`]);
+    expect(breedAbout(cat(["sfinks", MIXED], [true, true]))[0]).toMatch(/^Наполовину сфінкс\. /);
     const two = breedAbout(cat(["siamska", "perska"], [true, true]));
-    expect(two).toHaveLength(4);
+    expect(two).toHaveLength(2);
     expect(two.filter((line) => line.startsWith("Наполовину"))).toHaveLength(2);
-    expect(breedAbout(cat(["siamska", "perska"], [false, true]))).toEqual([fill(BREED_HALF, "female", { порода: "перська" }), BREED_ABOUT["perska"]]);
+    expect(breedAbout(cat(["siamska", "perska"], [false, true]))).toEqual([`${fill(BREED_HALF, "female", { порода: "перська" })} ${BREED_ABOUT["perska"]}`]);
     expect(breedAbout(cat(["sfinks", "sfinks"], [true, true]))).toEqual([BREED_ABOUT["sfinks"]]);
     expect(breedAbout(cat([MIXED, MIXED], [true, true]))).toEqual([BREED_ABOUT[MIXED]]);
     expect(BREED_HALF).not.toMatch(/\d/);
@@ -151,14 +154,14 @@ describe("опис порід і поради ветеринара (рішенн
       { name: "Ромашка", sex: "female", diseases: ["heart"], manner: null },
       { name: "Пушок", sex: "male", diseases: [], manner: null },
     ]);
-    expect(text).toContain("Мурчик — хвороба серця, гінгівіт; Ромашка — хвороба серця. Решта здорові.");
+    expect(text).toContain("Оглянула котів. Знайшла: Мурчик — хвороба серця, гінгівіт; Ромашка — хвороба серця.");
     expect(text.split(VET_ADVICE["heart"] ?? "?").length - 1).toBe(1);
     expect(text).toContain(VET_ADVICE["gingivitis"]);
     expect(text).not.toContain("всіх");
     const one = homeVetText([{ name: "Мурчик", sex: "male", diseases: ["joints"], manner: null }]);
     expect(one).toBe(`Мурчик: знайшла — хвороба суглобів. ${VET_ADVICE["joints"]}`);
     const healthy = [{ name: "Мурчик", sex: "male", diseases: [], manner: null }, { name: "Пушок", sex: "male", diseases: [], manner: null }] as const;
-    expect(homeVetText(healthy)).toBe("Оглянула котів (2): хвороб не знайшла.");
+    expect(homeVetText(healthy)).toBe("Оглянула котів: хвороб не знайшла.");
   });
 
   it("«Заходила ветеринарка», а оглядати не було кого: хто гуляв на сходах — чи котів у домі немає (рецензія 2026-11-03)", () => {
