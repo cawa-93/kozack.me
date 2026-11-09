@@ -41,6 +41,7 @@ describe("звуки інтерфейсу: події й моменти", () => 
     [{ type: "glitch", chance: 0.2, angle: 1 }, []],
     [{ type: "trait-noticed", cat: 1, group: "talkative", stage: 1 }, ["notify"]],
     [{ type: "ordered", delivery: { id: 1, quality: "cheap", at: 100, product: "food" }, price: 50 }, ["ordered"]],
+    [{ type: "utilities-paid", amount: 61 }, ["bought"]],
     [{ type: "bought", goods: "food", quality: "cheap", destination: "shop" }, ["bought"]],
     [{ type: "meow", cat: 1 }, []],
     [{ type: "work-started" }, []],

@@ -3,7 +3,7 @@
 import { PALETTE } from "../../art/palette";
 import "./phone.css";
 import { MODIFIERS, NAME_MAX_LENGTH, WAKE_UP } from "../sim/config";
-import { supplyCount, utilitiesDue } from "../sim/economy";
+import { supplyCount } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
 import { diseaseMedicine, dosedToday } from "../sim/diseases";
 import { giveAwayBlocker } from "../sim/farewell";
@@ -15,31 +15,31 @@ import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { Address, AlbumEntry, Appliance, Cat, Chronotype, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Quality, Sex, ThingKind } from "../sim/types";
 import {
   ADDRESS_TEXTS,
+  BILL_TEXTS,
+  BIRTH_MESSAGE,
   BREED_ABOUT,
   BREED_HALF,
+  CAT_DOSE_TODAY,
   CONTROLS_TITLES,
   DAY_MODIFIER_TEXTS,
   DIFFICULTY_TITLES,
-  WEEK_MODIFIER_TEXTS,
   diseaseTitle,
   endingText,
   farewellText,
   fill,
-  BIRTH_MESSAGE,
-  CAT_DOSE_TODAY,
   GAME_TEXTS,
-  PROFILE_TEXTS,
   KITTEN_MESSAGE,
   LEDGER_TEXTS,
   ledgerLines,
   minutesText,
-  UTILITIES_MESSAGES,
+  PROFILE_TEXTS,
   SOUND_TEXTS,
   WAKE_TEXTS,
+  WEEK_MODIFIER_TEXTS,
 } from "../texts";
 import { allControls, homeControls } from "./controls";
 import { creditsLink } from "./creditslink";
-import { destinationLabel, diseaseLabel, named, productLabel } from "./icons";
+import { destinationLabel, diseaseLabel, productLabel } from "./icons";
 import { element, type Card, type CardAction, type TitleSection } from "./overlay";
 import { shopCatalog, variantLabel } from "./shop";
 import { phoneStatusBar } from "./phonebar";
@@ -47,10 +47,10 @@ import type { CartLine } from "../sim/shop";
 import { plural } from "./titles";
 
 export { plural };
-import { UTILITIES_ICON } from "../view/symbols";
 import { LOOK_OPTIONS } from "./look";
 import { catProfile, type CatFacts } from "./catprofile";
 import { drawPortrait, portraitCanvas } from "./portrait";
+import { billCard } from "./bill";
 import { traitChips, traitHint } from "./traits";
 import { profileTab } from "./profile";
 
@@ -133,10 +133,9 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
     // На прощанні відкривається весь характер кота (§9.7): риси з описом по дотику. «Прощавай, {кіт}» вимагало б кличного відмінка.
     events.push([`Прощання: ${entry.name}`, text.cause, `«${text.title}». ${text.life}`, ...(entry.traits.length > 0 ? [traitChips(entry.traits, entry.sex)] : [])]);
   }
+  // Прийшов рахунок за комунальні (§6.4); нульового немає.
   const utilities = night?.utilities;
-  if (utilities && utilities.outcome !== "evicted") {
-    events.push([fill(UTILITIES_MESSAGES[utilities.outcome], address, { сума: utilities.paid, платіж: utilities.nextDue })]);
-  }
+  if (utilities?.outcome === "billed" && utilities.bill > 0) events.push([fill(BILL_TEXTS.arrived, address, { сума: utilities.bill })]);
   // Куди пішли гроші минулого тижня (§6.4, рішення автора 2026-10-27, Е4).
   if (night?.ledger) events.push([LEDGER_TEXTS.heading, ...ledgerLines(night.ledger)]);
   if (night === null && state.day === 0) {
@@ -229,7 +228,7 @@ function catChips(state: GameState): HTMLElement | null {
   return box;
 }
 
-export type PhoneTab = "shop" | "mine" | "cats" | "album" | "profile" | "game";
+export type PhoneTab = "shop" | "home" | "cats" | "album" | "profile" | "game";
 
 /** Річ без місця в «Моїх речах» (§8.7): техніка, автогодівниця над місцем миски, переноска чи замок на шафку. */
 export type DiscardThing = { appliance: Appliance } | { feeder: string } | { carrier: number } | { owned: "lock" };
@@ -237,6 +236,8 @@ export type DiscardThing = { appliance: Appliance } | { feeder: string } | { car
 export interface PhoneHandlers {
   /** Оплатити кошик доставкою (§6.4). */
   checkout: (cart: CartLine[]) => void;
+  /** Сплатити рахунок за комунальні (§6.4). */
+  payUtilities: () => void;
   discard: (item: HomeItem) => void;
   /** Викинути техніку, автогодівницю (над місцем миски `slot`), переноску чи замок на шафку; `quality` — для назви в підтвердженні. */
   discardThing: (thing: DiscardThing, quality: Quality) => void;
@@ -252,7 +253,7 @@ export interface PhoneHandlers {
 }
 
 /** Вкладки телефона по порядку: за місцем вкладки `phone.css` фарбує її плитку, тож порядок і іконки — разом із ним. */
-const PHONE_TABS: Record<PhoneTab, string> = { shop: "🛒 Магазин", mine: "🏠 Речі", cats: "🐱 Коти", album: "Альбом", profile: PROFILE_TEXTS.tab, game: GAME_TEXTS.tab };
+const PHONE_TABS: Record<PhoneTab, string> = { shop: "🛒 Магазин", home: "🏠 Дім", cats: "🐱 Коти", album: "Альбом", profile: PROFILE_TEXTS.tab, game: GAME_TEXTS.tab };
 
 /** Телефон персонажа (§6.4): магазин із доставкою, викинути річ, коти, альбом, гра. */
 export function phoneCard(state: GameState, wanted: PhoneTab, handlers: PhoneHandlers): Card {
@@ -264,11 +265,9 @@ export function phoneCard(state: GameState, wanted: PhoneTab, handlers: PhoneHan
   // Що вже їде, видно в рядку кожного товару (§6.4); смуга кошика з «Замовити» — внизу картки (рішення автора 2026-11-03).
   const shop = tab === "shop" ? shopCatalog(state, "delivery", { checkout: handlers.checkout }) : null;
   if (shop) body.push(shop.list);
-  if (tab === "mine") {
-    body.push(`${named(UTILITIES_ICON, "Комунальні")}: ${utilitiesDue(state)} ₴ на тиждень.`);
-    // З попередженням — борг і скільки треба в понеділок (§6.4, рішення автора 2026-10-27, Е4).
-    const debt = state.home.utilitiesDebt;
-    if (debt > 0) body.push(fill(LEDGER_TEXTS.debt, state.character.address, { борг: debt, платіж: debt + utilitiesDue(state) }));
+  if (tab === "home") {
+    const bill = billCard(state, handlers.payUtilities);
+    if (bill) body.push(bill);
     body.push(myThings(state, handlers));
   }
   if (tab === "cats") body.push(...catCards(state, handlers));

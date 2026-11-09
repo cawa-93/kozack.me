@@ -43,12 +43,12 @@ describe("титулка дня (§4)", () => {
       newCats: [],
       givenCats: [],
       lostCats: [],
-      utilities: { outcome: "paid", paid: 40, nextDue: 0 },
+      utilities: { outcome: "billed", bill: 40 },
       ledger: { earned: 245.4, spent: { supplies: 210, delivery: 97, utilities: 40, health: 0 } },
     } as unknown as NightReport;
     const lines = dayTitle(state, night).flatMap((s) => s.blocks.flat());
     const at = lines.indexOf("Гроші за тиждень");
-    expect(lines[at - 1]).toBe("Комунальні: −40 ₴.");
+    expect(lines[at - 1]).toBe("Прийшов рахунок за комунальні: 40 ₴.");
     expect(lines[at + 1]).toBe("Заробили 245 ₴, витратили 347 ₴.");
     expect(lines[at + 2]).toBe("Корм і запаси — 210 ₴; доставка — 97 ₴; комунальні — 40 ₴.");
     // У будні підсумку немає.

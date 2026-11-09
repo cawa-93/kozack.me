@@ -14,7 +14,7 @@ import { FUR_SPOTS, furVisible, isDryMess, pendingTufts, tuftsOf } from "../src/
 import { waterCapacity } from "../src/sim/resources";
 import { DUST_SPOTS, dustOf, floorDust } from "../src/sim/dust";
 import { stateRng } from "../src/sim/rng";
-import { boxCount, canUnpack, freeSlots, supplyCount, utilitiesDue } from "../src/sim/economy";
+import { boxCount, canUnpack, freeSlots, payUtilities, supplyCount, utilitiesBill, utilitiesDue } from "../src/sim/economy";
 import { checkout, room, type CartLine } from "../src/sim/shop";
 import { advance, drive, goHome, goToSleep, interact, rewindAccident } from "../src/sim/game";
 import { adopt, shelterCats, tripCat, vetExam, vetTreat } from "../src/sim/destinations";
@@ -168,6 +168,8 @@ export class Bot {
     const s = this.state;
     const ch = s.character;
     if (ch.held) return named("handleHeld", () => this.handleHeld());
+    // Рахунок за комунальні — щойно є чим сплатити (§6.4): не сплачений до нового — виселення.
+    payUtilities(s);
     this.orderSupplies();
     const escaped = s.cats.find((c) => c.away !== null);
     if (escaped || s.home.porch.length > 0) return named("use", () => this.use("door"));
@@ -249,7 +251,7 @@ export class Bot {
     const position = positionOf(s);
     const share = position.patienceDecay / (position.patienceDecay + position.patienceRecovery);
     // Грошей менше, ніж на комунальні з запасом, — розважливий гравець працює більше (перевірка економіки 2026-10-27).
-    const poor = s.character.money < utilitiesDue(s) * 2 + s.home.utilitiesDebt + POOR_MONEY;
+    const poor = s.character.money < utilitiesDue(s) * 2 + utilitiesBill(s) + POOR_MONEY;
     return share * 9 * (poor ? this.policy.poorWork : this.policy.work);
   }
 

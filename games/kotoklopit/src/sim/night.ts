@@ -27,7 +27,7 @@ import {
   NOCTURNAL,
   CAT_ACT_MINUTES,
 } from "./config";
-import { addSupply, freeSlots, ownedItems, payUtilities, place, postponeDeliveries } from "./economy";
+import { addSupply, billUtilities, freeSlots, ownedItems, place, postponeDeliveries } from "./economy";
 import { emit } from "./events";
 import { agingDiseases, isHurting, maybeFallIll, nightlyDiseases } from "./diseases";
 import { nightlyIllness } from "./illness";
@@ -366,8 +366,8 @@ function ageCats({ state, rng }: Night): void {
 }
 
 function utilities({ state, report }: Night): void {
-  report.utilities = payUtilities(state);
-  // Гроші тижня разом із платежем комунальних — у звіт ночі; новий тиждень рахується з нуля (§6.4, «Куди йдуть гроші»).
+  report.utilities = billUtilities(state);
+  // Гроші тижня — у звіт ночі; новий тиждень рахується з нуля (§6.4, «Куди йдуть гроші»).
   report.ledger = closeLedger(state);
 }
 

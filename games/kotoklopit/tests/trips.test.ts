@@ -26,6 +26,7 @@ import {
   vetTreat,
 } from "../src/sim/destinations";
 import { fallIll, hasDisease } from "../src/sim/diseases";
+import { payUtilities } from "../src/sim/economy";
 import { MIXED } from "../src/sim/breeds";
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { advance, deserialize, drive, goHome, goToSleep, newGame, replayDay, replayWeek, returnHome, rewindAccident, serialize } from "../src/sim/game";
@@ -241,6 +242,8 @@ describe("знімки після аварії (§6.1, §8.5; рішення а�
     save.current.home.clothes = START_CLOTHES;
     save.current.character.stats.sanity = 100;
     save.current.home.dust = [];
+    // Рахунок за комунальні — одразу (§6.4): несплачений до нового виселяє, а тут перевіряють лише знімки.
+    payUtilities(save.current);
     liveDay(save);
   };
 

@@ -66,8 +66,8 @@ class FakeElement {
 }
 
 const noop = (): void => undefined;
-const handlers: PhoneHandlers = { checkout: noop, discard: noop, discardThing: noop, advertise: noop, cancelAd: noop, newGame: noop, exportSave: noop, importSave: noop, tab: noop, close: noop, effects: { volume: 1, set: noop } };
-const TABS: PhoneTab[] = ["shop", "mine", "cats", "album", "profile", "game"];
+const handlers: PhoneHandlers = { checkout: noop, payUtilities: noop, discard: noop, discardThing: noop, advertise: noop, cancelAd: noop, newGame: noop, exportSave: noop, importSave: noop, tab: noop, close: noop, effects: { volume: 1, set: noop } };
+const TABS: PhoneTab[] = ["shop", "home", "cats", "album", "profile", "game"];
 
 /** Гра з котом і записом в альбомі: у телефоні всі шість вкладок. */
 function fullPhone(): GameState {
@@ -85,6 +85,29 @@ beforeAll(() => {
   vi.stubGlobal("window", { matchMedia: () => ({ matches: false }) });
 });
 afterAll(() => vi.unstubAllGlobals());
+
+describe("рахунок за комунальні у «Домі» (§6.4)", () => {
+  const bill = (state: GameState): FakeElement | undefined => {
+    for (const part of phoneCard(state, "home", handlers).body) {
+      if (typeof part === "string") continue;
+      const node = part as unknown as FakeElement;
+      if (node.className === "bill") return node;
+    }
+    return undefined;
+  };
+
+  it("сплачувати нічого — рахунку немає; є рахунок — сума тижня й кнопка з нею; без грошей — неактивна", () => {
+    const state = newGame({ address: "she", difficulty: "normal", seed: 8 }).current;
+    expect(bill(state)).toBeUndefined();
+    state.home.utilitiesBill = 61;
+    state.character.money = 100;
+    expect(bill(state)?.textContent).toContain("За тиждень61 ₴");
+    const pay = (): FakeElement | undefined => bill(state)?.find("bill-pay");
+    expect([pay()?.textContent, pay()?.disabled]).toEqual(["Сплатити · 61 ₴", false]);
+    state.character.money = 60;
+    expect([pay()?.textContent, pay()?.disabled]).toEqual(["Сплатити · 61 ₴", true]);
+  });
+});
 
 describe("профіль (§8.4, §6.5)", () => {
   const text = (state: GameState): string =>
@@ -154,7 +177,7 @@ describe("телефон — смартфон набік", () => {
     expect(full.map(hasGlyph)).toEqual([true, true, true, false, false, false]);
     expect(full.at(-2)).toContain("Профіль");
     expect(full.at(-1)).toContain("Гра");
-    expect((phoneCard(fullPhone(), "shop", handlers).tabs ?? []).map((t) => t.id)).toEqual(["shop", "mine", "cats", "album", "profile", "game"]);
+    expect((phoneCard(fullPhone(), "shop", handlers).tabs ?? []).map((t) => t.id)).toEqual(["shop", "home", "cats", "album", "profile", "game"]);
     // Без котів і альбому — лише Магазин, Речі, Профіль і Гра.
     const fresh = labels(newGame({ address: "she", difficulty: "normal", seed: 8 }).current);
     expect(fresh).toEqual([full[0], full[1], full[4], full[5]]);

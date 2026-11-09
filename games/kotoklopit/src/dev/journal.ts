@@ -80,7 +80,7 @@ export function describe(event: GameEvent, state: GameState): string | null {
       const parts = [`Ніч: сон ${number(r.sleptHours)} год${r.collapsed ? " (впав без сил)" : ""}`];
       for (const wake of r.wakeUps) parts.push(`розбудив ${catName(state, wake.cat)} (${wake.reason === "morning" ? "ранкова побудка" : "нічні пісні"})`);
       parts.push(`кроки — ${r.steps.join(", ")}`);
-      if (r.utilities) parts.push(`комунальні — ${r.utilities.outcome}, сплачено ${r.utilities.paid}`);
+      if (r.utilities) parts.push(`комунальні — ${r.utilities.outcome}, рахунок ${r.utilities.bill}`);
       if (r.newCats.length > 0) parts.push(`нових котів: ${r.newCats.length}`);
       parts.push(`здоровий глузд ${number(r.sanityEvening)} → ${number(r.sanityMorning)}`);
       return parts.join("; ");
@@ -121,6 +121,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `Летючка: ${event.attended ? "присутність" : "пропуск"}, репутація ${signed(event.reputation, 2)}`;
     case "ordered":
       return `Замовлено ${goods(event.delivery)} (${event.delivery.quality}): −${event.price}`;
+    case "utilities-paid":
+      return `Сплачено комунальні: −${event.amount}`;
     case "job-rejected":
       return `Пошук роботи: вакансія ${event.vacancy} — відмова`;
     case "unpacked":

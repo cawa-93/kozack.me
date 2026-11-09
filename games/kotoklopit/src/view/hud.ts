@@ -1,4 +1,4 @@
-// Інтерфейс рівня (§8.4): настільний годинник, календарик, шкали показників, гроші, іконки станів персонажа й короткий
+// Інтерфейс рівня (§8.4): настільний годинник, календарик, шкали показників, гроші, несплачений рахунок, іконки станів і короткий
 // розклад дня. Приховані числа (терпіння, репутація) тут не показуються.
 // Смуга, кружечки показників, рамки шкал, телефон і кнопка повного екрана — кадри атласу `ui/hud/*` (крок 16, A13), іконки —
 // `icon/*`, а кольори й написи — з палітри арту (`iso/hudlook.ts`, `iso/uilook.ts`); заливку шкал малює код у рамках арту.
@@ -8,6 +8,7 @@ import Phaser from "phaser";
 import { addArt, setArt } from "./art/atlas";
 import { canFullscreen, isFullscreen, toggleFullscreen } from "../screen";
 import { statCeiling } from "../sim/character";
+import { hasUnpaidUtilities } from "../sim/economy";
 import { LOW_STAT } from "../sim/config";
 import { absoluteMinute, formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { GameState, Product, StatName } from "../sim/types";
@@ -35,7 +36,7 @@ import {
 } from "./iso/hudlook";
 import { UI_FILL, UI_FONT, UI_TEXT, uiEntry } from "./iso/uilook";
 import { scheduleOf } from "./schedule";
-import { PERSON_STATE_ICONS, PRODUCT_ICONS, STAT_ICONS } from "./symbols";
+import { PERSON_STATE_ICONS, PRODUCT_ICONS, STAT_ICONS, UTILITIES_ICON } from "./symbols";
 import { canvasNow, type Frame } from "./viewport";
 import { BASE_WIDTH, textResolution } from "./zoom";
 import { UI_LAYERS } from "./world/layers";
@@ -49,8 +50,8 @@ const STATS: readonly { name: StatName; icon: IconName; column: 0 | 1; row: 0 | 
   { name: "hygiene", icon: STAT_ICONS.hygiene, column: 1, row: 1 },
 ];
 
-/** Просвіти в ряду показників: від кружечка до суми, від суми до розкладу. */
-const ROW_GAP = { amount: 4, schedule: 12 } as const;
+/** Просвіти в ряду показників: від кружечка до суми, від суми до квитанції, від суми до розкладу. */
+const ROW_GAP = { amount: 4, bill: 10, schedule: 12 } as const;
 /**
  * Аркуш розкладу (`ui/hud/note`): `pad` — відступ за рядками, одиниці кадру (у Caveat хвости літер виходять за виміряну ширину
  * рядка); `gap` — від аркуша до телефона, одиниці панелі. Лівий край рядків — точки запису.
@@ -145,6 +146,9 @@ export class Hud {
   /** Власні гроші: гаманець на кружечку й сума. */
   private readonly wallet: { ring: Phaser.GameObjects.Image; icon: Phaser.GameObjects.Image };
   private readonly money: Phaser.GameObjects.Text;
+  /** Несплачений рахунок за комунальні (§6.4): квитанція на червоному кружечку одразу за сумою; натиснути — «Дім» у телефоні. */
+  private readonly bill: { ring: Phaser.GameObjects.Image; icon: Phaser.GameObjects.Image };
+  private billShown = false;
   /** Стани персонажа (§8.4): іконки на паперових кружечках у другому ряду, під грошима; `mark` — ✓ «добре виспався». */
   private readonly states: { ring: Phaser.GameObjects.Image; icon: Phaser.GameObjects.Image; mark: Phaser.GameObjects.Image }[];
   /** Які стани показано зараз (`personStates` через кому): іконки міняються, лише коли змінилися. */
@@ -189,6 +193,7 @@ export class Hud {
     layer: Phaser.GameObjects.Layer,
     onPhone: () => void,
     onProfile: () => void,
+    onBill: () => void,
   ) {
     // Написи — паперовим на темній панелі з чорнильною обвідкою (`iso/uilook.ts`), піксель у піксель полотна.
     const resolution = textResolution(canvasNow().ui);
@@ -222,6 +227,11 @@ export class Hud {
     }));
     this.wallet = { ring: addArt(scene, null, HUD_ART.stat), icon: addArt(scene, null, HUD_ART.purse) };
     this.money = text(0, 0, SMALL_TEXT.amount).setFontStyle("bold").setOrigin(0, 0.5);
+    this.bill = { ring: addArt(scene, null, HUD_ART.alert).setVisible(false), icon: addArt(scene, null, iconArt(UTILITIES_ICON)).setVisible(false) };
+    this.bill.ring.setInteractive({ useHandCursor: true }).on("pointerdown", (_p: unknown, _x: number, _y: number, event: EventData) => {
+      event.stopPropagation();
+      onBill();
+    });
     const handwriting = (): Phaser.GameObjects.Text =>
       keep(scene.add.text(0, 0, "", { fontFamily: HANDWRITING.family, fontStyle: HANDWRITING.weight, fontSize: `${SMALL_TEXT.schedule}px`, color: UI_TEXT.onPaper, resolution })).setOrigin(0, 0.5);
     this.schedule = [handwriting(), handwriting()];
@@ -239,7 +249,7 @@ export class Hud {
     this.barFrames = STATS.map(() => new StretchArt(scene, this.left, HUD_ART.bar));
     // Аркуш розкладу — до рядків, щоб вони лягли поверх нього.
     this.note = new StretchArt(scene, this.left, HUD_ART.note);
-    this.left.add([...this.states.flatMap((s) => [s.ring, s.icon, s.mark]), this.wallet.ring, this.wallet.icon, this.money, this.statesZone, ...this.schedule]);
+    this.left.add([...this.states.flatMap((s) => [s.ring, s.icon, s.mark]), this.wallet.ring, this.wallet.icon, this.money, this.bill.ring, this.bill.icon, this.statesZone, ...this.schedule]);
     this.arrange(HUD_LAYOUT.desktop, BASE_WIDTH);
 
     // Телефон персонажа: доставка (§6.4).
@@ -336,12 +346,28 @@ export class Hud {
     return layout;
   }
 
-  /** Іконки станів — під грошима; розклад — праворуч біля телефона, але не лівіше за гроші й стани. */
+  /** Квитанція — за сумою, іконки станів — під грошима; розклад — праворуч біля телефона, але не лівіше за них. */
   private placeRight(): void {
-    const { columns } = this;
-    if (!columns) return;
+    const { shape, columns } = this;
+    if (!shape || !columns) return;
+    const r = shape.disc.outer / 2;
+    const { ring, icon } = statDisc(shape.disc.outer, shape.disc.fill);
+    const x = this.money.x + this.money.width + ROW_GAP.bill + r;
+    this.bill.ring.setPosition(x, shape.rows[0]).setDisplaySize(ring, ring);
+    this.bill.icon.setPosition(x, shape.rows[0]).setDisplaySize(icon, icon);
+    const money = this.billShown ? x + r : this.money.x + this.money.width;
     const states = this.placeStates();
-    this.placeNote(Math.max(columns.schedule, this.money.x + this.money.width + ROW_GAP.schedule, states + ROW_GAP.schedule));
+    this.placeNote(Math.max(columns.schedule, money + ROW_GAP.schedule, states + ROW_GAP.schedule));
+  }
+
+  /** Квитанція видна, лише поки є що сплачувати (§6.4); розклад може відсунутися. */
+  private showBill(state: GameState): void {
+    const unpaid = hasUnpaidUtilities(state);
+    if (unpaid === this.billShown) return;
+    this.billShown = unpaid;
+    this.bill.ring.setVisible(unpaid);
+    this.bill.icon.setVisible(unpaid);
+    this.placeRight();
   }
 
   /** Іконки станів (§8.4): у другому ряду від лівого краю грошей, кружечки трохи менші за кружечки показників; повертає їхній правий край. */
@@ -512,6 +538,7 @@ export class Hud {
     }
 
     this.showStates(state);
+    this.showBill(state);
     // Запас уперше закінчився (§6.4): телефон пульсує з його іконкою, доки його не відкриють.
     const hints = state.home.phoneHints ?? [];
     const product = hints[hints.length - 1];

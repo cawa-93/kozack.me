@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { START_MONEY } from "../src/sim/config";
-import { deliveryCost, landFlying, order, payUtilities, productPrice, seePhoneHints, supplyCount, unpack, useSupply, utilitiesDue, utilitiesPlanned } from "../src/sim/economy";
+import { deliveryCost, hasUnpaidUtilities, landFlying, order, payUtilities, productPrice, seePhoneHints, supplyCount, unpack, useSupply, utilitiesBill, utilitiesDue } from "../src/sim/economy";
 import { advance, goToSleep, interact, newGame } from "../src/sim/game";
 import { absoluteMinute } from "../src/sim/time";
 import type { Save } from "../src/sim/types";
@@ -123,7 +123,7 @@ describe("доставка (§6.4)", () => {
   });
 });
 
-describe("комунальні в ніч на понеділок (§6.4)", () => {
+describe("рахунок за комунальні (§6.4)", () => {
   /** Прожити до неділі ввечері з такими грошима й лягти спати. */
   const sundayNight = (save: Save, money: number) => {
     save.current.day = 6;
@@ -132,101 +132,94 @@ describe("комунальні в ніч на понеділок (§6.4)", () =>
     return goToSleep(save);
   };
 
-  it("сплачено 61", () => {
+  it("у ніч на понеділок приходить рахунок, гроші самі не знімаються", () => {
     const save = game();
     const report = sundayNight(save, 100);
-    expect(report?.utilities).toEqual({ outcome: "paid", paid: 61, nextDue: 0 });
-    expect(save.current.character.money).toBe(39);
+    expect(report?.utilities).toEqual({ outcome: "billed", bill: 61 });
+    expect(save.current.character.money).toBe(100);
+    expect(utilitiesBill(save.current)).toBe(61);
+    expect(hasUnpaidUtilities(save.current)).toBe(true);
   });
 
-  it("гроші тижня разом із комунальними — у звіт ночі на понеділок, у будні звіту немає (рішення автора 2026-10-27, Е4)", () => {
-    const save = game();
-    expect(order(save.current, "food", "cheap")).not.toBeNull();
-    save.current.minute = hours(22);
-    expect(goToSleep(save)?.ledger).toBeNull();
-    // 60 за їжу, 6 — 10% бази й 15 — надбавка за окреме замовлення.
-    const report = sundayNight(save, 100);
-    expect(report?.ledger).toEqual({ earned: 0, spent: { supplies: 60, delivery: 21, utilities: 61 } });
-    expect(save.current.ledger).toEqual({ earned: 0, spent: {} });
-  });
-
-  it("у будні комунальні не списуються", () => {
+  it("у будні рахунку немає", () => {
     const save = game();
     save.current.minute = hours(22);
     expect(goToSleep(save)?.utilities).toBeNull();
     expect(save.current.character.money).toBe(START_MONEY);
+    expect(hasUnpaidUtilities(save.current)).toBe(false);
   });
 
-  it("не вистачило — попередження, наступного тижня треба сплатити за два", () => {
+  it("сплатити в телефоні: гроші знімаються, рахунку більше немає, оплата — у гроші тижня", () => {
     const save = game();
-    const first = sundayNight(save, 30);
-    expect(first?.utilities).toEqual({ outcome: "warning", paid: 0, nextDue: 122 });
-    expect(save.current.character.money).toBe(30);
-    expect(save.current.home.utilitiesDebt).toBe(61);
-
-    const cleared = sundayNight(save, 200);
-    expect(cleared?.utilities).toEqual({ outcome: "cleared", paid: 122, nextDue: 0 });
-    expect(save.current.home.utilitiesDebt).toBe(0);
+    sundayNight(save, 100);
+    const { events, stop } = recordEvents();
+    expect(payUtilities(save.current)).toBe(true);
+    stop();
+    expect(save.current.character.money).toBe(39);
+    expect(hasUnpaidUtilities(save.current)).toBe(false);
+    expect(events).toContainEqual({ type: "utilities-paid", amount: 61 });
+    expect(save.current.ledger?.spent.utilities).toBe(61);
+    // Сплачувати більше нічого.
+    expect(payUtilities(save.current)).toBe(false);
+    expect(save.current.character.money).toBe(39);
   });
 
-  it("з попередженням вистачило на один тиждень — попередження лишається", () => {
+  it("лише всю суму: грошей менше — нічого не сплачено", () => {
     const save = game();
-    sundayNight(save, 0);
-    const partial = sundayNight(save, 70);
-    expect(partial?.utilities).toEqual({ outcome: "partial", paid: 61, nextDue: 122 });
-    expect(save.current.character.money).toBe(9);
-    expect(save.current.home.utilitiesDebt).toBe(61);
+    sundayNight(save, 60);
+    expect(payUtilities(save.current)).toBe(false);
+    expect([save.current.character.money, utilitiesBill(save.current)]).toEqual([60, 61]);
   });
 
-  it("планові комунальні на панелі: цей тиждень, борг і знижка перерахунку — стільки ж, скільки потім знімуть", () => {
+  it("гроші тижня — у звіт ночі на понеділок, у будні звіту немає", () => {
     const save = game();
-    const state = save.current;
-    state.character.money = 1000;
-    const due = utilitiesDue(state);
-    expect(utilitiesPlanned(state)).toBe(due);
-    state.home.utilitiesDebt = 49;
-    expect(utilitiesPlanned(state)).toBe(due + 49);
-    state.today.utilitiesDiscount = 10;
-    const planned = utilitiesPlanned(state);
-    expect(planned).toBe(due + 49 - 10);
-    expect(payUtilities(state).paid).toBe(planned);
-    // Знижка більша за тиждень: сума не від'ємна.
-    state.today.utilitiesDiscount = due + 100;
-    expect(utilitiesPlanned(state)).toBe(0);
+    expect(order(save.current, "food", "cheap")).not.toBeNull();
+    save.current.minute = hours(22);
+    expect(goToSleep(save)?.ledger).toBeNull();
+    // 60 за їжу, 6 — 10% бази й 15 — надбавка за окреме замовлення; рахунок цієї ночі ще не сплачено.
+    const report = sundayNight(save, 100);
+    expect(report?.ledger).toEqual({ earned: 0, spent: { supplies: 60, delivery: 21 } });
+    expect(save.current.ledger).toEqual({ earned: 0, spent: {} });
   });
 
-  it("борг більший за поточний тиждень: оплачується більший тиждень, на який вистачає грошей (загальна ревізія 2026-10-29)", () => {
-    // Минулого тижня до комунальних додався ремонт дивана: борг 70, а цей тиждень — 61.
-    const debtor = (money: number): Save => {
-      const save = game();
-      save.current.home.utilitiesDebt = 70;
-      expect(utilitiesDue(save.current)).toBe(61);
-      save.current.character.money = money;
-      return save;
-    };
-    // На борг не вистачає, а на поточний тиждень — так: його й оплачено, борг лишається, гравця не виселено.
-    const short = debtor(65).current;
-    expect(payUtilities(short)).toEqual({ outcome: "partial", paid: 61, nextDue: 131 });
-    expect([short.character.money, short.home.utilitiesDebt, short.end]).toEqual([4, 70, null]);
-    // Вистачає на більший — оплачується борг, боргом лишається поточний тиждень.
-    const enough = debtor(80).current;
-    expect(payUtilities(enough)).toEqual({ outcome: "partial", paid: 70, nextDue: 122 });
-    expect([enough.character.money, enough.home.utilitiesDebt]).toEqual([10, 61]);
-    // Не вистачає на жоден тиждень — виселення.
-    const broke = debtor(60).current;
-    expect(payUtilities(broke).outcome).toBe("evicted");
-    expect(broke.end).toBe("eviction");
+  it("сплачено протягом тижня — наступного понеділка просто новий рахунок", () => {
+    const save = game();
+    sundayNight(save, 100);
+    expect(payUtilities(save.current)).toBe(true);
+    expect(sundayNight(save, 0)?.utilities).toEqual({ outcome: "billed", bill: 61 });
+    expect(save.current.end).toBeNull();
   });
 
-  it("з попередженням не вистачило на жоден тиждень — виселення, решта ночі не обробляється", () => {
+  it("новий рахунок прийшов, а старий не сплачено, — виселення, хоч гроші й є; решта ночі не обробляється", () => {
     const save = game();
     sundayNight(save, 0);
     const dayStart = save.dayStart.day;
-    const report = sundayNight(save, 39);
+    const report = sundayNight(save, 1000);
     expect(report?.utilities?.outcome).toBe("evicted");
     expect(save.current.end).toBe("eviction");
     expect(report?.steps.at(-1)).toBe("utilities");
     expect(report?.steps).not.toContain("new-day");
     expect(save.dayStart.day).toBe(dayStart);
+  });
+
+  it("знижка перерахунку й ремонт — у рахунок; знижка більша за тиждень — рахунку немає, і виселяти нема за що", () => {
+    const save = game();
+    const state = save.current;
+    const due = utilitiesDue(state);
+    state.today.utilitiesDiscount = 10;
+    state.home.repairs = 5;
+    expect(sundayNight(save, 0)?.utilities).toEqual({ outcome: "billed", bill: due + 5 - 10 });
+    expect([state.home.repairs, state.today.utilitiesDiscount]).toEqual([0, 0]);
+    state.home.utilitiesBill = 0;
+    state.today.utilitiesDiscount = due + 100;
+    expect(sundayNight(save, 0)?.utilities).toEqual({ outcome: "billed", bill: 0 });
+    expect(hasUnpaidUtilities(state)).toBe(false);
+    expect(sundayNight(save, 0)?.utilities?.outcome).toBe("billed");
+  });
+
+  it("у збереженні, де комунальні знімалися самі, рахунку немає", () => {
+    const state = game().current;
+    delete state.home.utilitiesBill;
+    expect([utilitiesBill(state), hasUnpaidUtilities(state), payUtilities(state)]).toEqual([0, false, false]);
   });
 });

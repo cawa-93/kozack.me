@@ -7,7 +7,7 @@ import { meetCat, nextNewcomer } from "../sim/cat";
 import { inStandoff, isDirty } from "../sim/catai";
 import { LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES, SUPPLY_FLIGHT } from "../sim/config";
 import { carrierRoom, discardCarrier } from "../sim/carriers";
-import { discard, discardAppliance, discardLock, seePhoneHints, supplyCount } from "../sim/economy";
+import { discard, discardAppliance, discardLock, payUtilities, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
 import { onEvent, type CleanerVisit, type GameEvent, type GuestsVisit, type ModifierEvent } from "../sim/events";
 import { advance, carryFoundling, goHome, interact, newGame, newSeed, replayDay, replayWeek, rewindAccident } from "../sim/game";
@@ -171,7 +171,7 @@ export class DayScene extends Phaser.Scene {
     this.storage = new StorageIndicators(this, layer, () => this.world.person.head);
     // Серпанок над квартирою, але під інтерфейсом.
     this.gloom = this.add.rectangle(0, 0, 1, 1, 0x5b3a7a, 0).setOrigin(0).setDepth(UI_LAYERS.gloom).addToDisplayList(ui);
-    this.hud = new Hud(this, ui, () => this.openPhone(), () => this.openPhone("profile"));
+    this.hud = new Hud(this, ui, () => this.openPhone(), () => this.openPhone("profile"), () => this.openPhone("home"));
     this.dark = this.add.rectangle(0, 0, 1, 1, 0x000000, 0).setOrigin(0).setDepth(UI_LAYERS.dark).addToDisplayList(ui);
     this.touch = new TouchControls(
       this,
@@ -1397,29 +1397,33 @@ export class DayScene extends Phaser.Scene {
     // картці»): «Викинути: керамічна миска для корму?».
     const confirmDiscard = (kind: ThingKind, quality: Quality, done: () => void): void =>
       this.overlay.show({
-        kicker: "Речі",
+        kicker: "Дім",
         title: `Викинути: ${variantTitle({ thing: kind }, quality).toLowerCase()}?`,
         // Без прогнозу комунальних: тексти не пояснюють механік (§11.3а; крок 17, вичитка 2026-10-28).
         body: [],
         // Викинути — назавжди: без головної дії, пробіл чи Enter нічого не викинуть.
         actions: [
-          { label: "Повернутися", onSelect: () => show("mine") },
+          { label: "Повернутися", onSelect: () => show("home") },
           {
             label: "Викинути",
             onSelect: () => {
               done();
-              show("mine");
+              show("home");
             },
           },
         ],
         steps: true,
-        onDismiss: () => show("mine"),
+        onDismiss: () => show("home"),
       });
     const show = (tab: PhoneTab): void =>
       this.overlay.show(
         phoneCard(this.state, tab, {
           checkout: (cart) => {
             checkout(this.state, cart, "delivery");
+            show(tab);
+          },
+          payUtilities: () => {
+            payUtilities(this.state);
             show(tab);
           },
           // Викинути — назавжди: спершу картка-підтвердження (перевірка побуту 2026-10-28: подвійний дотик викидав другу річ).

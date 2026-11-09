@@ -36,14 +36,14 @@ describe("сценарії (§11.5)", () => {
     }
   });
 
-  it("«Вечір неділі»: лягти спати — і вже понеділок другого тижня, комунальні сплачено", () => {
+  it("«Вечір неділі»: лягти спати — і вже понеділок другого тижня, прийшов рахунок за комунальні", () => {
     const scenario = FILE_SCENARIOS["sunday-evening"];
     if (!scenario) throw new Error("немає сценарію");
     const save = applyScenario(scenario);
     expect(weekdayOf(save.current.day)).toBe(6);
     const night = interact(save);
     expect(night?.weekly).toBe(true);
-    expect(night?.utilities?.outcome).toBe("paid");
+    expect(night?.utilities?.outcome).toBe("billed");
     expect(weekOf(save.current.day)).toBe(2);
     expect(weekdayOf(save.current.day)).toBe(0);
     expect(save.weekStart.day).toBe(7);

@@ -102,8 +102,8 @@ function collectCases(): Map<string, Shown[]> {
     add(`storage:${product}`, { icon: PRODUCT_ICONS[product], count: 5 });
     add(`hint:${product}`, { icon: PRODUCT_ICONS[product] });
   }
-  // Комунальні у вкладці «Речі» телефона.
-  add("phone:utilities", { icon: UTILITIES_ICON });
+  // Несплачений рахунок за комунальні: квитанція на панелі й рахунок у «Домі» телефона — один випадок.
+  add("utilities:unpaid", { icon: UTILITIES_ICON });
   // Показники персонажа: панель і думка, коли показник низький.
   const { save, cat } = setup();
   for (const stat of STATS) {

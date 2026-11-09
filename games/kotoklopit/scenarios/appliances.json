@@ -227,7 +227,6 @@
    "messes": [],
    "deliveries": [],
    "porch": [],
-   "utilitiesDebt": 0,
    "repairs": 0,
    "carriers": [{ "quality": "cheap", "wear": 0 }],
    "appliances": {

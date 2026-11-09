@@ -59,7 +59,6 @@ interface Run {
   petted: number;
   played: number;
   walked: number;
-  warnings: number;
   seconds: number;
 }
 
@@ -97,7 +96,6 @@ function simulate(chronotype: Chronotype, difficulty: Difficulty, seed: number):
     petted: 0,
     played: 0,
     walked: 0,
-    warnings: 0,
     seconds: 0,
   };
   const obese = new Set<number>();
@@ -108,7 +106,6 @@ function simulate(chronotype: Chronotype, difficulty: Difficulty, seed: number):
     run.sanity.push(report?.sanityEvening ?? evening);
     if (report) {
       run.kittens += report.newCats.length;
-      if (report.utilities?.outcome === "warning" || report.utilities?.outcome === "partial") run.warnings += 1;
     }
     run.health.push(save.current.character.stats.health);
     run.days = d + 1;
@@ -150,8 +147,8 @@ function report(runs: Run[]): string {
   lines.push("");
   lines.push(`${WEEKS} тижнів, ${SEEDS} seed на комбінацію. Бот — \`balance/bot.ts\`. Згенеровано ${new Date().toISOString().slice(0, 10)}.`);
   lines.push("");
-  lines.push("| Хронотип | Складність | Дожили | Кінець | Гроші (мін) | Здоровий глузд ввечері (мін) | Здоров'я (мін) | Кошенят | Котів (померло) | Настрій котів (вісь фіналу) | Здоров'я котів | Вага котів (ожиріння) | Посада | Робота, год/день | Коти, год/день | Попереджень ОСББ |");
-  lines.push("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
+  lines.push("| Хронотип | Складність | Дожили | Кінець | Гроші (мін) | Здоровий глузд ввечері (мін) | Здоров'я (мін) | Кошенят | Котів (померло) | Настрій котів (вісь фіналу) | Здоров'я котів | Вага котів (ожиріння) | Посада | Робота, год/день | Коти, год/день |");
+  lines.push("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
   const combos = new Map<string, Run[]>();
   for (const run of runs) {
     const key = `${run.chronotype}/${run.difficulty}`;
@@ -183,7 +180,6 @@ function report(runs: Run[]): string {
         fmt(avg(group.map((r) => r.position + 1))),
         fmt(avg(group.map((r) => r.worked))),
         fmt(avg(group.map((r) => r.petted))),
-        fmt(avg(group.map((r) => r.warnings))),
       ].join(" | ").replace(/^/, "| ").concat(" |"),
     );
   }

@@ -201,6 +201,8 @@ export type GameEvent =
   | { type: "modifier"; kind: ModifierEvent; value: number; guests?: GuestsVisit; paid?: number; cleaner?: CleanerVisit }
   | { type: "career"; change: "promoted" | "demoted" | "fired" | "hired"; position: number }
   | { type: "ordered"; delivery: Delivery; price: number }
+  /** Сплачено рахунок за комунальні в телефоні (§6.4). */
+  | { type: "utilities-paid"; amount: number }
   /** Пошук роботи: вакансія закінчилася відмовою, далі — нова (§8.6). */
   | { type: "job-rejected"; vacancy: number }
   /** Ящики розпаковано (§6.4): що й скільки розлетілося по сховищах. */

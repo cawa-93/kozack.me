@@ -658,10 +658,10 @@ describe("картки поїздок (§8.5)", () => {
 
   it("телефон: смуга кошика — у картці внизу, лише на вкладці магазину", () => {
     const state = at(null);
-    const phone: PhoneHandlers = { checkout: noop, discard: noop, discardThing: noop, advertise: noop, cancelAd: noop, newGame: noop, exportSave: noop, importSave: noop, tab: noop, close: noop, effects: { volume: 1, set: noop } };
+    const phone: PhoneHandlers = { checkout: noop, payUtilities: noop, discard: noop, discardThing: noop, advertise: noop, cancelAd: noop, newGame: noop, exportSave: noop, importSave: noop, tab: noop, close: noop, effects: { volume: 1, set: noop } };
     const shop = phoneCard(state, "shop", phone);
     expect(shop.bar ? fake(shop.bar).find("shop-pay").textContent : "").toBe("Замовити");
-    expect(phoneCard(state, "mine", phone).bar).toBeUndefined();
+    expect(phoneCard(state, "home", phone).bar).toBeUndefined();
   });
 
   it("«Мої речі»: рядок речі — її іконка й назва варіанта, та сама, що на картці магазину, без назви речі над нею; «Викинути» знає якість", () => {
@@ -671,10 +671,10 @@ describe("картки поїздок (§8.5)", () => {
     if (bowl) state.home.items.push(bowl);
     const thrown: [string, string][] = [];
     const phone: PhoneHandlers = {
-      checkout: noop, discard: (item) => thrown.push([item.kind, item.quality]), discardThing: (thing, quality) => thrown.push([JSON.stringify(thing), quality]),
+      checkout: noop, payUtilities: noop, discard: (item) => thrown.push([item.kind, item.quality]), discardThing: (thing, quality) => thrown.push([JSON.stringify(thing), quality]),
       advertise: noop, cancelAd: noop, newGame: noop, exportSave: noop, importSave: noop, tab: noop, close: noop, effects: { volume: 1, set: noop },
     };
-    const card = phoneCard(state, "mine", phone);
+    const card = phoneCard(state, "home", phone);
     const list = card.body.map((b) => (typeof b === "string" ? null : fake(b))).find((b) => b !== null && b.findAll("shop-row").length > 0);
     const rows = list?.findAll("shop-row") ?? [];
     const expected = [...state.home.items.map((i) => variantLabel({ thing: i.kind }, i.quality)), variantLabel({ thing: "carrier" }, "premium")];

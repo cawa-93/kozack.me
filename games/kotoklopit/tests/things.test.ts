@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
 import { decide, tickCats } from "../src/sim/catai";
-import { discard, freeSlots, orderThing, payUtilities, receivePackages, utilitiesDue } from "../src/sim/economy";
+import { billUtilities, discard, freeSlots, orderThing, receivePackages, utilitiesDue } from "../src/sim/economy";
 import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
@@ -95,7 +95,7 @@ describe("кігтеточка й диван (§9.12)", () => {
     for (let i = 0; i < 30 && cat.act.kind === "scratch"; i++) tickCats(save.current, 1, { present: false });
     expect(save.current.home.repairs).toBe(5);
     expect(utilitiesDue(save.current)).toBe(66);
-    payUtilities(save.current);
+    billUtilities(save.current);
     expect(save.current.home.repairs).toBe(0);
   });
 

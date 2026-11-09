@@ -355,9 +355,9 @@ export class DevPanel {
         supply("hygiene", "cheap", "Гігієна дешева"),
         supply("hygiene", "premium", "Гігієна дорога"),
         supply("momMeal", "cheap", "Мамині судочки"),
-        this.number("Борг комунальних", () => home().utilitiesDebt, (v) => {
-          home().utilitiesDebt = Math.max(0, v);
-          this.changed(`борг — ${v}`, false);
+        this.number("Рахунок комунальних", () => home().utilitiesBill ?? 0, (v) => {
+          home().utilitiesBill = Math.max(0, v);
+          this.changed(`рахунок — ${v}`, false);
         }),
       ),
       el(
@@ -515,7 +515,7 @@ export class DevPanel {
       `у руках ${ch.held ? (ch.held.kind === "cat" ? `кіт ${ch.held.cat}` : ch.held.kind === "toy" ? "іграшка" : ch.held.kind === "vacuum" ? `пилосос ${round(ch.held.minutes ?? 0)} хв` : ch.held.kind === "thing" ? `${ch.held.item.kind}/${ch.held.item.quality}` : `${ch.held.kind}/${ch.held.quality}`) : "—"} · плита ${home.stove.item?.kind ?? "—"} ${round(home.stove.minutes)} хв`,
       `шерсть ${round(home.fur)} · жмутів ${home.tufts?.length ?? 0} · пилу ${home.dust?.length ?? 0} · пилосос ${home.vacuumAt ? `${round(home.vacuumAt.x)}, ${round(home.vacuumAt.y)}` : "у руках"}`,
       `доставки ${home.deliveries.map((d) => `${"product" in d ? d.product : d.thing}@${formatClock(d.at % 1440)}`).join(", ") || "—"} · під дверима ${home.porch.length}`,
-      `борг комунальних ${home.utilitiesDebt}`,
+      `рахунок комунальних ${home.utilitiesBill ?? 0}`,
       `seed ${state.seed} · перегравань ${state.replays} · хвилина ${round(state.minute)}`,
       `rng умови ${state.rng.conditions} · поведінка ${state.rng.behavior}`,
     ].join("\n");

@@ -1043,6 +1043,60 @@
 
 /* Вкладка «Профіль» телефона (§8.4): портрет і хто персонаж — ім'я, посада, ставка, робочий час; далі стани — іконка на
    паперовому кружечку (з позначкою, як на панелі), назва, опис і, біля хвороби, чи прийнято ліки. */
+/* Рахунок за комунальні у вкладці «Дім» (`src/ui/bill.ts`, §6.4): бланк на папері з рамкою й тінню, під шапкою — пунктир,
+   рядок із крапками-провідниками, кнопка праворуч унизу. */
+.bill {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 360px;
+  margin-bottom: 12px;
+  padding: 10px 14px 12px;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  background: var(--paper) var(--paper-tile) 0 0 / 256px 256px;
+  box-shadow: 0 4px 0 var(--shade-base);
+}
+
+.bill-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 2px dashed var(--ink-soft);
+}
+
+.bill-head > img {
+  flex: none;
+  width: 34px;
+  height: 34px;
+}
+
+.bill-title {
+  margin: 0;
+  font: 400 20px/1.15 var(--hand);
+  color: var(--ink);
+}
+
+.bill-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font: 400 18px/1.2 var(--hand);
+  color: var(--ink);
+}
+
+.bill-dots {
+  flex: 1;
+  min-width: 12px;
+  border-bottom: 2px dotted var(--ink-soft);
+}
+
+.bill-pay {
+  align-self: flex-end;
+  margin-top: 4px;
+}
+
 .profile-card {
   display: flex;
   gap: 14px;

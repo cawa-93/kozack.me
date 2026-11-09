@@ -6,7 +6,7 @@ import type { CleanerVisit, GuestsVisit } from "./sim/events";
 import type { PersonStateId } from "./view/personstates";
 import { formatClock } from "./sim/time";
 import { accidentBedtime, accidentHome, accidentOf } from "./sim/trips";
-import type { AccidentLoss, Address, AlbumEntry, FarewellCause, GameEnd, GameState, IllnessId, Ledger, Medicine, Sex, Spending, UtilitiesReport } from "./sim/types";
+import type { AccidentLoss, Address, AlbumEntry, FarewellCause, GameEnd, GameState, IllnessId, Ledger, Medicine, Sex, Spending } from "./sim/types";
 
 /**
  * Підставити значення й обрати форми: за статтю кота чи за звертанням до персонажа («він» — чоловіча форма, «вона» — жіноча,
@@ -33,12 +33,13 @@ export const WAKE_TEXTS = {
 export const BIRTH_MESSAGE =
   "Уночі {кішка} тихенько влаштувала собі гніздо — і тепер у домі на {кількість} більше: {кошенята}. Поки що [воно лише пищить, спить і тиснеться|вони лише пищать, сплять і тиснуться] до мами.";
 
-export const UTILITIES_MESSAGES: Record<Exclude<UtilitiesReport["outcome"], "evicted">, string> = {
-  paid: "Комунальні: −{сума} ₴.",
-  warning: "На комунальні не вистачило — ОСББ попереджає.",
-  partial: "Комунальні: −{сума} ₴, але попередження лишається.",
-  cleared: "Борг за комунальні погашено: −{сума} ₴. ОСББ зняло попередження.",
-};
+/** Рахунок за комунальні (§6.4): `arrived` — на титулці понеділка, решта — бланк у вкладці «Дім» телефона. */
+export const BILL_TEXTS = {
+  arrived: "Прийшов рахунок за комунальні: {сума} ₴.",
+  title: "Рахунок за комунальні",
+  week: "За тиждень",
+  pay: "Сплатити · {сума} ₴",
+} as const;
 
 /** Картка радіо (§8.10). */
 export const RADIO_TEXTS = {
@@ -92,11 +93,10 @@ export const IMPORT_SAVE = {
   back: "Повернутися",
 } as const;
 
-/** Гроші за тиждень на титулці понеділка (§6.4, «Куди йдуть гроші») і борг у телефоні. */
+/** Гроші за тиждень на титулці понеділка (§6.4, «Куди йдуть гроші»). */
 export const LEDGER_TEXTS = {
   heading: "Гроші за тиждень",
   total: "Заробили {заробили} ₴, витратили {витратили} ₴.",
-  debt: "Борг за комунальні: {борг} ₴.",
 } as const;
 export const SPENDING_TITLES: Record<Spending, string> = {
   supplies: "корм і запаси",

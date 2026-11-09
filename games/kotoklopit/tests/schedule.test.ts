@@ -3,7 +3,6 @@
 import { describe, expect, it } from "vitest";
 
 import { newGame } from "../src/sim/game";
-import { utilitiesPlanned } from "../src/sim/economy";
 import { absoluteMinute } from "../src/sim/time";
 import type { GameState } from "../src/sim/types";
 import { scheduleOf } from "../src/view/schedule";
@@ -59,17 +58,5 @@ describe("розклад дня (§8.4)", () => {
     courier(office, 9);
     expect(panel(office)).toEqual(["10:00 летючка", "до 18:00 офіс"]);
     expect(scheduleOf(office).slice(2)).toEqual(["09:00 робота", "≈09:00 кур'єр"]);
-  });
-
-  it("у неділю — завтрашні комунальні в розкладі: на панелі квитанції немає (§6.4); в інші дні — ні", () => {
-    const sunday = day(12);
-    sunday.day = 6;
-    const planned = utilitiesPlanned(sunday);
-    expect(planned).toBeGreaterThan(0);
-    courier(sunday, 15);
-    expect(panel(sunday)).toEqual([`завтра комунальні −${planned} ₴`, "≈15:00 кур'єр"]);
-    const saturday = day(12);
-    saturday.day = 5;
-    expect(scheduleOf(saturday).join("|")).not.toContain("комунальні");
   });
 });

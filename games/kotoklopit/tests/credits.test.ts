@@ -191,7 +191,7 @@ describe("посилання на титри", () => {
 
   it("останнім у вкладці «Гра» телефона: титри в новій вкладці, гра лишається відкритою", () => {
     const noop = (): void => undefined;
-    const phone: PhoneHandlers = { checkout: noop, discard: noop, discardThing: noop, advertise: noop, cancelAd: noop, newGame: noop, exportSave: noop, importSave: noop, tab: noop, close: noop, effects: { volume: 1, set: noop } };
+    const phone: PhoneHandlers = { checkout: noop, payUtilities: noop, discard: noop, discardThing: noop, advertise: noop, cancelAd: noop, newGame: noop, exportSave: noop, importSave: noop, tab: noop, close: noop, effects: { volume: 1, set: noop } };
     const card = phoneCard(newGame({ address: "she", difficulty: "normal", seed: 8 }).current, "game", phone);
     const last = card.body.at(-1) as unknown as FakeElement;
     expect(last.className).toBe("game-credits");

@@ -55,7 +55,9 @@ export const group: SoundGroup = {
         return NOTIFY;
       case "ordered":
         return ORDERED;
+      // Сплачений рахунок за комунальні (§6.4) — той самий звук, що покупка на місці: гроші пішли одразу.
       case "bought":
+      case "utilities-paid":
         return BOUGHT;
       default:
         return NONE;
