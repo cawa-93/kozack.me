@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 52" width="29" height="52">
+<!-- person/top-front/collar/back — комір сорочки (сорочка, поло, комбінезон), ракурс back (¾ ззаду).
+size 29×52; pivot (14, 52) — таз (клаптик торса person/torso/1 від (15, 2)); points: немає.
+Шари: fill-top, ink.
+Спереду — два крила коміра, що лягають на груди й закривають виріз торса; між ними видно шию. Ззаду — стійка довкола шиї. Планка — на поясі (person/top-hem/shirt, person/top-hem/polo). Полотно — до таза: pivot має лежати на ньому. Без шару тіні (бюджет атласу): накладка світліша за тінь торса під підборіддям — читається піднятою.
+-->
+<g id="fill-top">
+<path d="M5.6 10.8C5.7 9 6.5 7.4 7.8 6.8C11.4 7.6 16.6 7.7 21.4 6.8C22.6 7.6 23.3 9.2 23.4 10.8C18.9 14.4 10.2 14.4 5.6 10.8Z" fill="#ffffff"/>
+</g>
+<g id="ink">
+<path d="M5.6 10.8C5.7 9 6.5 7.4 7.8 6.8" fill="none" stroke="#2e1f29" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7.8 6.8C11.4 7.6 16.6 7.7 21.4 6.8" fill="none" stroke="#2e1f29" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M21.4 6.8C22.6 7.6 23.3 9.2 23.4 10.8" fill="none" stroke="#2e1f29" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M23.4 10.8C18.9 14.4 10.2 14.4 5.6 10.8" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

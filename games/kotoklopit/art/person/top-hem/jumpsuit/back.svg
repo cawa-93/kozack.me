@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 57 20" width="57" height="20">
+<!-- person/top-hem/jumpsuit/back — пасок комбінезона, ракурс back (¾ ззаду).
+size 57×20; pivot (29, 16) — таз (клаптик торса person/torso/1 від (0, 38)); points: немає.
+Шари: detail, ink.
+Шкіряний пасок (detail) над подолом торса від боку до боку, латунна пряжка спереду й шлевки; на кістці поясу, тож ширина — за стегнами статури. Поділ і боки торса під паском повторено.
+-->
+<g id="detail">
+<path d="M8.71 7.2C10.3 8.7 11.9 8.3 14 8.8C16.1 9.3 19 9.5 22 9.6C25 9.7 28.7 9.7 32 9.6C35.3 9.5 39 9.5 42 9C45 8.5 48.5 8.9 50.95 7C50.91 8.88 50.72 10.59 50 11.6C48.5 13.7 45 13.3 42 13.8C39 14.3 35.3 14.3 32 14.4C28.7 14.5 25 14.5 22 14.4C19 14.3 16.1 14.1 14 13.6C11.9 13.1 10.3 13.5 9.4 11.4C9 10.46 8.81 8.91 8.71 7.2Z" fill="#6d4a35"/>
+</g>
+<g id="ink">
+<path d="M8.71 7.2C10.3 8.7 11.9 8.3 14 8.8C16.1 9.3 19 9.5 22 9.6C25 9.7 28.7 9.7 32 9.6C35.3 9.5 39 9.5 42 9C45 8.5 48.5 8.9 50.95 7" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M9.4 11.4C10.3 13.5 11.9 13.1 14 13.6C16.1 14.1 19 14.3 22 14.4C25 14.5 28.7 14.5 32 14.4C35.3 14.3 39 14.3 42 13.8C45 13.3 48.5 13.7 50 11.6" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8.66 6.4C8.76 8.42 8.93 10.31 9.4 11.4" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M50 11.6C50.82 10.45 50.95 8.38 50.95 6.2" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M15 9.3L15.1 14.1" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M29.6 9.3L29.7 14.1" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M44 9.3L44.1 14.1" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

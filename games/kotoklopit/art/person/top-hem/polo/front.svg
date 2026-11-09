@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 48" width="15" height="48">
+<!-- person/top-hem/polo/front — коротка планка поло, ракурс front (¾ спереду).
+size 15×48; pivot (7, 44) — таз (клаптик торса person/torso/1 від (22, 10)); points: немає.
+Шари: ink.
+Планка від коміра (person/top-front/collar) до грудей і два ґудзики — лише ink на кістці поясу. Ззаду нічого.
+-->
+<g id="ink">
+<path d="M5.8 5.8C5.9 9.6 6 13.4 6.1 17" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8.4 5.6C8.5 9.4 8.6 13.2 8.7 16.8" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M6.1 17C6.8 17.6 8 17.5 8.7 16.8" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8.25 10.4A0.95 0.95 0 1 1 6.35 10.4A0.95 0.95 0 1 1 8.25 10.4Z" fill="#2e1f29"/>
+<path d="M8.35 14.4A0.95 0.95 0 1 1 6.45 14.4A0.95 0.95 0 1 1 8.35 14.4Z" fill="#2e1f29"/>
+</g>
+</svg>

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 56" width="29" height="56">
+<!-- person/top-front/zip-hoodie/front — розстебнуте худі: краї капюшона, борти й футболка між ними, ракурс front (¾ спереду).
+size 29×56; pivot (15, 52) — таз (клаптик торса person/torso/1 від (14, 2)); points: немає.
+Шари: fill-top, fill-inner, ink.
+Краї капюшона сходять до бортів; між бортами до подолу — футболка (fill-inner, колір TopCut.inner) зі своїм вирізом — лінією вирізу торса; внизу ближнього борту — бігунок блискавки. Капюшон — person/hood/hoodie. Ззаду нічого. Без шару тіні (бюджет атласу): накладка світліша за тінь торса під підборіддям — читається піднятою.
+-->
+<g id="fill-top">
+<path d="M7.6 14.4L10.8 14.2C11 19.4 10.7 19.6 10.6 23.6L7.4 23.8C7.3 19.6 7.4 19.4 7.6 14.4Z" fill="#ffffff"/>
+<path d="M19.4 14.2L22.4 14C22.6 19.2 22.8 14.4 22.7 18.4L19.7 18.6C19.6 14.4 19.2 19.2 19.4 14.2Z" fill="#ffffff"/>
+<path d="M21 8.6C19.3 8.9 19.1 11.6 18 12.4C17.8 13.9 17.6 15.4 17.4 17C19.4 15.8 22.4 13 23.4 8.4C23.2 6.6 21.6 6 20.6 7.2C20.8 7.7 20.9 8.1 21 8.6Z" fill="#ffffff"/>
+<path d="M8 9.2C9.7 9.4 9.7 11.7 10.8 12.4C11.2 13.8 11.4 15.4 11.6 17.4C10.2 16.4 7 13.6 5.6 9C5.8 7.2 7.6 6.4 8.6 7.6C8.4 8.2 8.2 8.7 8 9.2Z" fill="#ffffff"/>
+</g>
+<g id="fill-inner">
+<path d="M10.8 12.4C11.9 13.1 13.2 13.4 14.4 13.4C15.6 13.4 16.9 13.2 18 12.4C17.4 22 16 34 15.6 50.4C14.2 50.5 12.8 50.5 11.4 50.3C11.2 36 11 22 10.8 12.4Z" fill="#ffffff"/>
+</g>
+<g id="ink">
+<path d="M7.6 15.4C7.4 19.4 7.3 19.6 7.4 23.8" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M10.8 15.2C11 19.4 10.7 19.6 10.6 23.6" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M6.9 23.2L11.1 23L11 26C10.2 26.6 7.8 26.7 7 26.2Z" fill="#2e1f29"/>
+<path d="M19.4 15.2C19.2 19.2 19.6 14.4 19.7 18.6" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M22.4 15C22.6 19.2 22.8 14.4 22.7 18.4" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M19.2 18L23.2 17.8L23.1 20.8C22.3 21.4 20.1 21.5 19.3 21Z" fill="#2e1f29"/>
+<path d="M18 12.4C16.9 13.2 15.6 13.4 14.4 13.4C13.2 13.4 11.9 13.1 10.8 12.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M10.8 12.4C11 22 11.2 36 11.4 50.3" fill="none" stroke="#2e1f29" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18 12.4C17.4 22 16 34 15.6 50.4" fill="none" stroke="#2e1f29" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M10.2 46.6L12.5 46.4L12.7 49.6L10.4 49.8Z" fill="#2e1f29"/>
+<path d="M11.6 17.4C10.2 16.4 7 13.6 5.6 9C5.8 7.2 7.6 6.4 8.6 7.6" fill="none" stroke="#2e1f29" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17.4 17C19.4 15.8 22.4 13 23.4 8.4C23.2 6.6 21.6 6 20.6 7.2" fill="none" stroke="#2e1f29" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8 9.2C9.7 9.4 9.7 11.7 10.8 12.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M21 8.6C19.3 8.9 19.1 11.6 18 12.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

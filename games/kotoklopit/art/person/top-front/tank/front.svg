@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 51" width="30" height="51">
+<!-- person/top-front/tank/front — глибокий виріз майки, ракурс front (¾ спереду).
+size 30×51; pivot (15, 51) — таз (клаптик торса person/torso/1 від (14, 3)); points: немає.
+Шари: fill-skin, shade, ink.
+Шкіра (fill-skin) лягає у виріз торса спереду й ззаду; решта майки — сам торс (fill-top), рук немає (person/arm/tank). Краї шиї під шкірою повторено, щоб контур не тоншав. Полотно — до таза: pivot має лежати на ньому.
+-->
+<defs>
+<clipPath id="person-top-front-tank-front-clip"><path d="M6.4 8.27C7.2 14.4 10.6 19.2 14.7 19.2C18.8 19.2 22.8 14.6 23.8 7.99C22.73 7.66 21.73 7.47 21 7.6C20.96 7.39 20.82 6.87 20.68 6.3C17.6 5.8 12.4 5.8 8.84 6.3C8.5 7.08 8.16 7.89 8 8.2C7.57 8.15 7.02 8.18 6.4 8.27Z"/></clipPath>
+</defs>
+<g id="fill-skin">
+<path d="M6.4 8.27C7.2 14.4 10.6 19.2 14.7 19.2C18.8 19.2 22.8 14.6 23.8 7.99C22.73 7.66 21.73 7.47 21 7.6C20.96 7.39 20.82 6.87 20.68 6.3C17.6 5.8 12.4 5.8 8.84 6.3C8.5 7.08 8.16 7.89 8 8.2C7.57 8.15 7.02 8.18 6.4 8.27Z" fill="#ffffff"/>
+</g>
+<g id="shade" clip-path="url(#person-top-front-tank-front-clip)">
+<path d="M27.9 10.4C27.9 11.3 27 12.4 25.7 13.1C24.4 13.8 22.1 14.5 20 14.8C17.8 15.1 15 15.1 12.8 14.8C10.7 14.5 8.4 13.8 7.1 13.1C5.8 12.4 4.9 11.3 4.9 10.4C4.9 9.5 5.8 8.4 7.1 7.7C8.4 7 10.7 6.3 12.8 6C15 5.7 17.8 5.7 20 6C22.1 6.3 24.4 7 25.7 7.7C27 8.4 27.9 9.5 27.9 10.4Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="ink">
+<path d="M8 8.2C8.19 7.82 8.66 6.71 9.06 5.8" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M21 7.6C20.95 7.33 20.74 6.54 20.55 5.8" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8 8.2C7.57 8.15 7.02 8.18 6.4 8.27" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M21 7.6C21.73 7.47 22.73 7.66 23.8 7.99" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M6.4 8.27C7.2 14.4 10.6 19.2 14.7 19.2C18.8 19.2 22.8 14.6 23.8 7.99" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

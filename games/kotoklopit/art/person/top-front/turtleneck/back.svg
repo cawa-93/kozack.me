@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 56" width="30" height="56">
+<!-- person/top-front/turtleneck/back — високий комір водолазки, ракурс back (¾ ззаду).
+size 30×56; pivot (15, 56) — таз (клаптик торса person/torso/1 від (14, -2)); points: немає.
+Шари: fill-top, ink.
+Трубка закриває шию й виріз торса від плечей до підборіддя (верх ховає голова); нижче лінії відвороту — сам відворот, товстий валик довкола шиї. Без шару тіні (бюджет атласу): накладка світліша за тінь торса під підборіддям — читається піднятою.
+-->
+<g id="fill-top">
+<path d="M7 14.8C6.8 12.2 7 9.4 7.8 7.8C10.6 6.2 19.4 6 22.4 7.6C23.6 9.4 24 12.2 24 14.8C21 19.6 10 19.6 7 14.8Z" fill="#ffffff"/>
+</g>
+<g id="ink">
+<path d="M7.2 13C10.8 15.4 19.8 15.4 23.8 12.8" fill="none" stroke="#2e1f29" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M24 14.8C21 19.6 10 19.6 7 14.8" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7 14.8C6.8 12.2 7 9.4 7.8 7.8C10.6 6.2 19.4 6 22.4 7.6C23.6 9.4 24 12.2 24 14.8" fill="none" stroke="#2e1f29" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

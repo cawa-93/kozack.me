@@ -2,6 +2,7 @@
 // верхом — `fill-inner`. Нового торса на фасон немає (не вміщується в атлас): силует дають рукав і накладки.
 
 import type { ArtId, TintStep } from "../art/types";
+import { CLOTHES } from "./clothes";
 import type { SlotFrames, WardrobeEntry, Wear } from "./types";
 
 export type TopGroup = "повсякденне" | "ділове" | "затишне" | "сукні й комбінезони";
@@ -28,7 +29,29 @@ export interface TopCut extends WardrobeEntry {
   readonly stains?: Readonly<Record<string, ArtId | null>>;
 }
 
-export const TOP_CUTS: readonly TopCut[] = [{ name: "лонгслів", group: "повсякденне" }];
+/** Річ під верхом — біла, а під білим верхом — графітова (`innerColor`). */
+const WHITE = CLOTHES[6] ?? 0xe9e6df;
+const GRAPHITE = CLOTHES[5] ?? 0x3a3440;
+
+const TEE = { arm: "person/arm/tee", armFar: "person/arm-far/tee" } as const;
+const COLLAR = "person/top-front/collar";
+const SHIRT = { front: COLLAR, hem: "person/top-hem/shirt" } as const;
+const HOOD = "person/hood/hoodie";
+
+export const TOP_CUTS: readonly TopCut[] = [
+  { name: "лонгслів", group: "повсякденне" },
+  { name: "футболка", group: "повсякденне", ...TEE },
+  { name: "майка", group: "повсякденне", arm: "person/arm/tank", armFar: "person/arm-far/tank", front: "person/top-front/tank" },
+  { name: "сорочка", group: "ділове", ...SHIRT },
+  { name: "сорочка з коротким рукавом", group: "ділове", ...SHIRT, ...TEE },
+  { name: "поло", group: "повсякденне", ...TEE, front: COLLAR, hem: "person/top-hem/polo" },
+  { name: "водолазка", group: "затишне", front: "person/top-front/turtleneck" },
+  { name: "худі", group: "повсякденне", front: "person/top-front/hoodie", hem: "person/top-hem/hoodie", hood: HOOD },
+  { name: "худі на блискавці", group: "повсякденне", front: "person/top-front/zip-hoodie", hood: HOOD, inner: WHITE },
+  { name: "жилет", group: "ділове", arm: "person/arm/vest", armFar: "person/arm-far/vest", front: "person/top-front/vest", inner: WHITE },
+  // Рідше за інші: «Випадково» з ним не обирає низу.
+  { name: "комбінезон", group: "сукні й комбінезони", front: COLLAR, hem: "person/top-hem/jumpsuit", bottom: 0, weight: 0.5 },
+];
 
 /** Кадри верху; `skirt` — лише в сукні: тоді вона займає слот спідниці низу. */
 export function topSkin(wear: Wear): SlotFrames<"torso" | "arm-near" | "arm-far" | "top-front" | "hood" | "top-hem"> & { readonly skirt?: ArtId } {
@@ -48,6 +71,13 @@ export function topSkin(wear: Wear): SlotFrames<"torso" | "arm-near" | "arm-far"
 export function topSteps(wear: Wear, color: number): TintStep[] {
   const inner = TOP_CUTS[wear.topCut]?.inner;
   const steps: TintStep[] = [{ layer: "fill-top", color, put: "source-over" }];
-  if (inner !== undefined) steps.push({ layer: "fill-inner", color: inner, put: "source-over" });
+  if (inner !== undefined) steps.push({ layer: "fill-inner", color: innerColor(inner, color), put: "source-over" });
   return steps;
+}
+
+/** Колір речі під верхом: того самого кольору, що верх, вона злилася б із ним — тоді протилежна за світлотою. */
+export function innerColor(inner: number, top: number): number {
+  if (inner !== top) return inner;
+  const luma = 0.299 * ((top >> 16) & 0xff) + 0.587 * ((top >> 8) & 0xff) + 0.114 * (top & 0xff);
+  return luma < 128 ? WHITE : GRAPHITE;
 }

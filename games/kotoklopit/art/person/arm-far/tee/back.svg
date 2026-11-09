@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 27 73" width="27" height="73">
+<!-- person/arm-far/tee/back — дальня рука з коротким рукавом (футболка, поло, сорочка з коротким рукавом), ракурс back (¾ ззаду).
+size 27×73; pivot (13, 14) — плече; points: hand (14, 54.6), grip (14.2, 61) — як у person/arm-far.
+Шари: fill-top, fill-skin, shade, ink.
+Контур рукава замкнений (дальня рука за торсом); тильний бік долоні.
+-->
+<defs>
+<path id="person-arm-far-tee-back-sleeve" d="M6.4 13.2C6.2 15.8 6.4 19.5 6.3 22.5C6.2 25.5 5.8 28 6 29.6C8.5 31.2 17.2 31.4 19.9 29.8C19.8 27.5 19.6 25.6 19.5 23.8C19.5 20.2 19.9 15.4 19.6 12.8C19.3 10.2 18.8 9.2 17.6 8.1C16.5 7.1 14.4 6.4 12.8 6.4C11.2 6.4 9.2 7.2 8.1 8.4C7.1 9.5 6.6 10.5 6.4 13.2Z"/>
+<path id="person-arm-far-tee-back-skin" d="M7.9 30.35C7.8 32.5 7.8 32.5 8 35.5C8.2 39 8.6 42.5 8.7 45.5C8.8 48.5 8.7 51.6 8.5 54.2C6.7 55 7.3 57.4 7.3 59C7.4 60.6 7.8 62.8 8.7 64.1C9.6 65.3 11.3 66.1 12.6 66.4C13.9 66.6 15.5 66.2 16.5 65.4C17.5 64.7 18.2 63.2 18.6 61.8C19 60.3 18.9 58.2 18.8 56.9C18.8 55.7 18.6 55 18.5 54.2C18.4 51.5 18.4 48.5 18.4 45.5C18.4 42.5 18.6 39 18.7 35.5C18.8 32.9 18.9 31.6 18.9 30.5C16 31.1 10 31 7.9 30.35Z"/>
+<clipPath id="person-arm-far-tee-back-clip"><use href="#person-arm-far-tee-back-sleeve"/><use href="#person-arm-far-tee-back-skin"/></clipPath>
+</defs>
+<g id="fill-skin">
+<use href="#person-arm-far-tee-back-skin" fill="#ffffff"/>
+</g>
+<g id="fill-top">
+<use href="#person-arm-far-tee-back-sleeve" fill="#ffffff"/>
+</g>
+<g id="shade" clip-path="url(#person-arm-far-tee-back-clip)">
+<path d="M5 12C5.8 5.3 9.1 10.3 10 14C10.9 17.7 10.3 27.3 10.4 34C10.5 40.7 11.5 50.7 10.6 54C9.7 57.3 5.9 61 5 54C4.1 47 4.2 18.7 5 12Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M5 30C8 31.8 17.5 32 21 30.2C21.6 31.6 20.6 33.4 19.4 33.9C16.5 35 9.6 34.9 7.4 34C6.2 33.5 4.4 31.6 5 30Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="ink">
+<path d="M19.9 29.8C19.8 27.5 19.6 25.6 19.5 23.8C19.5 20.2 19.9 15.4 19.6 12.8C19.3 10.2 18.8 9.2 17.6 8.1C16.5 7.1 14.4 6.4 12.8 6.4C11.2 6.4 9.2 7.2 8.1 8.4C7.1 9.5 6.6 10.5 6.4 13.2C6.2 15.8 6.4 19.5 6.3 22.5C6.2 25.5 5.8 28 6 29.6" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7.9 30.6C7.8 32.5 7.8 32.5 8 35.5C8.2 39 8.6 42.5 8.7 45.5C8.8 48.5 8.7 51.6 8.5 54.2C6.7 55 7.3 57.4 7.3 59C7.4 60.6 7.8 62.8 8.7 64.1C9.6 65.3 11.3 66.1 12.6 66.4C13.9 66.6 15.5 66.2 16.5 65.4C17.5 64.7 18.2 63.2 18.6 61.8C19 60.3 18.9 58.2 18.8 56.9C18.8 55.7 18.6 55 18.5 54.2C18.4 51.5 18.4 48.5 18.4 45.5C18.4 42.5 18.6 39 18.7 35.5C18.8 32.9 18.9 31.6 18.9 30.8" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M6 29.6C8.5 31.2 17.2 31.4 19.9 29.8" fill="none" stroke="#2e1f29" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11.2 36.2Q13.4 36 15 37.2Q13.1 37 11.2 36.2Z" fill="#2e1f29"/>
+</g>
+</svg>

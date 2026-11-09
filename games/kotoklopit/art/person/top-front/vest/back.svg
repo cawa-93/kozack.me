@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 56" width="29" height="56">
+<!-- person/top-front/vest/back — виріз жилета з сорочкою і її коміром, ракурс back (¾ ззаду).
+size 29×56; pivot (14, 52) — таз (клаптик торса person/torso/1 від (15, 2)); points: немає.
+Шари: fill-inner, shade, ink.
+Сорочка (fill-inner, колір TopCut.inner) видна у вирізі жилета, її комір лежить поверх; краї вирізу — борти жилета, нижче — борт до подолу з трьома ґудзиками (лише лінії: колір і плями — торса). Ззаду — стійка коміра сорочки. Тінь від голови — та сама, що в торса.
+-->
+<defs>
+<clipPath id="person-top-front-vest-back-clip"><path d="M5.6 10.8C5.7 9 6.5 7.4 7.8 6.8C11.4 7.6 16.6 7.7 21.4 6.8C22.6 7.6 23.3 9.2 23.4 10.8C18.9 14.4 10.2 14.4 5.6 10.8Z"/></clipPath>
+</defs>
+<g id="fill-inner">
+<path d="M5.6 10.8C5.7 9 6.5 7.4 7.8 6.8C11.4 7.6 16.6 7.7 21.4 6.8C22.6 7.6 23.3 9.2 23.4 10.8C18.9 14.4 10.2 14.4 5.6 10.8Z" fill="#ffffff"/>
+</g>
+<g id="shade" clip-path="url(#person-top-front-vest-back-clip)">
+<path d="M24.9 11.4C24.9 12.3 24 13.4 22.7 14.1C21.4 14.8 19.1 15.5 17 15.8C14.8 16.1 12 16.1 9.8 15.8C7.7 15.5 5.4 14.8 4.1 14.1C2.8 13.4 1.9 12.3 1.9 11.4C1.9 10.5 2.8 9.4 4.1 8.7C5.4 8 7.7 7.3 9.8 7C12 6.7 14.8 6.7 17 7C19.1 7.3 21.4 8 22.7 8.7C24 9.4 24.9 10.5 24.9 11.4Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="ink">
+<path d="M5.6 10.8C5.7 9 6.5 7.4 7.8 6.8" fill="none" stroke="#2e1f29" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7.8 6.8C11.4 7.6 16.6 7.7 21.4 6.8" fill="none" stroke="#2e1f29" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M21.4 6.8C22.6 7.6 23.3 9.2 23.4 10.8" fill="none" stroke="#2e1f29" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M23.4 10.8C18.9 14.4 10.2 14.4 5.6 10.8" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

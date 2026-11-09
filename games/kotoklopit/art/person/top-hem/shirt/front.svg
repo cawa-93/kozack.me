@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 48" width="14" height="48">
+<!-- person/top-hem/shirt/front — планка сорочки з ґудзиками, ракурс front (¾ спереду).
+size 14×48; pivot (6, 44) — таз (клаптик торса person/torso/1 від (23, 10)); points: немає.
+Шари: ink.
+Лише лінія планки й ґудзики (ink) на кістці поясу: колір і плями — торса під нею. Верх планки ховається під коміром (person/top-front/collar). Ззаду нічого.
+-->
+<g id="ink">
+<path d="M5.8 5.8C6.1 16 6.4 30 6.6 42.2" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8.21 11.5A1 1 0 1 1 6.21 11.5A1 1 0 1 1 8.21 11.5Z" fill="#2e1f29"/>
+<path d="M8.38 18.5A1 1 0 1 1 6.38 18.5A1 1 0 1 1 8.38 18.5Z" fill="#2e1f29"/>
+<path d="M8.54 25.5A1 1 0 1 1 6.54 25.5A1 1 0 1 1 8.54 25.5Z" fill="#2e1f29"/>
+<path d="M8.68 32.5A1 1 0 1 1 6.68 32.5A1 1 0 1 1 8.68 32.5Z" fill="#2e1f29"/>
+<path d="M8.8 39.5A1 1 0 1 1 6.8 39.5A1 1 0 1 1 8.8 39.5Z" fill="#2e1f29"/>
+</g>
+</svg>
