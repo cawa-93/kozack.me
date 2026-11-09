@@ -1702,6 +1702,9 @@ function playOften(cat: Cat): number {
  * таких кошенят відганяє (`shoos`; перевірка блоку 2).
  */
 function playmate(state: GameState, cat: Cat, pals = true): { cat: Cat; weight: number } | null {
+  // Кота гладять, з ним грається персонаж чи він на руках — гратися він не кличе, як і його не кличуть (`approachable`): інакше
+  // гра, яку щойно перервали пестощі, тут-таки починалася знову.
+  if (getsAttention(state, cat)) return null;
   const w = RELATIONS.wrestle;
   const kitten = isKitten(cat);
   const now = absoluteMinute(state.day, state.minute);

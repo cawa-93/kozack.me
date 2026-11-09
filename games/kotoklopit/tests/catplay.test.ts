@@ -594,8 +594,10 @@ describe("гра фазами (§9.4, рішення автора 2026-10-26, Г
       const over = (): boolean => count(events, "cats-played") + count(events, "play-declined") > 0;
       for (let t = 0; t < 20 && !over() && (a.act.kind === "wrestle" || b.act.kind === "wrestle"); t++) tickCats(save.current, 1, { present: false });
       stop();
-      played += count(events, "cats-played");
-      declined += count(events, "play-declined");
+      // Лише перша подія: у тій самій хвилині кіт міг догратися й одразу покликати знову, а друг — відмовитися.
+      const first = events.find((e) => e.type === "cats-played" || e.type === "play-declined")?.type;
+      if (first === "cats-played") played++;
+      if (first === "play-declined") declined++;
     }
     // Хто погодився (95%, Г5), той і догрався.
     expect(played + declined).toBe(20);
