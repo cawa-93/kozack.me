@@ -35,7 +35,7 @@ const FACE_POINTS = [
 
 /**
  * Торси статур (`BUILDS`): pivot — таз; шия, плечі, стегна, `arms` (де кіт на руках) і `print` — центр принта на грудях
- * (`WARDROBE.md`, «Візерунки»: на 1 правіше від основи шиї, на середній лінії грудей). Звичайна — еталон F1b
+ * (`WARDROBE.md`, «Візерунки»: на середній лінії тіла, під серединою вирізу коміра). Звичайна — еталон F1b
  * `art/person/torso/1`; струнка й кремезна — той самий торс, вужчий чи ширший від таза (плечі, талія, стегна — кожне
  * своїм множником), тож суглоби зсунуто разом із формою.
  */
@@ -58,7 +58,7 @@ const TORSO = [
       "hip-near-back": { x: 32.5, y: 59 },
       arms: { x: 34.5, y: 34 },
       "arms-back": { x: 35.4, y: 33 },
-      print: { x: 28.4, y: 29 },
+      print: { x: 26.5, y: 29 },
     },
   },
   {
@@ -79,7 +79,7 @@ const TORSO = [
       "hip-near-back": { x: 35.5, y: 59 },
       arms: { x: 38, y: 34 },
       "arms-back": { x: 39, y: 33 },
-      print: { x: 30.5, y: 29 },
+      print: { x: 28.4, y: 29 },
     },
   },
   {
@@ -100,7 +100,7 @@ const TORSO = [
       "hip-near-back": { x: 43.8, y: 59 },
       arms: { x: 47.4, y: 34 },
       "arms-back": { x: 48.6, y: 33 },
-      print: { x: 37.6, y: 29 },
+      print: { x: 35.3, y: 29 },
     },
   },
 ] as const satisfies readonly { size: { w: number; h: number }; pivot: ArtPoint; points: Record<string, ArtPoint> }[];

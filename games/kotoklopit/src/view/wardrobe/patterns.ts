@@ -27,7 +27,28 @@ export interface Pattern extends WardrobeEntry {
 }
 
 /** Номери лише дописуються в кінець (`WARDROBE.md`, «Як влаштовано»): номер — у збереженні. */
-export const PATTERNS: readonly Pattern[] = [{ name: "однотонний", on: ["top", "bottom"], tile: null }];
+export const PATTERNS: readonly Pattern[] = [
+  // Здебільшого одяг однотонний: інакше «Випадково» майже завжди вбирало б у візерунок.
+  { name: "однотонний", on: ["top", "bottom"], tile: null, weight: 10 },
+  { name: "смужка", on: ["top", "bottom"], tile: "cloth/stripe", tone: "tone" },
+  { name: "вертикальна смужка", on: ["top", "bottom"], tile: "cloth/stripe", tone: "tone", turn: true },
+  { name: "горошок", on: ["top", "bottom"], tile: "cloth/dots", tone: "contrast" },
+  { name: "клітинка", on: ["top", "bottom"], tile: "cloth/check", tone: "tone" },
+  { name: "шотландка", on: ["top", "bottom"], tile: "cloth/tartan", tone: "own" },
+  { name: "камуфляж", on: ["top", "bottom"], tile: "cloth/camo", tone: "own", weight: 0.5 },
+  { name: "леопард", on: ["top", "bottom"], tile: "cloth/leopard", tone: "own", weight: 0.5 },
+  { name: "сердечко", on: ["top"], tile: "cloth/print/heart", kind: "print", tone: "contrast" },
+  { name: "вишиванка", on: ["top"], tile: "cloth/print/vyshyvanka", kind: "print", tone: "own", cuff: "cloth/print/vyshyvanka-cuff", weight: 0.7 },
+  { name: "котяча мордочка", on: ["top"], tile: "cloth/print/cat", kind: "print", tone: "contrast" },
+  { name: "лапка", on: ["top"], tile: "cloth/print/paw", kind: "print", tone: "contrast" },
+  { name: "у лапки", on: ["top", "bottom"], tile: "cloth/paws", tone: "tone" },
+  { name: "рибка", on: ["top"], tile: "cloth/print/fish", kind: "print", tone: "contrast" },
+  { name: "ромби", on: ["top", "bottom"], tile: "cloth/rhombs", tone: "tone" },
+  { name: "мозаїка", on: ["top", "bottom"], tile: "cloth/mosaic", tone: "own", weight: 0.5 },
+  { name: "тигр", on: ["top", "bottom"], tile: "cloth/tiger", tone: "own", weight: 0.5 },
+  { name: "петриківські квіточки", on: ["top"], tile: "cloth/petrykivka", tone: "own", weight: 0.7 },
+  { name: "зимовий светр", on: ["top"], tile: "cloth/print/winter", kind: "print", tone: "own", cuff: "cloth/print/winter-cuff", weight: 0.7 },
+];
 
 /**
  * Чи візерунок `pattern` лягає на одяг `garment` фасону `cut` (`TOP_CUTS` чи `BOTTOM_CUTS`); однотонний — завжди. Принт — лише
