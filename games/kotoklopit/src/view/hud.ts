@@ -22,6 +22,7 @@ import { iconArt, type IconName } from "./iconnames";
 import { StretchArt } from "./iso/hudart";
 import {
   bandRect,
+  CALENDAR_LIFT,
   HUD_ART,
   HUD_BAND,
   HUD_LAYOUT,
@@ -275,7 +276,7 @@ export class Hud {
     const columns = hudColumns(layout, room);
     this.columns = columns;
     this.clock.root.setPosition(layout.clock.x, layout.height / 2).setScale(layout.clock.scale);
-    this.calendar.root.setPosition(layout.calendarX, layout.height / 2).setScale(layout.clock.scale);
+    this.calendar.root.setPosition(layout.calendarX, layout.height / 2 - CALENDAR_LIFT * layout.clock.scale).setScale(layout.clock.scale);
     const { ring, icon } = statDisc(layout.disc.outer, layout.disc.fill);
     this.discs.forEach((disc, i) => {
       const x = layout.stats + i * columns.step + layout.disc.x;
