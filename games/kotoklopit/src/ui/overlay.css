@@ -70,8 +70,10 @@
   scrollbar-width: thin;
 }
 
-/* Риси кота (§9.9): назви-чипи-ярлички, під ними — опис тієї, на яку навели чи натиснули. */
+/* Риси кота (§9.9): назви-чипи-ярлички; опис тієї, на яку навели чи натиснули, — паперовий бабл над нею з хвостиком до неї
+   (`placeBubble` у `traits.ts` ставить його лівий край і верх риси, а `--tail` — де хвостик). */
 .traits {
+  position: relative;
   margin-top: 6px;
 }
 
@@ -97,12 +99,38 @@
 }
 
 .trait-about {
-  margin: 6px 0 0;
-  color: var(--ink-soft);
-  font-size: 14px;
+  position: absolute;
+  z-index: 3;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(320px, 100%);
+  margin: 0;
+  padding: 6px 10px;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background: var(--paper);
+  box-shadow: 0 3px 0 var(--shade-base);
+  color: var(--ink);
+  font: 400 14px/1.3 system-ui, sans-serif;
+  text-align: left;
+  translate: 0 calc(-100% - 10px);
+  pointer-events: none;
 }
 
-.trait-about:empty {
+.trait-about::after {
+  content: "";
+  position: absolute;
+  bottom: -7px;
+  left: calc(var(--tail, 50%) - 6px);
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+  background: var(--paper);
+  rotate: 45deg;
+}
+
+.trait-about[hidden] {
   display: none;
 }
 
@@ -115,9 +143,7 @@
   justify-content: center;
 }
 
-.title-screen .trait-about {
-  color: var(--grey-hi);
-}
+
 
 /* Хрестик у кутку: закриває картку, як Esc; липне до верху, коли вміст прокручують. Кругла паперова кнопка; «×» лишається
    текстом для читача екрана, але його не видно. */
@@ -405,11 +431,6 @@
   font: 400 14px/1.3 system-ui, sans-serif;
 }
 
-/* Опис риси під чипами в рядку кота (притулок, розплідник: `traitChips` усередині `.shop-name`) — звичайним шрифтом, як підпис
-   під назвою, а не рукописним від назви: дрібний рукописний читається гірше (рецензія 2026-11-03). */
-.shop-name .trait-about {
-  font: 400 14px/1.3 system-ui, sans-serif;
-}
 
 @media (max-width: 520px) {
   .shop-row {
