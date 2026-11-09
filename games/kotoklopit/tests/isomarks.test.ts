@@ -82,7 +82,7 @@ function working(state: GameState): GameState {
   return state;
 }
 
-/** Робочий день о 11:00 (не летучка й не нарада). */
+/** Робочий день о 11:00 (не летючка й не нарада). */
 function employed(state: GameState): GameState {
   state.job.unemployed = false;
   state.minute = 11 * 60;
@@ -137,7 +137,7 @@ describe("екран комп'ютера (§8.6)", () => {
     expect(screenShow(working(employed(scenario("job-search"))))).toBe("work");
   });
 
-  it("летучка о 10:00 і нарада дня «Нарада» — відеодзвінок, але лише в робочий день", () => {
+  it("летючка о 10:00 і нарада дня «Нарада» — відеодзвінок, але лише в робочий день", () => {
     const standup = working(employed(scenario("job-search")));
     standup.minute = STANDUP_MINUTE + 5;
     expect(inMeeting(standup)).toBe(true);
@@ -150,7 +150,7 @@ describe("екран комп'ютера (§8.6)", () => {
     meeting.minute = MODIFIERS.meeting.from + MODIFIERS.meeting.minutes;
     expect(screenShow(meeting)).toBe("work");
 
-    // Безробітний на летучку не ходить: о 10:00 він шукає роботу.
+    // Безробітний на летючку не ходить: о 10:00 він шукає роботу.
     const jobless = working(scenario("job-search"));
     jobless.minute = STANDUP_MINUTE + 5;
     expect(inMeeting(jobless)).toBe(false);

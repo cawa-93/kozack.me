@@ -507,7 +507,7 @@ export class DevPanel {
     const round = (v: number) => Math.round(v * 100) / 100;
     return [
       `терпіння ${round(job.patience)} (${patienceLevel(state)}) · репутація ${round(job.reputation)}`,
-      `посада ${job.position}: ${positionOf(state).pay}/год · летучка ${round(job.standupMinutes)} хв`,
+      `посада ${job.position}: ${positionOf(state).pay}/год · летючка ${round(job.standupMinutes)} хв`,
       `швидкість ${round(actionSpeed(state))} · сон ${round(ch.sleepSpeed)} · сонливість ${isDrowsy(state) ? "так" : "ні"}`,
       `збої керування ${round(glitchChance(state) * 100)}%/хв`,
       `тіло ${round(ch.body.x)}, ${round(ch.body.y)} · ривок ${round(ch.body.dashCooldown)} хв`,

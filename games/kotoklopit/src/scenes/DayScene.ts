@@ -852,7 +852,7 @@ export class DayScene extends Phaser.Scene {
       else this.bubbles.setState(id, "say", null, 0, 0);
     };
     const working = isWorking(state);
-    // Летучки в день без світла немає (§4.1, рішення автора 2026-11-02) — і камера над комп'ютером її не обіцяє.
+    // Летючки в день без світла немає (§4.1, рішення автора 2026-11-02) — і камера над комп'ютером її не обіцяє.
     const standup = standupToday(state) && state.minute >= STANDUP_MINUTE && state.minute < STANDUP_MINUTE + STANDUP_MINUTES;
     let computer: IconName | null = null;
     const day = state.minute % 1440;
@@ -1097,7 +1097,7 @@ export class DayScene extends Phaser.Scene {
         // Бабл камери над комп'ютером — `eventBubbles`.
         return;
       case "meeting-missed":
-        this.notice("Нараду пропущено", "Керівництво чекало на дзвінку, а вас не було.");
+        this.notice("Нараду пропущено", "Керівництво чекало вас на відеодзвінку.");
         return;
       case "home-vet": {
         // Ветеринарка оглянула всіх котів, що вдома (рішення автора 2026-10-27, Х7), і як кожен поводився (§9.12); хвороби — id:
@@ -1113,17 +1113,17 @@ export class DayScene extends Phaser.Scene {
       case "inspection": {
         const paid = Math.floor(paidNow ?? value);
         const fine = money > 0 ? `Представник ОСББ поморщився й виписав штраф: ${money} ₴.${paid < money ? ` Заплатили ${paid} ₴ — усе, що було.` : ""}` : "Представник ОСББ не знайшов, до чого причепитися.";
-        this.notice("Перевірка від ОСББ", fine);
+        this.notice("Перевірка ОСББ", fine);
         return;
       }
       case "guests":
         this.notice("Прийшли гості", guestsText(guests));
         return;
       case "inspection-away":
-        this.notice("Перевірка від ОСББ", "Представник ОСББ дзвонив у двері, але вдома нікого не було.");
+        this.notice("Перевірка ОСББ", "Представник ОСББ дзвонив у двері, але вдома нікого не було.");
         return;
       case "guests-away":
-        this.notice("Гості не застали", "Гості дзвонили в двері, але вдома нікого не було, і вони пішли.");
+        this.notice("Гості не застали", "Гості дзвонили в двері, але вдома нікого не було.");
         return;
       case "home-vet-away":
         this.notice("Ветеринарка не застала", "Ветеринарка дзвонила в двері, але вдома нікого не було.");
@@ -1250,7 +1250,6 @@ export class DayScene extends Phaser.Scene {
       next();
     };
     this.overlay.show({
-      kicker: UNREADABLE_SAVE.kicker,
       title: UNREADABLE_SAVE.title,
       body: [UNREADABLE_SAVE.body],
       actions: [
@@ -1404,7 +1403,7 @@ export class DayScene extends Phaser.Scene {
         kicker: "Речі",
         title: `Викинути: ${variantTitle({ thing: kind }, quality).toLowerCase()}?`,
         // Без прогнозу комунальних: тексти не пояснюють механік (§11.3а; крок 17, вичитка 2026-10-28).
-        body: ["Повернути не можна."],
+        body: [],
         actions: [
           {
             label: "Викинути",
@@ -1437,7 +1436,6 @@ export class DayScene extends Phaser.Scene {
           // без чисел ефекту — тексти не називають прихованих чисел (§11.3а; крок 17, вичитка 2026-10-28).
           advertise: (cat) =>
             this.overlay.show({
-              kicker: "Віддати в добрі руки",
               title: "Віддати в добрі руки?",
               body: [
                 `${cat.name} завтра вранці поїде до нових господарів. ${recentlyArrived(cat, this.state.day + 1) ? GIVE_AWAY_RECENT : GIVE_AWAY_LATER}`,
@@ -1467,7 +1465,7 @@ export class DayScene extends Phaser.Scene {
               (save) => this.confirmImport(save, () => show(tab)),
               () => {
                 this.overlay.close();
-                this.notice("Не вдалося завантажити", "Цей файл не схожий на збереження Котоклопіту або збережений старою версією гри.", "Гра");
+                this.notice("Не вдалося завантажити", "Цей файл не схожий на збереження «Котоклопіту» або збережений старою версією гри.", "Гра");
               },
             );
           },

@@ -116,9 +116,9 @@ export function describe(event: GameEvent, state: GameState): string | null {
         out: "Терпіння на нулі: «Х», репутація падає",
       }[event.level];
     case "standup-started":
-      return "Летучка почалася";
+      return "Летючка почалася";
     case "standup":
-      return `Летучка: ${event.attended ? "присутність" : "пропуск"}, репутація ${signed(event.reputation, 2)}`;
+      return `Летючка: ${event.attended ? "присутність" : "пропуск"}, репутація ${signed(event.reputation, 2)}`;
     case "ordered":
       return `Замовлено ${goods(event.delivery)} (${event.delivery.quality}): −${event.price}`;
     case "job-rejected":

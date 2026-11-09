@@ -30,6 +30,7 @@ import {
   KITTEN_MESSAGE,
   LEDGER_TEXTS,
   ledgerLines,
+  minutesText,
   UTILITIES_MESSAGES,
   SOUND_TEXTS,
   WAKE_TEXTS,
@@ -84,10 +85,10 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
   const { name, address } = state.character;
   const weekBlocks: string[][] = [];
   const week = state.modifiers.week && weekShown(state, state.modifiers.week) ? WEEK_MODIFIER_TEXTS[state.modifiers.week] : undefined;
-  if (week) weekBlocks.push([week.title, week.situation]);
+  if (week) weekBlocks.push([week.title, ...(week.situation ? [week.situation] : [])]);
   const dayBlocks: string[][] = [];
   const modifier = state.modifiers.day ? DAY_MODIFIER_TEXTS[state.modifiers.day] : undefined;
-  if (modifier) dayBlocks.push([modifier.title, modifier.situation]);
+  if (modifier) dayBlocks.push([modifier.title, ...(modifier.situation ? [modifier.situation] : [])]);
 
   const events: (string | HTMLElement)[][] = [];
   // Хто будив уночі (§8.8): по рядку на кота, без пояснень.
@@ -113,7 +114,7 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
   }
   for (const id of night?.keptCats ?? []) {
     const cat = state.cats.find((c) => c.id === id);
-    if (cat) events.push([`Оголошення знято: ${cat.name} годує кошенят і поки що лишається вдома.`]);
+    if (cat) events.push([`Оголошення знято: ${cat.name} годує кошенят.`]);
   }
   for (const id of night?.givenCats ?? []) {
     const entry = state.album.find((e) => e.id === id);
@@ -261,7 +262,7 @@ export function phoneCard(state: GameState, wanted: PhoneTab, handlers: PhoneHan
   const shop = tab === "shop" ? shopCatalog(state, "delivery", { checkout: handlers.checkout }) : null;
   if (shop) body.push(shop.list);
   if (tab === "mine") {
-    body.push(`${named(UTILITIES_ICON, "Комунальні")}: ${utilitiesDue(state)} ₴ на тиждень, знімаються самі в ніч на понеділок.`);
+    body.push(`${named(UTILITIES_ICON, "Комунальні")}: ${utilitiesDue(state)} ₴ на тиждень.`);
     // З попередженням — борг і скільки треба в понеділок (§6.4, рішення автора 2026-10-27, Е4).
     const debt = state.home.utilitiesDebt;
     if (debt > 0) body.push(fill(LEDGER_TEXTS.debt, state.character.address, { борг: debt, платіж: debt + utilitiesDue(state) }));
@@ -319,7 +320,7 @@ function gameMenu(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
     allControls(isTouch()),
     sound,
     box,
-    element("p", "game-note", "Гра зберігається в браузері сама, але браузер може її стерти — тож довгу гру варто часом зберігати файлом."),
+    element("p", "game-note", "Браузер може стерти гру — часом зберігайте її файлом."),
     creditsLink(),
   ];
 }
@@ -356,7 +357,8 @@ export function breedText(breed: readonly [string, string], known: readonly [boo
 export function breedLine(breed: readonly [string, string], known: readonly [boolean, boolean], sex: Sex): string | null {
   const text = breedText(breed, known, sex);
   if (text === null) return null;
-  return breed[0] === MIXED && breed[1] === MIXED ? `${text.replace(/^./, (c) => c.toUpperCase())}.` : `Порода: ${text}.`;
+  // Невідома половина останньою — без крапки після «?».
+  return breed[0] === MIXED && breed[1] === MIXED ? `${text.replace(/^./, (c) => c.toUpperCase())}.` : `Порода: ${text}${text.endsWith("?") ? "" : "."}`;
 }
 
 /**
@@ -371,8 +373,7 @@ export function breedAbout(cat: Cat): string[] {
   for (const id of halves) {
     const about = BREED_ABOUT[id];
     if (!about) continue;
-    if (halfBreed) lines.push(fill(BREED_HALF, cat.sex, { порода: breedById(id).name.toLowerCase() }));
-    lines.push(about);
+    lines.push(halfBreed ? `${fill(BREED_HALF, cat.sex, { порода: breedById(id).name.toLowerCase() })} ${about}` : about);
   }
   return lines;
 }
@@ -389,7 +390,6 @@ export function catFacts(state: GameState, cat: Cat): CatFacts {
   else if (showsPregnancy(state, cat)) states.push("здається, вагітна");
   if (inHeat(state, cat)) states.push("у тічці");
   if (isNursing(state, cat)) states.push("годує кошенят");
-  if (cat.ageWeeks === 0 && cat.source === "born") states.push("новонароджене");
   if (states.length > 0) lines.push(`${states.join(", ")}.`.replace(/^./, (c) => c.toUpperCase()));
   const found = cat.diseases.filter((d) => d.known).map((d) => diseaseLabel(d.id));
   // Хворобу могла знайти й ветеринарка вдома; назви посеред речення — з малої (крок 17, вичитка 2026-10-29); іконка — як у картці
@@ -400,28 +400,29 @@ export function catFacts(state: GameState, cat: Cat): CatFacts {
   for (const trait of cat.traits) {
     const seen = visibility(state, trait);
     if (seen === 2) {
-      const hint = traitHint(cat, trait);
+      // Ім'я вже в заголовку картки: «Здається, {прояв}.», як у новині телефона.
+      const hint = traitHint(cat, trait, null);
       if (hint) lines.push(hint);
-    } else if (seen === 1) lines.push("❓ Помічено щось дивне");
+    }
   }
+  // Помічене — один рядок, хоч би скільки рис (§9.9).
+  if (cat.traits.some((t) => visibility(state, t) === 1)) lines.push("❓ Помічено щось дивне.");
   if (cat.traits.every((t) => visibility(state, t) === 0)) lines.push("Характер: ?");
   return { head: `${cat.sex === "male" ? "♂" : "♀"} · ${weeks(cat.ageWeeks)}`, lines, known };
 }
 
 /** Картки котів (§9.7, §9.9): та сама картка, що й у знайомстві, а під нею — оголошення. */
 function catCards(state: GameState, handlers: PhoneHandlers): (string | HTMLElement)[] {
-  if (state.cats.length === 0) return ["Котів поки немає."];
   return state.cats.map((cat) => {
     const card = element("div", "cat-profile-extra");
     // Оголошення (§9.8): з підтвердженням (картку показує сцена) і можна зняти; новонародженого й матір новонароджених — ні.
     const blocker = giveAwayBlocker(state, cat);
     if (state.ads.includes(cat.id)) {
-      card.append(note(`Оголошення: завтра вранці ${cat.name} поїде до нових господарів.`));
+      card.append(note(`Завтра вранці ${cat.name} поїде до нових господарів.`));
       const cancel = element("button", "button", "Зняти оголошення");
       cancel.addEventListener("click", () => handlers.cancelAd(cat));
       card.append(cancel);
-    } else if (blocker === "nursing") card.append(note("Годує новонароджених — поки що лишається вдома."));
-    else if (blocker === null) {
+    } else if (blocker === null) {
       const ad = element("button", "button", "Віддати в добрі руки");
       ad.addEventListener("click", () => handlers.advertise(cat));
       card.append(ad);
@@ -431,7 +432,7 @@ function catCards(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
 }
 
 /** Причина в альбомі (§9.7); віддані — «живе в нових руках» (§9.8), як і на титулці. */
-const CAUSE_TITLES: Record<string, string> = { old: "старість", sorrow: "туга", carrier: "[замкнений у|замкнена в] переносці", given: "живе в нових руках" };
+const CAUSE_TITLES: Record<string, string> = { old: "старість", sorrow: "туга", carrier: "[замкнений у|замкнена в] переносці", given: "у нових руках" };
 
 /**
  * Причина в першому рядку альбому: хвороба — сама назва з малої, як «старість» і «туга» (загальна ревізія 2026-10-29: було
@@ -443,11 +444,10 @@ export function albumCause(entry: AlbumEntry, title: (id: string) => string = di
 
 /** Альбом пам'яті (§9.7): ім'я, вік, усі риси, причина й опис життя. */
 function albumCards(state: GameState): (string | HTMLElement)[] {
-  if (state.album.length === 0) return ["Альбом поки порожній."];
   return [...state.album].reverse().map((entry) => {
     const text = farewellText(entry, diseaseLabel);
     const card = note(`${entry.name}, ${weeks(entry.ageWeeks)} — ${albumCause(entry, diseaseLabel)}`, `«${text.title}». ${text.life}`);
-    card.append(entry.traits.length > 0 ? traitChips(entry.traits, entry.sex) : element("p", "trait-about", "Без помітних рис."));
+    if (entry.traits.length > 0) card.append(traitChips(entry.traits, entry.sex));
     return card;
   });
 }
@@ -552,10 +552,10 @@ export function foundlingCard(onTake: () => void, onShelter: () => void): Card {
   return {
     kicker: "Знайда",
     title: "Кошеня під дверима",
-    body: ["Під дверима сидить змокле кошеня й тремтить. Дивиться так, ніби давно на вас чекало."],
+    body: ["Змокле, тремтить і дивиться так, ніби давно на вас чекало."],
     actions: [
       { label: "Узяти додому", primary: true, onSelect: onTake },
-      { label: `Віднести в ${destinationLabel("shelter").toLowerCase()} · 🕐 ${MODIFIERS.foundlingShelterMinutes / 60} год`, onSelect: onShelter },
+      { label: `Віднести в ${destinationLabel("shelter").toLowerCase()} · 🕐 ${minutesText(MODIFIERS.foundlingShelterMinutes)}`, onSelect: onShelter },
     ],
   };
 }
@@ -567,7 +567,7 @@ export function callCard(onAnswer: () => void, onIgnore: () => void): Card {
     title: "Дзвонить мама",
     body: ["Мама питає, як справи, чи ви їсте й чи не забагато в домі котів."],
     actions: [
-      { label: `Відповісти · 🕐 ${MODIFIERS.call.minutes} хв`, primary: true, onSelect: onAnswer },
+      { label: `Відповісти · 🕐 ${minutesText(MODIFIERS.call.minutes)}`, primary: true, onSelect: onAnswer },
       { label: "Не відповідати", onSelect: onIgnore },
     ],
   };
@@ -579,10 +579,9 @@ const LOOK_TITLE = "Як ви виглядаєте?";
 export function titleCard(state: GameState, onContinue: () => void, onNew: () => void): Card {
   const { name } = state.character;
   return {
-    kicker: "Котоклопіт",
     solid: true,
     title: "Котоклопіт",
-    body: [`Збережена гра: ${name}, тиждень ${weekOf(state.day)}, ${WEEKDAY_NAMES[weekdayOf(state.day)]}.`],
+    body: [`${name}, тиждень ${weekOf(state.day)}, ${WEEKDAY_NAMES[weekdayOf(state.day)]}.`],
     actions: [
       { label: "Продовжити", primary: true, onSelect: onContinue },
       { label: "Нова гра", onSelect: onNew },
@@ -763,7 +762,7 @@ export function difficultyCard(chosen: Difficulty, onChoose: (difficulty: Diffic
     kicker: "Нова гра · 5 з 5",
     solid: true,
     title: "Складність",
-    body: ["Змінити її потім не вийде."],
+    body: [],
     choices: (["easy", "normal", "hard"] as const).map((difficulty) => ({ label: DIFFICULTY_TITLES[difficulty], chosen: difficulty === chosen, onSelect: () => onChoose(difficulty) })),
     actions: [back(onBack), { label: "Почати гру", primary: true, onSelect: onStart }],
     steps: true,

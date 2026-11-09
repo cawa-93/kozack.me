@@ -113,7 +113,7 @@ describe("терпіння керівництва (§8.6)", () => {
     expect(patienceLevel(save.current)).toBe("warning");
     advance(save, 1);
     expect(patienceLevel(save.current)).toBe("out");
-    // Пропущена летучка: −3,09.
+    // Пропущена летючка: −3,09.
     const reputation = save.current.job.reputation;
     expect(reputation).toBeCloseTo(50 - 3.09);
     advance(save, hours(1));
@@ -157,7 +157,7 @@ describe("терпіння керівництва (§8.6)", () => {
   });
 });
 
-describe("щоденна летучка о 10:00 (§8.6)", () => {
+describe("щоденна летючка о 10:00 (§8.6)", () => {
   const standup = (setup: (save: Save) => void): { reputation: number; attended: boolean } => {
     const save = game();
     const { events, stop } = recordEvents();
@@ -165,7 +165,7 @@ describe("щоденна летучка о 10:00 (§8.6)", () => {
     waitUntil(save, hours(10) + STANDUP_MINUTES + 30);
     stop();
     const result = events.find((e) => e.type === "standup");
-    if (result?.type !== "standup") throw new Error("летучки не було");
+    if (result?.type !== "standup") throw new Error("летючки не було");
     expect(events.some((e) => e.type === "standup-started")).toBe(true);
     return { reputation: result.reputation, attended: result.attended };
   };
@@ -186,7 +186,7 @@ describe("щоденна летучка о 10:00 (§8.6)", () => {
     expect(present(26)).toEqual({ attended: true, reputation: -0.5 * 3.3 });
   });
 
-  it("зараховано, якщо персонаж пробув щонайменше половину летучки", () => {
+  it("зараховано, якщо персонаж пробув щонайменше половину летючки", () => {
     const late = (minutes: number) =>
       standup((save) => {
         save.current.character.stats.hygiene = 60;
@@ -197,7 +197,7 @@ describe("щоденна летучка о 10:00 (§8.6)", () => {
     expect(late(STANDUP_MINUTES / 2 - 1).attended).toBe(false);
   });
 
-  it("у вихідні летучки немає", () => {
+  it("у вихідні летючки немає", () => {
     const save = game();
     save.current.day = 5;
     const { events, stop } = recordEvents();
@@ -230,7 +230,7 @@ describe("щоденна летучка о 10:00 (§8.6)", () => {
 });
 
 describe("справедливість роботи (ревізія 2026-10-22)", () => {
-  it("прийти на летучку неохайним — не гірше, ніж пропустити", () => {
+  it("прийти на летючку неохайним — не гірше, ніж пропустити", () => {
     const run = (attend: boolean): number => {
       const save = game();
       save.current.day = 1;
@@ -280,7 +280,7 @@ describe("справедливість роботи (ревізія 2026-10-22)"
     expect(sick.money).toBeCloseTo(saturday.money);
     expect(sick.reputation).toBeCloseTo(1.37 * CAREER_PACE);
     expect(sick.reputation).toBeCloseTo(saturday.reputation);
-    // Без роботи цілий будень лікарняного — ні летучки, ні «!» і «Х», репутація не падає.
+    // Без роботи цілий будень лікарняного — ні летючки, ні «!» і «Х», репутація не падає.
     const save = game();
     sickLeave(save);
     const before = save.current.job.reputation;

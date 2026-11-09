@@ -65,12 +65,12 @@ describe("вибір модифікаторів: перевірка модифі
     expect(withCat.has("quiet-night")).toBe(true);
   });
 
-  it("«Щеплення» немає, а «Ветеринар удома» лишився без пари — легким боком", () => {
+  it("«Щеплення» немає, а «Ветеринарка вдома» лишився без пари — легким боком", () => {
     const withCat = seen((save) => addCat(save.current, createCat(save.current, createRng(3), { source: "shelter", ageWeeks: 4, at: { x: 5.5, y: 8.5 } })), 2, 3000);
     expect(withCat.has("vaccination")).toBe(false);
     expect(withCat.has("home-vet")).toBe(true);
     expect(DAY_MODIFIER_TEXTS.vaccination).toBeUndefined();
-    // «Ветеринар удома» — лише легкий бік: випадає, лише коли кидок боку (другий кидок вибору, після «без модифікатора») дав легкий.
+    // «Ветеринарка вдома» — лише легкий бік: випадає, лише коли кидок боку (другий кидок вибору, після «без модифікатора») дав легкий.
     const hard = newGame({ address: "she", difficulty: "hard", seed: 14 });
     addCat(hard.current, createCat(hard.current, createRng(3), { source: "shelter", ageWeeks: 4, at: { x: 5.5, y: 8.5 } }));
     let homeVet = 0;

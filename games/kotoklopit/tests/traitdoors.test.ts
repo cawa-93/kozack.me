@@ -564,7 +564,6 @@ describe("«Ветеринар»: рядок у картці огляду (§9.1
       { name: sick.name, sex: sick.sex, diseases: ["cold"], manner: null },
     ]);
     expect(text).toContain(`${sick.name} — застуда`);
-    expect(text).toContain("Решта здорові.");
     expect(text).toContain(healthy.name);
   });
 

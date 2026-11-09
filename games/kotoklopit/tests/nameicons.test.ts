@@ -12,7 +12,7 @@ import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { GOODS, goodsKey, variants } from "../src/sim/shop";
 import type { AlbumEntry, Destination, DiseaseId, IllnessId, Product, ThingKind } from "../src/sim/types";
-import { diseaseTitle, farewellText, homeVetText, ILLNESS_TITLES } from "../src/texts";
+import { diseaseTitle, farewellText, homeVetText, ILLNESS_TITLES, minutesText } from "../src/texts";
 import { albumCause, careCard, foundlingCard } from "../src/ui/cards";
 import { destinationLabel, diseaseLabel, iconMark, iconUrl, illnessLabel, named, productLabel, splitIcons, type IconPart } from "../src/ui/icons";
 import { goodsIcon, variantLabel, variantTitle } from "../src/ui/shop";
@@ -319,6 +319,6 @@ describe("іконка біля назви: пункти поїздок (§8.5 �
   it("знайда: на кнопці «Віднести в притулок» — іконка притулку, та сама, що в «Куди поїхати?»; текст той самий", () => {
     const label = foundlingCard(noop, noop).actions[1]?.label ?? "";
     expect(iconOf(label)).toBe(DESTINATION_ICONS.shelter);
-    expect(plain(label)).toBe(`Віднести в притулок · 🕐 ${MODIFIERS.foundlingShelterMinutes / 60} год`);
+    expect(plain(label)).toBe(`Віднести в притулок · 🕐 ${minutesText(MODIFIERS.foundlingShelterMinutes)}`);
   });
 });

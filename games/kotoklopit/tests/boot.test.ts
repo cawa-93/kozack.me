@@ -26,7 +26,7 @@ describe("заставка завантаження", () => {
 
   it("повідомлення, що гра не завантажилася, — заголовок, текст і кнопка", () => {
     expect(LOAD_FAILED.title).toBeTruthy();
-    expect(LOAD_FAILED.body).toMatch(/спробуйте ще раз/);
+    expect(LOAD_FAILED.body).toMatch(/інтернет/);
     expect(LOAD_FAILED.retry).toBe("Спробувати ще");
   });
 });

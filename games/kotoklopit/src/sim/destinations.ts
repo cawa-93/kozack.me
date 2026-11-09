@@ -356,7 +356,7 @@ export function officeMeeting(state: GameState): void {
   if (trip?.destination !== "office" || state.today.officeDone) return;
   state.today.officeDone = true;
   const position = POSITIONS[state.job.position];
-  // Звільнили дорогою (летучка) — зборів для персонажа вже немає: він розвертається додому (перевірка поїздок 2026-10-28).
+  // Звільнили дорогою (летючка) — зборів для персонажа вже немає: він розвертається додому (перевірка поїздок 2026-10-28).
   if (!position || !isWorkday(state)) {
     trip.visit = 0;
     return;

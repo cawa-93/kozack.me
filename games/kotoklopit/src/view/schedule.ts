@@ -27,7 +27,7 @@ const DAY_EVENTS: Record<string, [number, string]> = {
 };
 
 /**
- * Розклад за важливістю (§8.4; загальна ревізія 2026-10-29): спершу летучка й подія дня — те, що можна пропустити
+ * Розклад за важливістю (§8.4; загальна ревізія 2026-10-29): спершу летючка й подія дня — те, що можна пропустити
  * (нарада, перевірка ОСББ, збори в офісі, ветеринарка, гості…), — далі кур'єр, початок роботи й пакунок під дверима (над
  * дверима й так видно бабл-коробку). У межах групи — за часом. Панель показує два перші рядки: раніше «09:00–18:00 робота»
  * висіла до вечора, а кур'єр і пакунок ішли першими, і нарада, перевірка ОСББ чи офіс зникали з розкладу.
@@ -40,8 +40,8 @@ export function scheduleOf(state: GameState): string[] {
   if (isWorkday(state)) {
     // Робота вже йде — вона не «запланована»: рядок лише до її початку.
     if (minute < WORK_START_MINUTE) other.push([WORK_START_MINUTE, `${formatClock(WORK_START_MINUTE)}–${formatClock(WORK_END_MINUTE)} робота`]);
-    // У день без світла летучки немає (§4.1, рішення автора 2026-11-02).
-    if (standupToday(state) && minute < STANDUP_MINUTE + STANDUP_MINUTES) important.push([STANDUP_MINUTE, `${formatClock(STANDUP_MINUTE)} летучка`]);
+    // У день без світла летючки немає (§4.1, рішення автора 2026-11-02).
+    if (standupToday(state) && minute < STANDUP_MINUTE + STANDUP_MINUTES) important.push([STANDUP_MINUTE, `${formatClock(STANDUP_MINUTE)} летючка`]);
   }
   const event = DAY_EVENTS[state.modifiers.day ?? ""];
   // Робочі події — лише в робочий день, офіс — поки зборів не було (перевірка модифікаторів 2026-10-28: розклад обіцяв нараду на лікарняному й офіс після зборів).

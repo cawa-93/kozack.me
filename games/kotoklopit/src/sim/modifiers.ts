@@ -47,7 +47,7 @@ export const DAY_PAIRS: readonly Pair[] = [
   pair("work-saturday", "midweek-off", "work", "saturday", "workday"),
   pair("full-moon", "rain", "cats", "cat"),
   pair("festival", "quiet-evening", "cats", "cat"),
-  // «Ветеринар удома» — без пари: «Щеплення» прибрано (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А14; §11.1 це дозволяє).
+  // «Ветеринарка вдома» — без пари: «Щеплення» прибрано (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А14; §11.1 це дозволяє).
   // Він, як і раніше, лише легкий бік: випадає, коли випав легкий.
   pair(null, "home-vet", "cats", "cat"),
   pair("heat", "cold", "cats", "cat"),

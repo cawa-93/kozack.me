@@ -274,7 +274,7 @@ export const REPUTATION_MAX = 100;
 export const ABSENCE_REPUTATION = -3;
 export const STANDUP_MINUTE = 10 * MINUTES_PER_HOUR;
 export const STANDUP_MINUTES = 60;
-/** Летучку зараховано від такої частки часу. */
+/** Летючку зараховано від такої частки часу. */
 export const STANDUP_ATTENDANCE = 0.5;
 /** × репутація за годину посади. */
 export const STANDUP_MISSED_REPUTATION = -1;

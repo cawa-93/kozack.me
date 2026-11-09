@@ -919,7 +919,7 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   }
   // Спрага — раніше за прохання їсти: голодний кіт без корму все одно п'є.
   if (n.thirst >= NEED_THRESHOLD.thirst) {
-    // «Фонтанолюб» без фонтанчика сідає на умивальник і чекає, щоб відкрили кран (§9.12, рішення автора 2026-10-25).
+    // «Фонтанолюб» без фонтанчика сідає на умивальник і чекає, поки відкриють кран (§9.12, рішення автора 2026-10-25).
     const drinking = traitLevel(cat, "drinking");
     if (drinking > 0 && !fountainWorks(state) && rng.chance(DRINKING.sinkStep * drinking)) {
       const sink = objectById("sink");
@@ -3920,7 +3920,7 @@ function paperSeen(state: GameState, cat: Cat): void {
   observe(state, cat, "hunting", 1, false, HUNTING.observeEvery);
 }
 
-/** «Фонтанолюб» сидить на умивальнику й чекає, щоб відкрили кран, — на очах персонажа (§9.9): прояв «Пиття +», раз за раз. */
+/** «Фонтанолюб» сидить на умивальнику й чекає, поки відкриють кран, — на очах персонажа (§9.9): прояв «Пиття +», раз за раз. */
 function sinkSeen(state: GameState, cat: Cat): void {
   const act = cat.act;
   if (act.kind !== "beg" || act.target !== "sink" || act.goal !== null || act.seen === true || !witnesses(state, cat)) return;
