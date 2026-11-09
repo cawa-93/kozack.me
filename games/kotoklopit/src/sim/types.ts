@@ -664,7 +664,7 @@ export interface Trait {
   /** Група рис: id з `TRAIT_GROUPS`. */
   group: string;
   level: TraitLevel;
-  /** Скільки проявів риси бачив персонаж (§9.9). */
+  /** Скільки проявів риси бачив персонаж (§9.9); після зміни складності — дробове (`setDifficulty`). */
   seen: number;
   /** Риса відома: її показали під час вибору кота (§9.9). */
   known: boolean;

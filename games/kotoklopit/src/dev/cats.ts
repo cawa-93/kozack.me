@@ -146,7 +146,7 @@ export class CatsSection {
         el(
           "li",
           {},
-          `${fill(traitName(t), sex)} (${traitGroup(t.group).title} ${t.level > 0 ? "+" : ""}${t.level}${t.known ? ", відома" : `, бачено ${t.seen}`}) `,
+          `${fill(traitName(t), sex)} (${traitGroup(t.group).title} ${t.level > 0 ? "+" : ""}${t.level}${t.known ? ", відома" : `, бачено ${Math.round(t.seen * 100) / 100}`}) `,
           this.button("×", () => {
             cat.traits = cat.traits.filter((x) => x !== t);
             this.changed(`${cat.name}: прибрано рису ${t.group}`);

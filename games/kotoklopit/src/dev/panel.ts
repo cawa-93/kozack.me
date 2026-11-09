@@ -2,6 +2,7 @@
 // «Сценарії», приховані числа й журнал.
 
 import { actionSpeed, glitchChance } from "../sim/body";
+import { setDifficulty } from "../sim/difficulty";
 import { DEFAULT_NAME, newGame } from "../sim/game";
 import { isDrowsy } from "../sim/sleep";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf, workBoost } from "../sim/time";
@@ -381,7 +382,7 @@ export class DevPanel {
         "div",
         { class: "dev-grid" },
         this.select("Складність", difficulties, () => state().difficulty, (v) => {
-          state().difficulty = v;
+          setDifficulty(state(), v);
           this.changed(`складність — ${v}`, false);
         }),
         this.number("Seed", () => seed, (v) => (seed = v)),

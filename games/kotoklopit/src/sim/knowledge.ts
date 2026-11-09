@@ -60,9 +60,11 @@ export function sees(from: Vec, to: Vec): boolean {
 export function visibility(state: GameState, trait: Trait): 0 | 1 | 2 | 3 {
   if (trait.known) return 3;
   const need = OBSERVATIONS[state.difficulty];
-  if (trait.seen >= need) return 3;
-  if (trait.seen >= (need * 2) / 3) return 2;
-  if (trait.seen >= need / 3) return 1;
+  // Після зміни складності `seen` дробове (`setDifficulty`): похибка дробів не повинна знижувати стадію.
+  const seen = trait.seen + 1e-9;
+  if (seen >= need) return 3;
+  if (seen >= (need * 2) / 3) return 2;
+  if (seen >= need / 3) return 1;
   return 0;
 }
 
