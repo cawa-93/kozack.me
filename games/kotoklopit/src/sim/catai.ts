@@ -133,6 +133,7 @@ import { stateRng, type Rng } from "./rng";
 import { appetiteFactor, attentionFactor, dietWeightFactor } from "./modifiers";
 import { absoluteMinute } from "./time";
 import { angryAtWindow, chatters, dogOnStairs, pigeonsFactor, strayMood, valerianCallPerHour } from "./windowdoor";
+import { handOn } from "./petpair";
 import { addTrace, SCRATCH_TRACES, tidyBoxTraces } from "./traces";
 import type { BowlItem, Cat, CatAct, CatActKind, Dish, ForbiddenZone, GameState, HomeItem, LitterItem, Mess, MessKind, PlayPhase, Product, Quality, ToyItem, TrinketKind, Vec, WaterItem } from "./types";
 import { exercise, gainWeight, settleWeight, weightSeen } from "./weight";
@@ -3316,7 +3317,7 @@ function nervous(state: GameState, cat: Cat, rng: Rng): void {
   const e = STRESS_EFFECTS;
   const now = absoluteMinute(state.day, state.minute);
   const activity = state.character.activity;
-  const touched = (activity?.kind === "pet" || activity?.kind === "play") && activity.cat === cat.id;
+  const touched = handOn(state, cat.id) !== null || (activity?.kind === "play" && activity.cat === cat.id);
   if (!NERVOUS_FROM.has(cat.act.kind) || touched) {
     if (now - shaken > e.waitMinutes) delete cat.shaken;
     return;
@@ -4169,6 +4170,8 @@ export function jealousy(state: GameState, lucky: Cat, why: "pet" | "play" | "la
   const now = absoluteMinute(state.day, state.minute);
   for (const other of state.cats) {
     if (other.id === lucky.id || !home(state, other) || asleep(other) || isNewborn(other) || !seesWithin(other, lucky, RELATIONS.jealousySight)) continue;
+    // Кого гладять другою рукою («Двох одразу», §9.12), той не ревнує.
+    if (handOn(state, other.id) !== null) continue;
     const level = traitLevel(other, "jealousy");
     if (level === 0) continue;
     const free = JEALOUS_FROM.has(other.act.kind) && (other.jealousAt === undefined || now - other.jealousAt >= JEALOUSY.pauseMinutes);
@@ -4196,7 +4199,8 @@ export function jealousy(state: GameState, lucky: Cat, why: "pet" | "play" | "la
 /** Персонаж зараз приділяє увагу коту (§9.12, «Ревнивість»): гладить, грається, кіт на колінах чи на руках. */
 function getsAttention(state: GameState, cat: Cat): boolean {
   const activity = state.character.activity;
-  if (activity?.kind === "pet" && activity.cat === cat.id) return activity.bitten !== true && activity.left !== true;
+  const hand = handOn(state, cat.id);
+  if (hand) return hand.bitten !== true && hand.left !== true;
   if (activity?.kind === "play" && activity.cat === cat.id) return activity.done !== true;
   return cat.act.kind === "lap" || isCarried(state, cat);
 }
@@ -4213,7 +4217,8 @@ function confront(state: GameState, cat: Cat, lucky: Cat, rng: Rng): void {
   if (!seesWithin(cat, lucky, JEALOUSY.near) || !getsAttention(state, lucky) || isCarried(state, lucky) || !rng.chance(JEALOUSY.leave)) return;
   const activity = state.character.activity;
   const lap = lucky.act.kind === "lap";
-  if (activity?.kind === "pet" && activity.cat === lucky.id) activity.left = true;
+  const hand = handOn(state, lucky.id);
+  if (hand) hand.left = true;
   if (activity?.kind === "play" && activity.cat === lucky.id) activity.done = true;
   backAway(state, lucky, cat);
   if (lap && level >= JEALOUSY.lapLevel && isWorking(state)) start(cat, "lap", null, MINUTES_PER_HOUR * 4, "character");

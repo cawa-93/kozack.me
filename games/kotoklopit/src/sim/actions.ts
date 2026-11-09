@@ -59,13 +59,14 @@ import { feederAt, receivePackages, returnSupply, supplyCount, topQuality, unpac
 import { emit, type Refusal } from "./events";
 import { isSolid, SURFACE_IDS, type HomeObject } from "./home";
 import { isNewborn } from "./reproduction";
+import { petHandOf, secondToPet } from "./petpair";
 import { waterCapacity } from "./resources";
 import { stateRng } from "./rng";
 import { canGoToSleep } from "./sleep";
 import { absoluteMinute } from "./time";
 import { isDish } from "./dish";
 import { targetById, targetOf, type Target } from "./targets";
-import type { BowlItem, Cat, GameState, HomeItem, Item, PetActivity, PlayActivity, Quality, UseActivity, Vec } from "./types";
+import type { BowlItem, Cat, GameState, HomeItem, Item, PetActivity, PetHand, PlayActivity, Quality, UseActivity, Vec } from "./types";
 import { exercise } from "./weight";
 import { angryAtWindow } from "./windowdoor";
 import { startWork, stopWork } from "./work";
@@ -649,12 +650,13 @@ export function catFeeling(state: GameState, cat: Cat): CatFeeling | null {
     return water > 0 ? "content" : water === 0 ? "reluctant" : "struggling";
   }
   if (held?.kind === "cat" && held.cat === cat.id) return carryFeeling(state, cat);
-  if (activity?.kind === "pet" && activity.cat === cat.id && !petOver(activity)) {
+  const hand = activity?.kind === "pet" ? petHandOf(activity, cat.id) : null;
+  if (hand && !petOver(hand)) {
     const tolerance = petTolerance(cat);
-    if (activity.minutes > tolerance) return "struggling";
+    if (hand.minutes > tolerance) return "struggling";
     // За хвилину до кінця терпіння кожен кіт попереджає: б'є хвостом і притискає вуха (§9.12, рішення автора 2026-10-25) — свій
     // вигляд, не «терпить» (п. 4, 2026-10-30). Та сама мить, з якої `tickPet` запам'ятовує `petWarnedAt`.
-    if (activity.minutes > tolerance - PETTING.warnMinutes) return "warning";
+    if (hand.minutes > tolerance - PETTING.warnMinutes) return "warning";
     return cat.needs.attention >= PET.wantsAttention ? "content" : "reluctant";
   }
   if (activity?.kind === "play" && activity.cat === cat.id && !activity.done) return "content";
@@ -758,7 +760,10 @@ function holdTick(state: GameState, minutes: number): boolean {
       else refuse(state, target.id, "cat-up-high");
       return true;
     }
-    else if (target.type === "cat") character.activity = { kind: "pet", cat: target.cat.id, minutes: 0 };
+    else if (target.type === "cat") {
+      const second = secondToPet(state, target.cat);
+      character.activity = { kind: "pet", cat: target.cat.id, minutes: 0, ...(second ? { second: { cat: second.id, minutes: 0 } } : {}) };
+    }
     else character.activity = { kind: "use", target: target.id, progress: eatenMinutes(state, target) };
   }
   const current = character.activity;
@@ -872,9 +877,14 @@ export function petTolerance(cat: Cat, level = traitLevel(cat, "petting")): numb
   return Math.max(PET.minToleranceMinutes, PET.toleranceMinutes * (1 + PET.toleranceStep * level) * love);
 }
 
-/** Пестощі закінчилися, але кнопку ще тримають (§10): кіт вкусив чи пішов з-під руки. */
-export function petOver(activity: PetActivity): boolean {
-  return activity.bitten === true || activity.left === true;
+/** Пестощі кота закінчилися, але кнопку ще тримають (§10): кіт вкусив чи пішов з-під руки. */
+export function petOver(hand: PetHand): boolean {
+  return hand.bitten === true || hand.left === true;
+}
+
+/** Під рукою не лишилося нікого, а кнопку ще тримають: обидва коти («Двох одразу») вкусили чи пішли. */
+export function petDone(activity: PetActivity): boolean {
+  return petOver(activity) && (activity.second === undefined || petOver(activity.second));
 }
 
 /** Кіт сидить на клавіатурі (§9.12, «Кіт і робота»). */
@@ -893,19 +903,28 @@ function wakeOnComputer(state: GameState, cat: Cat): void {
 }
 
 /**
- * Пестощі (§8.2, §9.12): поки кіт хоче уваги — здоровий глузд, настрій і любов; коли не хоче —
- * менше здорового глузду, а настрій кота падає; довше, ніж кіт терпить, — настрій падає, і кіт може вкусити.
+ * Пестощі (§8.2, §9.12): кожна рука — свій кіт («Двох одразу»); перший відійшов — під рукою лишається другий.
  */
 function pet(state: GameState, activity: PetActivity, minutes: number): void {
+  const kept = petHand(state, activity, minutes);
+  const second = activity.second;
+  if (second && !petHand(state, second, minutes)) delete activity.second;
+  if (kept) return;
+  const rest = activity.second;
+  state.character.activity = rest ? { kind: "pet", ...rest } : null;
+}
+
+/**
+ * Один кіт під рукою: поки кіт хоче уваги — здоровий глузд, настрій і любов; коли не хоче — менше здорового глузду, а настрій
+ * кота падає; довше, ніж кіт терпить, — настрій падає, і кіт може вкусити. false — кота під рукою вже немає.
+ */
+function petHand(state: GameState, hand: PetHand, minutes: number): boolean {
   const character = state.character;
-  const cat = state.cats.find((c) => c.id === activity.cat);
+  const cat = state.cats.find((c) => c.id === hand.cat);
   const body = character.body;
-  if (!cat || cat.away !== null || Math.hypot(cat.x - body.x, cat.y - body.y) > REACH + 0.6) {
-    character.activity = null;
-    return;
-  }
+  if (!cat || cat.away !== null || Math.hypot(cat.x - body.x, cat.y - body.y) > PETTING.stayReach) return false;
   // Вкушений кіт чи той, що пішов з-під руки, відходить; рука чекає, поки кнопку відпустять.
-  if (petOver(activity)) return;
+  if (petOver(hand)) return true;
   // Погладити кота, що б'ється, — розборонити (§9.4, перевірка стосунків 2026-10-26): бійка закінчується для обох, а не лише
   // для того, кого гладять (другий бився сам і міг травмуватися), і це неприємно, як узяти на руки.
   if (cat.act.kind === "fight") {
@@ -917,43 +936,43 @@ function pet(state: GameState, activity: PetActivity, minutes: number): void {
   // «Образливий», що дметься, гладити себе не дає: одразу йде з-під руки й сідає спиною (§9.12, перевірка етапу
   // 2026-10-25: пестощі щокадру зупиняли кота, і той, що дметься, муркотів під рукою).
   if (sulking(state, cat)) {
-    activity.left = true;
+    hand.left = true;
     turnAway(state, cat);
-    return;
+    return true;
   }
   // Щойно попереджав чи вкусив — чверть години гладити себе не дає: на спробу погладити одразу йде з-під руки, а над персонажем —
   // відмова (§9.12, рішення автора 2026-10-29, А8: раніше досить було на мить відпустити кнопку, і терпіння починалося з нуля —
   // кіт не кусав ніколи). Кіт на клавіатурі з неї не йде: дотик кота з клавіатури не знімає («Кіт і робота»).
-  if (activity.minutes === 0 && petResting(state, cat)) {
-    activity.left = true;
+  if (hand.minutes === 0 && petResting(state, cat)) {
+    hand.left = true;
     if (!onKeyboard(cat)) backAway(state, cat, character.body);
     refuse(state, `cat:${cat.id}`, "cat-annoyed");
-    return;
+    return true;
   }
   // «Незалежний» не терпить пестощів, коли уваги не хоче: «Незалежний» іде з-під руки за хвилину, «Відлюдник» — одразу.
   // Без укусу: укус — «Терпимість до гладження» (§9.12, рішення автора 2026-10-25).
   const aloofness = -traitLevel(cat, "affection");
   if (aloofness > 0 && cat.needs.attention < PET.wantsAttention) {
-    activity.unwanted = (activity.unwanted ?? 0) + minutes;
-    if (activity.unwanted > Math.max(0, AFFECTION.leaveAfter - aloofness)) {
-      activity.left = true;
+    hand.unwanted = (hand.unwanted ?? 0) + minutes;
+    if (hand.unwanted > Math.max(0, AFFECTION.leaveAfter - aloofness)) {
+      hand.left = true;
       backAway(state, cat, character.body);
       emit(state, { type: "cat-left", cat: cat.id });
       // Не частіше ніж раз на годину: «Відлюдник» іде миттєво, і кілька натискань поспіль не мають відкривати рису.
       observe(state, cat, "affection", -1, false, AFFECTION.observeEvery);
-      return;
+      return true;
     }
   }
   // Пестощі справді почалися — ревнивці це бачать (§9.4, §9.12 «Ревнивість»; перевірка етапу 2026-10-26: раніше ревнували й тоді,
   // коли кіт одразу йшов з-під руки). Ревнивець поруч може зігнати щасливця — тоді пестощам кінець.
-  if (activity.minutes === 0 && minutes > 0) {
+  if (hand.minutes === 0 && minutes > 0) {
     jealousy(state, cat, "pet");
-    if (petOver(activity)) return;
+    if (petOver(hand)) return true;
   }
-  const before = activity.minutes;
-  activity.minutes += minutes;
+  const before = hand.minutes;
+  hand.minutes += minutes;
   cat.interacted = true;
-  shedOnHands(state, cat, activity, minutes);
+  shedOnHands(state, cat, hand, minutes);
   // Кіт лишається на місці, поки його гладять. Кіт на клавіатурі з неї не йде: муркоче, а робота стоїть, доки його не заберуть
   // (§9.12 «Кіт і робота», рішення автора 2026-10-29, А8: раніше пестощі за мить зсаджували його з клавіатури — вибір «прогнати
   // й отримати „ні“» обходили одним дотиком). Його час на клавіатурі йде й під рукою, але не закінчується: поки гладять, кіт не
@@ -964,19 +983,19 @@ function pet(state: GameState, activity: PetActivity, minutes: number): void {
   const tolerance = petTolerance(cat);
   // Кіт попереджає (б'є хвостом) чи вже терпить через силу — і запам'ятовує це: чверть години від останньої такої миті гладити
   // себе не дасть (А8). Укус — теж така мить: після нього пестощі закінчено.
-  if (activity.minutes > tolerance - PETTING.warnMinutes) cat.petWarnedAt = absoluteMinute(state.day, state.minute);
-  if (activity.minutes <= tolerance) {
+  if (hand.minutes > tolerance - PETTING.warnMinutes) cat.petWarnedAt = absoluteMinute(state.day, state.minute);
+  if (hand.minutes <= tolerance) {
     const wants = cat.needs.attention >= PET.wantsAttention;
     changeStat(state, "sanity", (wants ? PET.sanity : PET.unwantedSanity) * catSanity * minutes);
     changeMood(state, cat, (wants ? PET.mood : PET.unwantedMood) * minutes);
     if (wants) changeLove(state, cat, PET.love * minutes);
     cat.needs.attention = Math.max(0, cat.needs.attention - PET.attentionPerMinute * minutes);
-    if (Math.floor(activity.minutes) !== Math.floor(before)) emit(state, { type: "purr", cat: cat.id, enjoyed: wants });
+    if (Math.floor(hand.minutes) !== Math.floor(before)) emit(state, { type: "purr", cat: cat.id, enjoyed: wants });
     // Гладять довше, ніж витерпів би кіт без риси з тією самою любов'ю, а він муркоче — прояв «Терпимості +», раз за
     // пестощі (§9.9, рішення автора 2026-10-25).
     const plain = petTolerance(cat, 0);
-    if (before <= plain && activity.minutes > plain) observe(state, cat, "petting");
-    return;
+    if (before <= plain && hand.minutes > plain) observe(state, cat, "petting");
+    return true;
   }
   changeMood(state, cat, PET.tooLongMood * minutes);
   const rng = stateRng(state, "behavior");
@@ -984,11 +1003,12 @@ function pet(state: GameState, activity: PetActivity, minutes: number): void {
   const trap = traitLevel(cat, "petting") <= -2;
   if (trap || rng.chance(1 - (1 - PET.biteChancePerMinute) ** minutes)) {
     changeStat(state, "health", PET.biteHealth);
-    activity.bitten = true;
+    hand.bitten = true;
     backAway(state, cat, character.body);
     emit(state, { type: "bite", cat: cat.id });
     observe(state, cat, "petting", -1);
   }
+  return true;
 }
 
 /**
@@ -996,7 +1016,7 @@ function pet(state: GameState, activity: PetActivity, minutes: number): void {
  * руки злітає жмут — раз за пестощі, з шансом 30% × (1 + «Догляд за шерстю»), у довгошерстого — частіше; «−» і безшерсті
  * — ніколи. Жмут — прояв «+»; чиста рука після 2 хвилин пестощів «−» — прояв «−» (раз на день).
  */
-function shedOnHands(state: GameState, cat: Cat, activity: PetActivity, minutes: number): void {
+function shedOnHands(state: GameState, cat: Cat, activity: PetHand, minutes: number): void {
   state.home.fur = Math.min(100, state.home.fur + (furPerHour(state, cat) * SHEDDING.petting * minutes) / 60);
   if (activity.shed !== undefined || activity.minutes < SHEDDING.tuftMinutes) return;
   const level = traitLevel(cat, "shedding");

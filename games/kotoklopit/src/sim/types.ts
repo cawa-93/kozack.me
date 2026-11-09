@@ -137,9 +137,14 @@ export interface UseActivity {
   wash?: { hygiene: number; quality: Quality | null };
 }
 
-/** Пестощі кота утриманням дії (§9.12). */
-export interface PetActivity {
+/** Пестощі кота утриманням дії (§9.12): перший кіт — у самій дії, другий («Двох одразу») — у `second`. */
+export interface PetActivity extends PetHand {
   kind: "pet";
+  second?: PetHand;
+}
+
+/** Одна рука, що гладить кота (§9.12). */
+export interface PetHand {
   cat: number;
   /** Скільки хвилин кота пестять поспіль. */
   minutes: number;

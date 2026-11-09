@@ -2,8 +2,9 @@
 // петлі не має: симуляція й так шипить щохвилини гри (подія `hissed`). Петлі перечитують кожні `SFX.loopMs`: перелік
 // перебудовується, лише коли в якогось кота змінилося, що звучить.
 
-import { petTolerance } from "../../../sim/actions";
+import { petOver, petTolerance } from "../../../sim/actions";
 import { PET, PETTING } from "../../../sim/config";
+import { handOn } from "../../../sim/petpair";
 import type { Cat, GameState } from "../../../sim/types";
 import type { LoopCue } from "../types";
 
@@ -53,8 +54,8 @@ function purrs(cat: Cat, minutes: number, over: boolean): boolean {
 /** Що звучить у кота петлею зараз (код: вид і, для пари, хто в ній менший). */
 export function loopCode(state: GameState, cat: Cat): number {
   if (cat.away !== null) return 0;
-  const activity = state.character.activity;
-  if (activity?.kind === "pet" && activity.cat === cat.id) return purrs(cat, activity.minutes, activity.bitten === true || activity.left === true) ? PET_PURR : 0;
+  const hand = handOn(state, cat.id);
+  if (hand) return purrs(cat, hand.minutes, petOver(hand)) ? PET_PURR : 0;
   const act = cat.act;
   const there = act.goal === null;
   switch (act.kind) {

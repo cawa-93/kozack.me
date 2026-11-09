@@ -598,8 +598,8 @@ export const PET = {
 } as const;
 /** «Ласкавість» (§9.12). */
 export const AFFECTION = { leaveAfter: 2, observeEvery: 60 } as const;
-/** «Терпимість до гладження» (§9.12). */
-export const PETTING = { warnMinutes: 1, bellyDistance: 1.5, restMinutes: 15 } as const;
+/** «Терпимість до гладження» (§9.12); `stayReach` — кіт під рукою, поки ближче, і другого для «Двох одразу» беруть звідти. */
+export const PETTING = { warnMinutes: 1, bellyDistance: 1.5, restMinutes: 15, stayReach: REACH + 0.6 } as const;
 
 /** Котячі побудки (§8.8, §9.12). */
 export const WAKE_UP = {

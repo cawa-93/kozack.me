@@ -3,6 +3,7 @@
 
 import { isKitten } from "../../../sim/cat";
 import { CARRIER_SPOT } from "../../../sim/home";
+import { handOn } from "../../../sim/petpair";
 import type { GameEvent } from "../../../sim/events";
 import type { Cat, GameState } from "../../../sim/types";
 import type { Cue, SoundAt } from "../types";
@@ -58,8 +59,7 @@ export function catEvent(event: GameEvent, state: GameState): readonly Cue[] {
     }
     case "purr": {
       // Під рукою муркоче петля (`loops`); тут — коротке «мрр» на ласощі, гру й «Щедру душу».
-      const activity = state.character.activity;
-      if (activity?.kind === "pet" && activity.cat === event.cat) return NONE;
+      if (handOn(state, event.cat) !== null) return NONE;
       return event.enjoyed ? [{ sound: "purr", at: catAt(event.cat) }] : NONE;
     }
     case "hissed":
