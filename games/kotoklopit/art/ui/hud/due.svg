@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 42 44" width="42" height="44">
+<!-- ui/hud/due — коли знімуть планові комунальні (hud.ts, §6.4, §8.4): крихітний листок відривного календарика поруч із сумою квитанції.
+size 42×44; pivot (21, 22) — центр; points: day (21, 26) — центр напису дня, який кладе код («пн»).
+Та сама мова, що в календарика ui/hud/calendar: шапка red, аркуш enamelHi, кільця, паперовий обідок — силует на темній смузі.
+-->
+<defs><clipPath id="ui-hud-due-in"><path d="M11.4 12.6Q20 12.3 28.6 12.6Q31.6 12.6 31.6 15.6Q31.9 23 31.6 30.4Q31.6 33.4 28.6 33.4Q20 33.7 11.4 33.4Q8.4 33.4 8.4 30.4Q8.1 23 8.4 15.6Q8.4 12.6 11.4 12.6Z"/></clipPath></defs>
+<g transform="translate(1 0)">
+<g id="p-rim">
+<path d="M10.4 7.8Q20 7.5 29.6 7.8Q36.2 7.8 36.2 14.4Q36.5 23.2 36.2 32Q36.2 38.2 29.6 38.2Q20 38.5 10.4 38.2Q3.8 38.2 3.8 32Q3.5 23.2 3.8 14.4Q3.8 7.8 10.4 7.8Z" fill="#f2e7d0"/>
+</g>
+<g id="p-ink">
+<path d="M10.8 9.4Q20 9.1 29.2 9.4Q34.6 9.4 34.6 14.8Q34.9 23 34.6 31.6Q34.6 36.6 29.2 36.6Q20 36.9 10.8 36.6Q5.4 36.6 5.4 31.6Q5.1 23 5.4 14.8Q5.4 9.4 10.8 9.4Z" fill="#2e1f29"/>
+</g>
+<g id="p-sheet">
+<path d="M11.4 12.6Q20 12.3 28.6 12.6Q31.6 12.6 31.6 15.6Q31.9 23 31.6 30.4Q31.6 33.4 28.6 33.4Q20 33.7 11.4 33.4Q8.4 33.4 8.4 30.4Q8.1 23 8.4 15.6Q8.4 12.6 11.4 12.6Z" fill="#f2e9d4"/>
+<g clip-path="url(#ui-hud-due-in)">
+<path d="M0 0L40 0L40 19.4Q20 19.9 0 19.4Z" fill="#c4524b"/>
+<path d="M0 30Q20 33.4 40 30L40 40L0 40Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<path d="M7.6 19.6Q20 20.1 32.4 19.6" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-rings">
+<path d="M14.6 6.6L14.6 13" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14.6 7.2L14.6 12.4" fill="none" stroke="#cdc6be" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M25.4 6.6L25.4 13" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M25.4 7.2L25.4 12.4" fill="none" stroke="#cdc6be" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+</svg>

@@ -15,6 +15,10 @@ export class StretchArt {
   /** Полотно запису й ширина кута, одиниці арту (для панелі — пікселі полотна гри). */
   readonly frame: ArtSize;
   private readonly cap: number;
+  /** Сховано (`setVisible`): `place` тоді лише розкладає частини, не показуючи їх. */
+  private hidden = false;
+  /** Які частини останній `place` розклав (вузький кадр — без середини). */
+  private readonly laid: boolean[] = [];
 
   constructor(scene: Phaser.Scene, parent: ArtParent, id: ArtId, opts: ArtFrameOptions = {}) {
     const entry = uiEntry(id);
@@ -29,7 +33,8 @@ export class StretchArt {
     const slices = stretchSlices(this.frame.w, this.cap, rect.w, scale);
     this.parts.forEach((image, i) => {
       const slice = slices[i];
-      image.setVisible(slice !== undefined);
+      this.laid[i] = slice !== undefined;
+      image.setVisible(slice !== undefined && !this.hidden);
       if (!slice) return;
       // Пікселів текстури на одиницю: в атласі — `res`, у заглушки — свої.
       const kx = image.width / this.frame.w;
@@ -39,6 +44,13 @@ export class StretchArt {
       image.setScale(scaleX, scale / ky);
       image.setPosition(rect.x + slice.x - slice.src * kx * scaleX, rect.y);
     });
+    return this;
+  }
+
+  /** Сховати чи показати кадр; показаний ляже туди, де його востаннє розклали (`place`). */
+  setVisible(visible: boolean): this {
+    this.hidden = !visible;
+    this.parts.forEach((image, i) => image.setVisible(visible && this.laid[i] === true));
     return this;
   }
 

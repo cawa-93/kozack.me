@@ -706,8 +706,8 @@ export const PANEL_STATES = {
 /** Картка знайомства з новим котом (§9.7); `male` і `female` — надпис дорослого за статтю. */
 export const CAT_INTRO_TEXTS = { kitten: "Нове кошеня", male: "Новий кіт", female: "Нова кішка", title: "Знайомтеся", name: "Ім'я", done: "Готово" } as const;
 
-/** Коли знімуть планові комунальні (§6.4, §8.4): напис під квитанцією на панелі. */
-export const BILL_WHEN = { sunday: "уночі", other: "у пн" } as const;
+/** Коли знімуть планові комунальні (§6.4, §8.4): напис на листку календарика за сумою квитанції — у ніч на понеділок. */
+export const BILL_DAY = "пн";
 
 /** Хвороби персонажа (§6.5). */
 export const ILLNESS_TITLES: Record<IllnessId, string> = { cold: "Застуда", injury: "Травма", exhaustion: "Виснаження" };
