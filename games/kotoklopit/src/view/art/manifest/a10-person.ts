@@ -34,7 +34,8 @@ const FACE_POINTS = [
 ] as const satisfies readonly { eyes: ArtPoint; top: ArtPoint }[];
 
 /**
- * Торси статур (`BUILDS`): pivot — таз; шия, плечі, стегна й `arms` (де кіт на руках). Звичайна — еталон F1b
+ * Торси статур (`BUILDS`): pivot — таз; шия, плечі, стегна, `arms` (де кіт на руках) і `print` — центр принта на грудях
+ * (`WARDROBE.md`, «Візерунки»: на 1 правіше від основи шиї, на середній лінії грудей). Звичайна — еталон F1b
  * `art/person/torso/1`; струнка й кремезна — той самий торс, вужчий чи ширший від таза (плечі, талія, стегна — кожне
  * своїм множником), тож суглоби зсунуто разом із формою.
  */
@@ -57,6 +58,7 @@ const TORSO = [
       "hip-near-back": { x: 32.5, y: 59 },
       arms: { x: 34.5, y: 34 },
       "arms-back": { x: 35.4, y: 33 },
+      print: { x: 28.4, y: 29 },
     },
   },
   {
@@ -77,6 +79,7 @@ const TORSO = [
       "hip-near-back": { x: 35.5, y: 59 },
       arms: { x: 38, y: 34 },
       "arms-back": { x: 39, y: 33 },
+      print: { x: 30.5, y: 29 },
     },
   },
   {
@@ -97,11 +100,15 @@ const TORSO = [
       "hip-near-back": { x: 43.8, y: 59 },
       arms: { x: 47.4, y: 34 },
       "arms-back": { x: 48.6, y: 33 },
+      print: { x: 37.6, y: 29 },
     },
   },
 ] as const satisfies readonly { size: { w: number; h: number }; pivot: ArtPoint; points: Record<string, ArtPoint> }[];
-/** Рука: pivot — плече, `hand` — зап'ясток (кістка кисті, гнізда `held` і `rod`), `grip` — середина долоні (рука, що гладить кота, тримає вудку, тарілку, кота). */
-const ARM = { size: { w: 27, h: 73 }, pivot: { x: 13, y: 14 }, points: { hand: { x: 14, y: 54.6 }, grip: { x: 14.2, y: 61 } } } as const;
+/**
+ * Рука: pivot — плече, `hand` — зап'ясток (кістка кисті, гнізда `held` і `rod`), `grip` — середина долоні (рука, що гладить кота,
+ * тримає вудку, тарілку, кота), `cuff` — середина манжета над лінією рукава (принт на манжети, `WARDROBE.md`, «Візерунки»).
+ */
+const ARM = { size: { w: 27, h: 73 }, pivot: { x: 13, y: 14 }, points: { hand: { x: 14, y: 54.6 }, grip: { x: 14.2, y: 61 }, cuff: { x: 14, y: 52 } } } as const;
 /** Нога від стегна до кісточки (еталон F1b): pivot — стегно, `foot` — кісточка, куди стає pivot взуття. */
 const LEG = { size: { w: 33, h: 74 }, pivot: { x: 16, y: 18 }, points: { foot: { x: 16.6, y: 67.2 } } } as const;
 

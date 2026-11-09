@@ -21,7 +21,8 @@ import Phaser from "phaser";
 
 import { hasArtFrame, type ArtParent } from "./atlas";
 import { BakeCache, BAKE_BUDGET, SHARED_OWNER, type BakeStats } from "./bakecache";
-import { composeFrame, stubLayers, type LayerImage, type LayerSource } from "./compose";
+import { clothFrame, clothIds, type ClothLayers } from "./cloth";
+import { composeFrame, createCtx, stubLayers, type LayerImage, type LayerSource } from "./compose";
 import { artEntry, DEFAULT_RES } from "./manifest";
 import { partExtraFrame } from "../wardrobe/index";
 import { artGeometry, artPlacement, frameNameFor, type ArtFallback, type ArtGeometry, type ArtPlacement } from "./placement";
@@ -290,10 +291,46 @@ function make(scene: Phaser.Scene, frame: FrameId, recipe: TintRecipe, key: stri
   canvas.height = px.h;
   const context = canvas.getContext("2d", { willReadFrequently: true });
   if (context) {
-    composeFrame(context, layers, recipe, { w: px.w, h: px.h });
+    // Візерунок тканини запікається разом із кадром: щокадру його ніхто не малює.
+    const cloth =
+      clothIds(recipe).length > 0
+        ? clothFrame({ k: px.w / geometry.size.w, pivot: geometry.pivot, points: found?.entry.points, view: frameView(frame, found?.entry) }, (id) => atlasCloth(scene, id), createCtx)
+        : undefined;
+    composeFrame(context, layers, recipe, { w: px.w, h: px.h, cloth });
     scene.textures.addCanvas(key, canvas);
   }
   return { key, px, geometry, stub };
+}
+
+/** Ракурс кадру запису; без ракурсів — null. */
+function frameView(frame: FrameId, entry: ArtEntry | undefined): ArtView | null {
+  return (entry && framesOf(entry).find((f) => f.frame === frame)?.view) ?? null;
+}
+
+/** Шар кадру атласу: прямокутник на сторінці зі зсувом обрізки й повне полотно кадру; немає чи заглушка — null. */
+function atlasLayer(scene: Phaser.Scene, name: string): { image: LayerImage; px: ArtSize } | null {
+  if (!hasArtFrame(scene, name)) return null;
+  const f = scene.textures.getFrame(ART_TEXTURE, name);
+  const image = f.source.image as CanvasImageSource | null;
+  if (!image || (f.customData as { stub?: unknown }).stub === true) return null;
+  // Обрізка: кадр лежить на полотні кадру зі зсувом (`setTrim` → `x`, `y`).
+  return { image: { image, sx: f.cutX, sy: f.cutY, sw: f.cutWidth, sh: f.cutHeight, dx: f.x, dy: f.y }, px: { w: Math.round(f.realWidth), h: Math.round(f.realHeight) } };
+}
+
+/** Шари кадру тканини (`cloth/*`) з атласу для візерунка; немає — null. */
+function atlasCloth(scene: Phaser.Scene, id: ArtId): ClothLayers | null {
+  const entry = artEntry(id);
+  if (!entry?.layers) return null;
+  const found = new Map<ArtLayer, LayerImage>();
+  let px: ArtSize | null = null;
+  for (const layer of entry.layers) {
+    const got = atlasLayer(scene, layerFrameName(id, layer));
+    if (!got) continue;
+    px ??= got.px;
+    found.set(layer, got.image);
+  }
+  if (!px) return null;
+  return { source: (layer) => found.get(layer) ?? null, w: px.w, h: px.h, size: entry.size, pivot: entry.pivot };
 }
 
 /**
@@ -307,14 +344,10 @@ function atlasLayers(scene: Phaser.Scene, frame: FrameId, recipe: TintRecipe): {
   let px: ArtSize | null = null;
   for (const { layer } of recipe.steps) {
     if (found.has(layer)) continue;
-    const name = layerFrameName(layer.startsWith("extra-") && extras ? extras : frame, layer);
-    if (!hasArtFrame(scene, name)) continue;
-    const f = scene.textures.getFrame(ART_TEXTURE, name);
-    const image = f.source.image as CanvasImageSource | null;
-    if (!image || (f.customData as { stub?: unknown }).stub === true) continue;
-    px ??= { w: Math.round(f.realWidth), h: Math.round(f.realHeight) };
-    // Обрізка: кадр лежить на полотні кадру зі зсувом (`setTrim` → `x`, `y`).
-    found.set(layer, { image, sx: f.cutX, sy: f.cutY, sw: f.cutWidth, sh: f.cutHeight, dx: f.x, dy: f.y });
+    const got = atlasLayer(scene, layerFrameName(layer.startsWith("extra-") && extras ? extras : frame, layer));
+    if (!got) continue;
+    px ??= got.px;
+    found.set(layer, got.image);
   }
   if (!px || found.size === 0) return null;
   return { source: (layer) => found.get(layer) ?? null, px };

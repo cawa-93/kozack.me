@@ -11,6 +11,7 @@
 import type { Look } from "../../sim/types";
 import { hairSkin } from "../wardrobe/hair";
 import { wearOf } from "../wardrobe/index";
+import { clothFrame, clothIds, type ClothFrame, type ClothImage, type ClothLookup, type ClothPaint } from "./cloth";
 import { artEntry } from "./manifest";
 import { STUB_LOOK, stubHatch, stubPixels } from "./placement";
 import { farRecipe, personRecipe } from "./recipes";
@@ -67,6 +68,8 @@ export interface ComposeOptions {
   scratch?: ScratchFactory;
   /** Очистити полотно перед складанням; за замовчуванням так. */
   clear?: boolean;
+  /** Візерунки тканини кадру (`TintStep.pattern`, `cloth.ts`); без них кроки візерунка пропускаються. */
+  cloth?: ClothFrame | undefined;
 }
 
 /** Колір 0xRRGGBB → `#rrggbb`. */
@@ -136,8 +139,21 @@ export function composeFrame(target: Ctx2D, layers: LayerSource, recipe: TintRec
   for (const step of recipe.steps) {
     const alpha = step.alpha ?? 1;
     if (alpha <= 0) continue;
-    // Візерунок тканини (`TintStep.pattern`) кладе механізм візерунків (`WARDROBE.md`); поки його немає — без візерунка.
-    if (step.pattern) continue;
+    if (step.pattern) {
+      if (empty || !opts.cloth) continue;
+      const src = layers(step.layer);
+      const paint = src ? opts.cloth.paint(step.pattern) : null;
+      if (!src || !paint) continue;
+      scratch ??= (opts.scratch ?? sharedScratch)(w, h);
+      if (!scratch || !drawCloth(scratch, paint, opts.cloth, w, h)) continue;
+      // Тканина — лише в межах заливки свого регіону: на шкіру, підкладку й сусідній одяг не лізе.
+      scratch.globalCompositeOperation = "destination-in";
+      drawLayer(scratch, src, w, h);
+      target.globalCompositeOperation = step.put;
+      target.globalAlpha = alpha;
+      target.drawImage(scratch.canvas, 0, 0, w, h, 0, 0, w, h);
+      continue;
+    }
     if (empty && step.put !== "source-over") continue;
     const src = layers(step.layer);
     if (!src) continue;
@@ -193,6 +209,38 @@ export function composeFrame(target: Ctx2D, layers: LayerSource, recipe: TintRec
     empty = false;
   }
   target.restore();
+}
+
+/**
+ * Тканина кроку візерунка на очищене допоміжне полотно: плитка — від pivot кадру (цілі пікселі: без розмиття), принт — у
+ * точці `print`, манжет — у `cuff`. false — класти нічого (принт, а точки в кадрі немає).
+ */
+function drawCloth(s: Ctx2D, paint: ClothPaint, cloth: ClothFrame, w: number, h: number): boolean {
+  const prints: { image: ClothImage; x: number; y: number }[] = [];
+  for (const [image, name] of [
+    [paint.print, "print"],
+    [paint.cuff, "cuff"],
+  ] as const) {
+    // Груди ззаду не видно: принт на груди — лише спереду; манжет видно з обох боків.
+    if (!image || (name === "print" && cloth.view === "back")) continue;
+    const at = (cloth.view ? cloth.points?.[`${name}-${cloth.view}`] : undefined) ?? cloth.points?.[name];
+    if (at) prints.push({ image, x: Math.round(at.x * cloth.k - image.px), y: Math.round(at.y * cloth.k - image.py) });
+  }
+  if (!paint.fill && prints.length === 0) return false;
+  s.setTransform(1, 0, 0, 1, 0, 0);
+  s.globalAlpha = 1;
+  s.globalCompositeOperation = "source-over";
+  s.clearRect(0, 0, w, h);
+  if (paint.fill) {
+    const ox = Math.round(cloth.pivot.x * cloth.k);
+    const oy = Math.round(cloth.pivot.y * cloth.k);
+    s.fillStyle = paint.fill;
+    s.setTransform(1, 0, 0, 1, ox, oy);
+    s.fillRect(-ox, -oy, w, h);
+    s.setTransform(1, 0, 0, 1, 0, 0);
+  }
+  for (const { image, x, y } of prints) s.drawImage(image.image, 0, 0, image.w, image.h, x, y, image.w, image.h);
+  return true;
 }
 
 function drawLayer(ctx: Ctx2D, src: LayerImage, w: number, h: number): void {
@@ -583,19 +631,20 @@ export function composePortrait(canvas: HTMLCanvasElement | OffscreenCanvas, loo
 /** Намалювати частини фігури тим самим рецептом, що в грі, вписавши в полотно; решта — як у `composePortrait`. */
 function composeFigure(canvas: HTMLCanvasElement | OffscreenCanvas, parts: readonly PortraitPart[], recipe: TintRecipe, opts: PortraitOptions = {}): boolean {
   const frames: FrameId[] = parts.map((p) => frameId(p.id, p.state ?? null, p.view === undefined ? "front" : p.view));
-  const state = artFrameState(frames);
+  const cloth = clothIds(recipe);
+  const state = figureState(frames, cloth);
   if (state === "missing") return false;
   if (state === "loading") {
     if (opts.onReady) {
       const onReady = opts.onReady;
       portraitWaiters.set(canvas, onReady);
-      void loadArtFrames(frames).then((ok) => {
+      void loadFigure(frames, cloth).then((ok) => {
         if (ok && portraitWaiters.get(canvas) === onReady) {
           portraitWaiters.delete(canvas);
           onReady();
         }
       });
-    } else void loadArtFrames(frames);
+    } else void loadFigure(frames, cloth);
     return false;
   }
   const ctx = canvas.getContext("2d") as (CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D) | null;
@@ -618,13 +667,14 @@ function composeFigure(canvas: HTMLCanvasElement | OffscreenCanvas, parts: reado
   ctx.clearRect(0, 0, W, H);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
-  for (const { source, m, far: dim } of drawn) {
+  for (const [i, { source, m, far: dim }] of drawn.entries()) {
     const part = pooledCtx("portrait-part", source.w, source.h);
     if (!part) continue;
     // Спільне полотно більше за кадр і пам'ятає попередні частини: зі згладжуванням `drawImage` частини бере й пікселі за
     // її межею — без очищення всього полотна довкола частин видно тонкі смужки сусідніх.
     part.clearRect(0, 0, part.canvas.width, part.canvas.height);
-    composeFrame(part, source.source, dim ? far : recipe, { w: source.w, h: source.h });
+    const view = parts[i]?.view;
+    composeFrame(part, source.source, dim ? far : recipe, { w: source.w, h: source.h, cloth: partCloth(cloth, source, view === undefined ? "front" : view) });
     // Пікселі кадру → одиниці арту (÷ res) → місце частини → полотно портрета.
     const sx = source.frame.size.w / source.w;
     const sy = source.frame.size.h / source.h;
@@ -633,6 +683,35 @@ function composeFigure(canvas: HTMLCanvasElement | OffscreenCanvas, parts: reado
   }
   ctx.restore();
   return true;
+}
+
+/**
+ * Чи можна малювати фігуру: як `artFrameState` частин, а кадри тканини (`cloth`) — необов'язкові: яких немає, ті без візерунка,
+ * але поки вони вантажаться, фігура чекає — інакше портрет блимнув би однотонним.
+ */
+function figureState(frames: readonly FrameId[], cloth: readonly FrameId[]): "ready" | "loading" | "missing" {
+  const state = artFrameState(frames);
+  if (state !== "ready" || cloth.length === 0) return state;
+  return cloth.some((id) => artFrameState([id]) === "loading") ? "loading" : "ready";
+}
+
+/** Завантажити частини й тканину; true — частини є (тканина необов'язкова). */
+async function loadFigure(frames: readonly FrameId[], cloth: readonly FrameId[]): Promise<boolean> {
+  const [ok] = await Promise.all([loadArtFrames(frames), ...cloth.map((id) => loadArtFrames([id]))]);
+  return ok;
+}
+
+/** Кадри тканини для портрета — зі сторінок атласу (`sources.ts`). */
+const portraitCloth: ClothLookup = (id) => {
+  const layers = artLayerSource(id);
+  return layers ? { source: layers.source, w: layers.w, h: layers.h, size: layers.frame.size, pivot: layers.frame.pivot } : null;
+};
+
+/** Візерунки частини портрета; рецепт без них — нічого, як і без механізму візерунків. */
+function partCloth(cloth: readonly FrameId[], source: FrameLayers, view: ArtView | null): ClothFrame | undefined {
+  if (cloth.length === 0) return undefined;
+  const { size, pivot, points } = source.frame;
+  return clothFrame({ k: source.w / size.w, pivot, points, view }, portraitCloth, createCtx);
 }
 
 /** Як вписати частини в полотно `W` × `H`: межі фігури в одиницях арту, з поворотом частин, і поле `padding`. */
@@ -725,6 +804,8 @@ export function placeInk(ink: FigureInk, k: number, W: number, H: number, pad: n
 export class FigureCanvas {
   private readonly tinted = new Map<string, Canvas2D>();
   private readonly far: TintRecipe;
+  /** Кадри тканини рецепта (`clothIds`). */
+  private readonly cloth: readonly FrameId[];
   private fit: { k: number; ox: number; oy: number } | null = null;
 
   constructor(
@@ -733,13 +814,14 @@ export class FigureCanvas {
     private readonly padding: number,
   ) {
     this.far = farRecipe(recipe);
+    this.cloth = clothIds(recipe);
   }
 
   /** Намалювати позу; false — кадри ще вантажаться чи їх немає, тоді полотно лишається як було. */
   draw(parts: readonly PortraitPart[]): boolean {
     const frames: FrameId[] = parts.map((p) => frameId(p.id, p.state ?? null, p.view === undefined ? "front" : p.view));
-    const state = artFrameState(frames);
-    if (state === "loading") void loadArtFrames(frames);
+    const state = figureState(frames, this.cloth);
+    if (state === "loading") void loadFigure(frames, this.cloth);
     if (state !== "ready") return false;
     const ctx = this.canvas.getContext("2d");
     if (!ctx) return false;
@@ -750,7 +832,7 @@ export class FigureCanvas {
       placed.push({ part, source });
     }
     const { width: W, height: H } = this.canvas;
-    const tinted = placed.map(({ part, source }, i) => this.tint(`${frames[i]}|${part.far === true}`, source, part.far === true));
+    const tinted = placed.map(({ part, source }, i) => this.tint(`${frames[i]}|${part.far === true}`, source, part));
     const { k, ox, oy } = (this.fit ??= this.place(placed, tinted, W, H));
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, W, H);
@@ -770,12 +852,13 @@ export class FigureCanvas {
   }
 
   /** Тонований кадр частини — раз на кадр (кеш `tinted`); null — полотна не створити. */
-  private tint(key: string, source: FrameLayers, far: boolean): Canvas2D | null {
+  private tint(key: string, source: FrameLayers, part: PortraitPart): Canvas2D | null {
     const cached = this.tinted.get(key);
     if (cached) return cached;
     const made = createCtx(source.w, source.h);
     if (!made) return null;
-    composeFrame(made, source.source, far ? this.far : this.recipe, { w: source.w, h: source.h });
+    const cloth = partCloth(this.cloth, source, part.view === undefined ? "front" : part.view);
+    composeFrame(made, source.source, part.far === true ? this.far : this.recipe, { w: source.w, h: source.h, cloth });
     this.tinted.set(key, made);
     return made;
   }
