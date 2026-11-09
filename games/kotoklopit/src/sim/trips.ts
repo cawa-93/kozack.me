@@ -8,7 +8,7 @@ import { ACCIDENT, CARRIER_MOOD, GIFTS, MINUTES_PER_DAY, MINUTES_PER_HOUR, SLEEP
 import { maybeFallIll } from "./diseases";
 import { emit } from "./events";
 import { fallIllPerson } from "./illness";
-import { roadFactor, trafficFactor } from "./modifiers";
+import { gripFactor, roadFactor, trafficFactor } from "./modifiers";
 import { observe } from "./knowledge";
 import { driveRace, newRace, type RaceInput } from "./race";
 import { deriveSeed, type Rng } from "./rng";
@@ -125,7 +125,7 @@ export interface TripClock {
 export function driveTrip(state: GameState, clock: TripClock, minutes: number, input: RaceInput): "arrived" | "crash" | null {
   const trip = state.trip;
   if (trip?.phase !== "drive") return null;
-  const result = driveRace(trip.race, minutes, input, state.difficulty, trafficFactor(state));
+  const result = driveRace(trip.race, minutes, input, state.difficulty, trafficFactor(state), gripFactor(state));
   if (clock.advance(minutes)) return null;
   if (result === "arrived") {
     trip.phase = "visit";

@@ -22,7 +22,7 @@ import { Horns } from "../audio/sfx/trip/horns";
 import { Revs } from "../audio/sfx/trip/revs";
 import { RACE } from "../sim/config";
 import { drive } from "../sim/game";
-import { trafficFactor } from "../sim/modifiers";
+import { gripFactor, trafficFactor } from "../sim/modifiers";
 import { carAt, type RaceInput } from "../sim/race";
 import { formatClock, raceMinutes } from "../sim/time";
 import type { Destination, GameState, RaceCar, Save, Trip } from "../sim/types";
@@ -70,6 +70,8 @@ import {
   type ParkingSpot,
 } from "../view/parking";
 import { CRASH_FX, crashView } from "../view/racecrash";
+import { icyRoad } from "../view/raceice";
+import { RaceIceLayer } from "../view/raceicelayer";
 import {
   arrivalLights,
   carLights,
@@ -213,7 +215,7 @@ export class RaceScene extends Phaser.Scene {
   }
 
   create(data?: Partial<RoadStart>): void {
-    const art = new RaceArt(this);
+    const art = new RaceArt(this, icyRoad(this.state));
     this.art = art;
     // Phaser перевикористовує сцену: стан минулого показу — геть, і день не бачить парковки, якої вже немає.
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -234,7 +236,7 @@ export class RaceScene extends Phaser.Scene {
     const state = this.state;
     this.leave =
       data?.mode === "depart" && trip?.phase === "drive" && trip.race.minutes === 0 && state.end === null
-        ? { ms: 0, save: this.session.save, skipped: false, start: homeDepartureStart(trip.race, state.seed, state.difficulty, trafficFactor(state)) }
+        ? { ms: 0, save: this.session.save, skipped: false, start: homeDepartureStart(trip.race, state.seed, state.difficulty, trafficFactor(state), gripFactor(state)) }
         : null;
     // Темрява — над усім, і над написом.
     this.dark = this.add.rectangle(0, 0, 1, 1, 0x000000, 0).setOrigin(0).setDepth(RACE_DEPTH.dark);
@@ -821,6 +823,8 @@ export class RaceScene extends Phaser.Scene {
 const RACE_DEPTH = {
   verge: 0,
   road: 1,
+  /** Лід «Ожеледиці» (`raceice.ts`) — над дорогою, під парковкою (її з'їзд перекриває бордюр) і машинами. */
+  ice: 1.5,
   lot: 2,
   traffic: 3,
   player: 4,
@@ -904,7 +908,7 @@ function bakedRecipe(key: string, tint: number): TintRecipe {
  * парковка пункту (§8.5 «На місці — кадр парковки», `src/view/parking.ts`): з'їзд і місця, запарковані машини, будівля з
  * дахом кольору пункту (запечений, власник `race:building`) і табличка з іконкою пункту. Усе, що на дорозі й біля неї, стоїть
  * від середини дороги `RaceView.cx`: на місці світ зсунуто вбік ним, а не камерою. Зображення беруться з пулів і ховаються,
- * коли зайві.
+ * коли зайві. У тиждень «Ожеледиці» асфальт укриває лід (`RaceIceLayer`).
  */
 class RaceArt {
   private readonly verge: Phaser.GameObjects.Image[] = [];
@@ -931,9 +935,12 @@ class RaceArt {
   private readonly owners = new Set<string>();
   /** Ніч (§8.9): з першого кадру й незалежно від темряви `dark`; удень схована. */
   private readonly night: RaceNight;
+  /** Лід «Ожеледиці» (`raceice.ts`): тиждень не міняється посеред показу сцени, тож є чи немає — з її початку. */
+  private readonly ice: RaceIceLayer | null;
 
-  constructor(private readonly scene: Phaser.Scene) {
+  constructor(private readonly scene: Phaser.Scene, icy: boolean) {
     this.night = new RaceNight(scene, { night: RACE_DEPTH.night, beams: RACE_DEPTH.beams, tails: RACE_DEPTH.tails, signGlow: RACE_DEPTH.signGlow });
+    this.ice = icy ? new RaceIceLayer(scene, RACE_DEPTH.ice) : null;
     this.player = addArt(scene, null, "race/car/player").setDepth(RACE_DEPTH.player);
     this.track = [0, 1, 2].map(() => addArt(scene, null, "race/progress", { state: "track" }).setDepth(RACE_DEPTH.bar).setOrigin(0.5, 0));
     this.fill = [0, 1, 2].map(() => addArt(scene, null, "race/progress", { state: "fill" }).setDepth(RACE_DEPTH.bar).setOrigin(0.5, 0));
@@ -1171,6 +1178,7 @@ class RaceArt {
       this.fit(image, rowFlipped(row.n) ? -k : k, k).setPosition(cx, row.y + roadPivot * k);
     }
     hideFrom(this.road, n);
+    this.ice?.draw(cx, k, height, distance);
   }
 
   /** Звільнити запечені кадри потоку й будівлі (сцена гонки закінчилася). */

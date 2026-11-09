@@ -1,0 +1,79 @@
+{
+ "name": "Ожеледиця",
+ "description": "Субота другого тижня, 11:30, тиждень «Ожеледиця». Персонажка вдень їде в магазин (×1, без газу машина поволі котиться): асфальт і бордюри між узбіччями світлі й холодні, крижані, а трава й машини — як завжди. На льоду гальмо й перестроювання слабші (§8.5, `MODIFIERS.week.grip`). У своїй смузі попереду машин немає.",
+ "game": {
+  "address": "she",
+  "difficulty": "normal",
+  "seed": 31
+ },
+ "state": {
+  "day": 12,
+  "minute": 690,
+  "modifiers": {
+   "day": null,
+   "week": "ice"
+  },
+  "character": {
+   "money": 400,
+   "stats": {
+    "satiety": 80,
+    "hygiene": 80,
+    "sanity": 55
+   },
+   "body": {
+    "x": 10.5,
+    "y": 10.45,
+    "facing": {
+     "x": 0,
+     "y": 1
+    }
+   },
+   "held": null
+  },
+  "trip": {
+   "destination": "shop",
+   "phase": "drive",
+   "cat": null,
+   "riders": [],
+   "race": {
+    "road": 45,
+    "done": 20,
+    "minutes": 10,
+    "lane": 1,
+    "targetLane": 1,
+    "speed": 1,
+    "cars": [
+     {
+      "lane": 0,
+      "start": 15.45
+     },
+     {
+      "lane": 2,
+      "start": 16.15
+     },
+     {
+      "lane": 0,
+      "start": 16.95
+     },
+     {
+      "lane": 2,
+      "start": 17.4
+     },
+     {
+      "lane": 2,
+      "start": 14.55
+     },
+     {
+      "lane": 0,
+      "start": 14.25
+     }
+    ],
+    "spawned": 19.5,
+    "rng": 20261102
+   },
+   "losses": [],
+   "visit": 30,
+   "seed": 41023
+  }
+ }
+}

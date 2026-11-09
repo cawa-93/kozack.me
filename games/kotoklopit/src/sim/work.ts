@@ -31,7 +31,7 @@ import {
   WORKDAYS_PER_WEEK,
 } from "./config";
 import { emit, type PatienceLevel } from "./events";
-import { patienceDecayFactor, payFactor, powerOut, reputationFactor, searchFactor, toOffice, workdayOverride } from "./modifiers";
+import { patienceDecayFactor, payFactor, powerOut, reputationFactor, searchFactor, toOffice, workdayOverride, workSanityFactor } from "./modifiers";
 import { weekdayOf } from "./time";
 import type { GameState, Job } from "./types";
 
@@ -181,7 +181,6 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
     activity.sanity += unpleasantTask(state, sanity * hours);
     activity.minutes += minutes;
     const vacancy = searchProgress(state).vacancy;
-    // Без світла пошук іде ×0,75 («Планове відключення», §4.1, рішення автора 2026-11-02).
     job.searchHours += hours * searchFactor(state);
     if (job.searchHours < JOB_SEARCH.hours[state.difficulty] && searchProgress(state).vacancy > vacancy) {
       // Чергова вакансія — відмова; далі нова (§8.6).
@@ -201,7 +200,8 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
     const reputationBefore = job.reputation;
     earn(state, money);
     changeReputation(state, position.reputation * CAREER_PACE * reputationFactor(state) * hours);
-    activity.sanity += unpleasantTask(state, position.sanity * hours);
+    // Тиждень «Квартальний звіт» / «Цікавий проєкт» (§4.1) — лише робота: пошук вище йде без нього.
+    activity.sanity += unpleasantTask(state, position.sanity * workSanityFactor(state) * hours);
     activity.minutes += minutes;
     activity.money += money;
     activity.reputation += job.reputation - reputationBefore;

@@ -932,12 +932,12 @@ export interface HomeDepartureStart extends ParkingSpot {
  * Знімок старту гонки для від'їзду від свого будинку: сим ставить машини потоку лише з першим кроком гонки (`driveRace`), тож
  * перший крок робиться на копії (`race` не змінюється) — і ті самі машини гонка поставить сама, коли від'їзд скінчиться. Де вони
  * — у мить старту (`race.minutes`), ще до кроку: кадр кінця від'їзду — гонка в мить старту, а її перший крок — уже рух від нього
- * (машина стартує не з місця, `RACE.startSpeed`). `gameSeed` — зерно гри (`state.seed`), `difficulty` і `traffic` — як у
- * `driveTrip` (складність і `trafficFactor`).
+ * (машина стартує не з місця, `RACE.startSpeed`). `gameSeed` — зерно гри (`state.seed`), `difficulty`, `traffic` і `grip` — як у
+ * `driveTrip` (складність, `trafficFactor` і `gripFactor`: від зчеплення залежить, які машини стоять на старті в сусідніх смугах).
  */
-export function homeDepartureStart(race: Race, gameSeed: number, difficulty: Difficulty, traffic = 1): HomeDepartureStart {
+export function homeDepartureStart(race: Race, gameSeed: number, difficulty: Difficulty, traffic = 1, grip = 1): HomeDepartureStart {
   const probe = structuredClone(race);
-  driveRace(probe, RACE.step, { steer: 0, throttle: 0 }, difficulty, traffic);
+  driveRace(probe, RACE.step, { steer: 0, throttle: 0 }, difficulty, traffic, grip);
   return {
     done: race.done,
     seed: homeLotSeed(gameSeed),
