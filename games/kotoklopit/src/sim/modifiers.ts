@@ -69,6 +69,7 @@ export const DAY_PAIRS: readonly Pair[] = [
   pair("construction-dust", "cleaner", "home", "any"),
   // Друг приходить допомогти з котами — лише коли вони є (перевірка модифікаторів 2026-10-28).
   pair("guests", "friend-help", "home", "any", "cat"),
+  pair("neighbor-parcels", "big-box", "home", "cat"),
   // «Тиха ніч» — коти не будять: лише коли вони є, інакше день без модифікатора (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А14).
   pair("noisy-neighbors", "quiet-night", "personal", "any", "cat"),
   pair("sick", "vigor", "personal", "any"),

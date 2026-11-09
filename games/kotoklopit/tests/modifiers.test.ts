@@ -89,7 +89,7 @@ describe("вибір модифікаторів: перевірка модифі
 
   it("частка важкого боку — за складністю й тоді, коли в пари сьогодні можливий лише один бік", () => {
     const save = newGame({ address: "she", difficulty: "hard", seed: 14 });
-    const hard = new Set(["deadline", "meeting", "pay-delay", "reprimand", "work-saturday", "outage", "inspection", "construction-dust", "guests", "noisy-neighbors", "sick", "mom-call", "traffic", "renovation", "food-price-up", "full-moon", "festival", "heat", "hiring-freeze", "stray-cat", "cat-feud", "clingy-cats", "valerian", "courier-delay"]);
+    const hard = new Set(["deadline", "meeting", "pay-delay", "reprimand", "work-saturday", "outage", "inspection", "construction-dust", "guests", "noisy-neighbors", "sick", "mom-call", "traffic", "renovation", "food-price-up", "full-moon", "festival", "heat", "hiring-freeze", "stray-cat", "cat-feud", "clingy-cats", "valerian", "courier-delay", "neighbor-parcels"]);
     let hardCount = 0;
     let total = 0;
     for (let seed = 0; seed < 3000; seed++) {
@@ -442,7 +442,7 @@ describe("вибір модифікаторів (§4.1)", () => {
 
   it("на переграванні модифікатор дня той самий, якщо стан лише відсіяв інші варіанти: лікарняний, звільнення, менше котів і вчорашній не зсувають вибору (§6.1, загальна ревізія 2026-10-29)", () => {
     const work = new Set(["deadline", "lull", "meeting", "lunch", "pay-delay", "bonus", "reprimand", "praise", "work-saturday", "midweek-off", "office"]);
-    const catOnly = new Set(["full-moon", "rain", "festival", "quiet-evening", "home-vet", "heat", "cold", "friend-help", "quiet-night", "food-price-up", "pet-sale", "show", "stray-cat", "pigeons", "cat-feud", "cat-peace", "clingy-cats", "cat-business", "valerian", "stair-dog"]);
+    const catOnly = new Set(["full-moon", "rain", "festival", "quiet-evening", "home-vet", "heat", "cold", "friend-help", "quiet-night", "food-price-up", "pet-sale", "show", "stray-cat", "pigeons", "cat-feud", "cat-peace", "clingy-cats", "cat-business", "valerian", "stair-dog", "neighbor-parcels", "big-box"]);
     /** Гра з котом (усі модифікатори можливі), потім зміна стану. */
     const pick = (seed: number, setup: (save: Save) => void = () => {}): string | null => {
       const save = game();
