@@ -554,9 +554,10 @@ export function foundlingCard(onTake: () => void, onShelter: () => void): Card {
     title: "Кошеня під дверима",
     body: ["Змокле, тремтить і дивиться так, ніби давно на вас чекало."],
     actions: [
-      { label: "Узяти додому", primary: true, onSelect: onTake },
       { label: `Віднести в ${destinationLabel("shelter").toLowerCase()} · 🕐 ${minutesText(MODIFIERS.foundlingShelterMinutes)}`, onSelect: onShelter },
+      { label: "Узяти додому", primary: true, onSelect: onTake },
     ],
+    steps: true,
   };
 }
 
@@ -567,9 +568,10 @@ export function callCard(onAnswer: () => void, onIgnore: () => void): Card {
     title: "Дзвонить мама",
     body: ["Мама питає, як справи, чи ви їсте й чи не забагато в домі котів."],
     actions: [
-      { label: `Відповісти · 🕐 ${minutesText(MODIFIERS.call.minutes)}`, primary: true, onSelect: onAnswer },
       { label: "Не відповідати", onSelect: onIgnore },
+      { label: `Відповісти · 🕐 ${minutesText(MODIFIERS.call.minutes)}`, primary: true, onSelect: onAnswer },
     ],
+    steps: true,
   };
 }
 
@@ -583,9 +585,10 @@ export function titleCard(state: GameState, onContinue: () => void, onNew: () =>
     title: "Котоклопіт",
     body: [`${name}, тиждень ${weekOf(state.day)}, ${WEEKDAY_NAMES[weekdayOf(state.day)]}.`],
     actions: [
-      { label: "Продовжити", primary: true, onSelect: onContinue },
       { label: "Нова гра", onSelect: onNew },
+      { label: "Продовжити", primary: true, onSelect: onContinue },
     ],
+    steps: true,
   };
 }
 

@@ -1185,7 +1185,7 @@ export class DayScene extends Phaser.Scene {
       this.overlay.close();
       after?.();
     };
-    this.queueCard({ kicker, title, body: [text], actions: [{ label: "Зрозуміло", primary: true, onSelect: close }], onDismiss: close });
+    this.queueCard({ kicker, title, body: [text], actions: [{ label: "Зрозуміло", primary: true, onSelect: close }], steps: true, onDismiss: close });
   }
 
   private showEnd(): void {
@@ -1212,10 +1212,12 @@ export class DayScene extends Phaser.Scene {
       kicker: "Нова гра",
       title: "Почати заново?",
       body: ["Поточну гру буде втрачено, якщо її не зберегти файлом."],
+      // Незворотне — без головної дії: пробіл чи Enter, затиснуті в грі, не почнуть нову гру за гравця.
       actions: [
-        { label: "Почати нову гру", primary: true, onSelect: () => this.chooseNewGame() },
         { label: "Повернутися", onSelect: back },
+        { label: "Почати нову гру", onSelect: () => this.chooseNewGame() },
       ],
+      steps: true,
       onDismiss: back,
     });
   }
@@ -1235,10 +1237,12 @@ export class DayScene extends Phaser.Scene {
       kicker: IMPORT_SAVE.kicker,
       title: IMPORT_SAVE.title,
       body: [file, IMPORT_SAVE.body],
+      // Поточну гру буде втрачено — без головної дії, як і в «Почати заново?».
       actions: [
-        { label: IMPORT_SAVE.load, primary: true, onSelect: () => this.session.replace(save) },
         { label: IMPORT_SAVE.back, onSelect: back },
+        { label: IMPORT_SAVE.load, onSelect: () => this.session.replace(save) },
       ],
+      steps: true,
       onDismiss: back,
     });
   }
@@ -1253,6 +1257,7 @@ export class DayScene extends Phaser.Scene {
       title: UNREADABLE_SAVE.title,
       body: [UNREADABLE_SAVE.body],
       actions: [
+        { label: UNREADABLE_SAVE.fresh, onSelect: done },
         {
           label: UNREADABLE_SAVE.save,
           primary: true,
@@ -1261,8 +1266,8 @@ export class DayScene extends Phaser.Scene {
             done();
           },
         },
-        { label: UNREADABLE_SAVE.fresh, onSelect: done },
       ],
+      steps: true,
       // Гра ще не почалася: квартиру й панель заглушки нової гри за карткою не видно, як і в картках вибору персонажа.
       solid: true,
     });
@@ -1404,17 +1409,18 @@ export class DayScene extends Phaser.Scene {
         title: `Викинути: ${variantTitle({ thing: kind }, quality).toLowerCase()}?`,
         // Без прогнозу комунальних: тексти не пояснюють механік (§11.3а; крок 17, вичитка 2026-10-28).
         body: [],
+        // Викинути — назавжди: без головної дії, пробіл чи Enter нічого не викинуть.
         actions: [
+          { label: "Повернутися", onSelect: () => show("mine") },
           {
             label: "Викинути",
-            primary: true,
             onSelect: () => {
               done();
               show("mine");
             },
           },
-          { label: "Повернутися", onSelect: () => show("mine") },
         ],
+        steps: true,
         onDismiss: () => show("mine"),
       });
     const show = (tab: PhoneTab): void =>
@@ -1441,6 +1447,7 @@ export class DayScene extends Phaser.Scene {
                 `${cat.name} завтра вранці поїде до нових господарів. ${recentlyArrived(cat, this.state.day + 1) ? GIVE_AWAY_RECENT : GIVE_AWAY_LATER}`,
               ],
               actions: [
+                { label: "Повернутися", onSelect: () => show(tab) },
                 {
                   label: "Дати оголошення",
                   primary: true,
@@ -1449,8 +1456,8 @@ export class DayScene extends Phaser.Scene {
                     show(tab);
                   },
                 },
-                { label: "Повернутися", onSelect: () => show(tab) },
               ],
+              steps: true,
               onDismiss: () => show(tab),
             }),
           cancelAd: (cat) => {

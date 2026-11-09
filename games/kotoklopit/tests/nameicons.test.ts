@@ -317,7 +317,7 @@ describe("іконка біля назви: пункти поїздок (§8.5 �
   });
 
   it("знайда: на кнопці «Віднести в притулок» — іконка притулку, та сама, що в «Куди поїхати?»; текст той самий", () => {
-    const label = foundlingCard(noop, noop).actions[1]?.label ?? "";
+    const label = foundlingCard(noop, noop).actions[0]?.label ?? "";
     expect(iconOf(label)).toBe(DESTINATION_ICONS.shelter);
     expect(plain(label)).toBe(`Віднести в притулок · 🕐 ${minutesText(MODIFIERS.foundlingShelterMinutes)}`);
   });

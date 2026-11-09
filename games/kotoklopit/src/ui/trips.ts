@@ -178,7 +178,9 @@ export function accidentCard(state: GameState, onClose: () => void): Card {
     kicker: "Аварія",
     title: "Бам!",
     body: accidentLines(state),
+    // «Додому» праворуч, як у картках пунктів (`actionsEnd`).
     actions: [{ label: "Додому", primary: true, onSelect: onClose }],
+    steps: true,
   };
 }
 
