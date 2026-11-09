@@ -1,21 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 55" width="56" height="55">
-<!-- person/hair-back/undercut/front — андеркат із чубом, задня частина: виголена потилиця (коротке волосся в тіні base) і високий чуб, що падає на ближній бік, ракурс front (¾ спереду). Рукою еталонів F1b (art/STYLE.md).
-size 56×55; pivot (26, 50) — шия, як у person/head/*; points: top (29, 2.5).
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 51" width="52" height="51">
+<!-- person/hair-back/undercut/front — андеркат із чубом, задня частина: виголена потилиця (щетина на шкірі) і високий чуб, що падає на ближній бік, ракурс front (¾ спереду). Рукою еталонів F1b (art/STYLE.md).
+size 52×51; pivot (22, 50) — шия, як у person/head/*; points: top (25, 2.5).
 Шари: fill-hair, fill-accent, shade, ink.
-Акцент `fill-accent` — довжина чуба (корені — кольору волосся), межі — лініями inner: без акценту чуб кольору волосся й світліший за виголене. У front — виголене за головою в тіні base.
+Виголене — рисочки `fill-hair` на шкірі голови без контуру: на 0,72 зливаються в смугу між кольором волосся й шкірою, тож межу з чубом видно за будь-якого кольору (суцільне волосся в тіні з чорним читалося як шолом). Акцент `fill-accent` — довжина чуба, корені — кольору волосся. У front — порожні шари: потилиця виголена, за головою волосся немає.
+front — порожні шари: за головою в цьому ракурсі волосся немає.
 -->
-<defs>
-<path id="person-hair-back-undercut-front-shape" d="M16.6 25C16 28.2 15.1 32.6 14.8 36C14.5 39.4 15.4 43.7 15 45.6C14.6 47.5 13.4 48.1 12.4 47.6C11.4 47.1 9.8 44.5 9 42.6C8.2 40.7 7.7 38.3 7.4 36C7.1 33.7 7.1 31.2 7.4 29C7.7 26.8 8.4 24.7 9.4 23C10.4 21.3 11.9 19.7 13.4 18.6C14.9 17.5 18.1 15.5 18.6 16.6C19.1 17.7 17.2 21.8 16.6 25Z"/>
-<clipPath id="person-hair-back-undercut-front-clip"><use href="#person-hair-back-undercut-front-shape"/></clipPath>
-</defs>
-<g id="fill-hair">
-<use href="#person-hair-back-undercut-front-shape" fill="#ffffff"/>
-</g>
+<g id="fill-hair"/>
 <g id="fill-accent"/>
-<g id="shade" clip-path="url(#person-hair-back-undercut-front-clip)">
-<path d="M-46 -36C-21 -61 79 -61 104 -36C129 -11 129 89 104 114C79 139 -21 139 -46 114C-71 89 -71 -11 -46 -36Z" fill="#3f2541" fill-opacity="0.3"/>
-</g>
-<g id="ink">
-<use href="#person-hair-back-undercut-front-shape" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
-</g>
+<g id="shade"/>
+<g id="ink"/>
 </svg>

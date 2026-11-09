@@ -50,8 +50,9 @@ export const MANIFEST: readonly ArtEntry[] = [
   part("person/hair-back/afro", 66, 61, -1, -8, TOP_AFRO, PLAIN),
   // Афро, передня частина: куля над лобом і з боків, ближнє вухо видно.
   part("person/hair-front/afro", 66, 55, -2, -8, TOP_AFRO, PLAIN),
-  // Скуйовджена: пасма-зубці на всі боки, до потилиці.
-  part("person/hair-back/shaggy", 64, 58, 0, -3, TOP_SHAGGY, PLAIN),
+  // Скуйовджена: у front — зубці на всі боки, у back — пасма загинаються від вихору в один бік (промені навсібіч були надто
+  // колючі), до потилиці.
+  part("person/hair-back/shaggy", 61, 54, 0, 0, TOP_SHAGGY, PLAIN),
   // Скуйовджена, передня частина: зубці над лобом і з боків, чубчик зубцями над бровами.
   part("person/hair-front/shaggy", 64, 51, 0, -4, TOP_SHAGGY, PLAIN),
   // Дреди: товсті джгути до лопаток; у back — потилиця з проділами.
@@ -62,9 +63,10 @@ export const MANIFEST: readonly ArtEntry[] = [
   part("person/hair-back/braid", 56, 61, 4, 2, TOP, PLAIN),
   // Коса на плече, передня частина: гладко зачесане з проділом, коса з-за ближнього вуха на груди.
   part("person/hair-front/braid", 56, 70, 4, 2, TOP, PLAIN),
-  // Андеркат із чубом: виголена потилиця й чуб, що падає на ближній бік; акцент — довжина чуба.
-  part("person/hair-back/undercut", 56, 55, 6, -4, TOP_QUIFF, ACCENT),
-  // Андеркат із чубом, передня частина: виголені скроні й високий чуб набік до ближньої скроні.
+  // Андеркат із чубом: виголена потилиця (щетина на шкірі — суцільне волосся з чорним читалося як шолом) і чуб, що падає на
+  // ближній бік; акцент — довжина чуба.
+  part("person/hair-back/undercut", 52, 51, 10, -4, TOP_QUIFF, ACCENT),
+  // Андеркат із чубом, передня частина: виголені скроні (щетина) й високий чуб набік до ближньої скроні.
   part("person/hair-front/undercut", 53, 52, 6, -5, TOP_QUIFF, ACCENT),
   // Неонові пасма: каре до щелепи з рваними кінчиками; акцент — два пасма.
   part("person/hair-back/streaks", 60, 55, 2, 2, TOP, ACCENT),
@@ -74,6 +76,7 @@ export const MANIFEST: readonly ArtEntry[] = [
   part("person/hair-back/shaved", 50, 46, 6, 4, TOP, ACCENT),
   // Візерунок на скроні, передня частина.
   part("person/hair-front/shaved", 51, 44, 7, 3, TOP, ACCENT),
-  // Довге з прямим проділом, передня частина (задня — «довгої», `person/hair-back/1`).
-  part("person/hair-front/middle-part", 59, 58, 1, 2, TOP, PLAIN),
+  // Довге з прямим проділом, передня частина (задня — «довгої», `person/hair-back/1`): пасма нижче плечей — ближнє на грудях
+  // між рукою й шиєю, дальнє на дальньому плечі.
+  part("person/hair-front/middle-part", 62, 75, 1, 2, TOP, PLAIN),
 ];
