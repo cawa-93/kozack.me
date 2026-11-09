@@ -42,7 +42,7 @@ import type {
 export const BLEND_MS = 120;
 
 /** Усі якорі (`RigAnchor`). */
-export const RIG_ANCHORS: readonly RigAnchor[] = ["head", "hands", "mouth", "lap"];
+export const RIG_ANCHORS: readonly RigAnchor[] = ["head", "hands", "hands-far", "mouth", "lap"];
 
 const EASES: readonly Ease[] = ["linear", "step", "in", "out", "inOut"];
 const CARGO: readonly SocketCargo[] = ["cat", "hand", "rod", "held", "toy", "sock"];

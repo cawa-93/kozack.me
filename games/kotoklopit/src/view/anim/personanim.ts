@@ -3,7 +3,7 @@
 // за `body.facing`. Разові — від подій, які сцена вже отримує (`personEventAnim`): узяв, поклав, насипав, вкусили,
 // спіткнувся… Плита готує сама (§8.7), тож готування — лише «поклав» і «взяв». Без Phaser.
 
-import { petOver } from "../../sim/actions";
+import { petDone } from "../../sim/actions";
 import type { GameEvent } from "../../sim/events";
 import { cleaningTool } from "../../sim/household";
 import { isIll } from "../../sim/illness";
@@ -143,7 +143,7 @@ export function personAnim(state: GameState, local: PersonLocal): PersonAnimChoi
   if (body.stun > 0 || (body.glitch > 0 && local.moving)) return choose("dizzy");
   if (activity?.kind === "work") return choose(inMeeting(state) ? "meeting" : "work");
   if (activity?.kind === "use") return choose(useAnim(activity.target, activity.bath === true));
-  if (activity?.kind === "pet" && !petOver(activity)) return choose("pet");
+  if (activity?.kind === "pet" && !petDone(activity)) return choose("pet");
   if (activity?.kind === "play" && activity.done !== true) return choose("rod");
   // Телефон тримають біля вуха — коли руки вільні; з річчю чи котом у руках накладка тримає їх, а дзвінок видно з бабла.
   if (state.today.callPending === true && held === null) return choose("phone");

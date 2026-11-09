@@ -9,6 +9,7 @@
 import { catFeeling, type CatFeeling, petOver } from "../sim/actions";
 import { hasDisease } from "../sim/diseases";
 import { HIGH_PLACES, objectAt } from "../sim/home";
+import { petHandOf } from "../sim/petpair";
 import type { Cat, GameState } from "../sim/types";
 import type { CatAnimId } from "./anim/ids";
 import { catLook } from "./thoughts";
@@ -65,7 +66,8 @@ const inArms = (state: GameState, cat: Cat): boolean => {
 /** Персонаж саме гладить кота чи грається з ним вудкою (§8.2): що саме, або null. */
 export function interactionWith(state: GameState, cat: Cat): "pet" | "play" | null {
   const activity = state.character.activity;
-  if (activity?.kind === "pet" && activity.cat === cat.id && !petOver(activity)) return "pet";
+  const hand = activity?.kind === "pet" ? petHandOf(activity, cat.id) : null;
+  if (hand && !petOver(hand)) return "pet";
   if (activity?.kind === "play" && activity.cat === cat.id && activity.done !== true) return "play";
   return null;
 }

@@ -44,6 +44,14 @@ export function reachDepth(personDepth: number, catDepth: number | null): number
 }
 
 /**
+ * Глибина дальньої руки, що гладить другого кота («Двох одразу», §9.12): у верху проміжку кота — над ним, а кіт за персонажем —
+ * рука за тулубом; кота в реєстрі немає — за тулубом.
+ */
+export function farReachDepth(personDepth: number, catDepth: number | null): number {
+  return catDepth !== null && Number.isFinite(catDepth) ? catDepth + ISO_DEPTH_SLOT * 0.95 : personDepth + PERSON_DEPTH.shadow;
+}
+
+/**
  * Глибина точки кота на руках чи на колінах (`PersonPart.hands.depth`): за персонажем у ракурсі `back`, перед ним — у `front`
  * (шматки кота — до `CARGO_PIECES` над нею).
  */
@@ -85,14 +93,14 @@ const EXTRAS = new Map<string, MixExtras>();
  * голова, що хилиться, засинаючи. Ті самі входи — той самий незмінний об'єкт (ключ кешу `mixAnims` рахується раз на об'єкт),
  * без поправок — `NO_EXTRAS`.
  */
-export function personExtras(eyes: "half" | "closed" | null, hideNearArm: boolean, droop: boolean): MixExtras {
-  if (eyes === null && !hideNearArm && !droop) return NO_EXTRAS;
-  const key = `${eyes ?? ""}|${hideNearArm ? 1 : 0}|${droop ? 1 : 0}`;
+export function personExtras(eyes: "half" | "closed" | null, hideNearArm: boolean, droop: boolean, hideFarArm = false): MixExtras {
+  if (eyes === null && !hideNearArm && !hideFarArm && !droop) return NO_EXTRAS;
+  const key = `${eyes ?? ""}|${hideNearArm ? 1 : 0}|${hideFarArm ? 1 : 0}|${droop ? 1 : 0}`;
   let extras = EXTRAS.get(key);
   if (!extras) {
     extras = Object.freeze({
       ...(eyes ? { frames: Object.freeze({ eyes }) } : {}),
-      ...(hideNearArm ? { hidden: Object.freeze(["arm-near"]) } : {}),
+      ...(hideNearArm || hideFarArm ? { hidden: Object.freeze([...(hideNearArm ? ["arm-near"] : []), ...(hideFarArm ? ["arm-far"] : [])]) } : {}),
       ...(droop ? { ramp: Object.freeze({ head: SLEEP_DROOP }) } : {}),
     });
     EXTRAS.set(key, extras);

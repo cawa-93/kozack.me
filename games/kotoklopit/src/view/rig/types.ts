@@ -81,7 +81,7 @@ export interface RigViewSetup<B extends string, S extends string, K extends stri
  * Якорі — точки для того, що лише стоїть поруч і не кріпиться до кістки: `head` — над головою (бульбашки, серця настрою),
  * `hands` — руки персонажа (куди летять запаси, звідки йде волосінь), `mouth` — рот кота, `lap` — коліна персонажа.
  */
-export type RigAnchor = "head" | "hands" | "mouth" | "lap";
+export type RigAnchor = "head" | "hands" | "hands-far" | "mouth" | "lap";
 
 /** Точка на кістці: у її системі, одиниці арту. */
 export interface AnchorDef<B extends string> {

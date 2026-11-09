@@ -24,7 +24,7 @@
 
 import Phaser from "phaser";
 
-import { petOver } from "../../sim/actions";
+import { petDone, petOver } from "../../sim/actions";
 import type { GameEvent } from "../../sim/events";
 import { cleaningTool } from "../../sim/household";
 import type { CleaningTool, GameState, Item, Look } from "../../sim/types";
@@ -65,6 +65,7 @@ import {
   PERSON_DEPTH,
   sweepDustState,
   personExtras,
+  farReachDepth,
   reachDepth,
   shadowScale,
   shownHeld,
@@ -133,10 +134,11 @@ export class IsoPersonView implements PersonPart {
   private readonly feather: Phaser.GameObjects.Image;
   private featherKey = "";
   private readonly featherCrop: Crop = { frame: null };
-  /** Рука, що гладить: запечений кадр ближньої руки, поставлений поза скелетом (з'являється з першими пестощами). */
-  private arm: Phaser.GameObjects.Image | null = null;
-  private armKey = "";
-  private armBase: Vec2 = { x: 1, y: 1 };
+  /** Руки, що гладять: ближня — першого кота, дальня — другого («Двох одразу»); з'являються з першими пестощами. */
+  private readonly arms: { readonly near: PetArm; readonly far: PetArm } = {
+    near: { slot: "arm-near", anchor: "hands", lag: 0, image: null, key: "", base: { x: 1, y: 1 } },
+    far: { slot: "arm-far", anchor: "hands-far", lag: FAR_STROKE_LAG, image: null, key: "", base: { x: 1, y: 1 } },
+  };
   private readonly point: IsoPointHandle;
   /** Глибина точки з останнього розв'язку реєстру. */
   private depth = 0;
@@ -169,12 +171,15 @@ export class IsoPersonView implements PersonPart {
   private main: PersonAnim | null = null;
   private choice: PersonAnimChoice | null = null;
   private hidden = true;
-  /** Кого гладить (ближня рука лягає на спинку) і з ким грається вудочкою цього кадру; null — ні. */
+  /** Кого гладить (ближня рука лягає на спинку; дальня — на другого) і з ким грається вудочкою цього кадру; null — ні. */
   private petCat: number | null = null;
+  private petFarCat: number | null = null;
   private rodCat: number | null = null;
 
   private readonly tmpPoint: Vec2 = { x: 0, y: 0 };
   private readonly tmpTarget: Vec2 = { x: 0, y: 0 };
+  /** Точка між двома котами, яких гладить («Двох одразу»): той самий об'єкт щокадру. */
+  private readonly touchAt: Point = { x: 0, y: 0 };
   private readonly tmpSocket: SocketWorld = { x: 0, y: 0, angle: 0, flipped: false };
   /** Щітка пилососа в руках цього кадру (`brush`) і чи вона є. */
   private readonly brushAt: Point = { x: 0, y: 0 };
@@ -267,11 +272,11 @@ export class IsoPersonView implements PersonPart {
     this.clock += dt * params.speed * (free ? gaitRate(choice.anim, frame.moving, this.pace) : 1);
 
     this.advanceShot(params);
-    // Куди дивиться: гладить кота чи грається з ним — лицем туди, де кота намальовано (юрба ставить його обабіч, `touchFacing`);
+    // Куди дивиться: гладить кота чи грається з ним — лицем туди, де кота намальовано (юрба ставить його обабіч, `touchFacing`),
+    // а двох («Двох одразу») — у бік між ними, щоб жоден не опинився за спиною;
     // за справою — лицем до цілі; засинаючи — спершу лицем до кімнати (очі видно); разова справа біля речі — лицем до неї.
     const reach = this.reachTargets(state, choice);
-    const touched = this.oneShot ? null : (reach.pet ?? reach.rod);
-    const catAt = touched === null ? null : (this.ctx.world.cat(touched)?.root ?? null);
+    const catAt = this.oneShot ? null : this.touchPoint(reach);
     const face = (this.oneShot?.place ? shotFace(state, this.oneShot.place) : null) ?? spot.face;
     const faced = catAt ? touchFacing(feet, catAt, this.facing) : (face && facingFromTiles(face, this.facing)) || { view: choice.view, flip: choice.flip };
     const facing = showFace(choice.anim, faced);
@@ -319,13 +324,18 @@ export class IsoPersonView implements PersonPart {
    * Кого гладить і з ким грається вудочкою (разові вирішує `play`): анімація `pet` чи `rod`, справа ще триває, кіт є в частині
    * котів. Кота немає — рука й вудочка такі, як в анімації.
    */
-  private reachTargets(state: GameState, choice: PersonAnimChoice): { pet: number | null; rod: number | null } {
+  private reachTargets(state: GameState, choice: PersonAnimChoice): Reach {
     const activity = state.character.activity;
     if (choice.params.hidden || !activity) return NO_REACH;
     const world = this.ctx.world;
-    if (choice.anim === "pet" && activity.kind === "pet" && !petOver(activity) && world.cat(activity.cat)) return { pet: activity.cat, rod: null };
+    if (choice.anim === "pet" && activity.kind === "pet" && !petDone(activity)) {
+      const second = activity.second;
+      const pet = !petOver(activity) && world.cat(activity.cat) ? activity.cat : null;
+      const petFar = second && !petOver(second) && world.cat(second.cat) ? second.cat : null;
+      return pet === null && petFar === null ? NO_REACH : { pet, petFar, rod: null };
+    }
     const toy = state.character.held?.kind === "toy";
-    if (choice.anim === "rod" && activity.kind === "play" && activity.done !== true && toy && world.cat(activity.cat)) return { pet: null, rod: activity.cat };
+    if (choice.anim === "rod" && activity.kind === "play" && activity.done !== true && toy && world.cat(activity.cat)) return { pet: null, petFar: null, rod: activity.cat };
     return NO_REACH;
   }
 
@@ -366,18 +376,19 @@ export class IsoPersonView implements PersonPart {
    * схована ближня рука (гладить: її ставить `placeArm`) і голова, що хилиться. За поступом (засинання) — час анімації з
    * поступу, інакше — годинник; та сама основна, лише з іншою накладкою чи очима, продовжує свою фазу.
    */
-  private play(choice: PersonAnimChoice, reach: { pet: number | null; rod: number | null }): void {
+  private play(choice: PersonAnimChoice, reach: Reach): void {
     const params = choice.params;
     const asleep = params.progress !== null;
     const fresh = this.fresh;
     const shot = this.oneShot;
     this.petCat = shot ? null : reach.pet;
+    this.petFarCat = shot ? null : reach.petFar;
     this.rodCat = shot ? null : reach.rod;
     const id = shot ? shot.anim : choice.anim;
     const main = PERSON_ANIMS[id];
     const droop = !shot && asleep && PERSON_BY_PROGRESS.has(choice.anim) && !movesHead(main);
     const armed = personWithArms(main, armsOverlay(id, choice.overlay), id);
-    const anim = mixAnims(armed, personExtras(eyesFrame(params.eyes), this.petCat !== null, droop));
+    const anim = mixAnims(armed, personExtras(eyesFrame(params.eyes), this.petCat !== null, droop, this.petFarCat !== null));
 
     // Час — годинник анімацій (`clock`), тож `Rig.play` напряму: `RigSprite.play` узяв би час минулого кадру.
     const rig = this.sprite.rig;
@@ -492,13 +503,8 @@ export class IsoPersonView implements PersonPart {
     // Розв'язок міг змінити глибину: руки — з новою.
     this.hands.depth = cargoDepth(this.depth, this.sprite.facing.view === "back");
 
-    if (this.petCat !== null) {
-      const cat = this.ctx.world.cat(this.petCat);
-      const catDepth = registry.point(`cat:${this.petCat}`)?.depth ?? null;
-      this.placeArm(cat ? palmAt(cat.back, frame.time) : null, reachDepth(this.depth, catDepth));
-    } else {
-      this.arm?.setVisible(false);
-    }
+    this.reachCat(this.arms.near, this.petCat, frame.time, registry, reachDepth);
+    this.reachCat(this.arms.far, this.petFarCat, frame.time, registry, farReachDepth);
     const g = this.line.clear();
     this.feather.setVisible(false);
     if (this.rodCat !== null) {
@@ -512,55 +518,81 @@ export class IsoPersonView implements PersonPart {
     return this.cargo.rod.key.slice(0, this.cargo.rod.key.indexOf("|")) as ArtId;
   }
 
+  /** Де кіт, до якого персонаж повернутий лицем: той, кого гладить чи з ким грається, а двох — точка між ними. */
+  private touchPoint(reach: Reach): Point | null {
+    const first = reach.pet ?? reach.petFar ?? reach.rod;
+    const a = first === null ? null : (this.ctx.world.cat(first)?.root ?? null);
+    const b = reach.pet !== null && reach.petFar !== null ? (this.ctx.world.cat(reach.petFar)?.root ?? null) : null;
+    if (!a || !b) return a;
+    this.touchAt.x = (a.x + b.x) / 2;
+    this.touchAt.y = (a.y + b.y) / 2;
+    return this.touchAt;
+  }
+
+  /** Рука `arm` гладить кота `cat` (null — рука схована, а слот скелета показує анімація). */
+  private reachCat(arm: PetArm, cat: number | null, time: number, registry: IsoDepth, depthOf: (person: number, cat: number | null) => number): void {
+    if (cat === null) {
+      arm.image?.setVisible(false);
+      return;
+    }
+    const drawn = this.ctx.world.cat(cat);
+    const catDepth = registry.point(`cat:${cat}`)?.depth ?? null;
+    this.placeArm(arm, drawn ? palmAt(drawn.back, time + arm.lag) : null, depthOf(this.depth, catDepth));
+  }
+
   /**
-   * Ближня рука, що гладить: той самий запечений кадр, що в слоті скелета (там його сховано), у позі анімації `pet`,
+   * Рука, що гладить: той самий запечений кадр, що в слоті скелета (там його сховано), у позі анімації `pet`,
    * повернута навколо плеча так, щоб кисть (`grip`) лягла на `palm` (спинка кота), і розтягнута не більше за
    * `REACH_STRETCH`. `palm` null — поза анімації як є.
    */
-  private placeArm(palm: Point | null, depth: number): void {
+  private placeArm(arm: PetArm, palm: Point | null, depth: number): void {
     const rig = this.sprite.rig;
-    const slot = rig.slot("arm-near");
+    const slot = rig.slot(arm.slot);
     if (slot.art === null) {
-      this.arm?.setVisible(false);
+      arm.image?.setVisible(false);
       return;
     }
-    const image = this.armImage(slot.art, slot.state);
+    const image = this.armImage(arm, slot.art, slot.state);
     let pose: PartPose = slot;
     const sign = this.sprite.facing.flip ? -1 : 1;
-    const hand = palm ? rig.anchor("hands", this.tmpPoint, false) : null;
+    const hand = palm ? rig.anchor(arm.anchor, this.tmpPoint, false) : null;
     if (palm && hand) {
-      const bone = rig.bone("arm-near").world;
+      const bone = rig.bone(arm.slot).world;
       const shoulder = { x: bone.tx, y: bone.ty };
       // Ціль — у системі кореня скелета (обличчям праворуч), як і поза.
       const target = { x: (palm.x - this.sprite.x) * sign, y: palm.y - this.sprite.y };
-      pose = reachedPose(slot, shoulder, hand, reachArm(shoulder, hand, target));
+      pose = reachedPose(slot, shoulder, hand, reachArm(shoulder, hand, target, arm.slot === "arm-far"));
     }
     // Віддзеркалений скелет дзеркалить і руку: місце по x, кут і масштаб по x — зі знаком.
     image
       .setPosition(this.sprite.x + sign * pose.x, this.sprite.y + pose.y)
       .setAngle(sign * pose.rot)
-      .setScale(sign * this.armBase.x * pose.sx, this.armBase.y * pose.sy)
+      .setScale(sign * arm.base.x * pose.sx, arm.base.y * pose.sy)
       .setDepth(depth)
       .setVisible(true);
   }
 
-  /** Зображення руки, що гладить, з кадром слота (стан, ракурс) і рецептом вигляду; новий кадр — лише коли щось змінилося. */
-  private armImage(art: ArtId, state: string | null): Phaser.GameObjects.Image {
+  /**
+   * Зображення руки, що гладить, з кадром слота (стан, ракурс) і рецептом вигляду (дальня — затінена, як у скелеті); новий
+   * кадр — лише коли щось змінилося.
+   */
+  private armImage(arm: PetArm, art: ArtId, state: string | null): Phaser.GameObjects.Image {
     const frame = slotFrame(art, artEntry(art), state, this.sprite.facing.view);
     const key = `${frame.frame}|${this.recipeVersion}`;
-    let image = this.arm;
-    if (image && this.armKey === key) return image;
+    let image = arm.image;
+    if (image && arm.key === key) return image;
+    const recipe = arm.slot === "arm-far" ? this.far : this.recipe;
     const opts = { state: frame.state, view: frame.view, owner: PERSON_OWNER };
     if (!image) {
-      image = addBakedArt(this.ctx.scene, this.ctx.layer, art, this.recipe, opts);
-      this.arm = image;
+      image = addBakedArt(this.ctx.scene, this.ctx.layer, art, recipe, opts);
+      arm.image = image;
     } else {
       // `setBakedArt` зберігає масштаб відносно базового — спершу базовий.
-      image.setScale(this.armBase.x, this.armBase.y);
-      setBakedArt(image, art, this.recipe, opts);
+      image.setScale(arm.base.x, arm.base.y);
+      setBakedArt(image, art, recipe, opts);
     }
-    this.armKey = key;
-    this.armBase = { x: image.scaleX, y: image.scaleY };
+    arm.key = key;
+    arm.base = { x: image.scaleX, y: image.scaleY };
     return image;
   }
 
@@ -614,7 +646,8 @@ export class IsoPersonView implements PersonPart {
     this.sweepDust.destroy();
     this.line.destroy();
     this.feather.destroy();
-    this.arm?.destroy();
+    this.arms.near.image?.destroy();
+    this.arms.far.image?.destroy();
     releaseBaked(this.ctx.scene, PERSON_OWNER);
   }
 
@@ -628,7 +661,30 @@ export class IsoPersonView implements PersonPart {
   }
 }
 
-const NO_REACH = { pet: null, rod: null } as const;
+/** Кого гладить кожна рука й з ким грається вудочкою (`reachTargets`). */
+interface Reach {
+  readonly pet: number | null;
+  readonly petFar: number | null;
+  readonly rod: number | null;
+}
+
+const NO_REACH: Reach = { pet: null, petFar: null, rod: null };
+
+/** Рука, що гладить, поставлена поза скелетом: слот і кисть скелета, зсув погладжування й запечене зображення. */
+interface PetArm {
+  readonly slot: "arm-near" | "arm-far";
+  readonly anchor: "hands" | "hands-far";
+  /** Зсув погладжування, мс: дві руки гладять не в такт. */
+  readonly lag: number;
+  image: Phaser.GameObjects.Image | null;
+  key: string;
+  base: Vec2;
+}
+
+/** Дальня рука гладить на пів погладжування пізніше за ближню. */
+const FAR_STROKE_LAG = 700;
+
+type IsoDepth = ReturnType<typeof isoDepth>;
 
 /**
  * Обтяти зображення кадру запису `id` до прямокутника `rect` (одиниці арту; null — без обтинання). Рахується знову, лише

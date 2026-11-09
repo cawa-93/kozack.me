@@ -1,0 +1,94 @@
+{
+ "name": "Двоє просять уваги",
+ "description": "Субота другого тижня, 17:00 (§9.12, «Двох одразу»). Мурка й Пушок прийшли по ласку й просять уваги поруч із персонажем. Утримуйте дію біля Мурки: персонаж гладить обох — ближньою рукою Мурку, дальньою Пушка; обидва муркочуть, здоровий глузд росте від кожного.",
+ "game": {
+  "address": "she",
+  "difficulty": "normal",
+  "seed": 5
+ },
+ "state": {
+  "day": 12,
+  "minute": 1020,
+  "modifiers": {
+   "day": null
+  },
+  "character": {
+   "money": 600,
+   "body": {
+    "x": 4.5,
+    "y": 8.5,
+    "facing": {
+     "x": 1,
+     "y": 0
+    }
+   },
+   "stats": {
+    "satiety": 80,
+    "hygiene": 80,
+    "sanity": 60
+   }
+  }
+ },
+ "cats": [
+  {
+   "source": "shelter",
+   "ageWeeks": 4,
+   "name": "Мурка",
+   "sex": "female",
+   "sterilized": true,
+   "arrivedDay": -10,
+   "x": 5.1,
+   "y": 8.5,
+   "facing": -1,
+   "love": 50,
+   "mood": 70,
+   "needs": {
+    "hunger": 10,
+    "thirst": 10,
+    "toilet": 10,
+    "play": 10,
+    "attention": 75,
+    "fatigue": 10
+   },
+   "act": {
+    "kind": "attention",
+    "target": "character",
+    "goal": null,
+    "minutes": 60,
+    "elapsed": 0,
+    "seen": true
+   },
+   "traits": []
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 4,
+   "name": "Пушок",
+   "sex": "male",
+   "sterilized": true,
+   "arrivedDay": -10,
+   "x": 4.7,
+   "y": 9.3,
+   "facing": -1,
+   "love": 50,
+   "mood": 70,
+   "needs": {
+    "hunger": 10,
+    "thirst": 10,
+    "toilet": 10,
+    "play": 10,
+    "attention": 75,
+    "fatigue": 10
+   },
+   "act": {
+    "kind": "attention",
+    "target": "character",
+    "goal": null,
+    "minutes": 60,
+    "elapsed": 0,
+    "seen": true
+   },
+   "traits": []
+  }
+ ]
+}

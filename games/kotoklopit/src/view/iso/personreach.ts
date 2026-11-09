@@ -54,9 +54,10 @@ const DEG = Math.PI / 180;
 
 /**
  * Рука від плеча `shoulder` з кистю в `hand` (поза анімації) тягнеться до `target`: повертається навколо плеча на `turn`
- * (`REACH_TURN`) і видовжується чи вкорочується в межах `REACH_STRETCH`. Усе — в одній системі координат (корінь скелета).
+ * (`REACH_TURN`; `always` — до цілі завжди цілком: дальня рука до другого кота, якого анімація не знає) і видовжується чи
+ * вкорочується в межах `REACH_STRETCH`. Усе — в одній системі координат (корінь скелета).
  */
-export function reachArm(shoulder: Point, hand: Point, target: Point): ArmReach {
+export function reachArm(shoulder: Point, hand: Point, target: Point, always = false): ArmReach {
   const ax = hand.x - shoulder.x;
   const ay = hand.y - shoulder.y;
   const bx = target.x - shoulder.x;
@@ -67,7 +68,7 @@ export function reachArm(shoulder: Point, hand: Point, target: Point): ArmReach 
   const d = want / arm;
   let full = (Math.atan2(by, bx) - Math.atan2(ay, ax)) / DEG;
   full -= 360 * Math.round(full / 360);
-  const u = Math.min(1, Math.max(0, (d - REACH_TURN.from) / (REACH_TURN.full - REACH_TURN.from)));
+  const u = always ? 1 : Math.min(1, Math.max(0, (d - REACH_TURN.from) / (REACH_TURN.full - REACH_TURN.from)));
   const turn = full * u * u * (3 - 2 * u);
   const stretch = Math.min(REACH_STRETCH.max, Math.max(REACH_STRETCH.min, d));
   const rad = turn * DEG;

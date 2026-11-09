@@ -378,7 +378,8 @@ const SIDES = [-1, 1] as const;
  * з якогось боку персонажа — того самого (крізь персонажа не перебігає), а коли стоїть точно в його точці (сим веде всіх у
  * центр клітинки) — того, де менше котів, а порівну — звідки прийшов. Місце в стіні чи меблях (`fits`) — тоді з краю
  * другого боку. Той, кого гладять чи з ким грається персонаж, — найближчий до нього на своєму боці (рука має дістати), і
- * там лишається й потім.
+ * там лишається й потім; двох, яких гладять обома руками («Двох одразу», §9.12), — на одному боці поруч: обабіч персонажа
+ * дальня рука до другого не дістала б.
  */
 function personRow(
   list: readonly number[],
@@ -422,6 +423,17 @@ function personRow(
     }
     if (own.order > first) own.order = first - 1;
   }
+  const touched = list.filter((i) => members[i]!.touched === true);
+  if (touched.length !== 2) return;
+  const [a, b] = touched as [number, number];
+  const slotA = slots.get(members[a]!.id)!;
+  const slotB = slots.get(members[b]!.id)!;
+  if (slotA.side === slotB.side) return;
+  // Переходить той, хто став у юрбу пізніше, — одразу за першим.
+  const [stay, move, i] = slotA.order <= slotB.order ? [slotA, slotB, b] : [slotB, slotA, a];
+  if (!fits(i, stay.side, 1)) return;
+  move.side = stay.side;
+  move.order = stay.order + 0.5;
 }
 
 // --- Юрба на речах ----------------------------------------------------------------------------------

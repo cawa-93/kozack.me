@@ -111,6 +111,8 @@ export const PERSON_RIG = defineRig({
     head: { bone: "head", x: 41.5, y: 0.5 },
     // Руки — куди летять запаси і звідки йде волосінь.
     hands: { bone: "hand-near", x: 6.4, y: -0.2 },
+    // Кисть дальньої руки — нею гладять другого кота («Двох одразу», §9.12).
+    "hands-far": { bone: "hand-far", x: 6.4, y: -0.2 },
     // Коліна: над сидінням перед тазом (сидячи — на стегнах). На тазі, а не на нозі: гніздо повертається разом із кісткою від
     // її вихідного кута, тож на нозі, що сидячи лягає горизонтально, кіт лежав би боком; таз не повертається (N4b).
     lap: { bone: "pelvis", x: 14, y: -1 },
@@ -183,6 +185,7 @@ export const PERSON_FIT = defineFit(PERSON_RIG, {
       { slot: "head", point: "top" },
     ],
     hands: { slot: "arm-near", point: "grip" },
+    "hands-far": { slot: "arm-far", point: "grip" },
   },
   sockets: {
     arms: { slot: "torso", point: "arms" },
