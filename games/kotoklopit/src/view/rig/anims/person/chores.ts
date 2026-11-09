@@ -36,7 +36,7 @@ import { isoObjectLook } from "../../../world/objects";
 import { ISO_TILE } from "../../../world/projection";
 import { PERSON_RIG } from "../../defs/person";
 import { easeValue } from "../../rigcore";
-import { defineAnims, type BoneOf, type BoneTracks, type Ease, type Key, type RigTracks, type SlotOf, type SlotTracks, type Vec2 } from "../../types";
+import { defineAnims, type BoneOf, type BoneTracks, type Ease, type Key, type RigTracks, type SlotOf, type SlotTracks, type StepKey, type Vec2 } from "../../types";
 import { levelHand, personArmsPose } from "./move";
 
 type Bone = BoneOf<typeof PERSON_RIG>;
@@ -307,15 +307,58 @@ function level(pose: Pose, tilt = 0): Pose {
 /** Доріжки слотів, однакові в обох ракурсах (схований черевик сидячи). */
 type Slots = Readonly<Partial<Record<Slot, SlotTracks>>>;
 
+/** Стан довгого поділу — спідниці й верху (`art/STYLE.md`, «Довжина»). */
+type HemState = "stand" | "sit" | "squat";
+
+/**
+ * Пороги стану поділу за згином у стегні (кут між тулубом і стегном, градуси): від `sit` — стегно поперек тулуба (сидить на
+ * стільці чи на підлозі, глибоко зігнувся), від `squat` — присів чи нахилився, менше — тулуб і ноги в одну лінію (стоїть, лежить
+ * на спині). Поділ іде за тулубом: `stand` на згині стирчав би назад чи йшов би під підлогу, а `sit` лежачи — догори.
+ */
+const HEM = { sit: 75, squat: 30 } as const;
+
+function hemState(pose: Pose): HemState {
+  const flex = (pose.torso?.rot ?? 0) - (pose["leg-near"]?.rot ?? 0);
+  if (flex >= HEM.sit) return "sit";
+  if (flex >= HEM.squat) return "squat";
+  return "stand";
+}
+
+/**
+ * Доріжка кадру поділу за позами справи: стан міняється стрибком посередині між ключами, де поза перейшла поріг (`HEM`). null —
+ * увесь час `stand`. Так будь-який кадр зі станами (`skirt`, `top-hem`) стає правильно без правок справ.
+ */
+function hemFrames(beats: readonly Beat[]): StepKey<string>[] | null {
+  const keys: StepKey<string>[] = [];
+  let prev: { t: number; state: HemState } | null = null;
+  for (const [t, pose] of beats) {
+    const state = hemState(pose);
+    if (!prev) keys.push({ t: 0, v: state });
+    else if (state !== prev.state) keys.push({ t: Math.round((prev.t + t) / 2), v: state });
+    prev = { t, state };
+  }
+  return keys.every((k) => k.v === "stand") ? null : keys;
+}
+
+/** Доріжки поділу спідниці й верху з однаковими кадрами. */
+const hemSlots = (frame: readonly StepKey<string>[]): Slots => ({ skirt: { frame }, "top-hem": { frame } });
+
 /**
  * Анімація з поз для кожного ракурсу: основні доріжки — ¾ спереду, а `views.back` — лише ті доріжки ¾ ззаду, що
- * відрізняються.
+ * відрізняються. Стан поділу — з поз (`hemFrames`), якщо `slots` не задають його самі.
  */
 function anim(duration: number, loop: boolean, beats: (s: Space) => readonly Beat[], slots?: Slots) {
-  const front = bonesOf(beats(SPACES.front));
-  const back = bonesOf(beats(SPACES.back));
+  const frontBeats = beats(SPACES.front);
+  const backBeats = beats(SPACES.back);
+  const front = bonesOf(frontBeats);
+  const back = bonesOf(backBeats);
   const diff: Partial<Record<Bone, BoneTracks>> = {};
   const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
+  const own = slots?.skirt !== undefined || slots?.["top-hem"] !== undefined;
+  const hemFront = own ? null : hemFrames(frontBeats);
+  const hemBack = own ? null : hemFrames(backBeats);
+  const allSlots: Slots | undefined = hemFront ? { ...hemSlots(hemFront), ...slots } : slots;
+  const backSlots: Slots | null = same(hemFront, hemBack) ? null : hemSlots(hemBack ?? [{ t: 0, v: "stand" }]);
   for (const id of BONES) {
     const a = front[id] ?? {};
     const b = back[id] ?? {};
@@ -327,12 +370,16 @@ function anim(duration: number, loop: boolean, beats: (s: Space) => readonly Bea
     };
     if (track.rot || track.pos || track.scale) diff[id] = track;
   }
+  const views = {
+    ...(Object.keys(diff).length > 0 ? { bones: diff } : {}),
+    ...(backSlots ? { slots: backSlots } : {}),
+  };
   return {
     duration,
     loop,
     bones: front,
-    ...(slots ? { slots } : {}),
-    ...(Object.keys(diff).length > 0 ? { views: { back: { bones: diff } } } : {}),
+    ...(allSlots ? { slots: allSlots } : {}),
+    ...(Object.keys(views).length > 0 ? { views: { back: views } } : {}),
   };
 }
 
@@ -447,15 +494,6 @@ const SIT_SLOTS: Slots = {
   "legwear-far": { visible: [{ t: 0, v: false }] },
   skirt: { frame: [{ t: 0, v: "sit" }] },
   "top-hem": { frame: [{ t: 0, v: "sit" }] },
-};
-
-/**
- * Сів на підлогу (падає від виснаження): ноги лягають уперед, як стегно сидячи, — спідниця й поділ верху в стані `sit`, щойно
- * таз опустився нижче за довжину поділу (стоячи поділ пішов би під підлогу).
- */
-const FLOOR_SLOTS: Slots = {
-  skirt: { frame: [{ t: 0, v: "stand" }, { t: 600, v: "sit" }] },
-  "top-hem": { frame: [{ t: 0, v: "stand" }, { t: 600, v: "sit" }] },
 };
 
 /**
@@ -1136,7 +1174,7 @@ export const PERSON_CHORES = defineAnims(PERSON_RIG, {
   door: anim(MS.door, false, door),
   phone: anim(2000, true, phone, OVER_HELD),
   fallAsleep: anim(PROGRESS_MS, false, fallAsleep),
-  collapse: anim(PROGRESS_MS, false, collapse, FLOOR_SLOTS),
+  collapse: anim(PROGRESS_MS, false, collapse),
   take: anim(MS.take, false, take),
   put: anim(MS.put, false, put),
   trash: anim(MS.trash, false, trash),
