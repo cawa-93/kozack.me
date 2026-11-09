@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 54" width="64" height="54">
+<!-- person/top-skirt/robe/back — низ халата до колін із поясом (слот skirt на кістці hips), ракурс back (¾ ззаду).
+size 64×54; pivot (32, 17) — таз, як у person/torso/1 (полотно торса, зсунуте на (3, -37)).
+Шари: fill-top, shade, ink. Стани: st-stand — стоїть; st-sit — сидить (стегно вперед); st-squat — присів (ноги вкорочені, тулуб нахилений).
+Халат від пояса до колін накриває поділ і стегна торса; пояс із бантом — без станів (поверх талії), край ближньої поли йде від банта донизу. Колір і візерунок — верху (fill-top). Плям немає. Ззаду — пояс без банта.
+-->
+<defs>
+<path id="person-top-skirt-robe-back-stand" d="M11.6 8C11.2 12 10.6 16 10.2 22C9.6 30 9 38 8.6 45.2C16 47 24 47.8 32 47.8C38 47.8 44 47 48.4 45.4C50.8 44.6 53.2 43.6 55.4 42.2C55.6 36 55.6 28 55.6 20C55.2 15 54.6 11 53.9 7.8C40 8.6 24 8.6 11.6 8Z"/>
+<clipPath id="person-top-skirt-robe-back-stand-clip"><use href="#person-top-skirt-robe-back-stand"/></clipPath>
+<path id="person-top-skirt-robe-back-sit" d="M11.6 8C24 8.6 40 8.6 53.9 7.8C55 7.2 56.4 6.6 57.6 6.4C58 11 58 17 57.6 22.4C57.4 23.8 57 24.6 56.4 25C49 27.4 40 29.2 32 30C24 30.8 18 31.4 14.6 31C11.6 30.6 10.2 28.8 10 26C10 19 10.6 13 11.6 8Z"/>
+<clipPath id="person-top-skirt-robe-back-sit-clip"><use href="#person-top-skirt-robe-back-sit"/></clipPath>
+<path id="person-top-skirt-robe-back-squat" d="M11.6 8C24 8.6 40 8.6 53.9 7.8C55 14 56.6 20 58 27C53 31.4 47 35 41 37.6C34 40.4 25 41.4 18 39.6C13.6 38.4 10.8 36.6 9.4 33.6C9.6 25 10.4 16 11.6 8Z"/>
+<clipPath id="person-top-skirt-robe-back-squat-clip"><use href="#person-top-skirt-robe-back-squat"/></clipPath>
+</defs>
+<g id="fill-top">
+<use href="#person-top-skirt-robe-back-stand" fill="#ffffff" class="st-stand"/>
+<use href="#person-top-skirt-robe-back-sit" fill="#ffffff" class="st-sit"/>
+<use href="#person-top-skirt-robe-back-squat" fill="#ffffff" class="st-squat"/>
+<path d="M11.4 8.6C24 10 42 10 54 8.4L54.4 12.4C42 14 24 14 11.2 12.8Z" fill="#ffffff"/>
+</g>
+<g id="shade">
+<g class="st-stand" clip-path="url(#person-top-skirt-robe-back-stand-clip)">
+<path d="M8 12.6C22 15.4 44 15.4 59 12.4L59 17.6C44 19.6 22 19.6 8 17.4Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M5 16C10 22 12 32 13.6 50L5 50Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<g class="st-sit" clip-path="url(#person-top-skirt-robe-back-sit-clip)">
+<path d="M8 12.6C22 15.4 44 15.4 59 12.4L59 17.6C44 19.6 22 19.6 8 17.4Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M8 24C20 26 40 24 60 20L60 36L8 36Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<g class="st-squat" clip-path="url(#person-top-skirt-robe-back-squat-clip)">
+<path d="M8 12.6C22 15.4 44 15.4 59 12.4L59 17.6C44 19.6 22 19.6 8 17.4Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M5 20C9 24 12 30 14 48L5 48Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+</g>
+<g id="ink">
+<g class="st-stand">
+<path d="M20 22Q19.4 34 18.2 45Q21.6 34 20 22Z" fill="#2e1f29"/>
+<path d="M45.6 22Q47.4 34 48.4 45.4Q49 34 45.6 22Z" fill="#2e1f29"/>
+<path d="M53.9 7.8C54.6 11 55.2 15 55.6 20C55.6 28 55.6 36 55.4 42.2C53.2 43.6 50.8 44.6 48.4 45.4C44 47 38 47.8 32 47.8C24 47.8 16 47 8.6 45.2C9 38 9.6 30 10.2 22C10.6 16 11.2 12 11.6 8" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g class="st-sit">
+<path d="M50.4 12Q53.4 16.6 53.6 22Q52.2 16.6 50.4 12Z" fill="#2e1f29"/>
+<path d="M53.9 7.8C55 7.2 56.4 6.6 57.6 6.4C58 11 58 17 57.6 22.4C57.4 23.8 57 24.6 56.4 25C49 27.4 40 29.2 32 30C24 30.8 18 31.4 14.6 31C11.6 30.6 10.2 28.8 10 26C10 19 10.6 13 11.6 8" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g class="st-squat">
+<path d="M46 24Q48.4 29 48.4 34.6Q47 29.4 46 24Z" fill="#2e1f29"/>
+<path d="M28 26Q29 33 28.4 40Q30.6 33 28 26Z" fill="#2e1f29"/>
+<path d="M53.9 7.8C55 14 56.6 20 58 27C53 31.4 47 35 41 37.6C34 40.4 25 41.4 18 39.6C13.6 38.4 10.8 36.6 9.4 33.6C9.6 25 10.4 16 11.6 8" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<path d="M11.4 8.6C24 10 42 10 54 8.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11.2 12.8C24 14 42 14 54.4 12.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

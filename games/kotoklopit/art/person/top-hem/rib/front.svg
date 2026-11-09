@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 58 27" width="58" height="27">
+<!-- person/top-hem/rib/front — напуск і резинка светра оверсайз і кардигана, ракурс front (¾ спереду).
+size 58×27; pivot (29, 14) — таз (клаптик торса person/torso/1 від (0, 40)); points: немає.
+Шари: fill-top, ink.
+Верх кольору верху продовжується нижче подолу торса напуском, ширшим за стегна, і збирається в резинку; низ — вище промежини (один кадр). Лінія подолу торса під напуском зникає; борт кардигана йде поверх (person/top-front/cardigan). Плями нижче резинки (на стегнах) лишаються видимими.
+-->
+<g id="fill-top">
+<path d="M7.09 6C6.93 6.67 6.28 8.83 6.1 10C5.92 11.17 5.92 12.23 6 13C6.08 13.77 6.42 14.12 6.6 14.6C6.9 14.73 7.2 14.87 7.5 15C7.63 16.4 7.77 17.8 7.9 19.2C10.93 19.8 14.48 20.8 18 21.2C21.52 21.6 25.33 21.6 29 21.6C32.67 21.6 36.7 21.67 40 21.2C43.3 20.73 46.16 19.52 48.8 18.8C48.93 17.47 49.07 16.13 49.2 14.8C49.53 14.67 49.87 14.53 50.2 14.4C50.35 13.44 50.86 12.6 50.7 11.2C50.54 9.8 49.48 6.87 49.24 6C45.86 6.2 36.02 7.2 29 7.2C21.98 7.2 10.74 6.2 7.09 6Z" fill="#ffffff"/>
+</g>
+<g id="ink">
+<path d="M7.09 6C6.93 6.67 6.28 8.83 6.1 10C5.92 11.17 5.92 12.23 6 13C6.08 13.77 6.42 14.12 6.6 14.6" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M50.2 14.4C50.35 13.44 50.86 12.6 50.7 11.2C50.54 9.8 49.48 6.87 49.24 6" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M6.6 14.6C6.9 14.73 7.2 14.87 7.5 15C7.63 16.4 7.77 17.8 7.9 19.2" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M48.8 18.8C48.93 17.47 49.07 16.13 49.2 14.8C49.53 14.67 49.87 14.53 50.2 14.4" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7.9 19.2C10.93 19.8 14.48 20.8 18 21.2C21.52 21.6 25.33 21.6 29 21.6C32.67 21.6 36.7 21.67 40 21.2C43.3 20.73 46.16 19.52 48.8 18.8" fill="none" stroke="#2e1f29" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M6.6 14.6C8.5 14.77 14.27 15.37 18 15.6C21.73 15.83 25.33 15.98 29 16C32.67 16.02 36.47 15.97 40 15.7C43.53 15.43 48.5 14.62 50.2 14.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11.4 16.56L11.4 18.57" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M15.8 16.94L15.8 19.48" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M20.2 17.23L20.2 20" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M24.6 17.42L24.6 20.18" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M29 17.5L29 20.2" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M33.4 17.48L33.4 20.19" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M37.8 17.34L37.8 20.03" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M42.2 16.99L42.2 19.38" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M46.6 16.42L46.6 18.07" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

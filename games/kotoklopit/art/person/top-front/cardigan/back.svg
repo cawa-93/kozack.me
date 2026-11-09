@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 64" width="30" height="64">
+<!-- person/top-front/cardigan/back — V-виріз кардигана з футболкою й планка з ґудзиками, ракурс back (¾ ззаду).
+size 30×64; pivot (15, 52) — таз (клаптик торса person/torso/1 від (14, 2)); points: немає.
+Шари: fill-inner, shade, ink.
+Футболка (fill-inner) у V-вирізі, її горловина — лінія вирізу торса; нижче — борт до низу резинки (person/top-hem/rib) і п'ять ґудзиків; колір і плями — торса. Полотно сягає нижче подолу торса: борт іде через резинку. Ззаду — лінія коміра-резинки.
+-->
+<g id="fill-inner"/>
+<g id="shade"/>
+<g id="ink">
+<path d="M7.6 10.8C11.2 13.6 19 13.6 23 10.8" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

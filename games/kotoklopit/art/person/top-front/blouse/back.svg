@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 52" width="29" height="52">
+<!-- person/top-front/blouse/back — бант блузки біля коміра, ракурс back (¾ ззаду).
+size 29×52; pivot (14, 52) — таз (клаптик торса person/torso/1 від (15, 2)); points: немає.
+Шари: fill-top, ink.
+Бант кольору блузки: дві петлі, вузол і кінці. Без шару тіні (бюджет атласу). Ззаду банта не видно: кадр порожній.
+-->
+<g id="fill-top"/>
+<g id="ink"/>
+</svg>

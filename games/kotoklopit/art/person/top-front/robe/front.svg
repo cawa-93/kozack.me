@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 52" width="30" height="52">
+<!-- person/top-front/robe/front — запах халата: глибокий виріз, шалевий комір і край поли, ракурс front (¾ спереду).
+size 30×52; pivot (15, 52) — таз (клаптик торса person/torso/1 від (14, 2)); points: немає.
+Шари: fill-skin, shade, ink.
+Шкіра (fill-skin) у V-вирізі запаху перекриває виріз торса; шалевий комір — лінії обабіч вирізу; ближня пола лягає навскіс поверх дальньої до пояса (пояс і низ — person/top-skirt/robe). Колір і плями — торса. Тінь від голови — та сама, що в торса. Ззаду — край коміра на спині.
+-->
+<defs>
+<clipPath id="person-top-front-robe-front-clip"><path d="M8 9.2C10.4 16 13.6 23.6 16.6 29.4C18.2 22.8 19.6 15.4 21 8.6C17 8.4 12 8.8 8 9.2Z"/></clipPath>
+</defs>
+<g id="fill-skin">
+<path d="M8 9.2C10.4 16 13.6 23.6 16.6 29.4C18.2 22.8 19.6 15.4 21 8.6C17 8.4 12 8.8 8 9.2Z" fill="#ffffff"/>
+</g>
+<g id="shade" clip-path="url(#person-top-front-robe-front-clip)">
+<path d="M27.9 11.4C27.9 12.3 27 13.4 25.7 14.1C24.4 14.8 22.1 15.5 20 15.8C17.8 16.1 15 16.1 12.8 15.8C10.7 15.5 8.4 14.8 7.1 14.1C5.8 13.4 4.9 12.3 4.9 11.4C4.9 10.5 5.8 9.4 7.1 8.7C8.4 8 10.7 7.3 12.8 7C15 6.7 17.8 6.7 20 7C22.1 7.3 24.4 8 25.7 8.7C27 9.4 27.9 10.5 27.9 11.4Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="ink">
+<path d="M8 9.2C10.4 16 13.6 23.6 16.6 29.4C18.4 33.6 20 38 21.4 42.6" fill="none" stroke="#2e1f29" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M21 8.6C19.6 15.4 18.2 22.8 16.6 29.4" fill="none" stroke="#2e1f29" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M5.6 9.5C7.8 17.8 11 26.2 14.8 34.4C16.4 37.4 17.6 40.4 18.4 43.2" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M24.4 9.2C23.4 17 21.8 27 19.4 36.2" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

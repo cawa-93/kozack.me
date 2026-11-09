@@ -37,6 +37,12 @@ const TEE = { arm: "person/arm/tee", armFar: "person/arm-far/tee" } as const;
 const COLLAR = "person/top-front/collar";
 const SHIRT = { front: COLLAR, hem: "person/top-hem/shirt" } as const;
 const HOOD = "person/hood/hoodie";
+/** Широкий рукав із резинкою — і светра, і кардигана; резинка на поділі — теж спільна. */
+const SWEATER = { arm: "person/arm/sweater", armFar: "person/arm-far/sweater" } as const;
+const RIB = "person/top-hem/rib";
+/** Футболка під бретелями (сарафан, напівкомбінезон): рукав — річ під верхом. */
+const TEE_INNER = { arm: "person/arm/tee-inner", armFar: "person/arm-far/tee-inner" } as const;
+const FLARE = "person/top-skirt/flare";
 
 export const TOP_CUTS: readonly TopCut[] = [
   { name: "лонгслів", group: "повсякденне" },
@@ -51,6 +57,16 @@ export const TOP_CUTS: readonly TopCut[] = [
   { name: "жилет", group: "ділове", arm: "person/arm/vest", armFar: "person/arm-far/vest", front: "person/top-front/vest", inner: WHITE },
   // Рідше за інші: «Випадково» з ним не обирає низу.
   { name: "комбінезон", group: "сукні й комбінезони", front: COLLAR, hem: "person/top-hem/jumpsuit", bottom: 0, weight: 0.5 },
+  { name: "піджак", group: "ділове", front: "person/top-front/blazer", hem: "person/top-hem/blazer", inner: WHITE },
+  { name: "кардиган", group: "затишне", ...SWEATER, front: "person/top-front/cardigan", hem: RIB, inner: WHITE },
+  // Ноги — з ряду «Низ»: під туніку пасують легінси, шорти чи міні дають голі ноги, спідницю низу ховає кльош.
+  { name: "сукня-туніка", group: "сукні й комбінезони", skirt: FLARE },
+  { name: "светр оверсайз", group: "затишне", ...SWEATER, hem: RIB },
+  { name: "блузка", group: "сукні й комбінезони", arm: "person/arm/puff", armFar: "person/arm-far/puff", front: "person/top-front/blouse" },
+  { name: "сарафан", group: "сукні й комбінезони", ...TEE_INNER, front: "person/top-front/sarafan", skirt: FLARE, inner: WHITE },
+  // Як комбінезон: «Випадково» з ним не обирає низу.
+  { name: "напівкомбінезон", group: "сукні й комбінезони", ...TEE_INNER, front: "person/top-front/overalls", inner: WHITE, bottom: 0, weight: 0.5 },
+  { name: "халат", group: "затишне", arm: "person/arm/robe", armFar: "person/arm-far/robe", front: "person/top-front/robe", skirt: "person/top-skirt/robe" },
 ];
 
 /** Кадри верху; `skirt` — лише в сукні: тоді вона займає слот спідниці низу. */

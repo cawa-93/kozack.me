@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 52" width="30" height="52">
+<!-- person/top-front/robe/back — запах халата: глибокий виріз, шалевий комір і край поли, ракурс back (¾ ззаду).
+size 30×52; pivot (15, 52) — таз (клаптик торса person/torso/1 від (14, 2)); points: немає.
+Шари: fill-skin, shade, ink.
+Шкіра (fill-skin) у V-вирізі запаху перекриває виріз торса; шалевий комір — лінії обабіч вирізу; ближня пола лягає навскіс поверх дальньої до пояса (пояс і низ — person/top-skirt/robe). Колір і плями — торса. Тінь від голови — та сама, що в торса. Ззаду — край коміра на спині.
+-->
+<g id="fill-skin"/>
+<g id="shade"/>
+<g id="ink">
+<path d="M6 10.8C10.6 14.6 19.8 14.8 24.8 10.8" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

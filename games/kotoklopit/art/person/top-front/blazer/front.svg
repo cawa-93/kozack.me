@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 37 52" width="37" height="52">
+<!-- person/top-front/blazer/front — лацкани піджака й виріз із сорочкою, ракурс front (¾ спереду).
+size 37×52; pivot (17, 52) — таз (клаптик торса person/torso/1 від (12, 2)); points: немає.
+Шари: fill-inner, shade, ink.
+Сорочка (fill-inner, колір TopCut.inner) у вирізі до першого ґудзика, її комір — поверх; лацкани з виїмкою — лише лінії на торсі (колір, візерунок і плями — торса), борт до подолу торса, два ґудзики, нагрудна кишеня з хусточкою (fill-inner). Поли — person/top-hem/blazer. Ззаду — стійка коміра сорочки над коміром піджака. Тінь від голови — та сама, що в торса.
+-->
+<defs>
+<clipPath id="person-top-front-blazer-front-clip"><path d="M9.6 9C11.6 15 14.4 25 17 32.6C19.2 25 21.8 15 23.6 8.4C21.8 10.6 19.4 13.4 16.8 13.8C14.4 13.4 11.6 10.8 9.6 9Z"/><path d="M9.4 7C8.7 10.4 9.4 14.6 11.4 17.1C13.3 16.1 15.3 14.8 16.7 13.4C14.6 12.2 11.3 10.1 9.4 7Z"/><path d="M23.4 6.7C24.1 10.1 23.2 13.9 21 16.4C19.6 15.6 18.1 14.6 16.9 13.4C19 12.1 21.7 9.8 23.4 6.7Z"/><path d="M27.6 25.4L28.4 23.2L29.4 24.4L30.4 23L30.8 25.1Z"/></clipPath>
+</defs>
+<g id="fill-inner">
+<path d="M9.6 9C11.6 15 14.4 25 17 32.6C19.2 25 21.8 15 23.6 8.4C21.8 10.6 19.4 13.4 16.8 13.8C14.4 13.4 11.6 10.8 9.6 9Z" fill="#ffffff"/>
+<path d="M9.4 7C8.7 10.4 9.4 14.6 11.4 17.1C13.3 16.1 15.3 14.8 16.7 13.4C14.6 12.2 11.3 10.1 9.4 7Z" fill="#ffffff"/>
+<path d="M23.4 6.7C24.1 10.1 23.2 13.9 21 16.4C19.6 15.6 18.1 14.6 16.9 13.4C19 12.1 21.7 9.8 23.4 6.7Z" fill="#ffffff"/>
+<path d="M27.6 25.4L28.4 23.2L29.4 24.4L30.4 23L30.8 25.1Z" fill="#ffffff"/>
+</g>
+<g id="shade" clip-path="url(#person-top-front-blazer-front-clip)">
+<path d="M29.9 11.4C29.9 12.3 29 13.4 27.7 14.1C26.4 14.8 24.1 15.5 22 15.8C19.8 16.1 17 16.1 14.8 15.8C12.7 15.5 10.4 14.8 9.1 14.1C7.8 13.4 6.9 12.3 6.9 11.4C6.9 10.5 7.8 9.4 9.1 8.7C10.4 8 12.7 7.3 14.8 7C17 6.7 19.8 6.7 22 7C24.1 7.3 26.4 8 27.7 8.7C29 9.4 29.9 10.5 29.9 11.4Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="ink">
+<path d="M12 16.4C13.6 21.6 15.4 27.4 17 32.6" fill="none" stroke="#2e1f29" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M20.6 15.8C19.4 21.4 18.2 27.4 17 32.6" fill="none" stroke="#2e1f29" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7.8 9.4C7 12.4 6.2 16.2 5.8 19.4L8.4 20.2" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8.4 20.2L6.6 21.6C9.4 25.6 13.4 29.8 17 32.6" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M25 8.8C25.8 11.8 26.4 15.4 26.6 18.6L25 19.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M25 19.4L26 20.8C24.2 25.2 20.6 29.8 17 32.6" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M9.4 7C8.7 10.4 9.4 14.6 11.4 17.1C13.3 16.1 15.3 14.8 16.7 13.4" fill="none" stroke="#2e1f29" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M16.7 13.4C14.6 12.2 11.3 10.1 9.4 7" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M23.4 6.7C24.1 10.1 23.2 13.9 21 16.4C19.6 15.6 18.1 14.6 16.9 13.4" fill="none" stroke="#2e1f29" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M16.9 13.4C19 12.1 21.7 9.8 23.4 6.7" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17 32.6C17.2 37 17.3 42 17.4 46.6" fill="none" stroke="#2e1f29" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M20.1 37.2A1.1 1.1 0 1 1 17.9 37.2A1.1 1.1 0 1 1 20.1 37.2Z" fill="#2e1f29"/>
+<path d="M20.3 43.6A1.1 1.1 0 1 1 18.1 43.6A1.1 1.1 0 1 1 20.3 43.6Z" fill="#2e1f29"/>
+<path d="M27.6 25.4L28.4 23.2L29.4 24.4L30.4 23L30.8 25.1Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M26.8 25.8L31.4 25.2" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

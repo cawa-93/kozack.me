@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 64" width="30" height="64">
+<!-- person/top-front/cardigan/front — V-виріз кардигана з футболкою й планка з ґудзиками, ракурс front (¾ спереду).
+size 30×64; pivot (15, 52) — таз (клаптик торса person/torso/1 від (14, 2)); points: немає.
+Шари: fill-inner, shade, ink.
+Футболка (fill-inner) у V-вирізі, її горловина — лінія вирізу торса; нижче — борт до низу резинки (person/top-hem/rib) і п'ять ґудзиків; колір і плями — торса. Полотно сягає нижче подолу торса: борт іде через резинку. Ззаду — лінія коміра-резинки.
+-->
+<defs>
+<clipPath id="person-top-front-cardigan-front-clip"><path d="M8 9.2C9.8 15.2 12.6 22.4 15.2 28.4C17.6 22 19.8 15 21 8.6C19.3 8.9 19.1 11.6 18 12.4C16.9 13.2 15.6 13.4 14.4 13.4C13.2 13.4 11.9 13.1 10.8 12.4C9.7 11.7 9.7 9.4 8 9.2Z"/></clipPath>
+</defs>
+<g id="fill-inner">
+<path d="M8 9.2C9.8 15.2 12.6 22.4 15.2 28.4C17.6 22 19.8 15 21 8.6C19.3 8.9 19.1 11.6 18 12.4C16.9 13.2 15.6 13.4 14.4 13.4C13.2 13.4 11.9 13.1 10.8 12.4C9.7 11.7 9.7 9.4 8 9.2Z" fill="#ffffff"/>
+</g>
+<g id="shade" clip-path="url(#person-top-front-cardigan-front-clip)">
+<path d="M27.9 11.4C27.9 12.3 27 13.4 25.7 14.1C24.4 14.8 22.1 15.5 20 15.8C17.8 16.1 15 16.1 12.8 15.8C10.7 15.5 8.4 14.8 7.1 14.1C5.8 13.4 4.9 12.3 4.9 11.4C4.9 10.5 5.8 9.4 7.1 8.7C8.4 8 10.7 7.3 12.8 7C15 6.7 17.8 6.7 20 7C22.1 7.3 24.4 8 25.7 8.7C27 9.4 27.9 10.5 27.9 11.4Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="ink">
+<path d="M21 8.6C19.3 8.9 19.1 11.6 18 12.4C16.9 13.2 15.6 13.4 14.4 13.4C13.2 13.4 11.9 13.1 10.8 12.4C9.7 11.7 9.7 9.4 8 9.2" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8 9.2C9.8 15.2 12.6 22.4 15.2 28.4" fill="none" stroke="#2e1f29" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M21 8.6C19.8 15 17.6 22 15.2 28.4" fill="none" stroke="#2e1f29" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M6.2 10.2C8.2 16.6 11.4 23.8 13.8 29.6" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M15.2 28.4C15.4 38 15.5 48 15.6 58.4" fill="none" stroke="#2e1f29" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17.95 31.6A0.95 0.95 0 1 1 16.05 31.6A0.95 0.95 0 1 1 17.95 31.6Z" fill="#2e1f29"/>
+<path d="M18 37.2A0.95 0.95 0 1 1 16.1 37.2A0.95 0.95 0 1 1 18 37.2Z" fill="#2e1f29"/>
+<path d="M18.05 42.8A0.95 0.95 0 1 1 16.15 42.8A0.95 0.95 0 1 1 18.05 42.8Z" fill="#2e1f29"/>
+<path d="M18.1 48.4A0.95 0.95 0 1 1 16.2 48.4A0.95 0.95 0 1 1 18.1 48.4Z" fill="#2e1f29"/>
+<path d="M18.15 54A0.95 0.95 0 1 1 16.25 54A0.95 0.95 0 1 1 18.15 54Z" fill="#2e1f29"/>
+</g>
+</svg>

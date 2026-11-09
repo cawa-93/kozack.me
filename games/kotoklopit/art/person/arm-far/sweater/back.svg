@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 31 73" width="31" height="73">
+<!-- person/arm-far/sweater/back — дальня рука, широкий рукав светра оверсайз і кардигана: спущене плече, резинка на манжеті, ракурс back (¾ ззаду).
+size 31×73; pivot (15, 14) — плече; points: hand (16, 54.6), grip (16.2, 61), cuff (16, 52.2) — як у person/arm, зсунуті на 2 (ширше полотно).
+Шари: fill-top, fill-skin, shade, ink.
+Рукав ширший за звичайний (кота на руках і річ у руці не закриває: ширший угорі, донизу звужується до резинки), шов спущеного плеча; манжет-резинка — fill-top, точка cuff — посередині резинки (принти на манжети).
+Дальня рука: контур рукава замкнений — вона за торсом.
+-->
+<defs>
+<path id="person-arm-far-sweater-back-sleeve" d="M14.8 6C13.08 6.02 11.32 6.77 10 7.9C8.68 9.03 7.47 10.12 6.9 12.8C6.33 15.48 6.53 20.13 6.6 24C6.67 27.87 7.07 32.63 7.3 36C7.53 39.37 7.75 42.23 8 44.2C8.25 46.17 8.56 46.72 8.8 47.8C10.96 48.16 13.63 49 16 49C18.37 49 20.9 48.16 23 47.8C23.06 46.66 23.18 46.2 23.2 44C23.22 41.8 23.15 37.97 23.1 34.6C23.05 31.23 22.9 27.4 22.9 23.8C22.9 20.2 23.53 15.67 23.1 13C22.67 10.33 21.68 8.97 20.3 7.8C18.92 6.63 16.52 5.98 14.8 6Z"/>
+<path id="person-arm-far-sweater-back-hand" d="M10.5 54.2C8.7 55 9.3 57.4 9.3 59C9.4 60.6 9.8 62.8 10.7 64.1C11.6 65.3 13.3 66.1 14.6 66.4C15.9 66.6 17.5 66.2 18.5 65.4C19.5 64.7 20.2 63.2 20.6 61.8C21 60.3 20.9 58.2 20.8 56.9C20.8 55.7 21.9 54.6 20.1 54.2C18.4 53.7 12.3 53.4 10.5 54.2Z"/>
+<clipPath id="person-arm-far-sweater-back-clip"><use href="#person-arm-far-sweater-back-sleeve"/><use href="#person-arm-far-sweater-back-hand"/><path d="M10.3 46.8L10.6 54.5C11.5 54.6 14.2 55.2 16 55.2C17.8 55.2 20.5 54.5 21.4 54.3L21.5 46.8Z"/></clipPath>
+</defs>
+<g id="fill-top">
+<use href="#person-arm-far-sweater-back-sleeve" fill="#ffffff"/>
+<path d="M10.3 46.8L10.6 54.5C11.5 54.6 14.2 55.2 16 55.2C17.8 55.2 20.5 54.5 21.4 54.3L21.5 46.8Z" fill="#ffffff"/>
+</g>
+<g id="fill-skin">
+<use href="#person-arm-far-sweater-back-hand" fill="#ffffff"/>
+</g>
+<g id="shade" clip-path="url(#person-arm-far-sweater-back-clip)">
+<path d="M5.6 12C6.4 5.3 9.7 10.3 10.6 14C11.5 17.7 10.9 27.3 11 34C11.1 40.7 12.1 50.7 11.2 54C10.3 57.3 6.5 61 5.6 54C4.7 47 4.8 18.7 5.6 12Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M9 48.2C12 49.8 20 49.8 23 48.4L23 50.6C20 51.6 12 51.6 9 50.4Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M8 54C10.5 53.6 20.5 53.5 23 54C25.5 54.5 24.3 56.2 23 56.8C21.7 57.4 17.5 57.4 15 57.4C12.5 57.4 9.2 57.2 8 56.6C6.8 56 5.5 54.4 8 54Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="ink">
+<path d="M23 47.8C23.06 46.66 23.18 46.2 23.2 44C23.22 41.8 23.15 37.97 23.1 34.6C23.05 31.23 22.9 27.4 22.9 23.8C22.9 20.2 23.53 15.67 23.1 13C22.67 10.33 21.68 8.97 20.3 7.8C18.92 6.63 16.52 5.98 14.8 6C13.08 6.02 11.32 6.77 10 7.9C8.68 9.03 7.47 10.12 6.9 12.8C6.33 15.48 6.53 20.13 6.6 24C6.67 27.87 7.07 32.63 7.3 36C7.53 39.37 7.75 42.23 8 44.2C8.25 46.17 8.56 46.72 8.8 47.8" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8.8 47.8C10.96 48.16 13.63 49 16 49C18.37 49 20.9 48.16 23 47.8" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M10.45 49.2L10.6 54.5" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M21.45 49.2L21.4 54.3" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M10.6 54.5C11.5 54.6 14.2 55.2 16 55.2C17.8 55.2 20.5 54.5 21.4 54.3" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M13 51.4L13 53.2" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M16 51.4L16 53.2" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M19 51.4L19 53.2" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M6.8 19.6C11.4 22 16.6 22.4 22.4 20.4" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M10.5 54.2C8.7 55 9.3 57.4 9.3 59C9.4 60.6 9.8 62.8 10.7 64.1C11.6 65.3 13.3 66.1 14.6 66.4C15.9 66.6 17.5 66.2 18.5 65.4C19.5 64.7 20.2 63.2 20.6 61.8C21 60.3 20.9 58.2 20.8 56.9C20.8 55.7 21.9 54.6 20.1 54.2C18.4 53.7 12.3 53.4 10.5 54.2Z" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M13.4 34.2Q15.9 34 17.8 35.6Q15.5 35.2 13.4 34.2Z" fill="#2e1f29"/>
+</g>
+</svg>

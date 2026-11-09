@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 52" width="29" height="52">
+<!-- person/top-front/blouse/front — бант блузки біля коміра, ракурс front (¾ спереду).
+size 29×52; pivot (14, 52) — таз (клаптик торса person/torso/1 від (15, 2)); points: немає.
+Шари: fill-top, ink.
+Бант кольору блузки: дві петлі, вузол і кінці. Без шару тіні (бюджет атласу). Ззаду банта не видно: кадр порожній.
+-->
+<g id="fill-top">
+<path d="M12.3 13.4C10.6 11.2 7.8 10.8 7.6 13.2C7.4 15.6 10 16.8 12.4 15Z" fill="#ffffff"/>
+<path d="M15 13.4C16.8 11 19.6 10.8 19.8 13.2C20 15.6 17.4 16.8 15.1 15Z" fill="#ffffff"/>
+<path d="M12.6 15.4C11.8 17.6 10.8 20 10 22.2L11.8 22.8C12.4 20.4 13 17.8 13.4 15.6Z" fill="#ffffff"/>
+<path d="M14.6 15.6C15.2 17.8 16 20.2 16.8 22.4L18.4 21.6C17.4 19.6 16 17.4 15.2 15.4Z" fill="#ffffff"/>
+<path d="M12.2 13C13 12.6 14.2 12.6 15 13L15.2 15.4C14.4 15.8 13.2 15.8 12.4 15.4Z" fill="#ffffff"/>
+</g>
+<g id="ink">
+<path d="M12.2 13.4C10.6 11.2 7.8 10.8 7.6 13.2C7.4 15.6 10 16.8 12.2 15.1" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M15.1 13.4C16.8 11 19.6 10.8 19.8 13.2C20 15.6 17.4 16.8 15.2 15.1" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M12.5 15.7C11.8 17.6 10.8 20 10 22.2L11.8 22.8C12.4 20.4 13 17.8 13.3 15.9" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14.8 15.9C15.3 17.8 16 20.2 16.8 22.4L18.4 21.6C17.4 19.6 16.2 17.6 15.4 15.8" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M12.2 13C13 12.6 14.2 12.6 15 13L15.2 15.4C14.4 15.8 13.2 15.8 12.4 15.4Z" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M10.6 13.4L8.8 13" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M16.8 13.4L18.6 13" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>
