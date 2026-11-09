@@ -232,6 +232,22 @@ export function medicineCat(state: GameState): Cat | null {
  * лікують таблетками (і контролює хронічну), краплі — так само; та сама доза раніше ніж за 6 годин —
  * кіт випльовує. Повертає, чи були ліки.
  */
+/**
+ * Ліки, що діють на хворобу кота (§9.5): курс таблеток чи крапель або щоденна таблетка, що тримає хронічну під контролем; null —
+ * ліками не лікують.
+ */
+export function diseaseMedicine(id: DiseaseId): Medicine | null {
+  const rule = DISEASES[id].cure;
+  if (rule.kind === "control") return rule.medicine;
+  return rule.kind === "pills" || rule.kind === "drops" ? rule.kind : null;
+}
+
+/** Чи кіт сьогодні проковтнув ці ліки (§9.5): виплюнуту дозу (раніше за `MEDICINE.doseMinutes`) гра не записує. */
+export function dosedToday(state: GameState, cat: Cat, medicine: Medicine): boolean {
+  const last = cat.lastDose?.[medicine];
+  return last !== undefined && last >= absoluteMinute(state.day, 0);
+}
+
 export function giveMedicine(state: GameState, medicine: Medicine, rng: Rng): boolean {
   const cat = medicineCat(state);
   if (!cat) return false;

@@ -3,9 +3,10 @@
 import { catsAxis, careerAxis, type CareerAxis, type CatsAxis } from "./sim/finale";
 import { lifeLevel } from "./sim/farewell";
 import type { CleanerVisit, GuestsVisit } from "./sim/events";
+import type { PersonStateId } from "./view/personstates";
 import { formatClock } from "./sim/time";
 import { accidentBedtime, accidentHome, accidentOf } from "./sim/trips";
-import type { AccidentLoss, Address, AlbumEntry, FarewellCause, GameEnd, GameState, IllnessId, Ledger, Sex, Spending, UtilitiesReport } from "./sim/types";
+import type { AccidentLoss, Address, AlbumEntry, FarewellCause, GameEnd, GameState, IllnessId, Ledger, Medicine, Sex, Spending, UtilitiesReport } from "./sim/types";
 
 /**
  * Підставити значення й обрати форми: за статтю кота чи за звертанням до персонажа («він» — чоловіча форма, «вона» — жіноча,
@@ -690,8 +691,8 @@ export const DISEASE_TITLES: Record<string, string> = {
 export const diseaseTitle = (id: string): string => DISEASE_TITLES[id] ?? id;
 
 /**
- * Рядок станів під шкалами панелі (`TEXTS.md`, «Панель: стани»; §11.4): сонливість, недосип, виспався, пошук роботи,
- * лікарняний і день без світла (§4.1).
+ * Назви станів персонажа в «Профілі» телефона (`TEXTS.md`, «Інтерфейс», «Стани»; §8.4): сонливість, недосип, виспався, пошук
+ * роботи, лікарняний і день без світла (§4.1); на панелі — лише іконки.
  */
 export const PANEL_STATES = {
   drowsy: "Сонливість",
@@ -703,11 +704,48 @@ export const PANEL_STATES = {
   noPower: "Без світла",
 } as const;
 
+/**
+ * Опис стану персонажа в профілі телефона (§8.4): що персонаж відчуває й бачить, без чисел і правил (§11.3а). Назви — `PANEL_STATES`
+ * і `ILLNESS_TITLES` (`personStateTitle`).
+ */
+export const PERSON_STATE_ABOUT: Record<PersonStateId, string> = {
+  drowsy: "Очі злипаються: пора в ліжко.",
+  sleepDebt: "Не [виспався|виспалася]: усе дається повільніше.",
+  rested: "[Виспався|Виспалася]: усе дається трохи легше.",
+  wellRested: "Чудово [виспався|виспалася]: усе дається легко.",
+  jobSearch: "Роботи немає: нову шукають за комп'ютером.",
+  sickLeave: "Лікар виписав лікарняний: на роботу можна не виходити.",
+  noPower: "Світла немає весь день: пральна машина стоїть, душ холодний, комп'ютер — від зарядної станції.",
+  cold: "Дере горло й закладає ніс: рухаєтеся повільніше й без ривка.",
+  injury: "Кульгаєте: рухаєтеся повільніше й без ривка, а з річчю в руках — ще повільніше.",
+  exhaustion: "Кілька ночей поспіль не досипали — тіло здає. Потрібно кілька ночей доброго сну.",
+};
+
+/** Вкладка «Профіль» телефона (§8.4, §8.6): ставка, робочий час, стани й ліки біля хвороби (§6.5). */
+export const PROFILE_TEXTS = {
+  tab: "Профіль",
+  rate: "{сума} ₴ за годину",
+  hours: "Робочий час — будні, {від}–{до}",
+  states: "Стани",
+  calm: "Нічого особливого: почуваєтеся як завжди.",
+  medsTaken: "Ліки сьогодні прийнято.",
+  medsNotYet: "Ліки сьогодні ще не прийнято.",
+} as const;
+
+/** Вкладка «Гра» телефона (§4.2): складність цієї гри. */
+export const GAME_TEXTS = { tab: "Гра", difficulty: "Складність: {складність}" } as const;
+
+/** Котові сьогодні дали ліки, що діють на його хворобу (§9.5): біля назви хвороби в картці кота. */
+export const CAT_DOSE_TODAY: Record<Medicine, string> = { pills: "таблетку сьогодні дано", drops: "краплі сьогодні дано" };
+
+/** Назва стану персонажа (§8.4): хвороби — назвами з `ILLNESS_TITLES`; форма — за звертанням. */
+export function personStateTitle(id: PersonStateId, address: Address): string {
+  return fill(id in PANEL_STATES ? PANEL_STATES[id as keyof typeof PANEL_STATES] : ILLNESS_TITLES[id as IllnessId], address);
+}
+
 /** Картка знайомства з новим котом (§9.7); `male` і `female` — надпис дорослого за статтю. */
 export const CAT_INTRO_TEXTS = { kitten: "Нове кошеня", male: "Новий кіт", female: "Нова кішка", title: "Знайомтеся", name: "Ім'я", done: "Готово" } as const;
 
-/** Коли знімуть планові комунальні (§6.4, §8.4): напис на листку календарика за сумою квитанції — у ніч на понеділок. */
-export const BILL_DAY = "пн";
 
 /** Хвороби персонажа (§6.5). */
 export const ILLNESS_TITLES: Record<IllnessId, string> = { cold: "Застуда", injury: "Травма", exhaustion: "Виснаження" };

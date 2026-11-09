@@ -25,8 +25,6 @@ export const HUD_ART = {
   calendar: "ui/hud/calendar",
   /** Розклад дня — аркуш записника «трьома частинами»: точки `line1`, `line2` — де стоять рядки. */
   note: "ui/hud/note",
-  /** Коли знімуть планові комунальні — листок календарика: точка `day` — де стоїть напис дня. */
-  due: "ui/hud/due",
   /** Гаманець біля грошей: той самий малюнок, що в картках (`👛`). */
   purse: "ui/glyph/purse",
   /** Кнопка телефону: `idle` і `hint` (запас уперше закінчився). */
@@ -136,9 +134,9 @@ export function clockDigitStates(clock: string): string[] {
   return [...clock.replace(":", "")].map((digit) => `d${digit}`);
 }
 
-/** Найменший розмір дрібних написів панелі на екрані, px CSS (підпис квитанції, стани, розклад, бабл телефона). */
+/** Найменший розмір дрібних написів панелі на екрані, px CSS (гроші, розклад, бабл телефона). */
 export const HUD_SMALL_TEXT_CSS = 12;
-/** Найдрібніший з цих написів, одиниць інтерфейсу (підпис квитанції й бабл телефона — 17). */
+/** Найдрібніший з цих написів, одиниць інтерфейсу (бабл телефона — 17). */
 export const HUD_SMALL_TEXT = 17;
 /** Більше збільшувати не можна: смуга панелі тієї самої висоти (`HUD_HEIGHT`), і написи вилізли б за неї. */
 export const HUD_TEXT_MAX = 1.35;
@@ -168,16 +166,16 @@ export interface HudLayout {
   calendarX: number;
   /** Де починається перша колонка показників. */
   stats: number;
-  /** Скільки місця лишити праворуч від шкал: гроші, квитанція й розклад (`hudColumns`). */
-  reserve: { money: number; bill: number; schedule: number };
+  /** Скільки місця лишити праворуч від шкал: гроші з іконками станів під ними й розклад (`hudColumns`). */
+  reserve: { money: number; schedule: number };
   /**
    * Кружечок показника: зовнішній діаметр чорнильного кільця з контуром (`statDisc`), частка паперу під малюнком іконки й
    * центр по горизонталі — від початку колонки.
    */
   disc: { outer: number; fill: number; x: number };
   /**
-   * Середини двох рядів від верху смуги: у першому — верхні показники, гроші й квитанція, у другому — нижні показники й рядок
-   * станів («Пошук роботи», «Застуда») під грошима.
+   * Середини двох рядів від верху смуги: у першому — верхні показники, гроші, у другому — нижні показники й іконки
+   * станів під грошима.
    */
   rows: readonly [number, number];
   /** Шкала від початку колонки за найбільшого кроку: лівий край, ширина й висота (рамку й заливку розкладає `isoBarRects`). */
@@ -201,7 +199,7 @@ export const HUD_LAYOUT: { readonly desktop: HudLayout; readonly phone: HudLayou
     clock: { x: 65, scale: 0.84 },
     calendarX: 170,
     stats: 222,
-    reserve: { money: 108, bill: 134, schedule: 190 },
+    reserve: { money: 160, schedule: 190 },
     disc: { outer: 30, fill: HUD_STAT_FILL, x: 15 },
     rows: [19, 51],
     bar: { x: 32, w: 150, h: 12 },
@@ -211,7 +209,7 @@ export const HUD_LAYOUT: { readonly desktop: HudLayout; readonly phone: HudLayou
     clock: { x: 72, scale: 1 },
     calendarX: 200,
     stats: 266,
-    reserve: { money: 124, bill: 170, schedule: 224 },
+    reserve: { money: 210, schedule: 224 },
     disc: { outer: 44, fill: 0.85, x: 22 },
     rows: [25, 69],
     bar: { x: 46, w: 136, h: 12 },
@@ -234,16 +232,16 @@ export interface HudColumns {
 }
 
 /**
- * Панель шириною `room` (від лівого краю безпечної зони до телефона): гроші, квитанція й розклад займають своє, решту ділять
+ * Панель шириною `room` (від лівого краю безпечної зони до телефона): гроші зі станами й розклад займають своє, решту ділять
  * показники, тож на вузькій панелі коротшають шкали, а написи не налазять один на одного. На широкій — шкали повні, а зайве
  * місце лишається перед телефоном.
  */
 export function hudColumns(layout: HudLayout, room: number): HudColumns {
   const { reserve } = layout;
-  const free = room - layout.stats - reserve.money - reserve.bill - reserve.schedule;
+  const free = room - layout.stats - reserve.money - reserve.schedule;
   const step = Math.min(HUD_STEP.max, Math.max(HUD_STEP.min, Math.floor(free / 2)));
   const money = layout.stats + 2 * step;
-  return { step, bar: step - layout.bar.x - HUD_STEP.gap, money, schedule: money + reserve.money + reserve.bill };
+  return { step, bar: step - layout.bar.x - HUD_STEP.gap, money, schedule: money + reserve.money };
 }
 
 /** Розклад панелі для екрана, де одиниця інтерфейсу займає `cssPerUnit` px CSS (`1 / CanvasFit.unit`). */

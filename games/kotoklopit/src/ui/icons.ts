@@ -13,7 +13,7 @@
 
 import { ILLNESS_TITLES, diseaseTitle } from "../texts";
 import type { Destination, IllnessId, Product } from "../sim/types";
-import { ICON_NAMES, type IconName } from "../view/iconnames";
+import { ICON_NAMES, type IconName, type Mark } from "../view/iconnames";
 import { DESTINATION_ICONS, DISEASE_ICONS, ILLNESS_ICONS, PRODUCT_ICONS } from "../view/symbols";
 import { DESTINATION_TITLES, PRODUCT_TITLES } from "./titles";
 
@@ -22,6 +22,8 @@ const ICON_DIR = "../../art/icon/";
 
 /** SVG іконок (`art/icon/<назва>.svg`) → адреса файлу. */
 const ICON_FILES = import.meta.glob<string>("../../art/icon/*.svg", { query: "?no-inline", import: "default", eager: true });
+/** SVG позначок поверх іконки (`art/icon/mark/<позначка>.svg`: ✗, ?, ✓) → адреса файлу. */
+const MARK_FILES = import.meta.glob<string>("../../art/icon/mark/*.svg", { query: "?no-inline", import: "default", eager: true });
 
 /**
  * Адреса SVG іконки: файл `icon/<назва>` серед `files` (шлях → адреса, як дає `import.meta.glob`); файлу немає — null.
@@ -113,6 +115,19 @@ export function iconImage(icon: IconName): HTMLImageElement | null {
   if (url === null) return null;
   const img = document.createElement("img");
   img.className = "name-icon";
+  img.src = url;
+  img.alt = "";
+  img.draggable = false;
+  img.setAttribute("aria-hidden", "true");
+  return img;
+}
+
+/** `<img>` позначки (✗, ?, ✓) поверх іконки — тим самим полотном 64 × 64, тож лягає на неї рівно (`.icon-mark` у CSS). */
+export function markImage(mark: Mark): HTMLImageElement | null {
+  const url = MARK_FILES[`${ICON_DIR}mark/${mark}.svg`];
+  if (url === undefined) return null;
+  const img = document.createElement("img");
+  img.className = "icon-mark";
   img.src = url;
   img.alt = "";
   img.draggable = false;

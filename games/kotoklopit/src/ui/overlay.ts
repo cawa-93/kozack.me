@@ -25,6 +25,8 @@ export interface CardChoice {
 /** Вкладка картки: компактний рядок угорі замість кнопок унизу. */
 export interface CardTab {
   label: string;
+  /** Що це за вкладка (`data-tab`): за ним CSS фарбує плитку, коли місце вкладки змінюється. */
+  id?: string;
   active?: boolean;
   onSelect: () => void;
 }
@@ -277,6 +279,7 @@ export class Overlay {
       for (const tab of card.tabs) {
         const button = element("button", tab.active ? "card-tab active" : "card-tab", tab.label);
         button.setAttribute("role", "tab");
+        if (tab.id) button.dataset["tab"] = tab.id;
         button.setAttribute("aria-selected", String(tab.active ?? false));
         button.addEventListener("click", () => tab.onSelect());
         tabs.append(button);

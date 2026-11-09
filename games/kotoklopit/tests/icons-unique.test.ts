@@ -14,7 +14,7 @@ import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, CatAct, Destination, Dish, Item, Product, Save, StatName, ThingKind } from "../src/sim/types";
 import type { IconName, Mark } from "../src/view/iconnames";
-import { catAsk, DESTINATION_ICONS, DISEASE_ICONS, eventBubbles, ILLNESS_ICONS, itemIcon, MOOD_ICONS, PRODUCT_ICONS, refusalBubble, STAT_ICONS, UTILITIES_ICON, STATE_ICONS, stoveIcon, THING_ICONS } from "../src/view/symbols";
+import { catAsk, DESTINATION_ICONS, DISEASE_ICONS, eventBubbles, ILLNESS_ICONS, itemIcon, MOOD_ICONS, PERSON_STATE_ICONS, PRODUCT_ICONS, refusalBubble, STAT_ICONS, UTILITIES_ICON, STATE_ICONS, stoveIcon, THING_ICONS } from "../src/view/symbols";
 import { catThought, personThought } from "../src/view/thoughts";
 import { EVENTS, REFUSALS } from "./bubblecases";
 import { withCatCorner } from "./helpers";
@@ -102,7 +102,8 @@ function collectCases(): Map<string, Shown[]> {
     add(`storage:${product}`, { icon: PRODUCT_ICONS[product], count: 5 });
     add(`hint:${product}`, { icon: PRODUCT_ICONS[product] });
   }
-  add("panel:utilities", { icon: UTILITIES_ICON });
+  // Комунальні у вкладці «Речі» телефона.
+  add("phone:utilities", { icon: UTILITIES_ICON });
   // Показники персонажа: панель і думка, коли показник низький.
   const { save, cat } = setup();
   for (const stat of STATS) {
@@ -169,6 +170,8 @@ function collectCases(): Map<string, Shown[]> {
   // Іконка біля назви хвороби (§11.4 «Іконка біля назви»): кота — у ветеринара, персонажа — у лікаря.
   for (const [disease, icon] of Object.entries(DISEASE_ICONS)) add(`disease:${disease}`, { icon });
   for (const [illness, icon] of Object.entries(ILLNESS_ICONS)) add(`illness:${illness}`, { icon });
+  // Стани персонажа на панелі й у профілі телефона (§8.4).
+  for (const [id, look] of Object.entries(PERSON_STATE_ICONS)) add(`person-state:${id}`, look);
   // Пункти поїздок (§11.4 «Іконка біля назви», §8.5 «На місці — кадр парковки»): біля назви пункту в картках і на табличці на
   // даху — кожен свій, без груп одного значення.
   for (const destination of DESTINATION_LIST) add(`destination:${destination}`, { icon: DESTINATION_ICONS[destination] });
@@ -238,8 +241,8 @@ Object.assign(SAME, {
   "смітник перекинуто": { why: "смітник перекинувся — над ним і у відмові щось викинути", ids: ["event:trash-tipped", "refusal:trash-tipped"] },
   "пральна машина пере": { why: "стан машини над нею і у відмові прати ще", ids: ["state:washer.washing", "refusal:washing"] },
   "немає світла": {
-    why: "у день без світла пральна машина не працює: відмова прати й стан над машиною, де стоїть прання, запущене до відключення (§4.1, рішення автора 2026-11-02)",
-    ids: ["state:washer.noPower", "refusal:no-power"],
+    why: "у день без світла пральна машина не працює: відмова прати й стан над машиною, де стоїть прання, запущене до відключення (§4.1, рішення автора 2026-11-02); той самий день — стан на панелі й у профілі (§8.4)",
+    ids: ["state:washer.noPower", "refusal:no-power", "person-state:noPower"],
   },
   відеодзвінок: { why: "летючка чи нарада почалася й іде — камера над комп'ютером", ids: ["state:computer.call", "event:standup-started", "event:modifier:kind=meeting-start"] },
 });
@@ -253,8 +256,10 @@ Object.assign(SAME, {
   },
   "болять очі": { why: "кіт тре очі — бабл, і та сама іконка біля кон'юнктивіту у ветеринара", ids: ["event:symptom:symptom=eyes", "disease:conjunctivitis"] },
   "крик болю": { why: "сечокам'яна: кіт кричить у лотку — бабл, і та сама іконка біля неї у ветеринара", ids: ["event:symptom:symptom=pain", "disease:urolithiasis"] },
-  травма: { why: "травма — пластир: відмова ривка травмованого персонажа, «Травма» в лікаря й травма кота у ветеринара", ids: ["refusal:injured", "illness:injury", "disease:injury"] },
-  "застуда персонажа": { why: "персонаж застуджений: відмова ривка й «Застуда» в лікаря — градусник", ids: ["refusal:cold", "illness:cold"] },
+  травма: { why: "травма — пластир: відмова ривка травмованого персонажа, «Травма» в лікаря й на панелі, травма кота у ветеринара", ids: ["refusal:injured", "illness:injury", "disease:injury", "person-state:injury"] },
+  "застуда персонажа": { why: "персонаж застуджений: відмова ривка, «Застуда» в лікаря й на панелі — градусник", ids: ["refusal:cold", "illness:cold", "person-state:cold"] },
+  "виснаження персонажа": { why: "персонаж виснажений: «Виснаження» в лікаря й на панелі — та сама хвороба (§6.5)", ids: ["illness:exhaustion", "person-state:exhaustion"] },
+  сонливість: { why: "персонаж сонний: думка «zz» над ним і стан на панелі — та сама сонливість (§8.8)", ids: ["state:drowsy", "person-state:drowsy"] },
   // Виснаження — не група: ривка воно не забирає, а відмова «без сил» (батарейка) — від здоров'я нижче 25 (рецензія 2026-11-02).
 });
 
@@ -326,7 +331,8 @@ describe("унікальна іконка на унікальний кейс (§
     expect(refusalBubble({ reason: "weak" }).icon).toBe("battery-low");
     expect(ILLNESS_ICONS.exhaustion).not.toBe(refusalBubble({ reason: "weak" }).icon);
     expect(ILLNESS_ICONS.exhaustion).not.toBe(STATE_ICONS.drowsy);
-    expect(meaningOf("illness:exhaustion")).toBe("illness:exhaustion");
+    // Виснаження — своя група: лише лікар і панель, без відмови ривка.
+    expect(meaningOf("illness:exhaustion")).toBe("виснаження персонажа");
     // Травма кота — той самий пластир, що в персонажа; серце хвороби кота — не серце здоров'я персонажа на панелі.
     expect(DISEASE_ICONS.injury).toBe(ILLNESS_ICONS.injury);
     expect(DISEASE_ICONS.heart).not.toBe(STAT_ICONS.health);

@@ -5,6 +5,7 @@ import type { GameEvent, HissCause, Need, Refusal } from "../sim/events";
 import { movableItem } from "../sim/targets";
 import type { Cat, Destination, Dish, GameState, Item, Product, StatName, ThingKind } from "../sim/types";
 import type { IconName, Mark } from "./iconnames";
+import type { PersonStateId } from "./personstates";
 import type { DiseaseId, IllnessId } from "../sim/types";
 
 /** Іконка кожного запасу: над сховищем, над персонажем і в ящиках (§6.4). */
@@ -535,3 +536,21 @@ type Symptom = Extract<GameEvent, { type: "symptom" }>["symptom"];
  * бліх, і від дерматиту — іконка в них спільна (це перевіряє `tests/icons-unique.test.ts`).
  */
 const SYMPTOM_DISEASE: Record<Symptom, DiseaseId> = { sneeze: "cold", itch: "fleas", eyes: "conjunctivitis", pain: "urolithiasis" };
+
+/**
+ * Стани персонажа на панелі й у профілі телефона (§8.4, §11.4): кожен свій, а той самий випадок — та сама іконка: сонливість — думка
+ * «zz» над персонажем, хвороби — іконки біля назви в лікаря (`ILLNESS_ICONS`), день без світла — «немає світла», як у відмові
+ * пральної машини; «добре виспався» — подушка «виспався» з ✓.
+ */
+export const PERSON_STATE_ICONS: Record<PersonStateId, { icon: IconName; mark?: Mark }> = {
+  drowsy: { icon: STATE_ICONS.drowsy },
+  sleepDebt: { icon: "alarm" },
+  rested: { icon: "rested" },
+  wellRested: { icon: "rested", mark: "ok" },
+  jobSearch: { icon: "job-search" },
+  sickLeave: { icon: "sick-leave" },
+  noPower: { icon: "no-power" },
+  cold: { icon: ILLNESS_ICONS.cold },
+  injury: { icon: ILLNESS_ICONS.injury },
+  exhaustion: { icon: ILLNESS_ICONS.exhaustion },
+};

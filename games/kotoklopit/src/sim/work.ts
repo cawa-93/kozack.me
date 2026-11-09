@@ -56,6 +56,11 @@ export function positionOf(state: GameState): (typeof POSITIONS)[number] {
   return position;
 }
 
+/** Ставка за годину роботи на посаді (§8.6): без поправок дня — їх персонаж і так бачить у заробітку. */
+export function hourlyRate(state: GameState): number {
+  return positionOf(state).pay * DIFFICULTY[state.difficulty].earnings;
+}
+
 /** Персонаж на лікарняному цього дня (§6.5). */
 export function onSickLeave(state: GameState, day = state.day): boolean {
   return day >= (state.job.sickLeaveFrom ?? -Infinity) && day <= state.job.sickLeaveUntil;

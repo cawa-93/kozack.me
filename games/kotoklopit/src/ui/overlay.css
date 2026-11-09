@@ -1041,7 +1041,97 @@
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
 }
 
-/* Вкладка «Гра» телефона: хто грає, підказки керування, збереження; рядок про збереження — дрібний, під кнопками. */
+/* Вкладка «Профіль» телефона (§8.4): портрет і хто персонаж — ім'я, посада, ставка, робочий час; далі стани — іконка на
+   паперовому кружечку (з позначкою, як на панелі), назва, опис і, біля хвороби, чи прийнято ліки. */
+.profile-card {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--enamel);
+  box-shadow: inset 0 -3px 0 var(--shade-soft);
+}
+
+.profile-card > canvas {
+  flex: none;
+}
+
+.profile-side {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profile-name {
+  margin: 0;
+  font: 400 24px / 1.15 var(--hand);
+}
+
+.profile-line {
+  margin: 0;
+  font-size: 16px;
+}
+
+.profile-position {
+  font: 400 19px / 1.2 var(--hand);
+}
+
+.profile-muted {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.profile-states {
+  margin-top: 12px;
+}
+
+.profile-state {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 8px;
+}
+
+.profile-state-icon {
+  position: relative;
+  flex: none;
+  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  background: var(--paper);
+}
+
+.profile-state-icon > img {
+  position: absolute;
+  inset: 1px;
+  width: calc(100% - 2px);
+  height: calc(100% - 2px);
+  margin: 0;
+}
+
+.profile-state-name {
+  margin: 0;
+  font: 400 18px / 1.2 var(--hand);
+}
+
+.profile-state-about {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.profile-state-meds {
+  margin: 2px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Вкладка «Гра» телефона: складність, підказки керування, звуки, збереження; рядок про збереження — дрібний, під кнопками. */
 .game-player {
   margin: 0 0 8px;
   font: 400 19px / 1.2 var(--hand);

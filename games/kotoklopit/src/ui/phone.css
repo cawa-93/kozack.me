@@ -203,8 +203,8 @@
   box-shadow: inset 0 -3px 0 var(--shade-base);
 }
 
-/* Колір плитки — за місцем вкладки (`PHONE_TABS` у `cards.ts`: Магазин, Речі, [Коти], [Альбом], Гра; Коти й Альбом
-   бувають не завжди). Коти — третя з іконкою, Альбом — посередині без іконки. Кольори — так, щоб іконка на плитці читалася:
+/* Колір плитки — за місцем вкладки (`PHONE_TABS` у `cards.ts`: Магазин, Речі, [Коти], [Альбом], Профіль, Гра; Коти й Альбом
+   бувають не завжди), а Профілю — за `data-tab`. Коти — третя з іконкою, Альбом — посередині без іконки. Кольори — так, щоб іконка на плитці читалася:
    гірчичний кошик на бірюзовому, рудий кіт на синьому. */
 .overlay .card.card-phone .card-tab:first-child {
   --app: var(--teal);
@@ -219,13 +219,21 @@
 }
 
 /* Альбом: фото з сонцем і пагорбом (чорнило, папір, зелений, гірчичний) на сливовій плитці. */
-.overlay .card.card-phone .card-tab:not(:has(> .glyph)):not(:last-child)::before {
+.overlay .card.card-phone .card-tab:not(:has(> .glyph)):not(:last-child):not([data-tab="profile"])::before {
   background:
     radial-gradient(circle closest-side, var(--mustard) 0 80%, transparent) calc(50% + 4px) calc(50% - 2px) / 6px 6px no-repeat,
     linear-gradient(var(--green), var(--green)) 50% calc(50% + 4px) / 16px 4px no-repeat,
     linear-gradient(var(--paper), var(--paper)) 50% 50% / 16px 12px no-repeat,
     linear-gradient(var(--ink), var(--ink)) 50% 50% / 20px 16px no-repeat,
     var(--plum);
+}
+
+/* Профіль: силует людини — голова й плечі папером у чорнильній облямівці — на помаранчевій плитці. */
+.overlay .card.card-phone .card-tab[data-tab="profile"]::before {
+  background:
+    radial-gradient(circle closest-side, var(--paper) 0 58%, var(--ink) 64% 92%, transparent 96%) 50% calc(50% - 4px) / 13px 13px no-repeat,
+    radial-gradient(50% 100% at 50% 100%, var(--paper) 0 56%, var(--ink) 62% 92%, transparent 96%) 50% calc(50% + 7px) / 22px 11px no-repeat,
+    var(--orange);
 }
 
 /* Гра: гральний кубик (папір, три крапки чорнилом) на гірчичній плитці. */

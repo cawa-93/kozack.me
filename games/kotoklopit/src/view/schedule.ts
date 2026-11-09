@@ -3,7 +3,8 @@
 import { constructionDustHours } from "../sim/cleaner";
 import { MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES, WORK_START_MINUTE } from "../sim/config";
 import { dayGuestLetIn } from "../sim/door";
-import { absoluteMinute, formatClock } from "../sim/time";
+import { utilitiesPlanned } from "../sim/economy";
+import { absoluteMinute, formatClock, isSunday } from "../sim/time";
 import type { GameState } from "../sim/types";
 import { isWorkday, standupToday } from "../sim/work";
 
@@ -58,6 +59,9 @@ export function scheduleOf(state: GameState): string[] {
     other.push([at, `≈${formatClock(at)} кур'єр`]);
   }
   if (state.home.porch.length > 0) other.push([Infinity, "пакунок під дверима"]);
+  // У неділю — завтрашні комунальні (§6.4): на панелі квитанції немає, тож сума — тут; знімуть у ніч на понеділок.
+  const planned = utilitiesPlanned(state);
+  if (isSunday(state.day) && planned > 0) important.push([24 * 60, `завтра комунальні −${planned} ₴`]);
   const byTime = (lines: [number, string][]): string[] => lines.sort((a, b) => a[0] - b[0]).map(([, text]) => text);
   return [...byTime(important), ...byTime(other)];
 }

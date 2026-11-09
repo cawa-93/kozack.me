@@ -8,7 +8,7 @@ import { weekdayOf } from "../src/sim/time";
 import type { Save } from "../src/sim/types";
 import { changeReputation, searchProgress } from "../src/sim/work";
 import { POSITION_TITLES } from "../src/texts";
-import { playerLine } from "../src/ui/cards";
+import { positionText } from "../src/ui/profile";
 import { hours, liveDay, recordEvents, standAt } from "./helpers";
 
 const game = (): Save => newGame({ address: "she", difficulty: "normal", seed: 2 });
@@ -246,27 +246,26 @@ describe("пошук роботи як процес найму (§8.6, прав�
   });
 });
 
-describe("посада у вкладці «Гра» телефона (§8.6; рішення автора 2026-10-29, А7)", () => {
-  it("рядок «ім'я · посада · складність» іде за посадою й звертанням; безробітному — «шукає роботу»; репутації в ньому немає", () => {
+describe("посада в «Профілі» телефона (§8.6)", () => {
+  it("посада — за посадою й звертанням; безробітному — «Шукає роботу»; репутації в ній немає", () => {
     const save = newGame({ address: "she", difficulty: "hard", seed: 2 });
     const state = save.current;
-    const { name } = state.character;
-    expect(playerLine(state)).toBe(`${name} · Практикантка · Реалістичний`);
-    // Підвищення — рядок одразу з новою посадою, хоч би картка про нього й загубилася.
+    expect(positionText(state)).toBe("Практикантка");
+    // Підвищення — одразу нова посада, хоч би картка про нього й загубилася.
     changeReputation(state, 60);
-    expect(playerLine(state)).toBe(`${name} · Стажерка · Реалістичний`);
+    expect(positionText(state)).toBe("Стажерка");
     state.job.position = POSITIONS.length - 1;
     state.character.address = "he";
-    expect(playerLine(state)).toBe(`${name} · Генеральний директор · Реалістичний`);
+    expect(positionText(state)).toBe("Генеральний директор");
     state.job.unemployed = true;
-    expect(playerLine(state)).toBe(`${name} · шукає роботу · Реалістичний`);
-    // Репутація невидима: рядок той самий за будь-якої.
+    expect(positionText(state)).toBe("Шукає роботу");
+    // Репутація невидима: та сама посада за будь-якої.
     state.job.unemployed = false;
     state.job.position = 3;
     state.job.reputation = 5;
-    const low = playerLine(state);
+    const low = positionText(state);
     state.job.reputation = 95;
-    expect(playerLine(state)).toBe(low);
+    expect(positionText(state)).toBe(low);
     expect(low).not.toMatch(/\d/);
   });
 });

@@ -171,7 +171,7 @@ export class DayScene extends Phaser.Scene {
     this.storage = new StorageIndicators(this, layer, () => this.world.person.head);
     // Серпанок над квартирою, але під інтерфейсом.
     this.gloom = this.add.rectangle(0, 0, 1, 1, 0x5b3a7a, 0).setOrigin(0).setDepth(UI_LAYERS.gloom).addToDisplayList(ui);
-    this.hud = new Hud(this, ui, () => this.openPhone());
+    this.hud = new Hud(this, ui, () => this.openPhone(), () => this.openPhone("profile"));
     this.dark = this.add.rectangle(0, 0, 1, 1, 0x000000, 0).setOrigin(0).setDepth(UI_LAYERS.dark).addToDisplayList(ui);
     this.touch = new TouchControls(
       this,
@@ -1389,7 +1389,7 @@ export class DayScene extends Phaser.Scene {
     this.overlay.show(radioCard(this.radio, () => this.overlay.close()));
   }
 
-  private openPhone(): void {
+  private openPhone(tab: PhoneTab = "shop"): void {
     if (this.blocked()) return;
     // Підказку телефоном побачено (§6.4).
     seePhoneHints(this.state);
@@ -1473,7 +1473,7 @@ export class DayScene extends Phaser.Scene {
           effects: { volume: this.sounds.volume, set: (volume) => this.sounds.setVolume(volume) },
         }),
       );
-    show("shop");
+    show(tab);
   }
 }
 

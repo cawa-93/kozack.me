@@ -5,6 +5,7 @@ import "./phone.css";
 import { MODIFIERS, NAME_MAX_LENGTH, WAKE_UP } from "../sim/config";
 import { supplyCount, utilitiesDue } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
+import { diseaseMedicine, dosedToday } from "../sim/diseases";
 import { giveAwayBlocker } from "../sim/farewell";
 import { visibility } from "../sim/knowledge";
 import { WEEK_PAIRS } from "../sim/modifiers";
@@ -19,14 +20,15 @@ import {
   CONTROLS_TITLES,
   DAY_MODIFIER_TEXTS,
   DIFFICULTY_TITLES,
-  POSITION_TITLES,
   WEEK_MODIFIER_TEXTS,
   diseaseTitle,
   endingText,
   farewellText,
   fill,
   BIRTH_MESSAGE,
-  JOB_SEEKING,
+  CAT_DOSE_TODAY,
+  GAME_TEXTS,
+  PROFILE_TEXTS,
   KITTEN_MESSAGE,
   LEDGER_TEXTS,
   ledgerLines,
@@ -50,6 +52,7 @@ import { LOOK_OPTIONS } from "./look";
 import { catProfile, type CatFacts } from "./catprofile";
 import { drawPortrait, portraitCanvas } from "./portrait";
 import { traitChips, traitHint } from "./traits";
+import { profileTab } from "./profile";
 
 const capitalize = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
 
@@ -226,7 +229,7 @@ function catChips(state: GameState): HTMLElement | null {
   return box;
 }
 
-export type PhoneTab = "shop" | "mine" | "cats" | "album" | "game";
+export type PhoneTab = "shop" | "mine" | "cats" | "album" | "profile" | "game";
 
 /** Річ без місця в «Моїх речах» (§8.7): техніка, автогодівниця над місцем миски, переноска чи замок на шафку. */
 export type DiscardThing = { appliance: Appliance } | { feeder: string } | { carrier: number } | { owned: "lock" };
@@ -249,7 +252,7 @@ export interface PhoneHandlers {
 }
 
 /** Вкладки телефона по порядку: за місцем вкладки `phone.css` фарбує її плитку, тож порядок і іконки — разом із ним. */
-const PHONE_TABS: Record<PhoneTab, string> = { shop: "🛒 Магазин", mine: "🏠 Речі", cats: "🐱 Коти", album: "Альбом", game: "Гра" };
+const PHONE_TABS: Record<PhoneTab, string> = { shop: "🛒 Магазин", mine: "🏠 Речі", cats: "🐱 Коти", album: "Альбом", profile: PROFILE_TEXTS.tab, game: GAME_TEXTS.tab };
 
 /** Телефон персонажа (§6.4): магазин із доставкою, викинути річ, коти, альбом, гра. */
 export function phoneCard(state: GameState, wanted: PhoneTab, handlers: PhoneHandlers): Card {
@@ -270,13 +273,14 @@ export function phoneCard(state: GameState, wanted: PhoneTab, handlers: PhoneHan
   }
   if (tab === "cats") body.push(...catCards(state, handlers));
   if (tab === "album") body.push(...albumCards(state));
+  if (tab === "profile") body.push(...profileTab(state));
   if (tab === "game") body.push(...gameMenu(state, handlers));
   // Вкладки — компактний рядок угорі, закрити — хрестиком: на телефоні горизонтально лишається місце для вмісту. Вигляд
   // смартфона набік — `phone.css`.
   return {
     title: "",
     skin: "phone",
-    tabs: tabs.map((t) => ({ label: PHONE_TABS[t], active: t === tab, onSelect: () => handlers.tab(t) })),
+    tabs: tabs.map((t) => ({ label: PHONE_TABS[t], id: t, active: t === tab, onSelect: () => handlers.tab(t) })),
     body,
     ...(shop ? { bar: shop.bar } : {}),
     actions: [],
@@ -286,8 +290,8 @@ export function phoneCard(state: GameState, wanted: PhoneTab, handlers: PhoneHan
 }
 
 /**
- * Меню гри (§4.2, §5): нова гра, експорт і імпорт збереження; керування — щоб перечитати підказку першого дня (§11.3а);
- * унизу — посилання на титри (§2.1).
+ * Меню гри (§4.2, §5): складність, керування — щоб перечитати підказку першого дня (§11.3а), гучність звуків, нова гра, експорт і
+ * імпорт збереження; унизу — посилання на титри (§2.1). Хто персонаж і його посада — у «Профілі» (`profile.ts`).
  */
 function gameMenu(state: GameState, handlers: PhoneHandlers): (string | HTMLElement)[] {
   const box = element("div", "shop");
@@ -316,24 +320,13 @@ function gameMenu(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
   const sound = element("label", "sound-volume-box", SOUND_TEXTS.effects);
   sound.append(effects);
   return [
-    element("p", "game-player", playerLine(state)),
+    element("p", "game-player", fill(GAME_TEXTS.difficulty, state.character.address, { складність: DIFFICULTY_TITLES[state.difficulty] })),
     allControls(isTouch()),
     sound,
     box,
     element("p", "game-note", "Браузер може стерти гру — часом зберігайте її файлом."),
     creditsLink(),
   ];
-}
-
-/**
- * Перший рядок вкладки «Гра»: «ім'я · посада · складність», безробітному — «шукає роботу» замість посади. Посаду більше ніде
- * не видно, а картка її зміни може загубитися після перезавантаження сторінки; репутації тут немає — вона невидима (§8.6;
- * рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А7).
- */
-export function playerLine(state: GameState): string {
-  const { name, address } = state.character;
-  const job = state.job.unemployed ? JOB_SEEKING : fill(POSITION_TITLES[state.job.position] ?? "", address);
-  return `${name} · ${job} · ${DIFFICULTY_TITLES[state.difficulty]}`;
 }
 
 const weeks = (n: number): string => `${n} ${plural(n, "тиждень", "тижні", "тижнів")}`;
@@ -391,7 +384,12 @@ export function catFacts(state: GameState, cat: Cat): CatFacts {
   if (inHeat(state, cat)) states.push("у тічці");
   if (isNursing(state, cat)) states.push("годує кошенят");
   if (states.length > 0) lines.push(`${states.join(", ")}.`.replace(/^./, (c) => c.toUpperCase()));
-  const found = cat.diseases.filter((d) => d.known).map((d) => diseaseLabel(d.id));
+  // Біля хвороби, на яку діють ліки, — чи дали їх сьогодні (§9.5): персонаж сам давав.
+  const found = cat.diseases.filter((d) => d.known).map((d) => {
+    const medicine = diseaseMedicine(d.id);
+    const dosed = medicine !== null && dosedToday(state, cat, medicine);
+    return dosed && medicine ? `${diseaseLabel(d.id)} (${CAT_DOSE_TODAY[medicine]})` : diseaseLabel(d.id);
+  });
   // Хворобу могла знайти й ветеринарка вдома; назви посеред речення — з малої (крок 17, вичитка 2026-10-29); іконка — як у картці
   // ветеринара (§11.4 «Іконка біля назви»).
   if (found.length > 0) lines.push(`Хвороби: ${found.join(", ").toLowerCase()}.`);

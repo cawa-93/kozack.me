@@ -5,6 +5,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { createCat } from "../src/sim/cat";
 import { newGame } from "../src/sim/game";
+import { fallIllPerson } from "../src/sim/illness";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { formatClock } from "../src/sim/time";
@@ -66,9 +67,9 @@ class FakeElement {
 
 const noop = (): void => undefined;
 const handlers: PhoneHandlers = { checkout: noop, discard: noop, discardThing: noop, advertise: noop, cancelAd: noop, newGame: noop, exportSave: noop, importSave: noop, tab: noop, close: noop, effects: { volume: 1, set: noop } };
-const TABS: PhoneTab[] = ["shop", "mine", "cats", "album", "game"];
+const TABS: PhoneTab[] = ["shop", "mine", "cats", "album", "profile", "game"];
 
-/** Гра з котом і записом в альбомі: у телефоні всі п'ять вкладок. */
+/** Гра з котом і записом в альбомі: у телефоні всі шість вкладок. */
 function fullPhone(): GameState {
   const state = newGame({ address: "she", difficulty: "normal", seed: 8 }).current;
   const cat = createCat(state, createRng(3), { source: "shelter", ageWeeks: 20, at: { x: 9.5, y: 8.5 } });
@@ -84,6 +85,34 @@ beforeAll(() => {
   vi.stubGlobal("window", { matchMedia: () => ({ matches: false }) });
 });
 afterAll(() => vi.unstubAllGlobals());
+
+describe("профіль (§8.4, §6.5)", () => {
+  const text = (state: GameState): string =>
+    phoneCard(state, "profile", handlers)
+      .body.map((part) => (typeof part === "string" ? part : (part as unknown as FakeElement).textContent))
+      .join("|");
+
+  it("посада, ставка й робочий час; безробітному — «Шукає роботу» без ставки", () => {
+    const state = newGame({ address: "she", difficulty: "normal", seed: 8 }).current;
+    expect(text(state)).toContain("Практикантка");
+    expect(text(state)).toContain("₴ за годину");
+    state.job.unemployed = true;
+    expect(text(state)).toContain("Шукає роботу");
+    expect(text(state)).not.toContain("за годину");
+  });
+
+  it("біля застуди — чи прийнято ліки сьогодні; біля виснаження рядка немає — ліки на нього не діють", () => {
+    const state = newGame({ address: "she", difficulty: "normal", seed: 8 }).current;
+    expect(text(state)).toContain("Нічого особливого");
+    fallIllPerson(state, "cold");
+    fallIllPerson(state, "exhaustion");
+    expect(text(state)).toContain("Ліки сьогодні ще не прийнято.");
+    const cold = state.character.illnesses.find((i) => i.id === "cold");
+    if (cold) cold.lastDose = state.day;
+    expect(text(state)).toContain("Ліки сьогодні прийнято.");
+    expect(text(state).match(/Ліки сьогодні/g)).toHaveLength(1);
+  });
+});
 
 describe("телефон — смартфон набік", () => {
   it("на кожній вкладці — оформлення телефона, вкладки й хрестик", () => {
@@ -115,17 +144,19 @@ describe("телефон — смартфон набік", () => {
   });
 
   // `phone.css` фарбує плитку вкладки за її місцем: Магазин і Речі — перші дві, Коти — третя з іконкою, Альбом — посередині без
-  // іконки, Гра — остання без іконки. Змінився порядок чи іконки — треба змінити й кольори там.
+  // іконки, Гра — остання без іконки; Профіль — за `data-tab`. Змінився порядок чи іконки — треба змінити й кольори там.
   it("порядок вкладок і їхні іконки — ті, на які спираються кольори плиток", () => {
     const glyphs = Object.keys(GLYPH_ART);
     const hasGlyph = (label: string): boolean => glyphs.some((g) => label.includes(g));
     const labels = (state: GameState): string[] => (phoneCard(state, "shop", handlers).tabs ?? []).map((t) => t.label);
     const full = labels(fullPhone());
-    expect(full).toHaveLength(5);
-    expect(full.map(hasGlyph)).toEqual([true, true, true, false, false]);
+    expect(full).toHaveLength(6);
+    expect(full.map(hasGlyph)).toEqual([true, true, true, false, false, false]);
+    expect(full.at(-2)).toContain("Профіль");
     expect(full.at(-1)).toContain("Гра");
-    // Без котів і альбому — лише Магазин, Речі й Гра.
+    expect((phoneCard(fullPhone(), "shop", handlers).tabs ?? []).map((t) => t.id)).toEqual(["shop", "mine", "cats", "album", "profile", "game"]);
+    // Без котів і альбому — лише Магазин, Речі, Профіль і Гра.
     const fresh = labels(newGame({ address: "she", difficulty: "normal", seed: 8 }).current);
-    expect(fresh).toEqual([full[0], full[1], full[4]]);
+    expect(fresh).toEqual([full[0], full[1], full[4], full[5]]);
   });
 });
