@@ -2,6 +2,8 @@
 // Phaser і DOM.
 
 import type { Look } from "../../sim/types";
+import type { ArtId } from "../art/types";
+import type { PersonSlot } from "../rig/defs/person";
 
 /** Варіант ряду редактора: назва й вага для «Випадково». */
 export interface WardrobeEntry {
@@ -15,6 +17,9 @@ export interface WardrobeEntry {
 export interface WardrobeColor extends WardrobeEntry {
   readonly color: number;
 }
+
+/** Кадри слотів ділянки гардеробу: слот → запис маніфесту (null — слот порожній). */
+export type SlotFrames<S extends PersonSlot> = { readonly [K in S]: ArtId | null };
 
 /** Одяг, на який лягає візерунок. */
 export type Garment = "top" | "bottom";

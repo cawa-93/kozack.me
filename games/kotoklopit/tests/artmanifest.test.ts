@@ -77,7 +77,7 @@ describe("маніфест арту", () => {
   });
 
   it("категорії — усі з ArtCategory, роздільність за замовчуванням — 2", () => {
-    const all: Record<ArtCategory, true> = { env: true, item: true, mess: true, fx: true, cat: true, person: true, icon: true, ui: true, race: true };
+    const all: Record<ArtCategory, true> = { env: true, item: true, mess: true, fx: true, cat: true, person: true, cloth: true, icon: true, ui: true, race: true };
     expect([...ART_CATEGORIES].sort()).toEqual(Object.keys(all).sort());
     expect(DEFAULT_RES).toBe(2);
   });

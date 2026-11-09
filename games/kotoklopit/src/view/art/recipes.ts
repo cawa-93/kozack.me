@@ -11,11 +11,16 @@
 
 import { coatOf, type Coat, type EyeColor, type Pigment, type TabbyPattern } from "../../sim/genetics";
 import type { Cat, Look, Shape } from "../../sim/types";
+import { accentSteps } from "../wardrobe/accents";
 import { IRIS_COLORS, SKIN_TONES } from "../wardrobe/body";
+import { bottomSteps } from "../wardrobe/bottoms";
 import { BOTTOM_COLORS, SHOE_COLORS, TOP_COLORS } from "../wardrobe/clothes";
 import { HAIR_COLORS } from "../wardrobe/hair";
 import { wearOf } from "../wardrobe/index";
-import type { ArtLayer, PutMode, TintRecipe, TintStep, TortieLayer, WhiteLayer } from "./types";
+import { patternSteps } from "../wardrobe/patterns";
+import { shoeSteps } from "../wardrobe/shoes";
+import { topSteps } from "../wardrobe/tops";
+import type { ArtLayer, PutMode, TintPattern, TintRecipe, TintStep, TortieLayer, WhiteLayer } from "./types";
 
 // --- Кольори -----------------------------------------------------------------------------------
 
@@ -294,9 +299,11 @@ function catKey(look: CatLookKey, state: Required<CatRecipeOptions>): string {
 export const PERSON_RECIPE_LAYERS: readonly ArtLayer[] = [
   "fill-skin",
   "fill-top",
+  "fill-inner",
   "fill-bottom",
   "fill-shoes",
   "fill-hair",
+  "fill-accent",
   "fill-iris",
   "detail",
   "extra-stain",
@@ -339,26 +346,84 @@ export function personColors(look: Look): { skin: number; hair: number; iris: nu
 }
 
 /**
- * Рецепт персонажа: шкіра, волосся, верх, низ, взуття й очі — білі заливки `fill-*` кольорами вигляду; плями на одязі
- * (`extra-stain`, у своїх кольорах, у межах силуету); тінь множенням; контур. Форма обличчя, зачіска й статура — це
- * вибір кадрів (`person/head/<обличчя>`…), не рецепт.
+ * Рецепт персонажа: шкіра, волосся, верх, низ, взуття й очі — білі заливки `fill-*` кольорами вигляду, а що кладе кожна
+ * ділянка гардеробу (річ під верхом, візерунки, акцент), кажуть її модулі (`topSteps`, `patternSteps`, `bottomSteps`,
+ * `shoeSteps`, `accentSteps`); плями на одязі (`extra-stain`, у своїх кольорах, у межах силуету); тінь множенням; контур.
+ * Форма обличчя, зачіска, статура й фасони — це вибір кадрів (`personSkin`), не рецепт.
  */
 export function personRecipe(look: Look, opts: PersonRecipeOptions = {}): TintRecipe {
-  const colors = personColors(look);
+  const wear = wearOf(look);
+  const colors = personColors(wear);
   const steps: TintStep[] = [
     { layer: "fill-skin", color: colors.skin, put: "source-over" },
-    { layer: "fill-top", color: colors.top, put: "source-over" },
-    { layer: "fill-bottom", color: colors.bottom, put: "source-over" },
-    { layer: "fill-shoes", color: colors.shoes, put: "source-over" },
+    ...topSteps(wear, colors.top),
+    ...patternSteps("top", wear, colors.top),
+    ...bottomSteps(wear, colors.bottom),
+    ...patternSteps("bottom", wear, colors.bottom),
+    ...shoeSteps(wear, colors.shoes),
     { layer: "fill-hair", color: colors.hair, put: "source-over" },
+    ...accentSteps(wear, colors.hair),
     { layer: "fill-iris", color: colors.iris, put: "source-over" },
-    { layer: "detail", color: null, put: "source-over" },
+    DETAIL,
   ];
-  if (opts.stained) steps.push({ layer: "extra-stain", color: null, put: "source-atop" });
-  steps.push({ layer: "shade", color: SHADE_TINT, tint: "multiply", put: "multiply" }, { layer: "ink", color: null, put: "source-over" });
-  const hex = (color: number): string => color.toString(16).padStart(6, "0");
-  const key = `person:${[colors.skin, colors.hair, colors.iris, colors.top, colors.bottom, colors.shoes].map(hex).join(".")}${opts.stained ? "/stain" : ""}`;
-  return { key, steps };
+  if (opts.stained) steps.push(STAIN);
+  steps.push(SHADE, INK);
+  return { key: personKey(steps), steps };
+}
+
+const DETAIL: TintStep = { layer: "detail", color: null, put: "source-over" };
+const STAIN: TintStep = { layer: "extra-stain", color: null, put: "source-atop" };
+const SHADE: TintStep = { layer: "shade", color: SHADE_TINT, tint: "multiply", put: "multiply" };
+const INK: TintStep = { layer: "ink", color: null, put: "source-over" };
+
+/** Заливки, кольори яких — основа ключа: `person:<шкіра>.<волосся>.<очі>.<верх>.<низ>.<взуття>`. */
+const KEY_FILLS: readonly ArtLayer[] = ["fill-skin", "fill-hair", "fill-iris", "fill-top", "fill-bottom", "fill-shoes"];
+/** Кроки, що є в кожному рецепті (плями — `/stain`): у ключі їх немає. */
+const KEY_FIXED = new Set([DETAIL, SHADE, INK].map(stepKey));
+
+/**
+ * Ключ рецепта персонажа: кольори основних заливок, плями й кожен інший крок (`stepKey`) — тож будь-яка нова заливка чи
+ * візерунок гардеробу дає інший ключ, і кеш запікання не віддасть кадр іншого вигляду, а вигляд без них має той самий ключ.
+ */
+function personKey(steps: readonly TintStep[]): string {
+  const base = new Map<ArtLayer, number>();
+  const extra: string[] = [];
+  let stained = false;
+  for (const step of steps) {
+    const sig = stepKey(step);
+    const plain = step.put === "source-over" && step.tint === undefined && step.alpha === undefined && step.pattern === undefined;
+    if (plain && step.color !== null && KEY_FILLS.includes(step.layer) && !base.has(step.layer)) base.set(step.layer, step.color);
+    else if (sig === stepKey(STAIN)) stained = true;
+    else if (!KEY_FIXED.has(sig)) extra.push(`/${sig}`);
+  }
+  const colors = KEY_FILLS.map((layer) => {
+    const color = base.get(layer);
+    return color === undefined ? "-" : hex(color);
+  });
+  return `person:${colors.join(".")}${stained ? "/stain" : ""}${extra.join("")}`;
+}
+
+/** Крок рядком: шар, колір, режими, непрозорість і візерунок — усе, від чого залежить вигляд. */
+function stepKey(step: TintStep): string {
+  let key: string = step.layer;
+  if (step.color !== null) key += `=${hex(step.color)}`;
+  if (step.tint !== undefined) key += `~${step.tint}`;
+  if (step.put !== "source-over") key += `@${step.put}`;
+  if (step.alpha !== undefined) key += `%${step.alpha}`;
+  if (step.pattern) key += `+${patternKey(step.pattern)}`;
+  return key;
+}
+
+function patternKey(pattern: TintPattern): string {
+  const fields = Object.entries(pattern)
+    .filter(([name]) => name !== "tile" && name !== "color")
+    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .map(([name, value]) => `,${name}:${String(value)}`);
+  return `${pattern.tile}${pattern.color === null ? "" : `.${hex(pattern.color)}`}${fields.join("")}`;
+}
+
+function hex(color: number): string {
+  return color.toString(16).padStart(6, "0");
 }
 
 // --- Дальні частини ----------------------------------------------------------------------------
@@ -372,13 +437,17 @@ export const FAR_TINT = 0xc5bec6;
 
 /** Заливки, по яких кладеться затінення дальньої частини: увесь силует частини, без контуру. */
 const FAR_FILLS: readonly ArtLayer[] = ["fill", "fill-skin", "fill-top", "fill-bottom", "fill-shoes", "fill-hair"];
+/** Заливки гардеробу — затінюються, лише коли рецепт їх фарбує: рецепт без них лишається тим самим кроком у крок. */
+const FAR_WARDROBE_FILLS: readonly ArtLayer[] = ["fill-inner", "fill-accent"];
 
 /**
- * Рецепт дальньої частини: той самий, а перед контуром — увесь силует (заливки) множенням на `FAR_TINT`, тож маски, деталі
- * й тінь темнішають, а контур лишається чорнильним (як на листі F1b). Ключ — з `/far`: дальні кадри запікаються окремо.
+ * Рецепт дальньої частини: той самий, а перед контуром — увесь силует (заливки) множенням на `FAR_TINT`, тож маски, деталі,
+ * візерунки й тінь темнішають, а контур лишається чорнильним (як на листі F1b). Ключ — з `/far`: дальні кадри запікаються
+ * окремо.
  */
 export function farRecipe(recipe: TintRecipe, tint = FAR_TINT): TintRecipe {
-  const dim: TintStep[] = FAR_FILLS.map((layer) => ({ layer, color: tint, put: "multiply" }));
+  const fills = [...FAR_FILLS, ...FAR_WARDROBE_FILLS.filter((layer) => recipe.steps.some((step) => step.layer === layer))];
+  const dim: TintStep[] = fills.map((layer) => ({ layer, color: tint, put: "multiply" }));
   const ink = recipe.steps.findIndex((step) => step.layer === "ink");
   const at = ink < 0 ? recipe.steps.length : ink;
   return { key: `${recipe.key}/far`, family: recipe.family ?? recipe.key, steps: [...recipe.steps.slice(0, at), ...dim, ...recipe.steps.slice(at)] };

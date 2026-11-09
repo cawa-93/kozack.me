@@ -26,6 +26,7 @@ const CATEGORY_SET: Readonly<Record<ArtCategory, true>> = {
   fx: true,
   cat: true,
   person: true,
+  cloth: true,
   icon: true,
   ui: true,
   race: true,

@@ -2,6 +2,8 @@
 // `Look` з типовими значеннями й застосовує правила поєднань. Реєстри — по файлу на ділянку (`hair.ts`, `tops.ts`…).
 
 import type { Look } from "../../sim/types";
+import { extraFrameOf } from "../art/placement";
+import type { ArtId } from "../art/types";
 import { accentFits, HAIR_ACCENTS } from "./accents";
 import { BUILDS, FACES, IRIS_COLORS, SKIN_TONES } from "./body";
 import { BOTTOM_CUTS } from "./bottoms";
@@ -12,7 +14,7 @@ import { SHOE_CUTS } from "./shoes";
 import { TOP_CUTS } from "./tops";
 import type { Wear } from "./types";
 
-export type { Garment, WardrobeColor, WardrobeEntry, Wear } from "./types";
+export type { Garment, SlotFrames, WardrobeColor, WardrobeEntry, Wear } from "./types";
 
 /** Усі поля `Look` (`Record` змушує перелічити кожне нове). */
 const KEYS: Readonly<Record<keyof Look, true>> = {
@@ -34,13 +36,14 @@ const KEYS: Readonly<Record<keyof Look, true>> = {
 };
 export const LOOK_KEYS = Object.keys(KEYS) as readonly (keyof Look)[];
 
-/** Номер варіанта з `n`: ціле в межах реєстру, інакше (немає поля, зіпсоване число) — 0. */
+/** Номер варіанта з `n`: немає поля чи не число — 0, поза реєстром — по колу (як завжди було з кольорами й формами). */
 function within(value: number | undefined, n: number): number {
-  return value !== undefined && Number.isInteger(value) && value >= 0 && value < n ? value : 0;
+  if (value === undefined || !Number.isFinite(value) || n <= 0) return 0;
+  return ((Math.trunc(value) % n) + n) % n;
 }
 
 /**
- * Вигляд, як його вдягнено: поля з типовими значеннями (немає — 0), номери в межах реєстрів, і поєднання (`WARDROBE.md`,
+ * Вигляд, як його вдягнено: поля з типовими значеннями (немає — 0), номери в межах реєстрів (`within`), і поєднання (`WARDROBE.md`,
  * «Поєднання»): візерунок, що не лягає на фасон, — однотонний; акцент у зачіски без маски — немає; верх із власним низом
  * задає фасон і візерунок низу. Що обрано в `Look`, не змінюється: повернувся фасон — повернувся й візерунок.
  */
@@ -79,4 +82,49 @@ export function wearOf(look: Partial<Look>): Wear {
 export function sameLook(a: Look, b: Look): boolean {
   for (const key of LOOK_KEYS) if ((a[key] ?? 0) !== (b[key] ?? 0)) return false;
   return true;
+}
+
+/**
+ * Вигляди, у яких хоч раз трапляється кожен варіант, що міняє кадри: обличчя, зачіска, фасон верху й кожен низ із кожним
+ * взуттям (їхні поєднання міняють кадри) — за кожної статури. Для переліку кадрів (`personVariants`) і тестів.
+ */
+export function personLooks(): Wear[] {
+  const looks: Look[] = [];
+  const base: Look = { face: 0, skin: 0, hair: 0, hairColor: 0, eyes: 0, build: 0, top: 0, bottom: 0, shoes: 0 };
+  for (let build = 0; build < BUILDS.length; build++) {
+    for (let face = 0; face < FACES.length; face++) looks.push({ ...base, build, face });
+    for (let hair = 0; hair < HAIR_STYLES.length; hair++) looks.push({ ...base, build, hair });
+    for (let topCut = 0; topCut < TOP_CUTS.length; topCut++) looks.push({ ...base, build, topCut });
+    for (let bottomCut = 0; bottomCut < BOTTOM_CUTS.length; bottomCut++) {
+      for (let shoeCut = 0; shoeCut < SHOE_CUTS.length; shoeCut++) looks.push({ ...base, build, bottomCut, shoeCut });
+    }
+  }
+  return looks.map(wearOf);
+}
+
+/** Плями фасонів (`stains` записів): кадр → накладка плям; будується раз. */
+let stainMap: ReadonlyMap<string, ArtId | null> | null = null;
+
+function stains(): ReadonlyMap<string, ArtId | null> {
+  if (stainMap) return stainMap;
+  const map = new Map<string, ArtId | null>();
+  for (const cut of [...TOP_CUTS, ...BOTTOM_CUTS, ...SHOE_CUTS]) for (const [id, extra] of Object.entries(cut.stains ?? {})) map.set(id, extra);
+  stainMap = map;
+  return map;
+}
+
+/**
+ * Кадр накладок `extra-*` для кадру частини кота чи персонажа: плями з запису фасону (`stains`: спільна накладка чи «без
+ * плям»), інакше — за назвою (`extraFrameOf`, `<частина>-extra`). null — накладок немає.
+ */
+export function partExtraFrame(frame: string): string | null {
+  const own = stains();
+  if (own.size > 0 && frame.startsWith("person/")) {
+    const parts = frame.split("/");
+    for (let n = parts.length; n >= 2; n--) {
+      const extra = own.get(parts.slice(0, n).join("/"));
+      if (extra !== undefined) return extra === null ? null : [extra, ...parts.slice(n)].join("/");
+    }
+  }
+  return extraFrameOf(frame);
 }

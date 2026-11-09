@@ -20,7 +20,7 @@ import { artEntries } from "../../../view/art/manifest";
 import { catRecipe, farRecipe, personRecipe } from "../../../view/art/recipes";
 import type { ArtId, ArtView, FrameLayer, TintRecipe } from "../../../view/art/types";
 import { CAT_FAR_SLOTS, CAT_FIT, CAT_RIG, CAT_VARIANTS } from "../../../view/rig/defs/cat";
-import { PERSON_FAR_SLOTS, PERSON_FIT, PERSON_RIG, PERSON_VARIANTS } from "../../../view/rig/defs/person";
+import { PERSON_FAR_SLOTS, PERSON_FIT, PERSON_RIG, personVariants } from "../../../view/rig/defs/person";
 import type { RigFit } from "../../../view/rig/rigcore";
 import { RigSprite, type Attachable, type RigBaked } from "../../../view/rig/rigsprite";
 import type { RigAnim, RigDef, SocketCargo } from "../../../view/rig/types";
@@ -61,7 +61,7 @@ const RIGS: Readonly<Record<"cat" | "person", RigChoice>> = {
     title: "Персонаж",
     def: PERSON_RIG as unknown as LooseRig,
     fit: PERSON_FIT,
-    variants: PERSON_VARIANTS,
+    variants: personVariants(),
     height: 152,
     recipe: personRecipe(DEFAULT_LOOK),
     far: PERSON_FAR_SLOTS,

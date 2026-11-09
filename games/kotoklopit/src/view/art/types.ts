@@ -39,7 +39,7 @@ export interface ArtSize {
  * - `ui` — оформлення DOM-інтерфейсу (рамки, кнопки, вкладки);
  * - `race` — гонка (вигляд згори, без ізометрії).
  */
-export type ArtCategory = "env" | "item" | "mess" | "fx" | "cat" | "person" | "icon" | "ui" | "race";
+export type ArtCategory = "env" | "item" | "mess" | "fx" | "cat" | "person" | "cloth" | "icon" | "ui" | "race";
 
 /**
  * Id запису маніфесту: `<категорія>/<назва>[/<варіант>…]` (`env/fridge`, `cat/head/normal`, `icon/thirst`). Сегменти — малі
@@ -62,8 +62,11 @@ export const ART_VIEWS: readonly ArtView[] = ["front", "back"];
 
 // --- Шари --------------------------------------------------------------------------------------
 
-/** Ділянки, які компонувальник фарбує в колір вигляду персонажа (§5.1) чи очей. Шерсть кота — шар `fill` без ділянки. */
-export type FillRegion = "iris" | "skin" | "hair" | "top" | "bottom" | "shoes";
+/**
+ * Ділянки, які компонувальник фарбує в колір вигляду персонажа (§5.1) чи очей. Шерсть кота — шар `fill` без ділянки. `inner` —
+ * річ під верхом (сорочка під жилетом), `accent` — неонова маска зачіски (`WARDROBE.md`).
+ */
+export type FillRegion = "iris" | "skin" | "hair" | "top" | "bottom" | "shoes" | "inner" | "accent";
 
 /**
  * Заливка — білий силует (#fff), який фарбує компонувальник: `fill` — шерсть кота (основний колір `coatOf`, у колорпойнта —
@@ -119,6 +122,8 @@ export const ART_LAYERS = [
   "fill-top",
   "fill-bottom",
   "fill-shoes",
+  "fill-inner",
+  "fill-accent",
   "fluff",
   "point",
   "tortie-a",
@@ -325,6 +330,17 @@ export type TintMode = "source-atop" | "multiply";
  */
 export type PutMode = "source-over" | "source-atop" | "multiply";
 
+/**
+ * Візерунок тканини (`WARDROBE.md`, «Візерунки»): крок із ним кладе не сам шар, а плитку чи принт `tile`, обтяті по силуету шару
+ * кроку в цьому кадрі, режимом `put`. Механізм — `compose.ts` і `bake.ts`; поле розширює трек візерунків.
+ */
+export interface TintPattern {
+  /** Плитка `cloth/<код>` чи принт `cloth/print/<код>`. */
+  readonly tile: ArtId;
+  /** Колір маски плитки (шар `fill`); null — лише свої кольори (`detail`). */
+  readonly color: number | null;
+}
+
 /** Крок рецепта: один шар кадру. Шар, якого в кадрі немає, пропускається. */
 export interface TintStep {
   layer: ArtLayer;
@@ -336,6 +352,8 @@ export interface TintStep {
   put: PutMode;
   /** Непрозорість шару 0–1; за замовчуванням 1 (блідий тікований табі — менше). */
   alpha?: number;
+  /** Візерунок по силуету шару замість самого шару. */
+  pattern?: TintPattern;
 }
 
 /**

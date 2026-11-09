@@ -436,8 +436,18 @@ function sitLegs(view: ArtView, hip: Vec2): Pose {
   };
 }
 
-/** Сидячи ближнього черевика не видно: ближня нога — лише стегно. */
-const SIT_SLOTS: Slots = { "shoe-near": { visible: [{ t: 0, v: false }] } };
+/**
+ * Сидячи ближня нога — лише стегно: черевика, халяви й низу штанини на ній не видно; дальня — гомілка, і накладці штанини
+ * (вона на стегні) там не місце. Спідниця й поділ верху — у стані `sit` (кадри без станів його не мають, `art/STYLE.md`).
+ */
+const SIT_SLOTS: Slots = {
+  "shoe-near": { visible: [{ t: 0, v: false }] },
+  "shaft-near": { visible: [{ t: 0, v: false }] },
+  "hem-near": { visible: [{ t: 0, v: false }] },
+  "legwear-far": { visible: [{ t: 0, v: false }] },
+  skirt: { frame: [{ t: 0, v: "sit" }] },
+  "top-hem": { frame: [{ t: 0, v: "sit" }] },
+};
 
 /**
  * Ближня рука над річчю в гнізді `held`: гніздо лежить над рукою (`PERSON_RIG`: тарілку, совок і страву несуть на кулаці), а

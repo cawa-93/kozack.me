@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { artEntry } from "../src/view/art/manifest";
 import type { ArtEntry, ArtId } from "../src/view/art/types";
 import { CAT_FAR_SLOTS, CAT_FIT, CAT_RIG, CAT_VARIANTS, catProportions, catSkin } from "../src/view/rig/defs/cat";
-import { PERSON_FAR_SLOTS, PERSON_FIT, PERSON_RIG, PERSON_VARIANTS, personProportions, personSkin } from "../src/view/rig/defs/person";
+import { OVERLAY_WIDTH, PERSON_FAR_SLOTS, PERSON_FIT, PERSON_RIG, personProportions, personSkin, personVariants } from "../src/view/rig/defs/person";
 import {
   animProblems,
   animTime,
@@ -116,7 +116,7 @@ describe("визначення скелетів", () => {
     expect(CAT_RIG.skin.body).toBe("cat/body/normal");
     expect(CAT_RIG.skin["ear-far"]).toBe(CAT_RIG.skin["ear-near"]);
     for (const [slot, art] of Object.entries(CAT_RIG.skin)) expect(CAT_VARIANTS[slot as keyof typeof CAT_VARIANTS]).toContain(art);
-    for (const [slot, art] of Object.entries(PERSON_RIG.skin)) expect(PERSON_VARIANTS[slot as keyof typeof PERSON_VARIANTS]).toContain(art);
+    for (const [slot, art] of Object.entries(PERSON_RIG.skin)) expect(personVariants()[slot as keyof ReturnType<typeof personVariants>]).toContain(art);
     const shape = { muzzle: "flat", ears: "folded", tail: "none", build: "stocky", legs: "short" } as const;
     const skin = catSkin(shape);
     expect(skin.tail).toBeNull();
@@ -138,6 +138,41 @@ describe("визначення скелетів", () => {
       const key = typeof name === "string" ? name : name.name;
       expect(Object.keys({ ...CAT_RIG.proportions, ...PERSON_RIG.proportions })).toContain(key);
     }
+  });
+
+  it("слоти гардеробу (WARDROBE.md): накладки над торсом, капюшон спереду за ним, на нозі — нога, накладка, взуття, халява, низ", () => {
+    const z = (view: "front" | "back", slot: string): number => new Rig(PERSON_RIG, { facing: { view } }).evaluate(0).slot(slot as never).z;
+    for (const view of ["front", "back"] as const) {
+      expect(z(view, "torso")).toBeLessThan(z(view, "skirt"));
+      expect(z(view, "skirt")).toBeLessThan(z(view, "top-hem"));
+      expect(z(view, "top-hem")).toBeLessThan(z(view, "top-front"));
+      expect(z(view, "top-front")).toBeLessThan(z(view, "head"));
+      for (const side of ["far", "near"] as const) {
+        const order = [`leg-${side}`, `legwear-${side}`, `shoe-${side}`, `shaft-${side}`, `hem-${side}`].map((slot) => z(view, slot));
+        expect(order, `${view} ${side}`).toEqual([...order].sort((a, b) => a - b));
+      }
+      expect(z(view, "hem-far")).toBeLessThan(z(view, "leg-near"));
+    }
+    expect(z("front", "hood")).toBeLessThan(z("front", "torso"));
+    expect(z("back", "hood")).toBeGreaterThan(z("back", "torso"));
+    expect(z("back", "hood")).toBeLessThan(z("back", "head"));
+    // Без варіантів гардеробу нові слоти порожні.
+    for (const slot of ["top-front", "hood", "top-hem", "skirt", "legwear-near", "legwear-far", "hem-near", "hem-far", "shaft-near", "shaft-far"] as const) {
+      expect(PERSON_RIG.skin[slot], slot).toBeNull();
+    }
+    for (const side of ["far"] as const) for (const part of ["leg", "legwear", "shoe", "shaft", "hem"]) expect(PERSON_FAR_SLOTS).toContain(`${part}-${side}`);
+  });
+
+  it("ширина накладок за статурою — як у торсів статур: груди за плечима, поділ за стегнами", () => {
+    const spread = (build: number, a: string, b: string): number => {
+      const points = artEntry(`person/torso/${build}` as ArtId)?.points ?? {};
+      return Math.abs((points[a]?.x ?? NaN) - (points[b]?.x ?? NaN));
+    };
+    const ratio = (build: number, a: string, b: string): number => spread(build, a, b) / spread(1, a, b);
+    expect(ratio(0, "shoulder-far", "shoulder-near")).toBeCloseTo(OVERLAY_WIDTH.slim.chest, 2);
+    expect(ratio(2, "shoulder-far", "shoulder-near")).toBeCloseTo(OVERLAY_WIDTH.stocky.chest, 2);
+    expect(ratio(0, "hip-far", "hip-near")).toBeCloseTo(OVERLAY_WIDTH.slim.hips, 2);
+    expect(ratio(2, "hip-far", "hip-near")).toBeCloseTo(OVERLAY_WIDTH.stocky.hips, 2);
   });
 
   it("помилки визначення, яких не ловлять типи", () => {

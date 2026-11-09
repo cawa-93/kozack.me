@@ -3,7 +3,8 @@
 // (`bake.ts`) так само, як у грі. Поки арту немає, це маджентові заглушки з синтетичними масками в кольорах рецепта; з
 // еталонами F1 після зведення стане справжнім. Перемикачі станів (тьмяна шерсть, залисини, нашийник) перезапікають котів, а
 // кнопка «втратити контекст» перевіряє, що запечене переживає втрату WebGL-контексту. Поруч — DOM-портрети
-// (`composePortrait`), а без атласу — запасний малюнок `ui/portrait.ts`, як буде в редакторі.
+// (`composePortrait`), а без атласу — запасний малюнок `ui/portrait.ts`, як буде в редакторі; під ними — гардероб: кожен
+// варіант кожного реєстру (`WARDROBE.md`) на тому самому вигляді, тож новий запис видно тут без правок галереї.
 
 import Phaser from "phaser";
 
@@ -14,7 +15,13 @@ import { addBakedArt, bakedFrame, bakeStats, releaseBaked, setBakedArt } from ".
 import { composePortrait } from "../../../view/art/compose";
 import { catRecipe, personRecipe, type CatAppearance, type CatRecipeOptions } from "../../../view/art/recipes";
 import type { ArtId, ArtView, TintRecipe } from "../../../view/art/types";
+import { HAIR_ACCENTS } from "../../../view/wardrobe/accents";
 import { BUILDS, FACES } from "../../../view/wardrobe/body";
+import { BOTTOM_CUTS } from "../../../view/wardrobe/bottoms";
+import { HAIR_STYLES } from "../../../view/wardrobe/hair";
+import { PATTERNS, patternFits } from "../../../view/wardrobe/patterns";
+import { SHOE_CUTS } from "../../../view/wardrobe/shoes";
+import { TOP_CUTS } from "../../../view/wardrobe/tops";
 import type { GalleryContext, GalleryTab, GalleryView } from "../tab";
 
 /** Гени за замовчуванням: чорний короткошерстий без малюнка й білого; зразок задає лише те, чим відрізняється. */
@@ -65,6 +72,32 @@ const LOOK_SAMPLES: readonly LookSample[] = [
   { label: "Дуже темна, сиві кучері", look: { face: 2, skin: 4, hair: 3, hairColor: 5, eyes: 2, build: 2, top: 6, bottom: 3, shoes: 3 } },
   { label: "Руде, плями на одязі", look: { face: 1, skin: 2, hair: 2, hairColor: 4, eyes: 0, build: 1, top: 2, bottom: 1, shoes: 2 }, stained: true },
 ];
+
+/** Вигляд, на якому галерея показує варіанти гардеробу. */
+const WARDROBE_BASE: Look = { face: 0, skin: 1, hair: 0, hairColor: 3, eyes: 1, build: 1, top: 1, bottom: 0, shoes: 1 };
+
+/** Перший фасон, на який лягає візерунок (`patternFits`); немає — 0. */
+const cutFor = (pattern: number, garment: "top" | "bottom"): number => {
+  const cuts = garment === "top" ? TOP_CUTS : BOTTOM_CUTS;
+  const cut = cuts.findIndex((_, i) => patternFits(pattern, garment, i));
+  return Math.max(0, cut);
+};
+
+/** Ряди гардеробу для галереї: кожен варіант реєстру на `WARDROBE_BASE`. */
+function wardrobeRows(): { title: string; looks: { label: string; look: Look }[] }[] {
+  const each = <T extends { name: string }>(list: readonly T[], look: (i: number) => Partial<Look>) =>
+    list.map((entry, i) => ({ label: `${i} · ${entry.name}`, look: { ...WARDROBE_BASE, ...look(i) } }));
+  const accentHair = Math.max(0, HAIR_STYLES.findIndex((style) => style.accent === true));
+  return [
+    { title: "Зачіски", looks: each(HAIR_STYLES, (hair) => ({ hair })) },
+    { title: `Акцент (на «${HAIR_STYLES[accentHair]?.name ?? ""}»)`, looks: each(HAIR_ACCENTS, (hairAccent) => ({ hair: accentHair, hairAccent })) },
+    { title: "Фасони верху", looks: each(TOP_CUTS, (topCut) => ({ topCut })) },
+    { title: "Візерунки верху", looks: each(PATTERNS, (topPattern) => ({ topPattern, topCut: cutFor(topPattern, "top") })) },
+    { title: "Фасони низу", looks: each(BOTTOM_CUTS, (bottomCut) => ({ bottomCut })) },
+    { title: "Візерунки низу", looks: each(PATTERNS, (bottomPattern) => ({ bottomPattern, bottomCut: cutFor(bottomPattern, "bottom") })) },
+    { title: "Фасони взуття", looks: each(SHOE_CUTS, (shoeCut) => ({ shoeCut })) },
+  ];
+}
 
 /** Стовпці: частина й ракурс. */
 interface Column {
@@ -229,6 +262,29 @@ function mount(ctx: GalleryContext): GalleryView {
     portraits.append(canvas);
   }
   panel.append(portraits);
+  for (const row of wardrobeRows()) {
+    const title = document.createElement("p");
+    title.textContent = `Гардероб · ${row.title}`;
+    const strip = document.createElement("div");
+    strip.style.display = "flex";
+    strip.style.gap = "6px";
+    strip.style.flexWrap = "wrap";
+    for (const { label, look } of row.looks) {
+      const cell = document.createElement("figure");
+      cell.style.margin = "0";
+      const canvas = portraitCanvas(56, 92);
+      const redraw = (): void => {
+        if (!composePortrait(canvas, look, { onReady: redraw })) drawPortrait(canvas, look);
+      };
+      redraw();
+      const caption = document.createElement("figcaption");
+      caption.textContent = label;
+      caption.style.fontSize = "11px";
+      cell.append(canvas, caption);
+      strip.append(cell);
+    }
+    panel.append(title, strip);
+  }
   ctx.panel.append(panel);
 
   const showStats = (): void => {

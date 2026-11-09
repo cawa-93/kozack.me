@@ -4,8 +4,9 @@
 
 import { describe, expect, it } from "vitest";
 
-import { BUILDS, FACES } from "../src/view/wardrobe/body";
+import { FACES } from "../src/view/wardrobe/body";
 import { HAIR_STYLES } from "../src/view/wardrobe/hair";
+import { partExtraFrame, personLooks } from "../src/view/wardrobe/index";
 import { CAT_EYES, CAT_MOUTHS } from "../src/view/anim/catface";
 import { portraitHead } from "../src/view/art/compose";
 import { artEntries, artEntry } from "../src/view/art/manifest";
@@ -13,7 +14,7 @@ import { extraFrameOf } from "../src/view/art/placement";
 import { CAT_RECIPE_LAYERS, PERSON_RECIPE_LAYERS } from "../src/view/art/recipes";
 import { ART_VIEWS, framesOf, type ArtId } from "../src/view/art/types";
 import { CAT_FIT, CAT_RIG, CAT_VARIANTS, catSkin } from "../src/view/rig/defs/cat";
-import { PERSON_FIT, PERSON_RIG, PERSON_VARIANTS, personSkin } from "../src/view/rig/defs/person";
+import { PERSON_FIT, PERSON_RIG, personSkin, personVariants } from "../src/view/rig/defs/person";
 import { entryPoint, type PointRefs, type RigFit } from "../src/view/rig/rigcore";
 import type { Shape } from "../src/sim/types";
 
@@ -37,13 +38,9 @@ function catSkins(): Record<string, ArtId | null>[] {
   return skins;
 }
 
-/** Усі обвіси персонажа за виглядом (`Look`: обличчя, зачіска, статура). */
+/** Обвіси персонажа, у яких хоч раз трапляється кожен варіант гардеробу, що міняє кадри (`personLooks`). */
 function personSkins(): Record<string, ArtId | null>[] {
-  const skins: Record<string, ArtId | null>[] = [];
-  for (let face = 0; face < FACES.length; face++) {
-    for (let hair = 0; hair < HAIR_STYLES.length; hair++) for (let build = 0; build < BUILDS.length; build++) skins.push(personSkin({ face, hair, build }));
-  }
-  return skins;
+  return personLooks().map((look) => personSkin(look));
 }
 
 /** Точки, на які спирається `fit`, яких немає в кадрах обвісу (для кожного ракурсу; зі списку досить першої знайденої). */
@@ -69,7 +66,7 @@ describe("скелети (F4a) — у маніфесті", () => {
       ...Object.values(CAT_RIG.skin),
       ...Object.values(CAT_VARIANTS).flat(),
       ...Object.values(PERSON_RIG.skin),
-      ...Object.values(PERSON_VARIANTS).flat(),
+      ...Object.values(personVariants()).flat(),
     ].filter((id): id is ArtId => id !== null);
     for (const id of new Set(ids)) expect(entry(id).views, id).toEqual(ART_VIEWS);
   });
@@ -142,5 +139,22 @@ describe("вирази (F4c) і компонувальник (F4b) — у ман
     expect(extraFrameOf("person/leg/back")).toBe("person/leg-extra/back");
     expect(extraFrameOf("cat/body-extra/normal/front")).toBeNull();
     expect(extraFrameOf("env/fridge/open")).toBeNull();
+  });
+
+  it("плями кожного кадру обвісу персонажа (`partExtraFrame`) — у полотні частини; оголошені фасоном (`stains`) — є", () => {
+    const owners = new Map(artEntries().flatMap((e) => framesOf(e).map((f) => [f.frame as string, e] as const)));
+    for (const ids of Object.values(personVariants())) {
+      for (const id of ids) {
+        if (!id) continue;
+        const part = entry(id);
+        for (const f of framesOf(part)) {
+          const extra = partExtraFrame(f.frame);
+          const owner = extra ? owners.get(extra) : undefined;
+          if (extra && extra !== extraFrameOf(f.frame)) expect(owner, `${f.frame} → ${extra}`).toBeDefined();
+          if (!owner) continue;
+          expect({ size: owner.size, pivot: owner.pivot, res: owner.res }, `${f.frame} → ${extra}`).toEqual({ size: part.size, pivot: part.pivot, res: part.res });
+        }
+      }
+    }
   });
 });

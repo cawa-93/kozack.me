@@ -9,8 +9,8 @@
 // кольором `source-atop` (чи множенням) → покласти на кадр. Це 3–4 операції на шар; кадр кота — ≈ 10 кроків.
 
 import type { Look } from "../../sim/types";
-import { FACES } from "../wardrobe/body";
-import { HAIR_STYLES } from "../wardrobe/hair";
+import { hairSkin } from "../wardrobe/hair";
+import { wearOf } from "../wardrobe/index";
 import { artEntry } from "./manifest";
 import { STUB_LOOK, stubHatch, stubPixels } from "./placement";
 import { farRecipe, personRecipe } from "./recipes";
@@ -136,6 +136,8 @@ export function composeFrame(target: Ctx2D, layers: LayerSource, recipe: TintRec
   for (const step of recipe.steps) {
     const alpha = step.alpha ?? 1;
     if (alpha <= 0) continue;
+    // Візерунок тканини (`TintStep.pattern`) кладе механізм візерунків (`WARDROBE.md`); поки його немає — без візерунка.
+    if (step.pattern) continue;
     if (empty && step.put !== "source-over") continue;
     const src = layers(step.layer);
     if (!src) continue;
@@ -272,10 +274,10 @@ function stubKind(id: string): StubKind {
   const part = id.split("/")[1] ?? "";
   if (part === "eyes") return "person-eyes";
   if (part.startsWith("hair")) return "person-hair";
-  if (part === "torso") return "person-top";
-  if (part === "arm") return "person-arm";
-  if (part === "leg") return "person-bottom";
-  if (part === "shoe") return "person-shoes";
+  if (part === "torso" || part.startsWith("top-") || part === "hood") return "person-top";
+  if (part.startsWith("arm")) return "person-arm";
+  if (part.startsWith("leg") || part === "hem" || part === "skirt") return "person-bottom";
+  if (part === "shoe" || part === "shaft") return "person-shoes";
   return "person-skin";
 }
 
@@ -550,18 +552,20 @@ export interface PortraitOptions {
 }
 
 /**
- * Голова персонажа для портрета: потилиця волосся, обличчя, очі, чубчик — з вигляду `Look`, ракурс `front`. Голова й
- * зачіски — на одному полотні з pivot у шиї (точка фігури), очі — у точці `eyes` голови, як їх ставить скелет
- * (`PERSON_FIT`).
+ * Голова персонажа для портрета: потилиця волосся, обличчя, очі, чубчик — з вигляду `Look` (зачіска — `hairSkin`; немає
+ * кадру — немає частини), ракурс `front`. Голова й зачіски — з pivot у шиї (точка фігури), очі — у точці `eyes` голови, як їх
+ * ставить скелет (`PERSON_FIT`).
  */
 export function portraitHead(look: Look): PortraitPart[] {
-  const face = wrap(look.face, FACES.length);
-  const hair = wrap(look.hair, HAIR_STYLES.length);
-  const head: ArtId = `person/head/${face}`;
+  const wear = wearOf(look);
+  const hair = hairSkin(wear);
+  const back = hair["hair-back"];
+  const front = hair["hair-front"];
+  const head: ArtId = `person/head/${wear.face}`;
   const entry = artEntry(head);
   const eyes = entry?.points?.["eyes"];
   const at = eyes && entry ? { x: eyes.x - entry.pivot.x, y: eyes.y - entry.pivot.y } : {};
-  return [{ id: `person/hair-back/${hair}` }, { id: head }, { id: "person/eyes", state: "open", ...at }, { id: `person/hair-front/${hair}` }];
+  return [...(back ? [{ id: back }] : []), { id: head }, { id: "person/eyes", state: "open", ...at }, ...(front ? [{ id: front }] : [])];
 }
 
 const portraitWaiters = new WeakMap<object, () => void>();
@@ -826,8 +830,4 @@ function partMatrix(part: PortraitPart, pivot: ArtPoint): { a: number; b: number
   const c = -sin * sy;
   const d = cos * sy;
   return { a, b, c, d, e: (part.x ?? 0) - (a * pivot.x + c * pivot.y), f: (part.y ?? 0) - (b * pivot.x + d * pivot.y) };
-}
-
-function wrap(i: number, n: number): number {
-  return ((Math.trunc(i) % n) + n) % n;
 }

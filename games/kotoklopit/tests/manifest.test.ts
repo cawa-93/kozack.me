@@ -12,8 +12,7 @@ import { ROBOT_DOCK } from "../src/sim/home";
 import { FUR_SPOTS } from "../src/sim/household";
 import { MAP, MAP_HEIGHT, MAP_WIDTH, OBJECTS, ROOMS, roomAt, TRINKETS, WINDOWS, type Rect } from "../src/sim/home";
 import { MAX_BOXES, STORAGES, type FillStage } from "../src/sim/storage";
-import type { Dish, Home, HomeItem, Item, Look, MessKind, Quality, Shape, ThingKind } from "../src/sim/types";
-import { LOOK_OPTIONS } from "../src/ui/look";
+import type { Dish, Home, HomeItem, Item, MessKind, Quality, Shape, ThingKind } from "../src/sim/types";
 import { GLYPH_ART } from "../src/view/art/manifest/a12-icons";
 import { cobwebState, type CobwebState } from "../src/view/art/manifest/a20-dust";
 import { backWallCells, CAT_COAT, CAT_FLUFF, iso, TH, TW, WALL_HEIGHT, WALL_SEGMENTS, wallKind } from "../src/view/art/manifest/lib/geometry";
@@ -22,6 +21,12 @@ import { ART_VIEWS, framesOf, type ArtEntry, type ArtLayer, type TortieLayer, ty
 import { LIGHT_ART } from "../src/view/art/manifest/a21-light";
 import { BOILER, CANDLE_SHELVES, DESK_CANDLE, DESK_LAMP, PANES, POWER_STATION, SCONCES } from "../src/view/decor";
 import { ICON_NAMES, type BubbleKind, type Mark } from "../src/view/iconnames";
+import { personVariants } from "../src/view/rig/defs/person";
+import { BUILDS, FACES, IRIS_COLORS, SKIN_TONES } from "../src/view/wardrobe/body";
+import { BOTTOM_COLORS, SHOE_COLORS, TOP_COLORS } from "../src/view/wardrobe/clothes";
+import { HAIR_COLORS, HAIR_STYLES } from "../src/view/wardrobe/hair";
+import { PATTERNS } from "../src/view/wardrobe/patterns";
+import { TOP_CUTS } from "../src/view/wardrobe/tops";
 
 const ENTRIES = artEntries();
 
@@ -82,6 +87,7 @@ describe("маніфест: правила записів", () => {
   it("ракурси — лише в частин скелета кота й персонажа й у пилососа й віника в руках, і там обидва", () => {
     // Пилосос у руках (`item/vacuum`, рішення автора 2026-11-02, GAME_DESIGN §8.7): щітка лежить на підлозі попереду, а
     // підлога попереду в ¾ спереду нижче на екрані, ніж у ¾ ззаду, — тож свій кадр на ракурс персонажа.
+    // Плитки тканини (`cloth/`) — без ракурсів: та сама плитка спереду й ззаду.
     const viewed = (id: string): boolean => id.startsWith("cat/") || id.startsWith("person/") || id === "item/vacuum" || id === "item/broom";
     for (const e of ENTRIES) expect(e.views, e.id).toEqual(viewed(e.id) ? ART_VIEWS : undefined);
   });
@@ -93,8 +99,10 @@ describe("маніфест: правила записів", () => {
       id.startsWith("cat/")
         ? [...CAT_COAT, ...CAT_FLUFF, "fill-iris", "detail"]
         : id.startsWith("person/")
-          ? ["fill-skin", "fill-hair", "fill-iris", "fill-top", "fill-bottom", "fill-shoes", "detail", "shade", "ink"]
-          : ["fill", "detail", "shade", "ink"];
+          ? ["fill-skin", "fill-hair", "fill-iris", "fill-top", "fill-bottom", "fill-shoes", "fill-inner", "fill-accent", "detail", "shade", "ink"]
+          : id.startsWith("cloth/")
+            ? ["fill", "detail"]
+            : ["fill", "detail", "shade", "ink"];
     for (const e of ENTRIES) {
       for (const layer of e.layers ?? []) if (!layer.startsWith("extra-")) expect(allowed(e.id), `${e.id}: ${layer}`).toContain(layer);
     }
@@ -130,9 +138,16 @@ describe("маніфест: правила записів", () => {
       "a20-dust": ["mess/dust/", "mess/cobweb"],
       // День і ніч, відключення світла (§8.9, §4.1, рішення автора 2026-11-02): декор квартири, якого сим не знає.
       "a21-light": ["env/window/kitchen", "env/sconce/", "env/boiler", "env/power-station", "env/candle-shelf/", "env/desk-lamp", "env/desk-candle"],
+      // Гардероб (`WARDROBE.md`), по файлу на трек: зачіски; фасони верху; низ і взуття; плитки й принти тканини.
+      "a22-person-hair": ["person/hair-back/", "person/hair-front/"],
+      "a23-person-tops": ["person/arm", "person/torso", "person/top-", "person/hood"],
+      "a24-person-legs": ["person/leg", "person/hem", "person/skirt", "person/shoe", "person/shaft"],
+      "a25-cloth": ["cloth/"],
     };
     const names = Object.keys(files).map((f) => f.replace(/^.*\//, "").replace(/\.ts$/, ""));
-    expect(names.sort()).toEqual(Object.keys(allowed).sort());
+    // Файли гардеробу дозволено наперед: їх заводять треки.
+    expect(Object.keys(allowed)).toEqual(expect.arrayContaining(names));
+    expect(names).toEqual(expect.arrayContaining(Object.keys(allowed).filter((name) => !/^a2[2-5]-/.test(name))));
     for (const [file, entries] of Object.entries(files)) {
       const name = file.replace(/^.*\//, "").replace(/\.ts$/, "");
       expect(entries.length, name).toBeGreaterThan(0);
@@ -519,16 +534,36 @@ describe("маніфест: кіт", () => {
 
 describe("маніфест: персонаж", () => {
   const persons = ENTRIES.filter((e) => e.id.startsWith("person/"));
-  const count = (key: keyof Look): number => LOOK_OPTIONS.find((o) => o.key === key)?.options.length ?? 0;
+  const counts: Record<"skin" | "hairColor" | "eyes" | "top" | "bottom" | "shoes", number> = {
+    skin: SKIN_TONES.length,
+    hairColor: HAIR_COLORS.length,
+    eyes: IRIS_COLORS.length,
+    top: TOP_COLORS.length,
+    bottom: BOTTOM_COLORS.length,
+    shoes: SHOE_COLORS.length,
+  };
 
-  it("кожен варіант форми (Look: обличчя, зачіска, статура) — частина персонажа", () => {
-    for (const key of ["face", "hair", "build"] as const) expect(count(key), key).toBeGreaterThan(0);
-    for (let i = 0; i < count("face"); i++) entry(`person/head/${i}`);
-    for (let i = 0; i < count("hair"); i++) for (const id of [`person/hair-back/${i}`, `person/hair-front/${i}`]) entry(id);
-    for (let i = 0; i < count("build"); i++) for (const id of [`person/torso/${i}`, `person/torso-extra/${i}`]) entry(id);
-    expect(artEntry(`person/head/${count("face")}`)).toBeUndefined();
+  it("кожне обличчя, статура й кожен кадр, який може показати слот (реєстри гардеробу), — частина персонажа", () => {
+    for (let i = 0; i < FACES.length; i++) entry(`person/head/${i}`);
+    for (let i = 0; i < BUILDS.length; i++) for (const id of [`person/torso/${i}`, `person/torso-extra/${i}`]) entry(id);
+    expect(artEntry(`person/head/${FACES.length}`)).toBeUndefined();
+    for (const [slot, ids] of Object.entries(personVariants())) for (const id of ids) if (id !== null) expect(artEntry(id), `${slot}: ${id}`).toBeDefined();
     for (const id of ["person/eyes", "person/arm", "person/arm-far", "person/leg", "person/shoe", "person/leg-extra"]) entry(id);
     expect(states("person/eyes")).toEqual(["open", "half", "closed"]);
+  });
+
+  it("гардероб: зачіска з акцентом має маску fill-accent, верх із річчю під ним — fill-inner, візерунок — плитку", () => {
+    const layersOf = (ids: readonly (string | null | undefined)[]): Set<ArtLayer> => new Set(ids.flatMap((id) => (id ? (entry(id).layers ?? []) : [])));
+    for (const style of HAIR_STYLES) if (style.accent) expect(layersOf([style.back, style.front]).has("fill-accent"), style.name).toBe(true);
+    for (const cut of TOP_CUTS) {
+      if (cut.inner === undefined) continue;
+      expect(layersOf([...(cut.torso ?? []), cut.arm, cut.armFar, cut.front, cut.hood, cut.hem, cut.skirt]).has("fill-inner"), cut.name).toBe(true);
+    }
+    for (const pattern of PATTERNS) {
+      if (!pattern.tile) continue;
+      expect(pattern.tile.startsWith("cloth/"), pattern.name).toBe(true);
+      expect(entry(pattern.tile).views, pattern.name).toBeUndefined();
+    }
   });
 
   it("кожен колір вигляду (Look) — шар заливки, який фарбує компонувальник; плями на одязі — накладка", () => {
@@ -542,7 +577,7 @@ describe("маніфест: персонаж", () => {
     };
     const layers = new Set(persons.flatMap((e) => e.layers ?? []));
     for (const [key, layer] of Object.entries(fills)) {
-      expect(count(key as keyof Look), key).toBeGreaterThan(0);
+      expect(counts[key as keyof typeof counts], key).toBeGreaterThan(0);
       expect(layers.has(layer), `${key}: ${layer}`).toBe(true);
     }
     expect(layers.has("extra-stain")).toBe(true);

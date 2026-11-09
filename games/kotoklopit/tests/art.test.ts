@@ -69,7 +69,9 @@ describe("арт гри (art/) і маніфест", () => {
     /** Пікселів на одиницю: на межі 4,0 одиниці растр ще прозорий, а 3,75 вже видно. */
     const scale = 4;
     const problems: string[] = [];
-    for (const svg of svgs) {
+    // Плитка тканини — край у край: правий край продовжує лівий (art/STYLE.md, «cloth»); принт — з полем, як усе.
+    const tile = (svg: string): boolean => svg.startsWith("cloth/") && !svg.startsWith("cloth/print/");
+    for (const svg of svgs.filter((s) => !tile(s))) {
       const text = readFileSync(path.join(ART_DIR, svg), "utf8");
       const { data, info } = await sharp(Buffer.from(text), { density: 72 * scale }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
       let x0 = Infinity;

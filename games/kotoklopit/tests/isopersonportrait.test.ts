@@ -31,9 +31,10 @@ describe("personPortraitParts: фігура для портрета", () => {
     expect(torso?.y).toBeCloseTo(-64);
   });
 
-  it("дальні рука, нога й черевик — затінені (`far`), ближні — ні", () => {
+  it("дальні рука, нога й черевик — затінені (`far`), ближні — ні; порожніх слотів гардеробу у фігурі немає", () => {
     const parts = personPortraitParts({ ...DEFAULT_LOOK });
-    expect(parts.filter((p) => p.far === true)).toHaveLength(PERSON_FAR_SLOTS.length);
+    const skin = personSkin(DEFAULT_LOOK);
+    expect(parts.filter((p) => p.far === true)).toHaveLength(PERSON_FAR_SLOTS.filter((slot) => skin[slot] !== null).length);
     const far = parts.filter((p) => p.far === true).map((p) => p.id);
     expect(far.sort()).toEqual(["person/arm-far", "person/leg", "person/shoe"]);
     expect(parts.filter((p) => p.id === "person/leg" && p.far !== true)).toHaveLength(1);

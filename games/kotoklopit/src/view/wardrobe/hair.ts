@@ -2,7 +2,7 @@
 // (той самий pivot у шиї), колір — заливка `fill-hair`. Акцент — `accents.ts`.
 
 import type { ArtId } from "../art/types";
-import type { WardrobeColor, WardrobeEntry } from "./types";
+import type { SlotFrames, WardrobeColor, WardrobeEntry, Wear } from "./types";
 
 export type HairGroup = "пряме" | "хвилясте" | "кучеряве" | "кудлате" | "дреди й коси" | "коротко" | "кіберпанк";
 
@@ -41,3 +41,9 @@ export const HAIR_COLORS: readonly WardrobeColor[] = [
   { name: "руде", color: 0xb8462f },
   { name: "сиве", color: 0x9aa3ab },
 ];
+
+/** Кадри зачіски на голові. */
+export function hairSkin(wear: Wear): SlotFrames<"hair-back" | "hair-front"> {
+  const style = HAIR_STYLES[wear.hair] ?? HAIR_STYLES[0];
+  return { "hair-back": style?.back ?? null, "hair-front": style?.front ?? null };
+}

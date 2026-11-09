@@ -83,9 +83,9 @@ describe("вигляд, як його вдягнено (wearOf)", () => {
     for (const key of ["topCut", "topPattern", "bottomCut", "bottomPattern", "shoeCut", "hairAccent"] as const) expect(DEFAULT_LOOK[key], key).toBe(0);
   });
 
-  it("зіпсоване число чи варіант поза реєстром — 0", () => {
-    const wear = wearOf({ ...OLD, face: 99, hair: -1, topCut: 1.5, shoeCut: Number.NaN, topPattern: PATTERNS.length, hairAccent: 7 });
-    expect([wear.face, wear.hair, wear.topCut, wear.shoeCut, wear.topPattern, wear.hairAccent]).toEqual([0, 0, 0, 0, 0, 0]);
+  it("не число — 0, поза реєстром — по колу, як завжди було з кольорами й формами", () => {
+    const wear = wearOf({ ...OLD, face: FACES.length + 1, hair: -1, topCut: TOP_CUTS.length, shoeCut: Number.NaN, topPattern: PATTERNS.length + 0.5 });
+    expect([wear.face, wear.hair, wear.topCut, wear.shoeCut, wear.topPattern]).toEqual([1, HAIR_STYLES.length - 1, 0, 0, 0]);
   });
 
   it("порівнює кожне поле: інакше нове поле не перезапекло б персонажа", () => {

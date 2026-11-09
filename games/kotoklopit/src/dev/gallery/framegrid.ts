@@ -21,6 +21,7 @@ export const CATEGORY_TITLES: Readonly<Record<ArtCategory, string>> = {
   fx: "ефекти",
   cat: "кіт",
   person: "персонаж",
+  cloth: "тканини",
   icon: "іконки",
   ui: "інтерфейс",
   race: "гонка",
