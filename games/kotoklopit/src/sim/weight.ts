@@ -29,9 +29,9 @@ export function exercise(cat: Cat, share = 1): void {
   burn(cat, WEIGHT.playLoss * share);
 }
 
-/** З часом зайва вага потроху йде (§9.12): `perHour` за годину, але не нижче норми. */
-export function settleWeight(cat: Cat, minutes: number): void {
-  burn(cat, (WEIGHT.perHour * minutes) / MINUTES_PER_HOUR);
+/** З часом зайва вага потроху йде (§9.12): `perHour` × `factor` за годину, але не нижче норми. */
+export function settleWeight(cat: Cat, minutes: number, factor = 1): void {
+  burn(cat, (WEIGHT.perHour * factor * minutes) / MINUTES_PER_HOUR);
 }
 
 function burn(cat: Cat, amount: number): void {

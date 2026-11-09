@@ -465,6 +465,9 @@ export const attentionFactor = (state: GameState): number => MODIFIERS.attention
 /** Ріст голоду котів (§9.3): «Осінній жор» / «Котяча дієта». */
 export const appetiteFactor = (state: GameState): number => MODIFIERS.week.appetite[state.modifiers.week ?? ""] ?? 1;
 
+/** Як швидко йде зайва вага котів (§9.12): у «Котячу дієту» — швидше. */
+export const dietWeightFactor = (state: GameState): number => (state.modifiers.week === "cat-diet" ? MODIFIERS.week.dietWeight : 1);
+
 /** Шерсть від кота (§8.7): «Линька» / «Зимове хутро». */
 export const sheddingFactor = (state: GameState): number => MODIFIERS.week.shedding[state.modifiers.week ?? ""] ?? 1;
 

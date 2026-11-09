@@ -129,6 +129,7 @@ import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNest, isNewborn, motherNest, motherOf, nestOf, nestTarget, newbornSleep } from "./reproduction";
 import { enoughFor, fountainWorks, inQuietHouse, isDirty, itemsOf, litterCapacity } from "./resources";
 import { stateRng, type Rng } from "./rng";
+import { appetiteFactor, attentionFactor, dietWeightFactor } from "./modifiers";
 import { absoluteMinute } from "./time";
 import { addTrace, SCRATCH_TRACES, tidyBoxTraces } from "./traces";
 import type { BowlItem, Cat, CatAct, CatActKind, Dish, ForbiddenZone, GameState, HomeItem, LitterItem, Mess, MessKind, PlayPhase, Product, Quality, ToyItem, TrinketKind, Vec, WaterItem } from "./types";
@@ -182,7 +183,7 @@ function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const n = cat.needs;
   const sleeping = asleep(cat);
   const appetite = traitFactor(cat, "appetite", APPETITE_STEP);
-  n.hunger = clamp(n.hunger + NEED_PER_HOUR.hunger * hours * appetite * hungerFactor(cat) * breedingHunger(state, cat) * (isAdapting(state, cat) ? ADAPTATION_HUNGER : 1));
+  n.hunger = clamp(n.hunger + NEED_PER_HOUR.hunger * hours * appetite * hungerFactor(cat) * breedingHunger(state, cat) * (isAdapting(state, cat) ? ADAPTATION_HUNGER : 1) * appetiteFactor(state));
   n.thirst = clamp(n.thirst + NEED_PER_HOUR.thirst * hours * thirstFactor(state) * heatThirst(state, cat));
   n.toilet = clamp(n.toilet + NEED_PER_HOUR.toilet * hours * toiletFactor(cat));
   if (sleeping) {
@@ -192,15 +193,15 @@ function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
     const recovering = state.day <= cat.recoveryUntil ? STERILIZATION.recoveryFatigue : 1;
     n.fatigue = clamp(n.fatigue + NEED_PER_HOUR.fatigue * hours * tired * fatigueFactor(cat) * recovering * catFatigueFactor(state));
   }
-  // Як часто кіт сам приходить по ласку — «Ласкавість»; як наполегливо вимагає — «Вимогливість» (§9.9).
+  // Як часто кіт сам приходить по ласку — «Ласкавість»; як наполегливо вимагає — «Вимогливість» (§9.9). Похід по увагу, тертя
+  // об ноги й клавіатура — від цієї потреби, тож «Коти-липучки» й «Котячі справи» діють лише тут (§4.1).
   const attention = Math.max(0, 1 + TRAIT_NEED_STEP * traitLevel(cat, "affection"));
-  n.attention = clamp(n.attention + NEED_PER_HOUR.attention * hours * attention);
+  n.attention = clamp(n.attention + NEED_PER_HOUR.attention * hours * attention * attentionFactor(state));
   const age = isKitten(cat) ? KITTEN_PLAY : isOld(cat) ? OLD_PLAY : 1;
   // З ожирінням кіт менше грається (§9.12, «Схильність до повноти»), з низьким здоров'ям — теж (§9.5, Х4).
   const heavy = isObese(cat) ? WEIGHT.obesePlay : 1;
   n.play = clamp(n.play + NEED_PER_HOUR.play * hours * activityAt(cat, state.minute) * traitFactor(cat, "energy", TRAIT_NEED_STEP) * age * playFactor(state) * heavy * healthPlay(cat));
-  // Зайва вага потроху йде (§9.12).
-  settleWeight(cat, minutes);
+  settleWeight(cat, minutes, dietWeightFactor(state));
   // Шерстяна грудка: частіше вночі, у довгошерстих і в тих, хто сильно линяє (§9.12).
   const night = isNight(state.minute);
   const long = cat.shape.coat === null && !cat.genes.short[0] && !cat.genes.short[1];

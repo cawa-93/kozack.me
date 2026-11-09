@@ -7,7 +7,7 @@ import { DUST_SPOTS, dustOf, floorDust, removeDust, tickDust } from "./dust";
 import { inView, observe } from "./knowledge";
 import { addSupply, flySupply, settleFeeders, takeSupplies, topQuality, useSupply } from "./economy";
 import { emit } from "./events";
-import { hygieneFactorMod, powerOut } from "./modifiers";
+import { hygieneFactorMod, powerOut, sheddingFactor } from "./modifiers";
 import { addMess, whereIs } from "./catai";
 import { CARRIER_TILE, hiddenTile, isSolid, isWall, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, ROBOT_DOCK, roomAt, slotCenter, STASHES } from "./home";
 import { loudNoise, quietRobot } from "./noise";
@@ -192,12 +192,15 @@ export function annoyingMesses(state: GameState, minutes: number): void {
   changeStat(state, "sanity", perHour * (minutes / MINUTES_PER_HOUR));
 }
 
-/** Скільки шерсті кіт лишає за годину (§8.7): після грумера — удвічі менше (рішення автора 2026-10-25). */
+/**
+ * Скільки шерсті кіт лишає за годину (§8.7). Шерсть від пестощів — частка від цього ж (`shedOnHands`), тож грумер і «Линька» /
+ * «Зимове хутро» діють і на неї; жмут із руки — прояв риси, його шанс від них не залежить.
+ */
 export function furPerHour(state: GameState, cat: Cat): number {
   if (cat.shape.coat === "hairless") return 0;
   const long = cat.shape.coat === null && !cat.genes.short[0] && !cat.genes.short[1];
   const groomed = state.day <= cat.groomedUntil ? SHEDDING.groomed : 1;
-  return HOUSEHOLD.furPerCatHour * (long ? HOUSEHOLD.longFur : 1) * Math.max(0, 1 + HOUSEHOLD.sheddingStep * traitLevel(cat, "shedding")) * groomed;
+  return HOUSEHOLD.furPerCatHour * (long ? HOUSEHOLD.longFur : 1) * Math.max(0, 1 + HOUSEHOLD.sheddingStep * traitLevel(cat, "shedding")) * groomed * sheddingFactor(state);
 }
 
 /** Кіт у барабані відчиненої пральної машини (§8.7). */
