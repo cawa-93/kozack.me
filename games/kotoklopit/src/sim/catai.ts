@@ -4379,8 +4379,8 @@ function watchWindow(state: GameState, cat: Cat, minutes: number, rng: Rng): voi
   const level = traitLevel(cat, "window");
   if (angryAtWindow(state, cat)) {
     if (act.refused === true) return;
-    if (level > -2) changeMood(state, cat, strayMood(minutes));
     if (act.elapsed < WINDOW.angerMinutes) return;
+    if (level > -2) changeMood(state, cat, strayMood());
     act.refused = true;
     act.minutes = 0;
     cat.windowAngryAt = absoluteMinute(state.day, state.minute);

@@ -75,11 +75,12 @@ describe("«Чужий кіт під вікном» (§4.1)", () => {
       atWindow(control);
       live(calm, WINDOW.angerMinutes - 0.5);
       live(save, WINDOW.angerMinutes - 1.5);
-      expect(cat.mood).toBeLessThan(50);
       expect(cat.mood).toBeLessThan(control.mood);
+      const before = cat.mood;
       const { events, stop } = recordEvents();
       live(save, 1);
       stop();
+      expect(cat.mood).toBeLessThan(before + MODIFIERS.strayCat.mood / 2);
       expect(events.some((e) => e.type === "window-angry" && e.cat === cat.id)).toBe(true);
       expect(events.some((e) => e.type === "chatter")).toBe(false);
       expect(events.some((e) => e.type === "hissed" && e.cat === cat.id && e.at === other.id)).toBe(true);
@@ -193,7 +194,9 @@ describe("«Валер'янка в під'їзді» (§4.1)", () => {
     const save = game("valerian");
     expect(valerianPull(save.current, withCat(save))).toBe(1);
     expect(valerianPull(save.current, withCat(save, { catnip: 2 }))).toBeCloseTo(1 + 2 * MODIFIERS.valerian.catnipStep);
-    expect(valerianPull(save.current, withCat(save, { catnip: -2 }))).toBe(0);
+    // Шкала м'яти немонотонна: «Шаленіє» тягнеться, як «Фанат», «Байдужий» — слабше за кота без риси.
+    expect(valerianPull(save.current, withCat(save, { catnip: -2 }))).toBeCloseTo(1 + 2 * MODIFIERS.valerian.catnipStep);
+    expect(valerianPull(save.current, withCat(save, { catnip: -1 }))).toBeCloseTo(1 - MODIFIERS.valerian.catnipStep);
     expect(valerianPull(save.current, withCat(save, { escape: -2 }))).toBe(0);
     const calm = game(null);
     expect(valerianPull(calm.current, withCat(calm))).toBe(0);

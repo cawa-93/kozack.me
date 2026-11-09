@@ -35,8 +35,8 @@ export function pigeonsFactor(state: GameState, cat: Cat, key: "weight" | "minut
   return traitLevel(cat, "window") >= 0 && pigeonsAtWindow(state) ? MODIFIERS.pigeons[key] : 1;
 }
 
-/** Настрій за `minutes` хвилин на підвіконні, коли під вікном чужий кіт (`MODIFIERS.strayCat`). */
-export const strayMood = (minutes: number): number => (MODIFIERS.strayCat.moodPerHour * minutes) / MINUTES_PER_HOUR;
+/** Настрій за спалах злості на чужого кота (`MODIFIERS.strayCat`). */
+export const strayMood = (): number => MODIFIERS.strayCat.mood;
 
 /** Кіт «кекає» на птахів (§9.12): «+», а коли на карнизі голуби, — і кіт без риси. */
 export function chatters(state: GameState, cat: Cat): boolean {
@@ -45,12 +45,14 @@ export function chatters(state: GameState, cat: Cat): boolean {
 }
 
 /**
- * Тяга до вхідних дверей (§4.1, «Валер'янка в під'їзді»): 1 + `MODIFIERS.valerian.catnipStep` × «Котяча м'ята», не менше нуля.
- * 0 — не тягне: інший день чи «Боїться дверей».
+ * Тяга до вхідних дверей (§4.1, «Валер'янка в під'їзді»): 1 + `MODIFIERS.valerian.catnipStep` × сила реакції на м'яту.
+ * Шкала м'яти немонотонна (§9.12): «Шаленіє від м'яти» реагує сильно, як «Фанат», а «Байдужий» — слабше. 0 — не тягне: інший
+ * день чи «Боїться дверей».
  */
 export function valerianPull(state: GameState, cat: Cat): number {
   if (state.modifiers.day !== "valerian" || traitLevel(cat, "escape") <= -2) return 0;
-  return Math.max(0, 1 + MODIFIERS.valerian.catnipStep * traitLevel(cat, "catnip"));
+  const level = traitLevel(cat, "catnip");
+  return 1 + MODIFIERS.valerian.catnipStep * (level === -2 ? 2 : level);
 }
 
 /** Добавка до шансу вибігти у відчинені двері (§4.1, «Валер'янка в під'їзді»). */
