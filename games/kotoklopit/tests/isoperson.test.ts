@@ -110,6 +110,7 @@ describe("речі в руках (§8.4)", () => {
     { kind: "catfood", quality: "cheap", sterile: false },
     { kind: "catfood", quality: "premium", sterile: false },
     { kind: "catfood", quality: "cheap", sterile: true },
+    { kind: "catfood", quality: "premium", sterile: true },
     { kind: "toy", toy: toy("cheap") },
     { kind: "toy", toy: toy("premium") },
   ];
@@ -126,7 +127,9 @@ describe("речі в руках (§8.4)", () => {
       expect(held.socket).toBe(item.kind === "toy" ? "rod" : "held");
     }
     expect(heldFrame({ kind: "meal", quality: "premium", mom: true })?.frame).toEqual({ id: "item/dish/mom", state: null });
-    expect(heldFrame({ kind: "catfood", quality: "premium", sterile: true })?.frame.state).toBe("sterile");
+    // Корм для стерилізованих — свого вигляду для кожної якості.
+    expect(heldFrame({ kind: "catfood", quality: "cheap", sterile: true })?.frame.state).toBe("sterile");
+    expect(heldFrame({ kind: "catfood", quality: "premium", sterile: true })?.frame.state).toBe("sterile-premium");
     expect(heldFrame({ kind: "toy", toy: toy("premium") })?.frame).toEqual({ id: "item/toy/premium", state: "hand" });
   });
 
