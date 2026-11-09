@@ -73,11 +73,12 @@ describe("тексти (TEXTS.md)", () => {
 });
 
 describe("опис рис для картки кота (§9.9)", () => {
-  it("у кожної групи є опис для «+» і для «−», без незаповнених форм", () => {
+  it("у кожної групи є опис для «+» і для «−» (порожній — назва каже все сама), без незаповнених форм", () => {
     for (const group of TRAIT_GROUPS) {
       const about = TRAIT_ABOUT[group.id];
       expect(about, group.id).toBeDefined();
       for (const text of about ?? []) {
+        if (text === "") continue;
         for (const sex of ["male", "female"] as const) {
           const filled = fill(text, sex);
           expect(filled.length, group.id).toBeGreaterThan(5);
@@ -89,7 +90,8 @@ describe("опис рис для картки кота (§9.9)", () => {
 
   it("загальна ревізія 2026-10-29: «Стрункий» і «Не мерзне» (−1) мають свій опис, без «ніколи» рівня −2", () => {
     const about = (group: string, level: -1 | -2): string => traitAbout({ group, level }, "female");
-    expect(about("chubby", -2)).toBe("Тримає форму, хоч скільки їсть.");
+    // «Не товстіє» (−2) — без опису: назва каже все сама.
+    expect(about("chubby", -2)).toBe("");
     expect(about("chubby", -1)).not.toBe(about("chubby", -2));
     expect(about("chubby", -1)).toContain("набирає вагу");
     expect(about("warmth", -2)).toContain("не шукає зовсім");

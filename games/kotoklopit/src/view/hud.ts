@@ -389,8 +389,10 @@ export class Hud {
     const pad = NEWS.pad;
     this.newsTitle.setText(title);
     this.newsText.setText(text);
+    // Без тексту — лише заголовок: у відкритої риси, чия назва каже все сама, опису немає (§9.9).
+    const body = text === "" ? 0 : this.newsText.height + 2;
     const width = Math.max(this.newsTitle.width, this.newsText.width) + pad * 2;
-    const height = this.newsTitle.height + this.newsText.height + pad * 2 + 2;
+    const height = this.newsTitle.height + body + pad * 2;
     // Контейнер стоїть у правому верхньому куті бабла: усе всередині — ліворуч і нижче.
     this.newsTitle.setPosition(-width + pad, pad);
     this.newsText.setPosition(-width + pad, pad + this.newsTitle.height + 2);
