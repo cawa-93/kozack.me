@@ -5,7 +5,10 @@ import { describe, expect, it } from "vitest";
 import { RADIO, SAMPLE_RATE } from "../src/audio/config";
 import { STATIONS } from "../src/audio/radio/playlist";
 import playlist from "../src/audio/radio/playlist.json";
-import { DEFAULT_AUDIO, loadAudioSettings, saveAudioSettings } from "../src/audio/settings";
+import type { AudioEngine } from "../src/audio/engine";
+import { radioLit } from "../src/audio/radio/lamp";
+import { Radio } from "../src/audio/radio/radio";
+import { AudioPrefs, DEFAULT_AUDIO, loadAudioSettings, saveAudioSettings } from "../src/audio/settings";
 import { setRadioOn, tap } from "../src/sim/actions";
 import { createCat } from "../src/sim/cat";
 import { radioSleepWeight } from "../src/sim/catai";
@@ -128,6 +131,42 @@ describe("вподобання (§8.10)", () => {
   it("сховище, що кидає помилку, не ламає гру", () => {
     const broken = { getItem: () => null, setItem: () => { throw new Error("повне"); } };
     expect(() => saveAudioSettings(broken, DEFAULT_AUDIO)).not.toThrow();
+  });
+});
+
+describe("радіо до початку гри (§8.10)", () => {
+  /** Рушій без звуку: настроювання лише перемикає станцію, нічого не граючи. */
+  const silent = { context: null, music: null, onRunning: () => undefined } as unknown as AudioEngine;
+  const leftOn = (): { radio: Radio; prefs: AudioPrefs } => {
+    let value: string | null = JSON.stringify({ ...DEFAULT_AUDIO, radioOn: true });
+    const prefs = new AudioPrefs({ getItem: () => value, setItem: (_key, next) => (value = next) }, STATIONS.map((s) => s.id));
+    return { radio: new Radio(silent, prefs), prefs };
+  };
+
+  it("у меню на старті мовчить і не світиться, хоч гравець лишив його ввімкненим", () => {
+    const { radio } = leftOn();
+    radio.hold();
+    expect(radio.on).toBe(false);
+    expect(radioLit()).toBe(false);
+  });
+
+  it("продовжили збережену гру — звучить, як лишили", () => {
+    const { radio } = leftOn();
+    radio.hold();
+    radio.release();
+    expect(radio.on).toBe(true);
+    expect(radioLit()).toBe(true);
+  });
+
+  it("нова гра починається з вимкненим, а ввімкнути його можна знову", () => {
+    const { radio, prefs } = leftOn();
+    radio.hold();
+    radio.switchOff();
+    radio.release();
+    expect(radio.on).toBe(false);
+    expect(prefs.value.radioOn).toBe(false);
+    radio.toggle();
+    expect(radio.on).toBe(true);
   });
 });
 

@@ -191,7 +191,13 @@ export class DayScene extends Phaser.Scene {
 
     this.cleanup.push(onEvent((event) => this.onGameEvent(event)));
     this.sounds.attach({ mode: () => this.soundMode(), state: () => this.state });
-    this.cleanup.push(this.session.onReset(() => this.restart()));
+    // Гру замінено — нова, перегравання, з файлу: вона почалася, тож радіо знову звучить, якщо ввімкнене (§8.10).
+    this.cleanup.push(
+      this.session.onReset(() => {
+        this.radio.release();
+        this.restart();
+      }),
+    );
     // Телефон повернули вертикально — гра на паузі (§10), а утримання дії й джойстик скидаються: інакше після повороту
     // дія тривала б сама, бо палець відпустили вже під заглушкою.
     this.cleanup.push(
@@ -214,7 +220,17 @@ export class DayScene extends Phaser.Scene {
       // Зовсім нова гра — одразу вибір персонажа (§5.1); збережена — меню.
       const start = (): void => {
         if (state.day === 0 && state.minute === state.dayStartMinute) this.chooseNewGame();
-        else this.overlay.show(titleCard(state, () => this.restart(), () => this.chooseNewGame()));
+        else
+          this.overlay.show(
+            titleCard(
+              state,
+              () => {
+                this.radio.release();
+                this.restart();
+              },
+              () => this.chooseNewGame(),
+            ),
+          );
       };
       // Збереження не вдалося відкрити — спершу запропонувати зберегти його файлом (§4.2, Ц3).
       const unreadable = this.session.unreadable;
@@ -1257,6 +1273,8 @@ export class DayScene extends Phaser.Scene {
    * з «Назад»; повернувшись, гравець бачить свій вибір. Статі немає (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4).
    */
   private chooseNewGame(): void {
+    // Створення персонажа — ще не гра: радіо мовчить, а нова гра почнеться з вимкненим (§8.10).
+    this.radio.hold();
     // Seed нової гри — наперед: з нього й випадкова зовнішність редактора.
     const seed = newSeed();
     const looks = lookRng(seed);
@@ -1281,7 +1299,10 @@ export class DayScene extends Phaser.Scene {
             entered = { name, address };
             this.overlay.show(
               difficultyCard(
-                (difficulty: Difficulty) => this.session.replace(newGame({ address, difficulty, name, look, chronotype, seed })),
+                (difficulty: Difficulty) => {
+                  this.radio.switchOff();
+                  this.session.replace(newGame({ address, difficulty, name, look, chronotype, seed }));
+                },
                 () => pickName(look, address, chronotype),
               ),
             );

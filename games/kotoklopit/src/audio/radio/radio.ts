@@ -26,6 +26,8 @@ export class Radio {
   private readonly broadcast: Broadcast;
   /** Відколи решта станцій напоготові; null — персонаж далеко. */
   private nearSince: number | null = null;
+  /** Гра ще не почалася (меню на старті, створення персонажа, §8.10): радіо мовчить, хоч би яким його лишили. */
+  private held = false;
 
   constructor(
     private readonly engine: AudioEngine,
@@ -46,7 +48,7 @@ export class Radio {
   }
 
   get on(): boolean {
-    return this.prefs.value.radioOn;
+    return !this.held && this.prefs.value.radioOn;
   }
 
   get station(): Station {
@@ -63,7 +65,23 @@ export class Radio {
   }
 
   toggle(): void {
-    this.update({ radioOn: !this.on });
+    this.update({ radioOn: !this.prefs.value.radioOn });
+    this.broadcast.tune(this.playing());
+  }
+
+  /** Замовкнути, поки гра не почалася (§8.10); звук повертає `release`. */
+  hold(): void {
+    this.setHeld(true);
+  }
+
+  /** Гра почалася: продовжили збережену — радіо таке, яким його лишили; нову — спершу `switchOff`. */
+  release(): void {
+    this.setHeld(false);
+  }
+
+  /** Нова гра починається з вимкненим радіо (§8.10). */
+  switchOff(): void {
+    this.update({ radioOn: false });
     this.broadcast.tune(this.playing());
   }
 
@@ -83,6 +101,13 @@ export class Radio {
   standby(): void {
     this.nearSince = clock();
     this.tick();
+  }
+
+  private setHeld(held: boolean): void {
+    if (held === this.held) return;
+    this.held = held;
+    setRadioLit(this.on);
+    this.broadcast.tune(this.playing());
   }
 
   private playing(): Station | null {

@@ -36,6 +36,8 @@ const engine = new AudioEngine();
 engine.start();
 const prefs = new AudioPrefs(browserStorage(), STATIONS.map((station) => station.id));
 const radio = new Radio(engine, prefs);
+// Справжня гра відкривається меню (§4.2), і там радіо мовчить (§8.10); сценарій режиму розробки — одразу гра.
+if (session.persistent) radio.hold();
 radio.start();
 const sounds = new Sounds(engine, prefs);
 sounds.start();
