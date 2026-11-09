@@ -1,0 +1,27 @@
+{
+  "name": "Сусідські посилки",
+  "description": "Субота першого тижня, 09:55, «Сусідські посилки» (§4.1). О 10:00 кур'єр дзвонить у двері, а за 8 хвилин заходить і лишає біля входу три сусідські коробки — картка «Посилки для сусідки». Персонаж біля дверей: натисніть дію після дзвінка — кур'єр зайде одразу. Коробки не ваші: дія біля купи їх не розпаковує (купа лише з посилок — не ціль дії). Для котів це ящики: Гризун («Гризіння» +2) гризе їх, Шкрябка («Дряпання» −2) дере купу, Цікавка («Допитливість» +2) спить у ній; кожна погризена чи подерта посилка — компенсація сусідці. У розкладі — «10:00 посилки» й «20:00 сусідка». Вечір із посилками — сценарій neighbor-parcels-evening.",
+  "game": { "address": "she", "difficulty": "normal", "seed": 23 },
+  "state": {
+    "day": 5,
+    "minute": 595,
+    "modifiers": { "day": "neighbor-parcels" },
+    "today": { "parcels": { "stage": "courier" } },
+    "character": { "money": 300, "body": { "x": 9.5, "y": 10.5 } },
+    "home": { "supplies": { "catFood": { "cheap": 20, "premium": 0 }, "litter": { "cheap": 6, "premium": 0 } } }
+  },
+  "cats": [
+    { "source": "shelter", "ageWeeks": 30, "name": "Гризун", "sex": "male", "sterilized": true, "arrivedDay": -10, "x": 6.5, "y": 8.5,
+      "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 10, "attention": 10, "fatigue": 10 },
+      "act": { "kind": "idle", "target": null, "goal": null, "minutes": 30, "elapsed": 0 },
+      "traits": [{ "group": "chewing", "level": 2, "seen": 0, "known": true }] },
+    { "source": "shelter", "ageWeeks": 30, "name": "Шкрябка", "sex": "female", "sterilized": true, "arrivedDay": -10, "x": 4.5, "y": 7.5,
+      "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 10, "attention": 10, "fatigue": 10 },
+      "act": { "kind": "idle", "target": null, "goal": null, "minutes": 30, "elapsed": 0 },
+      "traits": [{ "group": "scratching", "level": -2, "seen": 0, "known": true }] },
+    { "source": "shelter", "ageWeeks": 30, "name": "Цікавка", "sex": "female", "sterilized": true, "arrivedDay": -10, "x": 15.5, "y": 8.5,
+      "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 10, "attention": 10, "fatigue": 10 },
+      "act": { "kind": "idle", "target": null, "goal": null, "minutes": 30, "elapsed": 0 },
+      "traits": [{ "group": "curiosity", "level": 2, "seen": 0, "known": true }] }
+  ]
+}

@@ -7,7 +7,8 @@ import type { TraitArea } from "./sim/traits";
 import type { PersonStateId } from "./view/personstates";
 import { formatClock } from "./sim/time";
 import { accidentBedtime, accidentHome, accidentOf } from "./sim/trips";
-import type { AccidentLoss, Address, AlbumEntry, FarewellCause, GameEnd, GameState, IllnessId, Ledger, Medicine, Sex, Spending } from "./sim/types";
+import type { AccidentLoss, Address, AlbumEntry, FarewellCause, GameEnd, GameState, IllnessId, Ledger, Medicine, ParcelsPickup, Sex, Spending } from "./sim/types";
+import { plural } from "./ui/titles";
 
 /**
  * Підставити значення й обрати форми: за статтю кота чи за звертанням до персонажа («він» — чоловіча форма, «вона» — жіноча,
@@ -984,6 +985,36 @@ export const MOM_FOOD_TEXTS = {
   visit: { title: "Заходила мама", text: "Мама привезла повні судочки й сама поставила їх у холодильник." },
   porch: { title: "Гостинці від мами", text: "Мама вас не застала й лишила пакет із судочками. Він у ящиках біля входу." },
 } as const;
+
+/**
+ * «Сусідські посилки» (§4.1): кур'єр лишив коробки біля входу, сусідка їх забрала — увечері (картка) чи зранку (рядок титулки).
+ * `{коробки}`, `{посилки}` — число зі словом у знахідному відмінку: «3 коробки», «за 1 посилку». Грошей бракує — далі `short`.
+ */
+export const PARCELS_TEXTS = {
+  courier: { title: "Посилки для сусідки", text: "Кур'єр лишив біля входу {коробки} для сусідки." },
+  pickupTitle: "Заходила сусідка",
+  thanks: "Сусідка забрала посилки й подякувала: усі цілі.",
+  thanksMorning: "Зранку сусідка забрала посилки й подякувала: усі цілі.",
+  damaged: "Сусідка забрала посилки й помітила, що коти до них добралися. Компенсація за {посилки}: {сума} ₴.",
+  damagedMorning: "Зранку сусідка забрала посилки й помітила, що коти до них добралися. Компенсація за {посилки}: {сума} ₴.",
+  short: "Заплатили {заплатили} ₴ — усе, що було.",
+  nothing: "Заплатити не було чим.",
+} as const;
+
+/** Кур'єр лишив сусідські посилки (§4.1): скільки коробок біля входу. */
+export function parcelsCourierText(count: number): string {
+  return fill(PARCELS_TEXTS.courier.text, "female", { коробки: `${count} ${plural(count, "коробку", "коробки", "коробок")}` });
+}
+
+/** Сусідка забрала посилки (§4.1): усі цілі — подякувала; пошкоджені — компенсація й, коли грошей бракувало, скільки сплачено. */
+export function parcelsPickupText(pickup: ParcelsPickup, morning: boolean): string {
+  if (pickup.damaged === 0) return morning ? PARCELS_TEXTS.thanksMorning : PARCELS_TEXTS.thanks;
+  const values = { посилки: `${pickup.damaged} ${plural(pickup.damaged, "посилку", "посилки", "посилок")}`, сума: pickup.fine };
+  const text = fill(morning ? PARCELS_TEXTS.damagedMorning : PARCELS_TEXTS.damaged, "female", values);
+  const paid = Math.floor(pickup.paid);
+  if (paid >= pickup.fine) return text;
+  return `${text} ${paid > 0 ? fill(PARCELS_TEXTS.short, "female", { заплатили: paid }) : PARCELS_TEXTS.nothing}`;
+}
 
 /** Заголовок картки прибиральниці (§4.1): і коли персонаж удома, і коли його не було. */
 export const CLEANER_TITLE = "Заходила прибиральниця";

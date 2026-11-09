@@ -30,6 +30,9 @@ const VISITS: Partial<Record<ModifierEvent, readonly HomeCue[]>> = {
   inspection: visit("papers", 700),
   "home-vet": visit("vet-case", 800),
   cleaner: visit("bucket", 800),
+  // Кур'єр заносить сусідські посилки, сусідка їх забирає (§4.1).
+  parcels: visit("parcel", 700),
+  "parcels-taken": visit("parcel", 700),
   fireworks: one("fireworks", "sill-living"),
 };
 /** Мама заходить сама (§4.1): стукає тричі й відчиняє; не застала персонажа — тиша. */

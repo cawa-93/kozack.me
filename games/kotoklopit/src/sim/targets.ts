@@ -4,7 +4,7 @@
 import { highPlaceOf, isCarried } from "./catai";
 import { FACING_PRIORITY, MOVING, REACH } from "./config";
 import { isDish } from "./dish";
-import { CARRIER_SPOT, centerOf, distanceToRect, isSolid, isWall, itemPoint, objectAt, objectsOf, slotById, type HomeObject } from "./home";
+import { CARRIER_SPOT, centerOf, distanceToRect, hasPurchases, isSolid, isWall, itemPoint, objectAt, objectsOf, slotById, type HomeObject } from "./home";
 import type { Body, Cat, GameState, HomeItem, Mess, PlacedItem, Vec } from "./types";
 
 export type Target =
@@ -69,11 +69,17 @@ function idleSurface(state: GameState, object: HomeObject): boolean {
   return (object.kind === "table" || object.kind === "counter") && (state.home.surfaces[object.id] ?? null) === null && !isDish(state.character.held);
 }
 
+/**
+ * Купа ящиків лише із сусідськими посилками — не ціль (§4.1 «Сусідські посилки»): їх не розпакувати, а відмова «немає місця»
+ * збрехала б. Свої покупки в купі — ціль, як завжди: розпаковуються лише вони.
+ */
+const onlyParcels = (state: GameState, object: HomeObject): boolean => object.kind === "boxes" && !hasPurchases(state);
+
 /** Усі цілі, з якими зараз можна взаємодіяти. */
 function candidates(state: GameState): Target[] {
   const targets: Target[] = [];
   for (const object of objectsOf(state)) {
-    if (object.interactive && !catOnWardrobe(state, object) && !idleSurface(state, object)) targets.push({ type: "object", id: object.id, object });
+    if (object.interactive && !catOnWardrobe(state, object) && !idleSurface(state, object) && !onlyParcels(state, object)) targets.push({ type: "object", id: object.id, object });
   }
   // Будиночок і кігтеточка — для котів: персонажу з ними робити нічого.
   // Іграшку з повними руками не підняти, тож вона не заступає плиту чи стіл (§10).

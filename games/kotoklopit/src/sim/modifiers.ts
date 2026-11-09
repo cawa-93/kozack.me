@@ -27,6 +27,7 @@ import { waterCapacity } from "./resources";
 import { loudNoise } from "./noise";
 import { callImpression, changeReputation, isWorkday, noticeCallLook, onSickLeave, stopWork } from "./work";
 import { litterOrder, tickCleaner, tickConstructionDust } from "./cleaner";
+import { startParcels, tickParcels } from "./parcels";
 
 type When = "any" | "weekday" | "saturday" | "cat" | "work" | "workday" | "weekend-cat" | "cats2" | "unemployed";
 
@@ -251,6 +252,7 @@ export function startModifiers(state: GameState, rng: Rng): void {
   today.earlyWake = 0;
   delete today.mom;
   delete today.guestsCame;
+  startParcels(state);
   // Гість, якому так і не відчинили (персонаж ліг, не дочекавшись), уже не під дверима (§9.12).
   clearGuest(state);
   const perHour = POSITIONS[state.job.position]?.reputation ?? 1;
@@ -751,6 +753,8 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
   // Прибиральниця — візит із дзвінком за `GUESTS.ringLead` хвилин; будівельний пил — кімната за кімнатою (§4.1, рішення автора 2026-11-03).
   if (day === "cleaner") tickCleaner(state, from, minutes);
   if (day === "construction-dust") tickConstructionDust(state, from, minutes);
+  // Кур'єр із сусідськими посилками й сусідка — візити з дзвінком за `GUESTS.ringLead` хвилин (§4.1).
+  if (day === "neighbor-parcels") tickParcels(state, from, minutes);
   if (today.callAt !== null && crossed(from, minutes, today.callAt)) {
     today.callAt = null;
     // Дзвінок чекає, поки гравець вирішить: картка живе лише в сцені, і після перезавантаження сторінки дзвінок зникав без

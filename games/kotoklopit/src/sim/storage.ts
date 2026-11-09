@@ -67,10 +67,11 @@ export const MAX_BOXES = 4;
 
 /**
  * Скільки коробок у купі ящиків біля входу (§6.4, правка автора 2026-10-23): за кількістю
- * упаковок усередині — одна упаковка — один ящик, неповна — як ціла, від чотирьох — чотири; 0 — ящиків немає.
+ * упаковок усередині — одна упаковка — один ящик, неповна — як ціла, від чотирьох — чотири; 0 — ящиків немає. Сусідська посилка
+ * (§4.1) — теж ящик.
  */
 export function boxesShown(state: GameState): number {
-  let packs = 0;
+  let packs = state.home.parcels?.count ?? 0;
   for (const [product, box] of Object.entries(state.home.boxes ?? {}) as [Product, { cheap: number; premium: number } | undefined][]) {
     if (!box) continue;
     const units = PRODUCTS[product].units;

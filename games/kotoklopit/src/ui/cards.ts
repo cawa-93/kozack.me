@@ -36,6 +36,7 @@ import {
   LEDGER_TEXTS,
   ledgerLines,
   minutesText,
+  parcelsPickupText,
   PROFILE_TEXTS,
   SOUND_TEXTS,
   WAKE_TEXTS,
@@ -111,6 +112,8 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
   }
   // Сусіди розбудили раніше (§4.1): ефект — наступного ранку, коли модифікатор уже інший, тож титулка називає причину.
   if (night?.neighborsWoke !== undefined) events.push([fill(WAKE_TEXTS.neighbors, address, { час: formatClock(night.neighborsWoke) })]);
+  // Сусідка забрала посилки, поки персонаж спав (§4.1): учорашня подія, тож титулка каже, чим скінчилося.
+  if (night?.parcels) events.push([parcelsPickupText(night.parcels, true)]);
   const newCats = (night?.newCats ?? []).map((id) => state.cats.find((c) => c.id === id)).filter((c) => c !== undefined);
   for (const cat of newCats.filter((c) => c.source !== "born")) {
     events.push([fill(KITTEN_MESSAGE, address, { персонаж: name, кошеня: cat.name })]);

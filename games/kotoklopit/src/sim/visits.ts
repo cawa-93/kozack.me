@@ -6,6 +6,7 @@
 import { cleanerVisit } from "./cleaner";
 import { greetNow, guestAtDoor } from "./door";
 import { guestsVisit, homeVetVisit, inspectionVisit, momVisit } from "./modifiers";
+import { courierVisit, neighborVisit } from "./parcels";
 import type { DoorGuest, GameState } from "./types";
 
 /**
@@ -18,6 +19,8 @@ const VISITS: Record<DoorGuest, (state: GameState) => void> = {
   inspection: (state) => inspectionVisit(state),
   guests: (state) => guestsVisit(state),
   cleaner: (state) => cleanerVisit(state),
+  parcels: (state) => courierVisit(state),
+  neighbor: (state) => neighborVisit(state),
 };
 
 /**

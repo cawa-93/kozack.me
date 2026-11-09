@@ -1,7 +1,7 @@
 // Події симуляції. З них сцена показує бабли (§11.4) і ранкові повідомлення (§4),
 // а режим розробки веде журнал прихованих змін (§11.5). Стан гри від підписників не залежить.
 
-import type { AccidentLoss, AlbumEntry, CatTrace, Destination, Delivery, DiseaseId, Dish, ForbiddenZone, GameEnd, GameState, HomeItem, IllnessId, Item, Medicine, Mess, NightReport, PlacedItem, Product, Quality, TraitLevel, TrinketKind } from "./types";
+import type { AccidentLoss, AlbumEntry, CatTrace, Destination, Delivery, DiseaseId, Dish, ForbiddenZone, GameEnd, GameState, HomeItem, IllnessId, Item, Medicine, Mess, NightReport, ParcelsPickup, PlacedItem, Product, Quality, TraitLevel, TrinketKind } from "./types";
 
 /** Рівень терпіння керівництва (§8.6): ok, «!» чи «Х». */
 export type PatienceLevel = "ok" | "warning" | "out";
@@ -55,7 +55,11 @@ export type ModifierEvent =
   | "mom-food"
   /** Заходила прибиральниця (§4.1): персонаж удома — «cleaner», у поїздці — «cleaner-away»; що зробила — `cleaner`. */
   | "cleaner"
-  | "cleaner-away";
+  | "cleaner-away"
+  /** Кур'єр лишив біля входу сусідські посилки (§4.1): `value` — скільки коробок. */
+  | "parcels"
+  /** Сусідка забрала посилки (§4.1): `value` — компенсація за пошкоджені, `paid` — скільки з неї сплачено, решта — `parcels`. */
+  | "parcels-taken";
 
 /** Де кіт точить кігті (§9.12, «Дряпання»). */
 export type ScratchSpot = "post" | "sofa" | "doorframe" | "rug" | "boxes";
@@ -196,9 +200,10 @@ export type GameEvent =
   | { type: "broke"; what: string }
   /**
    * Подія дня (§4.1). `guests` — що сталося з гостями (§9.12 «Двері й гості»): безлад, шипіння з-під дивана, захват від котів;
-   * з цього повідомлення дня й складає слова (перевірка етапу 2026-10-26). `cleaner` — що зробила прибиральниця (§4.1).
+   * з цього повідомлення дня й складає слова (перевірка етапу 2026-10-26). `cleaner` — що зробила прибиральниця (§4.1), `parcels` —
+   * що забрала сусідка й скільки взяла за пошкоджені посилки.
    */
-  | { type: "modifier"; kind: ModifierEvent; value: number; guests?: GuestsVisit; paid?: number; cleaner?: CleanerVisit }
+  | { type: "modifier"; kind: ModifierEvent; value: number; guests?: GuestsVisit; paid?: number; cleaner?: CleanerVisit; parcels?: ParcelsPickup }
   | { type: "career"; change: "promoted" | "demoted" | "fired" | "hired"; position: number }
   | { type: "ordered"; delivery: Delivery; price: number }
   /** Сплачено рахунок за комунальні в телефоні (§6.4). */
@@ -345,6 +350,8 @@ export type GameEvent =
   | { type: "wire-chewed"; cat: number }
   /** Кіт прогриз пакет у ящиках біля входу (§9.12, «Гризіння»): одиниці запасу немає; корм і ласощі він з'їв. */
   | { type: "bag-chewed"; cat: number; product: Product }
+  /** Кіт погриз чи подер цілу сусідську посилку в ящиках біля входу (§4.1 «Сусідські посилки»). */
+  | { type: "parcel-damaged"; cat: number; how: "chewed" | "scratched" }
   /** Персонаж полагодив перегризений дріт (§9.12, «Гризіння»). */
   | { type: "wire-fixed" }
   /**

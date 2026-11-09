@@ -21,7 +21,7 @@ import { objectById } from "../sim/home";
 import { canGoToSleep, collapseMinute, isDrowsy } from "../sim/sleep";
 import { CARRIER_TARGET, targetOf } from "../sim/targets";
 import { clockFrame, weekOf } from "../sim/time";
-import type { Address, Chronotype, Difficulty, GameState, HomeItem, Quality, Save, ThingKind } from "../sim/types";
+import type { Address, Chronotype, Difficulty, GameState, HomeItem, ParcelsPickup, Quality, Save, ThingKind } from "../sim/types";
 import { inMeeting, isWorking, isWorkTime, patienceLevel, workGoesOn } from "../sim/work";
 import { RADIO } from "../audio/config";
 import type { Radio } from "../audio/radio/radio";
@@ -38,7 +38,7 @@ import { giveCatnip, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
 import { stateRng } from "../sim/rng";
 import { Overlay, type Card } from "../ui/overlay";
-import { CAREER_MESSAGES, carrierDeathNews, CLEANER_TITLE, cleanerText, DIFFICULTY_TITLES, fill, GIVE_AWAY_LATER, GIVE_AWAY_RECENT, guestsText, homeVetText, IMPORT_SAVE, MOM_FOOD_TEXTS, POSITION_TITLES, UNREADABLE_SAVE } from "../texts";
+import { CAREER_MESSAGES, carrierDeathNews, CLEANER_TITLE, cleanerText, DIFFICULTY_TITLES, fill, GIVE_AWAY_LATER, GIVE_AWAY_RECENT, guestsText, homeVetText, IMPORT_SAVE, MOM_FOOD_TEXTS, PARCELS_TEXTS, parcelsCourierText, parcelsPickupText, POSITION_TITLES, UNREADABLE_SAVE } from "../texts";
 import { canUse, setRadioOn } from "../sim/actions";
 import { moveThing } from "../sim/moving";
 import { type Anchor, Bubbles, THOUGHT_HOLD_MS } from "../view/bubbles";
@@ -1022,7 +1022,7 @@ export class DayScene extends Phaser.Scene {
         }
         break;
       case "modifier":
-        this.onModifier(event.kind, event.value, event.guests, event.paid, event.cleaner);
+        this.onModifier(event.kind, event.value, event.guests, event.paid, event.cleaner, event.parcels);
         break;
       case "career": {
         const message = CAREER_MESSAGES[event.change];
@@ -1076,7 +1076,7 @@ export class DayScene extends Phaser.Scene {
     this.queueCard(card);
   }
 
-  private onModifier(kind: ModifierEvent, value: number, guests?: GuestsVisit, paidNow?: number, cleaner?: CleanerVisit): void {
+  private onModifier(kind: ModifierEvent, value: number, guests?: GuestsVisit, paidNow?: number, cleaner?: CleanerVisit, parcels?: ParcelsPickup): void {
     const money = Math.round(Math.abs(value));
     switch (kind) {
       case "mom-call":
@@ -1137,6 +1137,13 @@ export class DayScene extends Phaser.Scene {
       case "cleaner":
       case "cleaner-away":
         this.notice(CLEANER_TITLE, cleanerText(cleaner, kind === "cleaner"));
+        return;
+      // «Сусідські посилки» (§4.1): кур'єр лишив коробки біля входу, сусідка їх забрала.
+      case "parcels":
+        this.notice(PARCELS_TEXTS.courier.title, parcelsCourierText(value));
+        return;
+      case "parcels-taken":
+        if (parcels) this.notice(PARCELS_TEXTS.pickupTitle, parcelsPickupText(parcels, false));
         return;
       case "fireworks":
         this.cameras.main.shake(300, 0.004);

@@ -134,6 +134,7 @@ import { appetiteFactor, attentionFactor, dietWeightFactor } from "./modifiers";
 import { absoluteMinute } from "./time";
 import { angryAtWindow, chatters, dogOnStairs, pigeonsFactor, strayMood, valerianCallPerHour } from "./windowdoor";
 import { handOn } from "./petpair";
+import { damageParcel, intactParcels } from "./parcels";
 import { addTrace, SCRATCH_TRACES, tidyBoxTraces } from "./traces";
 import type { BowlItem, Cat, CatAct, CatActKind, Dish, ForbiddenZone, GameState, HomeItem, LitterItem, Mess, MessKind, PlayPhase, Product, Quality, ToyItem, TrinketKind, Vec, WaterItem } from "./types";
 import { exercise, gainWeight, settleWeight, weightSeen } from "./weight";
@@ -1375,7 +1376,15 @@ function chewDone(state: GameState, cat: Cat, rng: Rng): void {
   }
   const boxes = state.home.boxes ?? {};
   const bags = (Object.keys(boxes) as Product[]).flatMap((product) => (["cheap", "premium"] as const).filter((q) => (boxes[product]?.[q] ?? 0) > 0).map((quality) => ({ product, quality })));
-  const bag = bags[rng.int(0, bags.length - 1)];
+  // Цілі сусідські посилки — такі самі коробки в купі (§4.1): кіт обирає між своїми пакетами й ними, а пошкоджену вдруге не рахують.
+  const parcels = intactParcels(state);
+  const pick = rng.int(0, bags.length + parcels - 1);
+  if (pick >= bags.length && parcels > 0) {
+    damageParcel(state, cat.id, "chewed");
+    addTrace(state, "boxes-chewed");
+    return;
+  }
+  const bag = bags[pick];
   const box = bag ? boxes[bag.product] : undefined;
   if (!bag || !box) return;
   box[bag.quality] -= 1;
@@ -2435,6 +2444,8 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       // Перший раз на цьому місці — слід назавжди (§9.12, «Котячі сліди в квартирі»); кігтеточка слідів не лишає.
       const trace = SCRATCH_TRACES[where];
       if (trace) addTrace(state, trace);
+      // Подер купу з сусідськими посилками — одна з цілих пошкоджена (§4.1).
+      if (where === "boxes") damageParcel(state, cat.id, "scratched");
       // Прояв — на місці, на очах персонажа (§9.9): «+» дере диван чи одвірок, «−» — кігтеточку, килимок чи коробки.
       observe(state, cat, "scratching", where === "sofa" || where === "doorframe" ? 1 : -1);
       return;

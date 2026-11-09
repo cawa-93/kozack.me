@@ -341,6 +341,10 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `${catName(state, event.cat)} перегриз дріт: комп'ютер не працює`;
     case "bag-chewed":
       return `${catName(state, event.cat)} прогриз пакет: −1 ${event.product}`;
+    case "parcel-damaged": {
+      const parcels = state.home.parcels;
+      return `${catName(state, event.cat)} ${event.how === "chewed" ? "погриз" : "подер"} сусідську посилку (пошкоджено ${parcels?.damaged ?? 0} з ${parcels?.count ?? 0})`;
+    }
     case "wire-fixed":
       return `Дріт комп'ютера полагоджено: ремонт +${CHEWING.wireRepair}`;
     case "trace":

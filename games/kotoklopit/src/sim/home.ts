@@ -138,9 +138,17 @@ export const WINDOWS: readonly { sill: string; wall: Vec; facing: 1 | -1; seat: 
 /** Високі місця (§9.12, «Лазіння»): верх холодильника й шафи — туди вилазять коти. */
 export const HIGH_PLACES: readonly string[] = ["fridge", "wardrobe"];
 
-/** У ящиках біля входу щось є (§6.4). */
-export function hasBoxes(state: Pick<GameState, "home">): boolean {
+/** У ящиках біля входу є покупки (§6.4): лише їх можна розпакувати. */
+export function hasPurchases(state: Pick<GameState, "home">): boolean {
   return Object.values(state.home.boxes ?? {}).some((box) => box.cheap + box.premium > 0);
+}
+
+/**
+ * Купа ящиків біля входу стоїть (§6.4): у ній покупки чи сусідські посилки (§4.1). Для котів посилки — ті самі коробки: їх гризуть,
+ * деруть і сплять у них.
+ */
+export function hasBoxes(state: Pick<GameState, "home">): boolean {
+  return hasPurchases(state) || (state.home.parcels?.count ?? 0) > 0;
 }
 
 /** Річ є в квартирі: меблі — завжди, сховище — після першого отримання свого запасу (§6.4). */

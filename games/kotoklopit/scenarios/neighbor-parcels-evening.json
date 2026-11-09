@@ -1,0 +1,22 @@
+{
+  "name": "Сусідські посилки ввечері",
+  "description": "Субота першого тижня, 19:50, «Сусідські посилки» (§4.1). Біля входу три сусідські коробки — купа лише з посилок; дві з них коти вже пошкодили (слідів на купі сценарій не ставить). О 20:00 сусідка дзвонить, за 8 хвилин заходить і забирає посилки — купа зникає. Картка «Заходила сусідка»: компенсація за 2 посилки, а грошей лише 40 ₴ — «Заплатили 40 ₴ — усе, що було.» Натисніть дію біля дверей після дзвінка — сусідка зайде одразу. Ляжте спати, не дочекавшись її (режим розробки: «Спати»), — вона забере посилки зранку, а титулка скаже, скільки сплачено.",
+  "game": { "address": "she", "difficulty": "normal", "seed": 23 },
+  "state": {
+    "day": 5,
+    "minute": 1190,
+    "modifiers": { "day": "neighbor-parcels" },
+    "today": { "parcels": { "stage": "neighbor" } },
+    "character": { "money": 40, "body": { "x": 9.5, "y": 10.5 } },
+    "home": {
+      "parcels": { "count": 3, "damaged": 2 },
+      "supplies": { "catFood": { "cheap": 20, "premium": 0 }, "litter": { "cheap": 6, "premium": 0 } }
+    }
+  },
+  "cats": [
+    { "source": "shelter", "ageWeeks": 30, "name": "Цікавка", "sex": "female", "sterilized": true, "arrivedDay": -10, "x": 6.5, "y": 8.5,
+      "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 10, "attention": 10, "fatigue": 10 },
+      "act": { "kind": "idle", "target": null, "goal": null, "minutes": 30, "elapsed": 0 },
+      "traits": [{ "group": "curiosity", "level": 2, "seen": 0, "known": true }] }
+  ]
+}

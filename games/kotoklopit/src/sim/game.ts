@@ -19,6 +19,7 @@ import { isLastDay, weekdayOf } from "./time";
 import type { Address, Chronotype, Difficulty, GameState, Look, NightReport, Save } from "./types";
 import { isWorking, newJob, tickWork } from "./work";
 import { momAtNight, tickModifiers } from "./modifiers";
+import { parcelsAtMorning } from "./parcels";
 
 // Нова версія — щойно стан отримав поле, без якого старе збереження ламає гру (міграцій немає, §12.2).
 export const SAVE_VERSION = 2;
@@ -281,6 +282,8 @@ function sleep(save: Save, collapsed: boolean): NightReport | null {
     return null;
   }
   const report = runNight(state, collapsed);
+  // Сусідка, якої не дочекалися, забирає посилки вранці (§4.1): гроші — уже з нового дня, після звіту тижня.
+  if (state.end === null) parcelsAtMorning(state, report);
   // Якщо гра закінчилася вночі, знімки не оновлюються: переграти можна день, що минув (§6.4).
   if (state.end === null) updateSnapshots(save, afterAccident);
   emit(state, { type: "night", report });

@@ -97,6 +97,30 @@ const GUESTS_BY_DOOR: Guest[] = [
     effect: (state) => state.home.messes.length,
     delta: -1,
   },
+  // «Сусідські посилки» (§4.1): дзвонять о своїй хвилині й заходять за `GUESTS.ringLead`, як мама.
+  {
+    who: "parcels",
+    day: "neighbor-parcels",
+    minute: MODIFIERS.parcels.arrive + GUESTS.ringLead,
+    kind: "parcels",
+    prepare: (state) => {
+      state.today.parcels = { stage: "courier" };
+    },
+    effect: (state) => state.home.parcels?.count ?? 0,
+    delta: MODIFIERS.parcels.count,
+  },
+  {
+    who: "neighbor",
+    day: "neighbor-parcels",
+    minute: MODIFIERS.parcels.pickup + GUESTS.ringLead,
+    kind: "parcels-taken",
+    prepare: (state) => {
+      state.today.parcels = { stage: "neighbor" };
+      state.home.parcels = { count: MODIFIERS.parcels.count, damaged: 1 };
+    },
+    effect: (state) => state.character.money,
+    delta: -MODIFIERS.parcels.fine,
+  },
 ];
 
 /**
