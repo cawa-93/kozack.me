@@ -380,12 +380,13 @@ function deskPlace(at: Vec): PerchPlace {
 // --- Лоток і кігтеточка ---------------------------------------------------------------------------
 
 /**
- * Кіт у лотку (§9.12; рецензія хвилі 3): присідає на наповнювачі — на `lift` над підлогою (наповнювач на 13, борт 22,
- * `art/item/litter/*.svg`) — і в порядку малювання одразу над лотком (`IN_LITTER`). У точці лотка на підлозі передній борт і
- * дашок ховали кота, крім кінчиків вух, і присідання (і крику від болю, §9.5) не було видно. У закритому лотку дашок — над
- * задньою половиною, вхід — на грані +x, тож кіт сидить у відкритій передній частині: на `premium` клітинки далі по x.
+ * Кіт у лотку (§9.12; рецензія хвилі 3): присідає на наповнювачі — на `lift` над підлогою (`art/item/litter/*.svg`: борт 22,
+ * наповнювач на 13 у відкритому й на 18 у закритому, `premiumLift`) — і в порядку малювання одразу над лотком (`IN_LITTER`). У
+ * точці лотка на підлозі передній борт і дашок ховали кота, крім кінчиків вух, і присідання (і крику від болю, §9.5) не було
+ * видно. У закритому лотку дашок — над задньою половиною, вхід — на грані +x, тож кіт сидить у відкритій передній частині: на
+ * `premium` клітинки далі по x.
  */
-export const LITTER_SEAT = { lift: 12, premium: 0.16 } as const;
+export const LITTER_SEAT = { lift: 12, premiumLift: 17, premium: 0.16 } as const;
 
 /**
  * Кіт поруч із річчю, яку дере чи нюхає (§9.12; рецензія хвилі 3): збоку вздовж горизонталі екрана на `along` клітинок (x − y),
@@ -558,7 +559,7 @@ export function catSpot(state: GameState, cat: Cat, anim: CatAnimId, pair: PairP
     if (litter && still && !sniffing) {
       const p = itemPoint(litter);
       const at = litter.quality === "premium" ? { x: p.x + LITTER_SEAT.premium, y: p.y } : p;
-      return spot("litter", at, { lift: LITTER_SEAT.lift, above: { id: `item:${litter.id}`, offset: IN_LITTER } });
+      return spot("litter", at, { lift: litter.quality === "premium" ? LITTER_SEAT.premiumLift : LITTER_SEAT.lift, above: { id: `item:${litter.id}`, offset: IN_LITTER } });
     }
     // Дере кігтеточку чи нюхає лоток — збоку від речі (з вільного боку), лапами чи носом до неї.
     const scratcher = scratcherOf(state, cat) ?? (still ? itemAtCat(state, cat, "scratcher") : null);
