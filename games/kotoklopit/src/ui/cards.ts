@@ -52,7 +52,8 @@ import type { CartLine } from "../sim/shop";
 import { plural } from "./titles";
 
 export { plural };
-import { LOOK_OPTIONS, shownRow } from "./look";
+import { wearOf } from "../view/wardrobe/index";
+import { LOOK_OPTIONS, LOOK_PAGE, LOOK_TABS, rowChoices, shownRow, type LookRow, type LookTab } from "./look";
 import { catProfile, type CatFacts } from "./catprofile";
 import { drawPortrait, portraitCanvas } from "./portrait";
 import { billCard } from "./bill";
@@ -653,7 +654,13 @@ export function wardrobeCard(start: Look, onDone: (look: Look) => void, onCancel
   };
 }
 
-/** Редактор зовнішності (§5.1): портрет і повзунки; `look` — те, що обрано зараз. */
+/**
+ * Редактор зовнішності (§5.1): портрет і повзунки рядів гардеробу; `look` — те, що обрано зараз. Повзунок іде лише доступними
+ * варіантами (`rowChoices`), ряд, що не діє, — вимкнений і підписаний чому. Рядів більше, ніж уміщує картка (`LOOK_PAGE`), —
+ * вкладки (тіло, волосся, верх, низ, взуття) з короткими підписами, а «Випадково» — у їхньому рядку: на телефоні набік під
+ * повзунками йому місця вже немає. Будь-яка зміна показує всі ряди заново: від зачіски залежить акцент, від фасону — візерунок
+ * і низ.
+ */
 function lookEditor(start: Look, shuffle: () => Look): { root: HTMLElement; look: Look } {
   const look: Look = { ...start };
   const editor = element("div", "look-editor");
@@ -661,44 +668,87 @@ function lookEditor(start: Look, shuffle: () => Look): { root: HTMLElement; look
   const redraw = (): void => drawPortrait(canvas, look);
   redraw();
   const sliders = element("div", "look-sliders");
-  // Показати на повзунках поточну зовнішність: після «Випадково» змінюються всі одразу.
-  const sync: (() => void)[] = [];
-  for (const { key, label, options } of LOOK_OPTIONS.filter(shownRow)) {
-    const row = element("label", "look-row");
-    const value = element("span", "look-value");
-    const slider = element("input");
-    slider.type = "range";
-    slider.min = "0";
-    slider.max = String(options.length - 1);
-    slider.step = "1";
-    slider.className = "look-slider";
-    const show = (): void => {
-      slider.value = String(look[key] ?? 0);
-      value.textContent = options[look[key] ?? 0] ?? "";
-    };
-    show();
-    sync.push(show);
-    slider.addEventListener("input", () => {
-      look[key] = Number(slider.value);
-      show();
-      redraw();
-    });
-    const head = element("span", "look-head");
-    head.append(element("span", "look-label", label), value);
-    row.append(head, slider);
-    sliders.append(row);
-  }
-  const randomize = (): void => {
-    Object.assign(look, shuffle());
-    for (const show of sync) show();
+  const rows = LOOK_OPTIONS.filter(shownRow);
+  const paged = rows.length > LOOK_PAGE;
+  const tabs = (Object.keys(LOOK_TABS) as LookTab[]).filter((id) => rows.some((row) => row.tab === id));
+  let tab: LookTab = tabs[0] ?? "body";
+  const shows: (() => void)[] = [];
+  const showAll = (): void => {
+    for (const show of shows) show();
+  };
+  const changed = (): void => {
+    showAll();
     redraw();
   };
+  for (const row of rows) shows.push(lookRow(row, paged ? row.short : row.label, look, sliders, () => paged && row.tab !== tab, changed));
+  showAll();
   const random = element("button", "button look-random", "Випадково");
-  random.addEventListener("click", randomize);
+  random.addEventListener("click", () => {
+    Object.assign(look, shuffle());
+    changed();
+  });
   const side = element("div", "look-side");
-  side.append(sliders, random);
+  if (paged) {
+    const bar = element("div", "look-bar");
+    const list = element("div", "card-tabs look-tabs");
+    list.setAttribute("role", "tablist");
+    const buttons = tabs.map((id) => {
+      const button = element("button", "card-tab", LOOK_TABS[id]);
+      button.type = "button";
+      button.setAttribute("role", "tab");
+      button.addEventListener("click", () => {
+        tab = id;
+        mark();
+        showAll();
+      });
+      return button;
+    });
+    const mark = (): void =>
+      buttons.forEach((button, i) => {
+        button.classList.toggle("active", tabs[i] === tab);
+        button.setAttribute("aria-selected", String(tabs[i] === tab));
+      });
+    mark();
+    list.append(...buttons);
+    bar.append(list, random);
+    side.append(bar, sliders);
+  } else side.append(sliders, random);
   editor.append(canvas, side);
   return { root: editor, look };
+}
+
+/**
+ * Ряд редактора в `parent`: підпис, назва варіанта (чи чому ряд не діє) і повзунок доступними варіантами. Повертає, як
+ * показати ряд за поточним виглядом; `hidden` — ряд на іншій вкладці, `changed` — гравець вибрав інший варіант.
+ */
+function lookRow(row: LookRow, label: string, look: Look, parent: HTMLElement, hidden: () => boolean, changed: () => void): () => void {
+  const el = element("label", "look-row");
+  const value = element("span", "look-value");
+  const slider = element("input");
+  slider.type = "range";
+  slider.min = "0";
+  slider.step = "1";
+  slider.className = "look-slider";
+  let choices: number[] = [];
+  slider.addEventListener("input", () => {
+    look[row.key] = choices[Number(slider.value)] ?? 0;
+    changed();
+  });
+  const head = element("span", "look-head");
+  head.append(element("span", "look-label", label), value);
+  el.append(head, slider);
+  parent.append(el);
+  return () => {
+    const wear = wearOf(look);
+    const off = row.off?.(wear) ?? null;
+    choices = rowChoices(row, wear);
+    slider.max = String(Math.max(0, choices.length - 1));
+    slider.value = String(Math.max(0, choices.indexOf(wear[row.key])));
+    slider.disabled = off !== null || choices.length < 2;
+    value.textContent = off ?? row.options[wear[row.key]] ?? "";
+    el.classList.toggle("off", off !== null);
+    el.hidden = hidden();
+  };
 }
 
 /** Крок 2: звертання «він / вона» (§5.1). Над вибором — портрет щойно складеної зовнішності; поки не обрано, «Далі» вимкнене. */

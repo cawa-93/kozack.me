@@ -5,7 +5,8 @@ import { describe, expect, it } from "vitest";
 
 import { DEFAULT_LOOK } from "../src/sim/game";
 import type { Look } from "../src/sim/types";
-import { LOOK_OPTIONS, lookRng, randomLook, shownRow } from "../src/ui/look";
+import { LOOK_OFF, LOOK_OPTIONS, LOOK_PAGE, LOOK_TABS, lookRng, pickChoice, randomLook, rowChoices, shownRow } from "../src/ui/look";
+import { createRng } from "../src/sim/rng";
 import { HAIR_ACCENTS } from "../src/view/wardrobe/accents";
 import { BUILDS, FACES, IRIS_COLORS, SKIN_TONES } from "../src/view/wardrobe/body";
 import { BOTTOM_CUTS } from "../src/view/wardrobe/bottoms";
@@ -111,5 +112,64 @@ describe("редактор із самими нулями гардеробу", (
       const look = randomLook(lookRng(seed));
       expect([look.face, look.skin, look.hair, look.hairColor, look.eyes, look.build, look.top, look.bottom, look.shoes], `seed ${seed}`).toEqual(values);
     });
+  });
+});
+
+describe("ряди редактора: що доступне за вигляду", () => {
+  it("кожен ряд пропонує лише варіанти свого реєстру, і серед них — те, що вдягнено", () => {
+    for (const look of [DEFAULT_LOOK, OLD, ...Array.from({ length: 40 }, (_, seed) => randomLook(lookRng(seed)))]) {
+      const wear = wearOf(look);
+      for (const row of LOOK_OPTIONS) {
+        const choices = rowChoices(row, wear);
+        expect(choices, row.key).toContain(wear[row.key]);
+        for (const i of choices) expect(row.options[i], `${row.key} ${i}`).toBeDefined();
+      }
+    }
+  });
+
+  it("акцент — лише в зачіски з маскою, низ — неактивний під верхом із власним низом", () => {
+    const accent = LOOK_OPTIONS.find((row) => row.key === "hairAccent")!;
+    for (let hair = 0; hair < HAIR_STYLES.length; hair++) {
+      expect(accent.off?.(wearOf({ ...OLD, hair })) ?? null).toBe(HAIR_STYLES[hair]?.accent ? null : LOOK_OFF.accent);
+    }
+    for (const key of ["bottomCut", "bottom", "bottomPattern"] as const) {
+      const row = LOOK_OPTIONS.find((r) => r.key === key)!;
+      for (let topCut = 0; topCut < TOP_CUTS.length; topCut++) {
+        const wear = wearOf({ ...OLD, topCut });
+        expect(row.off?.(wear) ?? null, `${key}, верх ${topCut}`).toBe(wear.suit ? LOOK_OFF.suit : null);
+      }
+    }
+  });
+
+  it("«Випадково» не бере недоступного: вигляд, як його вдягнено, — той самий, що обрано", () => {
+    for (let seed = 0; seed < 300; seed++) {
+      const look = randomLook(lookRng(seed));
+      const wear = wearOf(look);
+      for (const row of LOOK_OPTIONS) if (!row.off?.(wear)) expect(look[row.key], `seed ${seed}: ${row.key}`).toBe(wear[row.key]);
+    }
+  });
+
+  it("ваги (за номером варіанта): нульова ніколи, однакові серед доступних — той самий кидок, що й без ваг", () => {
+    const rng = createRng(7);
+    for (let i = 0; i < 500; i++) expect(pickChoice(rng, [0, 1, 2], [1, 0, 3])).not.toBe(1);
+    const a = createRng(9);
+    const b = createRng(9);
+    for (let i = 0; i < 50; i++) expect(pickChoice(a, [0, 2, 5], [2, 9, 2, 9, 9, 2])).toBe([0, 2, 5][b.int(0, 2)]);
+    const counts = [0, 0];
+    const c = createRng(11);
+    for (let i = 0; i < 4000; i++) counts[pickChoice(c, [0, 1], [1, 3])]!++;
+    expect(counts[1]! / 4000).toBeGreaterThan(0.7);
+    expect(counts[1]! / 4000).toBeLessThan(0.8);
+  });
+
+  it("вкладки: кожен ряд — на своїй, підписи різні й без вкладок, і на вкладці; на вкладці — не більше двох рядів сітки", () => {
+    expect(LOOK_PAGE).toBe(9);
+    expect(new Set(LOOK_OPTIONS.map((row) => row.label)).size).toBe(LOOK_OPTIONS.length);
+    for (const tab of Object.keys(LOOK_TABS)) {
+      const rows = LOOK_OPTIONS.filter((row) => row.tab === tab);
+      expect(rows.length, tab).toBeGreaterThan(0);
+      expect(rows.length, tab).toBeLessThanOrEqual(6);
+      expect(new Set(rows.map((row) => row.short)).size, tab).toBe(rows.length);
+    }
   });
 });

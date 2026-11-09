@@ -652,11 +652,53 @@
   gap: 2px;
 }
 
+/* Довгий підпис («Візерунок верху») і назва не вміщуються в стовпець — назва переходить під підпис. */
 .look-head {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 8px;
+  column-gap: 8px;
   font-size: 14px;
+}
+
+/* Ряд на іншій вкладці редактора. */
+.look-row[hidden] {
+  display: none;
+}
+
+/* Ряд, що за вигляду не діє (акцент без зачіски з акцентом, низ комбінезона): замість варіанта — чому, повзунок блідий. */
+.look-row.off .look-value {
+  font-style: italic;
+}
+
+.look-slider:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+/* Вкладки редактора й «Випадково» — один рядок над повзунками; не вміщуються — «Випадково» переходить нижче. */
+.look-bar {
+  align-self: stretch;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.look-bar > .look-random {
+  margin-left: auto;
+}
+
+/* З вкладками редактор ширший: вкладки й «Випадково» — в один рядок, повзунки — у три стовпці. */
+.card:has(.look-bar) {
+  width: min(780px, 100%);
+}
+
+/* Вкладки переносяться, а не прокручуються вбік; місця під хрестик картки не треба (він вище). */
+.card-tabs.look-tabs {
+  flex-wrap: wrap;
+  margin: -4px;
+  overflow: visible;
 }
 
 .look-label {
