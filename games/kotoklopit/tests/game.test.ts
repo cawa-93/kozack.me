@@ -57,6 +57,9 @@ describe("тиждень гри без графіки", () => {
       const save = newGame({ address, difficulty: "normal", seed: 1, chronotype });
       const nights: NightReport[] = [];
       for (let day = 0; day < 7; day++) {
+        // Модифікатори дня тут не перевіряють: найпростіший гравець не пилососить і не дбає про здоровий глузд, а «Будівельний
+        // пил» (§4.1) закінчив би гру, — тож з другого дня день звичайний.
+        if (day > 0) save.current.modifiers.day = null;
         const report = liveDay(save);
         if (report === null) throw new Error(`ніч ${day} не настала`);
         nights.push(report);
@@ -67,7 +70,8 @@ describe("тиждень гри без графіки", () => {
       expect(weekOf(state.day)).toBe(2);
       expect(weekdayOf(state.day)).toBe(0);
       expect(nights.map((night) => night.weekly)).toEqual([false, false, false, false, false, false, true]);
-      expect(nights.every((night) => night.sleptHours === 8 && !night.collapsed)).toBe(true);
+      // Ранок «Шумних сусідів» (§4.1) будить раніше — ту ніч обирає вже нічний вибір модифікатора, тож вона коротша.
+      expect(nights.every((night) => (night.sleptHours === 8 || night.neighborsWoke !== undefined) && !night.collapsed)).toBe(true);
       // Без роботи й котів здоровий глузд не змінюється, тож кошеня не приходить.
       expect(state.character.stats.sanity).toBe(40);
       expect(state.cats).toEqual([]);

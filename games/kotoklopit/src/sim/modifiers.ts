@@ -2,13 +2,16 @@
 // Числові ефекти інші модулі беруть через функції-множники звідси.
 
 import { knownBreedHalves } from "./breeds";
-import { asleep, markNewcomer, changeMood, createCat, isAdapting, traitLevel } from "./cat";
+import { asleep, changeMood, createCat, isAdapting, markNewcomer, traitLevel } from "./cat";
 import { clearGuest, openDoor, ringBell, takeGuest } from "./door";
 import { addCat, applyMorningSanity } from "./night";
 import { putDownCat, stopBath } from "./actions";
 import { hideSpot, isCarried, isDirty, startAct } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { hasFertileFemale, isNewborn } from "./reproduction";
+
+/** Є кіт із шерстю: лише тоді діє «Линька ↔ Зимове хутро» (§4.1). */
+export const hasFurryCat = (state: GameState): boolean => state.cats.some((c) => c.shape.coat !== "hairless");
 import { vetManner } from "./destinations";
 import { observe } from "./knowledge";
 import { changeStat, earn, spend } from "./character";
@@ -25,7 +28,7 @@ import { loudNoise } from "./noise";
 import { callImpression, changeReputation, isWorkday, noticeCallLook, onSickLeave, stopWork } from "./work";
 import { litterOrder, tickCleaner, tickConstructionDust } from "./cleaner";
 
-type When = "any" | "weekday" | "saturday" | "cat" | "work" | "workday" | "weekend-cat";
+type When = "any" | "weekday" | "saturday" | "cat" | "work" | "workday" | "weekend-cat" | "cats2" | "unemployed";
 
 interface Pair {
   /** Важкий бік; null — модифікатор без пари, лише легкий бік (§11.1). */
@@ -44,12 +47,19 @@ export const DAY_PAIRS: readonly Pair[] = [
   pair("meeting", "lunch", "work", "workday"),
   pair("pay-delay", "bonus", "work", "workday"),
   pair("reprimand", "praise", "work", "workday"),
+  // Лише безробітному (§8.6): решта робочих — з роботою.
+  pair("hiring-freeze", "job-fair", "work", "unemployed"),
   pair("work-saturday", "midweek-off", "work", "saturday", "workday"),
   pair("full-moon", "rain", "cats", "cat"),
   pair("festival", "quiet-evening", "cats", "cat"),
   // «Ветеринарка вдома» — без пари, лише легкий бік (§11.1): випадає, коли випав легкий.
   pair(null, "home-vet", "cats", "cat"),
   pair("heat", "cold", "cats", "cat"),
+  pair("stray-cat", "pigeons", "cats", "cat"),
+  // Стосунки між котами — від двох котів удома (§9.4).
+  pair("cat-feud", "cat-peace", "cats", "cats2"),
+  pair("clingy-cats", "cat-business", "cats", "cat"),
+  pair("valerian", "stair-dog", "cats", "cat"),
   pair("renovation", "neighbors-away", "home", "any"),
   // «Планове відключення» лишається й безробітному: без світла пошук роботи йде ×0,75 (§8.6, §4.1, рішення автора 2026-11-02;
   // раніше відключення інтернету зупиняло пошук — перевірка модифікаторів 2026-10-28).
@@ -64,6 +74,7 @@ export const DAY_PAIRS: readonly Pair[] = [
   pair("sick", "vigor", "personal", "any"),
   pair("mom-call", "mom-food", "personal", "any"),
   pair("traffic", "empty-roads", "city", "any"),
+  pair("courier-delay", "free-delivery", "city", "any"),
   pair("food-price-up", "pet-sale", "city", "cat"),
 ];
 
@@ -78,13 +89,19 @@ const SPECIAL: readonly { id: string; when: When; group: Pair["group"] }[] = [
  * 2026-10-29, `GENERAL_REVIEW.md`, А14: без котів тиждень із ними був порожнім). «Хвиля спеки ↔ Похолодання» — тижневі «Спека» й
  * «Холод», а ті бувають лише з котом.
  */
-export const WEEK_PAIRS: readonly { hard: string; easy: string; when: "any" | "work" | "cat" | "fertile" }[] = [
+export const WEEK_PAIRS: readonly { hard: string; easy: string; when: "any" | "work" | "cat" | "fertile" | "furry" }[] = [
   { hard: "deadline-week", easy: "quiet-week", when: "work" },
   { hard: "crunch", easy: "vacation", when: "work" },
   { hard: "cat-march", easy: "calm-season", when: "fertile" },
   { hard: "heat-wave", easy: "cold-snap", when: "cat" },
   { hard: "cat-flu", easy: "cat-prevention", when: "cat" },
   { hard: "human-flu", easy: "human-prevention", when: "any" },
+  { hard: "molting", easy: "winter-coat", when: "furry" },
+  { hard: "autumn-appetite", easy: "cat-diet", when: "cat" },
+  { hard: "vet-prices", easy: "spay-program", when: "cat" },
+  { hard: "ice", easy: "new-asphalt", when: "any" },
+  { hard: "price-rise", easy: "black-friday", when: "any" },
+  { hard: "quarterly-report", easy: "fun-project", when: "work" },
 ];
 
 /** Чи діє модифікатор: дня чи тижня (тижневі «Спека» й «Холод» — цілий тиждень). */
@@ -104,6 +121,9 @@ function contradicts(week: string | null, id: string, group: Pair["group"]): boo
   if (week === "quiet-week" && id === "deadline") return true;
   if ((week === "heat-wave" || week === "cold-snap") && (id === "heat" || id === "cold")) return true;
   if (week === "human-prevention" && (id === "sick" || id === "vigor")) return true;
+  if (week === "ice" && id === "heat") return true;
+  if (week === "price-rise" && id === "pet-sale") return true;
+  if (week === "black-friday" && id === "food-price-up") return true;
   return false;
 }
 
@@ -128,6 +148,10 @@ function fits(state: GameState, day: number, when: When): boolean {
       return !weekend && working;
     case "weekend-cat":
       return weekend && cats;
+    case "cats2":
+      return state.cats.filter((c) => c.away === null && !isNewborn(c) && !isAdapting(state, c)).length >= 2;
+    case "unemployed":
+      return !working;
   }
 }
 
@@ -156,7 +180,15 @@ export function chooseWeekModifier(state: GameState, week: number): string | nul
   const hard = rng.chance(MODIFIERS.hardShare[state.difficulty]);
   const order = shuffled(rng, WEEK_PAIRS.length);
   const fits = (when: (typeof WEEK_PAIRS)[number]["when"]): boolean =>
-    when === "work" ? !state.job.unemployed : when === "cat" ? state.cats.length > 0 : when === "fertile" ? hasFertileFemale(state) : true;
+    when === "work"
+      ? !state.job.unemployed
+      : when === "cat"
+        ? state.cats.length > 0
+        : when === "fertile"
+          ? hasFertileFemale(state)
+          : when === "furry"
+            ? hasFurryCat(state)
+            : true;
   const chosen = order.map((i) => WEEK_PAIRS[i]!).find((p) => fits(p.when));
   if (!chosen) return null;
   return hard ? chosen.hard : chosen.easy;
@@ -350,10 +382,11 @@ export function payFactor(state: GameState): number {
   return MODIFIERS.pay[state.modifiers.day ?? ""] ?? 1;
 }
 
-/** Пошук роботи за годину (§8.6): «Планове відключення» й «Швидкий інтернет» (§4.1). */
+/** Пошук роботи за годину (§8.6): «Планове відключення», «Швидкий інтернет», «Рекрутери мовчать», «Ярмарок вакансій» (§4.1). */
 export function searchFactor(state: GameState): number {
   if (powerOut(state)) return MODIFIERS.outage.search;
-  return active(state, "fast-internet") ? MODIFIERS.fastInternet.search : 1;
+  if (active(state, "fast-internet")) return MODIFIERS.fastInternet.search;
+  return MODIFIERS.search[state.modifiers.day ?? ""] ?? 1;
 }
 
 /** У скільки разів довше готує плита (§8.7): без світла — газовий пальник (`MODIFIERS.outage.cook`), і підгорає страва так само пізніше. */
@@ -417,9 +450,42 @@ export const toOffice = (state: GameState): boolean => state.trip?.destination =
 export const trafficFactor = (state: GameState): number => MODIFIERS.traffic[state.modifiers.day ?? ""] ?? 1;
 /** Довжина дороги (§8.5): «Затори» подовжують, «Порожні дороги» скорочують. */
 export const roadFactor = (state: GameState): number => MODIFIERS.road[state.modifiers.day ?? ""] ?? 1;
+/** Ціна запасу (§6.4): корм — подія дня, усі запаси — тиждень «Ціни ростуть» / «Чорна п'ятниця». */
 export function priceFactor(state: GameState, product: string): number {
-  return product === "catFood" || product === "sterileFood" ? (MODIFIERS.catFoodPrice[state.modifiers.day ?? ""] ?? 1) : 1;
+  const day = product === "catFood" || product === "sterileFood" ? (MODIFIERS.catFoodPrice[state.modifiers.day ?? ""] ?? 1) : 1;
+  return day * weekPriceFactor(state);
 }
+
+/** Ціни запасів і речей тижня (§6.4): «Ціни ростуть» / «Чорна п'ятниця»; послуг і комунальних не стосується. */
+export const weekPriceFactor = (state: GameState): number => MODIFIERS.week.prices[state.modifiers.week ?? ""] ?? 1;
+
+/** Ріст потреби уваги котів (§9.12): «Коти-липучки» / «Котячі справи». */
+export const attentionFactor = (state: GameState): number => MODIFIERS.attention[state.modifiers.day ?? ""] ?? 1;
+
+/** Ріст голоду котів (§9.3): «Осінній жор» / «Котяча дієта». */
+export const appetiteFactor = (state: GameState): number => MODIFIERS.week.appetite[state.modifiers.week ?? ""] ?? 1;
+
+/** Шерсть від кота (§8.7): «Линька» / «Зимове хутро». */
+export const sheddingFactor = (state: GameState): number => MODIFIERS.week.shedding[state.modifiers.week ?? ""] ?? 1;
+
+/** Ціна послуги ветеринара (§8.5): «Нові ціни у ветклініці» — усі; «Програма стерилізації» — огляд і стерилізація. */
+export function vetPriceFactor(state: GameState, service: "exam" | "treat" | "sterilize"): number {
+  const week = state.modifiers.week;
+  if (week === "spay-program" && service === "treat") return 1;
+  return MODIFIERS.week.vet[week ?? ""] ?? 1;
+}
+
+/** Години доставки замовленого зараз (§6.4): «Кур'єри не встигають». */
+export const deliveryHoursFactor = (state: GameState): number => MODIFIERS.delivery[state.modifiers.day ?? ""] ?? 1;
+
+/** Доставка сьогодні безкоштовна (§6.4): «Безкоштовна доставка». */
+export const deliveryFree = (state: GameState): boolean => state.modifiers.day === "free-delivery";
+
+/** Зчеплення в гонці (§8.5): гальмо й перестроювання — «Ожеледиця» / «Новий асфальт». */
+export const gripFactor = (state: GameState): number => MODIFIERS.week.grip[state.modifiers.week ?? ""] ?? 1;
+
+/** Здоровий глузд за годину роботи (§8.1): «Квартальний звіт» / «Цікавий проєкт»; пошуку роботи не стосується. */
+export const workSanityFactor = (state: GameState): number => MODIFIERS.week.workSanity[state.modifiers.week ?? ""] ?? 1;
 
 /** Шанс заразних хвороб котів (§9.5): «Котячий грип» чи «Тиждень котячої профілактики». */
 export function catIllnessFactor(state: GameState): number {

@@ -8,7 +8,7 @@ import { breedById, MIXED } from "../sim/breeds";
 import { diseaseMedicine, dosedToday } from "../sim/diseases";
 import { giveAwayBlocker } from "../sim/farewell";
 import { visibility } from "../sim/knowledge";
-import { WEEK_PAIRS } from "../sim/modifiers";
+import { hasFurryCat, WEEK_PAIRS } from "../sim/modifiers";
 import { hasFertileFemale, inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
 import { DEFAULT_NAME } from "../sim/game";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
@@ -78,13 +78,14 @@ const isTouch = (): boolean => window.matchMedia("(pointer: coarse)").matches;
 /**
  * Чи показує титулка модифікатор тижня (§4.1): того, що вже не про персонажа, — ні. Робочого — безробітному, котячого — коли
  * котів немає (останній помер чи пішов, коли тиждень уже обрано), «Котячого березня» й «Спокійного сезону» — без нестерилізованої
- * дорослої кішки. Погода — «Хвиля спеки» й «Похолодання» — лишається: і без котів вона змінює гігієну персонажа.
+ * дорослої кішки, «Линьки» й «Зимового хутра» — без кота з шерстю. Погода — «Хвиля спеки» й «Похолодання» — лишається: і без котів вона змінює гігієну персонажа.
  */
 function weekShown(state: GameState, id: string): boolean {
   const pair = WEEK_PAIRS.find((p) => p.hard === id || p.easy === id);
   if (pair?.when === "work") return !state.job.unemployed;
   if (pair?.when === "cat") return state.cats.length > 0 || id === "heat-wave" || id === "cold-snap";
   if (pair?.when === "fertile") return hasFertileFemale(state);
+  if (pair?.when === "furry") return hasFurryCat(state);
   return true;
 }
 

@@ -1103,6 +1103,22 @@ export const MODIFIERS = {
   show: { fee: 30, mood: -5, pedigree: { pure: 0.5, half: 0.25 }, luck: 0.3, prizes: [{ score: 1, money: 300, sanity: 10 }, { score: 0.8, money: 150, sanity: 5 }, { score: 0.6, money: 60, sanity: 0 }] },
   /** × репутація за годину посади. */
   officeAbsent: -5,
+  /** «Чужий кіт під вікном»: настрій за годину на підвіконні (замість радості, §9.12 «Вікно»). */
+  strayCat: { moodPerHour: -2 },
+  /** «Голуби на карнизі»: вага вікна, настрій і гра на підвіконні — × для «Вікна» від 0. */
+  pigeons: { weight: 1.5, mood: 1.5, play: 1.5 },
+  /** «Котячі розбірки»: пауза шипіння ×, бійка ×, межа падіння стосунків пари за день. */
+  catFeud: { hissPause: 0.5, fight: 1.5, maxDrop: 20 },
+  /** «Мир у зграї»: пауза шипіння ×, вилизування ×, згода на гру ×, нічне зближення ×. */
+  catPeace: { hissPause: 2, groom: 1.5, accept: 1.3, nightly: 1.5 },
+  /** «Коти-липучки» / «Котячі справи»: ріст потреби уваги ×. */
+  attention: { "clingy-cats": 1.5, "cat-business": 0.6 } as Record<string, number>,
+  /** «Валер'янка в під'їзді»: шанс утекти у відчинені двері + `escape` × (1 + `catnipStep` × «Котяча м'ята»). */
+  valerian: { escape: 0.15, catnipStep: 0.5 },
+  /** «Кур'єри не встигають»: доставка замовленого сьогодні × годин (§6.4). */
+  delivery: { "courier-delay": 2 } as Record<string, number>,
+  /** «Рекрутери мовчать» / «Ярмарок вакансій»: години пошуку роботи × (§8.6). */
+  search: { "hiring-freeze": 0.5, "job-fair": 2 } as Record<string, number>,
   /** Модифікатори тижня; `vacationPayHours` — годин оплати. */
   week: {
     decay: { "deadline-week": 1.5, "quiet-week": 0.7 } as Record<string, number>,
@@ -1112,6 +1128,19 @@ export const MODIFIERS = {
     calmPregnancy: 0.1,
     catIllness: { "cat-flu": 1.5, "cat-prevention": 0.5 } as Record<string, number>,
     humanFlu: 0.1,
+    /** «Линька» / «Зимове хутро»: шерсть від кота × (§8.7). */
+    shedding: { molting: 1.6, "winter-coat": 0.5 } as Record<string, number>,
+    /** «Осінній жор» / «Котяча дієта»: ріст голоду котів ×; у дієту зайва вага йде × швидше. */
+    appetite: { "autumn-appetite": 1.25, "cat-diet": 0.8 } as Record<string, number>,
+    dietWeight: 1.5,
+    /** «Нові ціни у ветклініці» — усі послуги ветеринара; «Програма стерилізації» — огляд і стерилізація. */
+    vet: { "vet-prices": 1.3, "spay-program": 0.6 } as Record<string, number>,
+    /** «Ожеледиця» / «Новий асфальт»: гальмо й перестроювання в гонці × (§8.5). */
+    grip: { ice: 0.6, "new-asphalt": 1.25 } as Record<string, number>,
+    /** «Ціни ростуть» / «Чорна п'ятниця»: ціни запасів і речей × (§6.4). */
+    prices: { "price-rise": 1.2, "black-friday": 0.8 } as Record<string, number>,
+    /** «Квартальний звіт» / «Цікавий проєкт»: здоровий глузд за годину роботи × (§8.1). */
+    workSanity: { "quarterly-report": 1.25, "fun-project": 0.8 } as Record<string, number>,
   },
 } as const;
 /** Середній настрій щасливого кота; кота, що страждав, — нижче `SUFFERED_LIFE` (§4.2). */

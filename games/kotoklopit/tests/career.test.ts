@@ -182,7 +182,8 @@ describe("захист першого тижня для репутації (§8.
     expect(events.some((e) => e.type === "career")).toBe(false);
     expect(save.current.job.reputation).toBe(FIRST_WEEK_PROTECTION.reputation);
     expect(save.current.day).toBe(FIRST_WEEK_PROTECTION.days);
-    // Восьмий день — захисту немає: перший же штраф звільняє.
+    // Восьмий день — захисту немає: перший же штраф звільняє (день — звичайний робочий, а не «Вихідний у будень»).
+    save.current.modifiers.day = null;
     liveDay(save);
     expect(save.current.job.unemployed).toBe(true);
   });

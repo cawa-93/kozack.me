@@ -89,7 +89,7 @@ describe("вибір модифікаторів: перевірка модифі
 
   it("частка важкого боку — за складністю й тоді, коли в пари сьогодні можливий лише один бік", () => {
     const save = newGame({ address: "she", difficulty: "hard", seed: 14 });
-    const hard = new Set(["deadline", "meeting", "pay-delay", "reprimand", "work-saturday", "outage", "inspection", "construction-dust", "guests", "noisy-neighbors", "sick", "mom-call", "traffic", "renovation", "food-price-up", "full-moon", "festival", "heat"]);
+    const hard = new Set(["deadline", "meeting", "pay-delay", "reprimand", "work-saturday", "outage", "inspection", "construction-dust", "guests", "noisy-neighbors", "sick", "mom-call", "traffic", "renovation", "food-price-up", "full-moon", "festival", "heat", "hiring-freeze", "stray-cat", "cat-feud", "clingy-cats", "valerian", "courier-delay"]);
     let hardCount = 0;
     let total = 0;
     for (let seed = 0; seed < 3000; seed++) {
@@ -372,7 +372,7 @@ describe("вибір модифікаторів (§4.1)", () => {
   });
 
   describe("котячі модифікатори тижня — лише коли є кіт (рішення автора 2026-10-29, А14)", () => {
-    const CAT_WEEKS = ["cat-march", "calm-season", "heat-wave", "cold-snap", "cat-flu", "cat-prevention"];
+    const CAT_WEEKS = ["cat-march", "calm-season", "heat-wave", "cold-snap", "cat-flu", "cat-prevention", "molting", "winter-coat", "autumn-appetite", "cat-diet", "vet-prices", "spay-program"];
     // Доросла нестерилізована кішка: «Котячий березень ↔ Спокійний сезон» — лише з нею (§4.1).
     const withCat = (save: Save): void =>
       addCat(save.current, createCat(save.current, createRng(3), { source: "shelter", ageWeeks: 40, sex: "female", at: { x: 5.5, y: 8.5 } }));
@@ -391,10 +391,12 @@ describe("вибір модифікаторів (§4.1)", () => {
       withCats.forEach((id, i) => {
         if (id === null || !CAT_WEEKS.includes(id)) expect(without[i]).toBe(id);
       });
-      // Безробітному без котів — лише «Людський грип ↔ Тиждень профілактики».
+      // Безробітному без котів — лише тижні «будь-коли».
       const jobless = game();
       jobless.current.job.unemployed = true;
-      expect(new Set(weeks(jobless).filter((id) => id !== null))).toEqual(new Set(["human-flu", "human-prevention"]));
+      expect(new Set(weeks(jobless).filter((id) => id !== null))).toEqual(
+        new Set(["human-flu", "human-prevention", "ice", "new-asphalt", "price-rise", "black-friday"]),
+      );
     });
 
     it("ніч на понеділок обирає тиждень за станом на вечір неділі: кошеня з притулку, що прийшло вночі, котячого тижня не дає", () => {
@@ -440,7 +442,7 @@ describe("вибір модифікаторів (§4.1)", () => {
 
   it("на переграванні модифікатор дня той самий, якщо стан лише відсіяв інші варіанти: лікарняний, звільнення, менше котів і вчорашній не зсувають вибору (§6.1, загальна ревізія 2026-10-29)", () => {
     const work = new Set(["deadline", "lull", "meeting", "lunch", "pay-delay", "bonus", "reprimand", "praise", "work-saturday", "midweek-off", "office"]);
-    const catOnly = new Set(["full-moon", "rain", "festival", "quiet-evening", "home-vet", "heat", "cold", "friend-help", "quiet-night", "food-price-up", "pet-sale", "show"]);
+    const catOnly = new Set(["full-moon", "rain", "festival", "quiet-evening", "home-vet", "heat", "cold", "friend-help", "quiet-night", "food-price-up", "pet-sale", "show", "stray-cat", "pigeons", "cat-feud", "cat-peace", "clingy-cats", "cat-business", "valerian", "stair-dog"]);
     /** Гра з котом (усі модифікатори можливі), потім зміна стану. */
     const pick = (seed: number, setup: (save: Save) => void = () => {}): string | null => {
       const save = game();
@@ -462,8 +464,9 @@ describe("вибір модифікаторів (§4.1)", () => {
       // Учора був інший модифікатор — сьогоднішній не змінюється.
       const other = base === "rain" ? "renovation" : "rain";
       expect(pick(seed, (save) => (save.current.modifiers.day = other))).toBe(base);
-      // Безробітному «Швидкий інтернет» неможливий (лише в робочий день) — решта та сама.
-      if (base !== "fast-internet") expect(pick(seed, (save) => ((save.current.modifiers.day = null), (save.current.job.unemployed = true)))).toBe(base);
+      // Безробітному додається «Рекрутери мовчать ↔ Ярмарок вакансій»: вибір той самий, якщо ця пара не стала раніше.
+      const jobless = pick(seed, (save) => ((save.current.modifiers.day = null), (save.current.job.unemployed = true)));
+      if (jobless !== "hiring-freeze" && jobless !== "job-fair") expect(jobless).toBe(base);
       // Котів не стало — не котячий модифікатор той самий.
       if (!catOnly.has(base)) expect(pick(seed, (save) => ((save.current.modifiers.day = null), (save.current.cats = [])))).toBe(base);
     }
