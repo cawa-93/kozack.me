@@ -12,6 +12,7 @@ import { createRng } from "../src/sim/rng";
 import { absoluteMinute } from "../src/sim/time";
 import { hourlyRate, positionOf } from "../src/sim/work";
 import { DIFFICULTY } from "../src/sim/config";
+import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { PERSON_STATE_ABOUT, personStateTitle } from "../src/texts";
 import { catFacts } from "../src/ui/cards";
 import { personStates, type PersonStateId } from "../src/view/personstates";
@@ -50,6 +51,13 @@ describe("стани персонажа (§8.4)", () => {
     }
     expect(personStateTitle("rested", "he")).toBe("Виспався");
     expect(personStateTitle("cold", "she")).toBe("Застуда");
+  });
+
+  it("сценарій «Усі стани персонажа» — усі вісім станів, що бувають разом: стільки ж іконок, скільки місць на панелі", () => {
+    const scenario = FILE_SCENARIOS["person-states"];
+    if (!scenario) throw new Error("немає сценарію");
+    const states = personStates(applyScenario(scenario).current);
+    expect(states).toEqual(["drowsy", "sleepDebt", "jobSearch", "sickLeave", "noPower", "cold", "injury", "exhaustion"]);
   });
 
   it("ставка за годину — посада × заробіток складності, без поправок дня", () => {
