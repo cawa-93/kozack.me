@@ -450,6 +450,15 @@ const SIT_SLOTS: Slots = {
 };
 
 /**
+ * Сів на підлогу (падає від виснаження): ноги лягають уперед, як стегно сидячи, — спідниця й поділ верху в стані `sit`, щойно
+ * таз опустився нижче за довжину поділу (стоячи поділ пішов би під підлогу).
+ */
+const FLOOR_SLOTS: Slots = {
+  skirt: { frame: [{ t: 0, v: "stand" }, { t: 600, v: "sit" }] },
+  "top-hem": { frame: [{ t: 0, v: "stand" }, { t: 600, v: "sit" }] },
+};
+
+/**
  * Ближня рука над річчю в гнізді `held`: гніздо лежить над рукою (`PERSON_RIG`: тарілку, совок і страву несуть на кулаці), а
  * телефон біля вуха кулак тримає ззовні — з камери телефон визирає з-під руки на щоці.
  */
@@ -1127,7 +1136,7 @@ export const PERSON_CHORES = defineAnims(PERSON_RIG, {
   door: anim(MS.door, false, door),
   phone: anim(2000, true, phone, OVER_HELD),
   fallAsleep: anim(PROGRESS_MS, false, fallAsleep),
-  collapse: anim(PROGRESS_MS, false, collapse),
+  collapse: anim(PROGRESS_MS, false, collapse, FLOOR_SLOTS),
   take: anim(MS.take, false, take),
   put: anim(MS.put, false, put),
   trash: anim(MS.trash, false, trash),

@@ -696,6 +696,16 @@ const SQUAT = stand(0, 0.54, 1.1);
 const SQUAT_BACK = stand(0, 0.8, 1.05);
 
 /**
+ * Спідниця й поділ верху в присіді — стан `squat` (`art/STYLE.md`, «Довжина»): нога вкорочена майже вдвічі, а тулуб
+ * нахилений, тож поділ стану `stand` (він іде за тулубом) стирчав би назад. `from`…`to` — коли стан `squat`, мс: посередині
+ * переходів, де нахил ≈ пів найбільшого (кадр міняється стрибком); без них — уся анімація.
+ */
+function squatSlots(from = 0, to?: number): NonNullable<PersonAnim["slots"]> {
+  const frame = [...(from > 0 ? [k(0, "stand")] : []), k(from, "squat"), ...(to === undefined ? [] : [k(to, "stand")])];
+  return { skirt: { frame }, "top-hem": { frame } };
+}
+
+/**
  * Гладить: присів глибоко й нахилився, кисть ≈ на 28 од. над підлогою (спереду) — між спинкою дорослого кота (≈ 32) і
  * кошеняти (≈ 17…24), тож кіт, чия спинка під кистю, стоїть лише на ≈ 4 од. нижче на екрані (дорослий) чи на ≈ 4…11 вище
  * (кошеня), ніж ноги персонажа, — на підлозі поруч, а не висить і не відходить углиб. Ззаду кіт перед персонажем — від камери, вище на екрані: кисть вища (≈ 36), і кіт будь-якого
@@ -981,6 +991,7 @@ export const PERSON_MOVE = defineAnims(PERSON_RIG, {
     loop: true,
     bones: petTracks(PET),
     views: { back: { bones: petTracks(PET_BACK) } },
+    slots: squatSlots(),
   },
 
   /**
@@ -1275,6 +1286,7 @@ export const PERSON_MOVE = defineAnims(PERSON_RIG, {
         ]),
       },
     },
+    slots: squatSlots(70, 305),
   },
 
   /**
@@ -1301,6 +1313,7 @@ export const PERSON_MOVE = defineAnims(PERSON_RIG, {
         ]),
       },
     },
+    slots: squatSlots(90, 320),
   },
 });
 
