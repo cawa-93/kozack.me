@@ -10,17 +10,18 @@
 // клітинки більшу за слід), контур і поле 4 (§2). Висота над pivot без поля 8 — це `ITEM_LOOKS` у
 // `src/view/world/objects.ts` (над нею — бабл), тож змінюють їх разом.
 //
-// Стани з кормом: `<корм>-<рівень>`, де корм — `cheap` («Щодня»), `premium` («Гурман») чи `sterile` (для стерилізованих,
-// зеленуватий, §9.8), рівень — скільки порцій (`BOWL_CAPACITY` 2) чи `low` / `full` у годівниці.
+// Стани з кормом: `<корм>-<рівень>`, де корм — `cheap` («Щодня»), `premium` («Гурман»), `sterile` («Щодня» для
+// стерилізованих, зеленуватий, §9.8) чи `sterile-premium` («Гурман» для стерилізованих: темніша зелень із помаранчевими
+// шматочками); рівень — скільки порцій (`BOWL_CAPACITY` 2) чи `low` / `full` у годівниці. Кожна якість корму — свій вигляд.
 
 import type { ArtEntry } from "../types";
 import { floorItem } from "./lib/geometry";
 
 const QUALITIES = ["cheap", "premium"] as const;
 /** Корм у мисці: порожньо, далі вид корму × порції (1 — до порції, 2 — повна). */
-const BOWL_FOOD = ["empty", "cheap-1", "cheap-2", "premium-1", "premium-2", "sterile-1", "sterile-2"] as const;
+const BOWL_FOOD = ["empty", "cheap-1", "cheap-2", "premium-1", "premium-2", "sterile-1", "sterile-2", "sterile-premium-1", "sterile-premium-2"] as const;
 /** Корм у бункері годівниці. */
-const FEEDER_FOOD = ["empty", "cheap-low", "cheap-full", "premium-low", "premium-full", "sterile-low", "sterile-full"] as const;
+const FEEDER_FOOD = ["empty", "cheap-low", "cheap-full", "premium-low", "premium-full", "sterile-low", "sterile-full", "sterile-premium-low", "sterile-premium-full"] as const;
 /**
  * Наповнювач у лотку (`LitterItem.litter`): немає (`empty`; `empty-dirty` — без наповнювача кіт уже сходив, такий лоток
  * брудний після першого ж відвідування, `LITTER_CAPACITY.none`); глиняний (`cheap`) чи силікагелевий (`premium`) — чистий,
@@ -120,9 +121,10 @@ export const MANIFEST: readonly ArtEntry[] = [
   // страву, на склі — паперова наліпка із сердечком; готова страва з холодильника.
   { id: "item/dish/mom", ...floorItem(42, 44, 8) },
   // Совок котячого корму (§9.12): металева чашка з гіркою гранул і ручкою праворуч — «Щодня» (`cheap`, світло-коричневі),
-  // «Гурман» (`premium`, червонясті) чи для стерилізованих (`sterile`, зеленуваті, §9.8). Несуть від шафки чи бака до
+  // «Гурман» (`premium`, червонясті) чи для стерилізованих (`sterile`, зеленуваті, §9.8; «Гурман» — `sterile-premium`, темніші з
+  // помаранчевими шматочками). Несуть від шафки чи бака до
   // миски. Pivot — низ чашки посередині (ручка праворуч, тож не по центру полотна).
-  { id: "item/scoop", size: { w: 44, h: 37 }, pivot: { x: 16, y: 29 }, states: ["cheap", "premium", "sterile"] },
+  { id: "item/scoop", size: { w: 44, h: 37 }, pivot: { x: 16, y: 29 }, states: ["cheap", "premium", "sterile", "sterile-premium"] },
   // Вертикальний пилосос у руках (рішення автора 2026-11-02, GAME_DESIGN §8.7 «Пилосос у руках»; пакет «Арт пилососа»): той
   // самий, що стоїть на підлозі (`env/vacuum`), нахилений ручкою до персонажа; pivot — хват ручки-петлі (гніздо `held`,
   // кулак накладки `holdVacuum`), щітка на підлозі попереду. Єдина річ у руках із ракурсами: щітка лежить на підлозі, а

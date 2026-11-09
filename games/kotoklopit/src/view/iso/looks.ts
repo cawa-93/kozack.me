@@ -378,9 +378,17 @@ export function trinketFrame(kind: TrinketKind, fallen: boolean): IsoFrame {
 export function bowlFrame(item: BowlItem, eaten = 0): IsoFrame {
   const food = item.food - (item.half === true ? 0.5 : 0) - eaten;
   if (food <= 0.02) return frame(`item/bowl/${item.quality}`, "empty");
-  const kind = item.sterile ? "sterile" : (item.foodQuality ?? "cheap");
+  const kind = foodLook(item.sterile, item.foodQuality);
   const level = food > BOWL_CAPACITY / 2 ? 2 : 1;
   return frame(`item/bowl/${item.quality}`, `${kind}-${level}`);
+}
+
+/**
+ * Вигляд корму в мисці, годівниці й совку: кожна якість — своя, і для стерилізованих теж (`art/item/bowl/*.svg`).
+ */
+export function foodLook(sterile: boolean, quality: Quality | null): "cheap" | "premium" | "sterile" | "sterile-premium" {
+  if (sterile) return quality === "premium" ? "sterile-premium" : "sterile";
+  return quality ?? "cheap";
 }
 
 /** Миска з водою (§9.12): порожня, мало, половина, повна (`WATER_CAPACITY` ковтків). */
@@ -433,7 +441,7 @@ export function itemFrame(state: GameState, item: HomeItem): IsoFrame {
 /** Автогодівниця (§9.12): що у віконці бункера — вид корму й мало/повно (до половини — `low`); порожня — `empty`. */
 export function feederFrame(feeder: Feeder): IsoFrame {
   if (feeder.food <= 0) return frame(`item/feeder/${feeder.quality}`, "empty");
-  const kind = feeder.sterile ? "sterile" : (feeder.foodQuality ?? "cheap");
+  const kind = foodLook(feeder.sterile, feeder.foodQuality);
   const level = feeder.food / FEEDER_CAPACITY[feeder.quality] > 0.5 ? "full" : "low";
   return frame(`item/feeder/${feeder.quality}`, `${kind}-${level}`);
 }
