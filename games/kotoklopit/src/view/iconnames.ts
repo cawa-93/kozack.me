@@ -153,6 +153,10 @@ export const ICON_NAMES = [
   "rested",
   "job-search",
   "sick-leave",
+  // Речі квартири, що є завжди, у вкладці «Дім» телефона (§8.4): радіо, комп'ютер, віник із совком.
+  "radio",
+  "computer",
+  "broom",
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];

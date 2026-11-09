@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/radio — приймач на тумбочці вітальні: радіо в списку речей вкладки «Дім» телефона (§8.10, §8.4).
+size 64×64; pivot (32, 32) — центр; points — немає. Без станів і шарів: один кадр у готових кольорах; контур 6 / важкий низ 8,5 / дрібне й лінії 3,5.
+Той самий приймач, що в квартирі (env/radio): бірюзовий корпус (teal, світліша смуга згори), темний динамік із ґраткою ліворуч, шкала частот paper із червоною стрілкою праворуч, дві темні ручки під нею й антена навскіс.
+-->
+<defs><clipPath id="icon-radio-body"><path d="M15 23H49Q55 23 55 29V47Q55 53 49 53H15Q9 53 9 47V29Q9 23 15 23Z"/></clipPath></defs>
+<g id="p-antenna">
+<path d="M43 23L51 9.5" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round"/>
+<circle cx="51.5" cy="8.5" r="3" fill="#6d6266" stroke="#2e1f29" stroke-width="3"/>
+</g>
+<g id="p-body">
+<path d="M15 23H49Q55 23 55 29V47Q55 53 49 53H15Q9 53 9 47V29Q9 23 15 23Z" fill="#5f9089"/>
+<g clip-path="url(#icon-radio-body)"><path d="M4 18H60V29.5H4Z" fill="#8bb3aa"/><path d="M4 47.5Q32 50.5 60 47.5V58H4Z" fill="#3f2541" fill-opacity="0.16"/></g>
+</g>
+<g id="p-speaker">
+<circle cx="21.5" cy="38.5" r="8" fill="#4b4146"/>
+<path d="M16.5 35.5H26.5M15.5 38.5H27.5M16.5 41.5H26.5" fill="none" stroke="#6d6266" stroke-width="2" stroke-linecap="round"/>
+<circle cx="21.5" cy="38.5" r="8" fill="none" stroke="#2e1f29" stroke-width="3.5"/>
+</g>
+<g id="p-dial">
+<path d="M34 31.5H48V39.5H34Z" fill="#e0d4b9"/>
+<path d="M41.5 32.5V38.5" fill="none" stroke="#c4524b" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M34 31.5H48V39.5H34Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linejoin="round"/>
+<circle cx="37" cy="45.5" r="2.6" fill="#4b4146" stroke="#2e1f29" stroke-width="2.5"/>
+<circle cx="45" cy="45.5" r="2.6" fill="#4b4146" stroke="#2e1f29" stroke-width="2.5"/>
+</g>
+<g id="p-ink">
+<path d="M15 23H49Q55 23 55 29V47Q55 53 49 53H15Q9 53 9 47V29Q9 23 15 23Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linejoin="round"/>
+<path d="M55 47Q55 53 49 53H15Q9 53 9 47" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

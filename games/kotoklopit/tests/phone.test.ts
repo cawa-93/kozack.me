@@ -96,6 +96,18 @@ describe("рахунок за комунальні у «Домі» (§6.4)", () 
     return undefined;
   };
 
+  it("сплачувати нічого — на місці рахунку «Усі рахунки сплачено»; під ним радіо, комп'ютер і віник, а з пилососом — без віника", () => {
+    const state = newGame({ address: "she", difficulty: "normal", seed: 8 }).current;
+    const parts = phoneCard(state, "home", handlers).body.filter((p): p is HTMLElement => typeof p !== "string") as unknown as FakeElement[];
+    expect(parts.find((p) => p.className === "bill-empty")?.textContent).toBe("Усі рахунки сплачено");
+    const names = (): string => (phoneCard(state, "home", handlers).body.map((p) => (typeof p === "string" ? p : (p as unknown as FakeElement).textContent)).join("|"));
+    for (const name of ["Радіо", "Комп'ютер", "Віник із совком"]) expect(names()).toContain(name);
+    state.home.appliances.vacuum = "cheap";
+    expect(names()).not.toContain("Віник із совком");
+    state.home.utilitiesBill = 61;
+    expect(names()).not.toContain("Усі рахунки сплачено");
+  });
+
   it("сплачувати нічого — рахунку немає; є рахунок — сума тижня й кнопка з нею; без грошей — неактивна", () => {
     const state = newGame({ address: "she", difficulty: "normal", seed: 8 }).current;
     expect(bill(state)).toBeUndefined();

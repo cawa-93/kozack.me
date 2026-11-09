@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/broom — віник із совком: інструмент для прибирання в списку речей вкладки «Дім» телефона, поки пилососа немає (§8.7, §8.4).
+size 64×64; pivot (32, 32) — центр; points — немає. Без станів і шарів: один кадр у готових кольорах; контур 6 / важкий низ 8,5 / дрібне й лінії 3,5.
+Той самий віник, що в руках (item/broom): дерев'яний держак навскіс, червона обв'язка й солом'яний віхоть віялом донизу ліворуч; праворуч на підлозі — бірюзовий совок (teal, світлий край).
+Не пилосос (vacuum) і не робот-пилосос (robot-vacuum).
+-->
+<defs><clipPath id="icon-broom-straw"><path d="M22.5 33.5L31.5 37.5Q30 45.5 27 54Q16 55 8.5 51Q15 42 22.5 33.5Z"/></clipPath></defs>
+<g id="p-pan">
+<path d="M34.5 41H52L54.5 54H32Z" fill="#5f9089"/>
+<path d="M34.5 41H52L52.6 44.5H33.9Z" fill="#8bb3aa"/>
+<path d="M34.5 41H52L54.5 54H32Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linejoin="round"/>
+<path d="M32 54H54.5" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round"/>
+</g>
+<g id="p-handle">
+<path d="M42 9.5L29 34.5" fill="none" stroke="#2e1f29" stroke-width="9" stroke-linecap="round"/>
+<path d="M42 9.5L29 34.5" fill="none" stroke="#9a6a47" stroke-width="3.5" stroke-linecap="round"/>
+</g>
+<g id="p-straw">
+<path d="M22.5 33.5L31.5 37.5Q30 45.5 27 54Q16 55 8.5 51Q15 42 22.5 33.5Z" fill="#ddc391"/>
+<g clip-path="url(#icon-broom-straw)"><path d="M26 38L18 54M29 39.5L23.5 55.5M23 36.5L13 51.5" fill="none" stroke="#c9a872" stroke-width="2.5" stroke-linecap="round"/><path d="M4 50Q18 56 34 52V60H4Z" fill="#3f2541" fill-opacity="0.16"/></g>
+<path d="M22.5 33.5L31.5 37.5Q30 45.5 27 54Q16 55 8.5 51Q15 42 22.5 33.5Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linejoin="round"/>
+<path d="M27 54Q16 55 8.5 51" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round"/>
+<path d="M21.5 34.5L32 39.2" fill="none" stroke="#c4524b" stroke-width="4" stroke-linecap="round"/>
+<path d="M20.5 31.8L33.5 37.6M19 36.5L31 41.8" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round"/>
+</g>
+</svg>

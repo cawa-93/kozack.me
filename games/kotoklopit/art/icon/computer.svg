@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/computer — монітор на ніжці: комп'ютер у списку речей вкладки «Дім» телефона (§8.6, §8.4).
+size 64×64; pivot (32, 32) — центр; points — немає. Без станів і шарів: один кадр у готових кольорах; контур 6 / важкий низ 8,5 / дрібне й лінії 3,5.
+Той самий монітор, що на столі у вітальні (env/computer): сіра рамка (grey-lo), увімкнений екран (світла бірюза з відблиском навскіс), зелений світлодіод у кутку, темна ніжка й сіра підставка.
+Не кіт на ноутбуці (cat-laptop: кіт улігся на клавіатуру) — просто комп'ютер.
+-->
+<defs><clipPath id="icon-computer-screen"><path d="M14 15H50V37H14Z"/></clipPath></defs>
+<g id="p-stand">
+<path d="M28 43H36V49.5H28Z" fill="#4b4146"/>
+<path d="M28 43H36V49.5H28Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linejoin="round"/>
+<path d="M21 48.5H43Q47 48.5 47 51.5Q47 54 43 54H21Q17 54 17 51.5Q17 48.5 21 48.5Z" fill="#6d6266"/>
+<path d="M21 48.5H43Q47 48.5 47 51.5Q47 54 43 54H21Q17 54 17 51.5Q17 48.5 21 48.5Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linejoin="round"/>
+<path d="M46 53Q45 54.5 43 54.5H21Q19 54.5 18 53" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round"/>
+</g>
+<g id="p-monitor">
+<path d="M13 9H51Q56 9 56 14V39Q56 44 51 44H13Q8 44 8 39V14Q8 9 13 9Z" fill="#6d6266"/>
+<path d="M14 15H50V37H14Z" fill="#8bb3aa"/>
+<g clip-path="url(#icon-computer-screen)"><path d="M18 40L36 10H44L26 40Z" fill="#d4e3dc"/><path d="M10 33Q32 35 54 33V40H10Z" fill="#3f2541" fill-opacity="0.16"/></g>
+<path d="M14 15H50V37H14Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linejoin="round"/>
+<circle cx="49.5" cy="40.5" r="1.6" fill="#7e9662"/>
+<path d="M13 9H51Q56 9 56 14V39Q56 44 51 44H13Q8 44 8 39V14Q8 9 13 9Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linejoin="round"/>
+</g>
+</svg>

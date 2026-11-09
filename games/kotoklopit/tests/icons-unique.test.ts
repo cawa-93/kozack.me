@@ -14,7 +14,7 @@ import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, CatAct, Destination, Dish, Item, Product, Save, StatName, ThingKind } from "../src/sim/types";
 import type { IconName, Mark } from "../src/view/iconnames";
-import { catAsk, DESTINATION_ICONS, DISEASE_ICONS, eventBubbles, ILLNESS_ICONS, itemIcon, MOOD_ICONS, PERSON_STATE_ICONS, PRODUCT_ICONS, refusalBubble, STAT_ICONS, UTILITIES_ICON, STATE_ICONS, stoveIcon, THING_ICONS } from "../src/view/symbols";
+import { catAsk, DESTINATION_ICONS, DISEASE_ICONS, eventBubbles, HOME_FIXTURE_ICONS, ILLNESS_ICONS, itemIcon, MOOD_ICONS, PERSON_STATE_ICONS, PRODUCT_ICONS, refusalBubble, STAT_ICONS, UTILITIES_ICON, STATE_ICONS, stoveIcon, THING_ICONS } from "../src/view/symbols";
 import { catThought, personThought } from "../src/view/thoughts";
 import { EVENTS, REFUSALS } from "./bubblecases";
 import { withCatCorner } from "./helpers";
@@ -172,6 +172,8 @@ function collectCases(): Map<string, Shown[]> {
   for (const [illness, icon] of Object.entries(ILLNESS_ICONS)) add(`illness:${illness}`, { icon });
   // Стани персонажа на панелі й у профілі телефона (§8.4).
   for (const [id, look] of Object.entries(PERSON_STATE_ICONS)) add(`person-state:${id}`, look);
+  // Речі квартири, що є завжди, у «Домі» телефона.
+  for (const [id, icon] of Object.entries(HOME_FIXTURE_ICONS)) add(`home:${id}`, { icon });
   // Пункти поїздок (§11.4 «Іконка біля назви», §8.5 «На місці — кадр парковки»): біля назви пункту в картках і на табличці на
   // даху — кожен свій, без груп одного значення.
   for (const destination of DESTINATION_LIST) add(`destination:${destination}`, { icon: DESTINATION_ICONS[destination] });

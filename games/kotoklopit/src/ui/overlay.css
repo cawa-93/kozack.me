@@ -1185,6 +1185,21 @@
   justify-self: end;
 }
 
+/* Сплачувати нічого — на місці рахунку напівпрозорий прямокутник того ж обрису з пунктирною рамкою й дрібним написом
+   посередині: видно, що рахунки з'являються тут, над речами. */
+.bill-empty {
+  display: grid;
+  place-items: center;
+  min-height: 72px;
+  margin-bottom: 12px;
+  border: 2px dashed var(--ink-soft);
+  border-radius: 6px;
+  background: rgb(224 212 185 / 0.45);
+  font: 400 15px/1.2 var(--hand);
+  color: var(--ink-soft);
+  opacity: 0.85;
+}
+
 .profile-card {
   display: flex;
   gap: 14px;

@@ -9,10 +9,10 @@ import { UTILITIES_ICON } from "../view/symbols";
 import { iconImage } from "./icons";
 import { element } from "./overlay";
 
-/** Рахунок або null, коли сплачувати нічого: тоді його немає зовсім. */
-export function billCard(state: GameState, onPay: () => void): HTMLElement | null {
+/** Рахунок; коли сплачувати нічого — напівпрозоре місце для нього: гравець бачить, де рахунки з'являтимуться. */
+export function billCard(state: GameState, onPay: () => void): HTMLElement {
   const bill = utilitiesBill(state);
-  if (bill === 0) return null;
+  if (bill === 0) return element("div", "bill-empty", BILL_TEXTS.paid);
   const { address } = state.character;
   const week = weekOf(state.day);
   const box = element("div", "bill");

@@ -554,3 +554,6 @@ export const PERSON_STATE_ICONS: Record<PersonStateId, { icon: IconName; mark?: 
   injury: { icon: ILLNESS_ICONS.injury },
   exhaustion: { icon: ILLNESS_ICONS.exhaustion },
 };
+
+/** Речі квартири, що є завжди (§8.4): рядки вкладки «Дім» телефона без «Викинути». Віник — поки пилососа немає (§8.7). */
+export const HOME_FIXTURE_ICONS = { radio: "radio", computer: "computer", broom: "broom" } as const satisfies Record<string, IconName>;

@@ -41,7 +41,12 @@ export const BILL_TEXTS = {
   payeeLabel: "Одержувач",
   payee: "ОСББ",
   pay: "Сплатити",
+  /** Напис посередині місця для рахунку, коли сплачувати нічого. */
+  paid: "Усі рахунки сплачено",
 } as const;
+
+/** Речі квартири, що є завжди (§8.4): рядки вкладки «Дім» телефона без «Викинути». */
+export const HOME_FIXTURE_TITLES = { radio: "Радіо", computer: "Комп'ютер", broom: "Віник із совком" } as const;
 
 /** Картка радіо (§8.10). */
 export const RADIO_TEXTS = {

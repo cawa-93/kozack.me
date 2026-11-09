@@ -28,6 +28,7 @@ import {
   farewellText,
   fill,
   GAME_TEXTS,
+  HOME_FIXTURE_TITLES,
   KITTEN_MESSAGE,
   LEDGER_TEXTS,
   ledgerLines,
@@ -39,7 +40,7 @@ import {
 } from "../texts";
 import { allControls, homeControls } from "./controls";
 import { creditsLink } from "./creditslink";
-import { destinationLabel, diseaseLabel, productLabel } from "./icons";
+import { destinationLabel, diseaseLabel, named, productLabel } from "./icons";
 import { element, type Card, type CardAction, type TitleSection } from "./overlay";
 import { shopCatalog, variantLabel } from "./shop";
 import { phoneStatusBar } from "./phonebar";
@@ -53,6 +54,7 @@ import { drawPortrait, portraitCanvas } from "./portrait";
 import { billCard } from "./bill";
 import { traitChips, traitHint } from "./traits";
 import { profileTab } from "./profile";
+import { HOME_FIXTURE_ICONS } from "../view/symbols";
 
 const capitalize = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
 
@@ -266,9 +268,7 @@ export function phoneCard(state: GameState, wanted: PhoneTab, handlers: PhoneHan
   const shop = tab === "shop" ? shopCatalog(state, "delivery", { checkout: handlers.checkout }) : null;
   if (shop) body.push(shop.list);
   if (tab === "home") {
-    const bill = billCard(state, handlers.payUtilities);
-    if (bill) body.push(bill);
-    body.push(myThings(state, handlers));
+    body.push(billCard(state, handlers.payUtilities), myThings(state, handlers));
   }
   if (tab === "cats") body.push(...catCards(state, handlers));
   if (tab === "album") body.push(...albumCards(state));
@@ -456,6 +456,13 @@ function albumCards(state: GameState): (string | HTMLElement)[] {
  */
 function myThings(state: GameState, handlers: PhoneHandlers): HTMLElement {
   const shop = element("div", "shop");
+  // Що є завжди (§8.4): радіо, комп'ютер і віник — без «Викинути»; куплений пилосос стоїть замість віника й викидається (§8.7).
+  const fixtures = (["radio", "computer", ...(state.home.appliances.vacuum === null ? (["broom"] as const) : [])] as const).map((id) => {
+    const row = element("div", "shop-row");
+    row.append(element("span", "shop-name", named(HOME_FIXTURE_ICONS[id], HOME_FIXTURE_TITLES[id])));
+    return row;
+  });
+  shop.append(...fixtures);
   for (const item of state.home.items) {
     const row = element("div", "shop-row");
     row.append(element("span", "shop-name", variantLabel({ thing: item.kind }, item.quality)));

@@ -21,7 +21,9 @@ import { splitIcons } from "../src/ui/icons";
 import type { Card } from "../src/ui/overlay";
 import { BOUGHT, BOUGHT_PAUSE_MS, CLEAR_CART, goodsIcon, shopCatalog, suppliesTitle, variantLabel, variantTitle } from "../src/ui/shop";
 import { PRODUCT_TITLES, plural, STORE_SECTION_TITLES } from "../src/ui/titles";
-import { iconMark } from "../src/ui/icons";
+import { iconMark, named } from "../src/ui/icons";
+import { HOME_FIXTURE_TITLES } from "../src/texts";
+import { HOME_FIXTURE_ICONS } from "../src/view/symbols";
 import { destinationCard, visitCard, type VisitHandlers } from "../src/ui/trips";
 
 /**
@@ -679,7 +681,11 @@ describe("картки поїздок (§8.5)", () => {
     const rows = list?.findAll("shop-row") ?? [];
     const expected = [...state.home.items.map((i) => variantLabel({ thing: i.kind }, i.quality)), variantLabel({ thing: "carrier" }, "premium")];
     expect(expected.length).toBeGreaterThan(1);
-    expect(rows.map((r) => r.find("shop-name").textContent)).toEqual(expected);
+    // Спершу те, що є завжди (§8.4): радіо, комп'ютер, віник — без «Викинути».
+    const fixed = rows.slice(0, 3);
+    expect(fixed.map((r) => r.find("shop-name").textContent)).toEqual((["radio", "computer", "broom"] as const).map((id) => named(HOME_FIXTURE_ICONS[id], HOME_FIXTURE_TITLES[id])));
+    expect(fixed.map((r) => r.findAll("button").length)).toEqual([0, 0, 0]);
+    expect(rows.slice(3).map((r) => r.find("shop-name").textContent)).toEqual(expected);
     expect(list?.findAll("shop-stock")).toEqual([]);
     rows.at(-1)?.find("button").click();
     expect(thrown).toEqual([[JSON.stringify({ carrier: 0 }), "premium"]]);
