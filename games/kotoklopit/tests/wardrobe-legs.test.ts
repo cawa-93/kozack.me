@@ -151,7 +151,9 @@ function lowest(rig: LooseRig, slot: string, view: ArtView): number {
     const y = pose.sy * (py - entry.pivot.y);
     low = Math.max(low, pose.y + x * Math.sin(r) + y * Math.cos(r));
   }
-  if (low === -Infinity) throw new Error(`${slot}: у ${pose.art} немає заливки в стані ${stateOf(rig, slot, view)}`);
+  // Накладка самими лініями (планка, кишеня поділу верху) заливки не має й до підлоги не дістає.
+  const lines = !(entry.layers ?? []).some((layer) => layer.startsWith("fill"));
+  if (low === -Infinity && !lines) throw new Error(`${slot}: у ${pose.art} немає заливки в стані ${stateOf(rig, slot, view)}`);
   return low;
 }
 

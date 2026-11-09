@@ -71,7 +71,9 @@ describe("фасони верху: реєстр", () => {
     for (const e of arms) {
       expect(e.points?.["hand"], e.id).toBeDefined();
       expect(e.points?.["grip"], e.id).toBeDefined();
-      expect({ size: e.size, pivot: e.pivot, points: e.points }, e.id).toEqual({ size: arm.size, pivot: arm.pivot, points: arm.points });
+      // Точка манжета (`cuff`, принти) — лише в рукава, що має манжет; кисть — як у звичайної руки.
+      const hands = (points: typeof arm.points) => ({ hand: points?.["hand"], grip: points?.["grip"] });
+      expect({ size: e.size, pivot: e.pivot, points: hands(e.points) }, e.id).toEqual({ size: arm.size, pivot: arm.pivot, points: hands(arm.points) });
     }
     for (const cut of TOP_CUTS) expect(Boolean(cut.arm), cut.name).toBe(Boolean(cut.armFar));
   });
