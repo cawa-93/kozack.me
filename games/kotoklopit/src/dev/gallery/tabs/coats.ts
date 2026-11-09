@@ -272,11 +272,9 @@ function mount(ctx: GalleryContext): GalleryView {
     for (const { label, look } of row.looks) {
       const cell = document.createElement("figure");
       cell.style.margin = "0";
+      // На весь зріст, як у редакторі: голова одна не показує ні фасонів, ні взуття.
       const canvas = portraitCanvas(56, 92);
-      const redraw = (): void => {
-        if (!composePortrait(canvas, look, { onReady: redraw })) drawPortrait(canvas, look);
-      };
-      redraw();
+      drawPortrait(canvas, look);
       const caption = document.createElement("figcaption");
       caption.textContent = label;
       caption.style.fontSize = "11px";

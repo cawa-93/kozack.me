@@ -13,6 +13,7 @@
 import Phaser from "phaser";
 
 import { DEFAULT_LOOK } from "../../../sim/game";
+import type { Look } from "../../../sim/types";
 import { coatOf } from "../../../sim/genetics";
 import { addArt } from "../../../view/art/atlas";
 import { releaseBaked } from "../../../view/art/bake";
@@ -20,7 +21,7 @@ import { artEntries } from "../../../view/art/manifest";
 import { catRecipe, farRecipe, personRecipe } from "../../../view/art/recipes";
 import type { ArtId, ArtView, FrameLayer, TintRecipe } from "../../../view/art/types";
 import { CAT_FAR_SLOTS, CAT_FIT, CAT_RIG, CAT_VARIANTS } from "../../../view/rig/defs/cat";
-import { PERSON_FAR_SLOTS, PERSON_FIT, PERSON_RIG, personVariants } from "../../../view/rig/defs/person";
+import { PERSON_FAR_SLOTS, PERSON_FIT, PERSON_RIG, personProportions, personSkin, personVariants } from "../../../view/rig/defs/person";
 import type { RigFit } from "../../../view/rig/rigcore";
 import { RigSprite, type Attachable, type RigBaked } from "../../../view/rig/rigsprite";
 import type { RigAnim, RigDef, SocketCargo } from "../../../view/rig/types";
@@ -144,7 +145,17 @@ type Show = FrameLayer | "baked";
 const LAYERS: readonly Show[] = ["baked", "all", "ink", "fill", "shade", "detail"];
 const LAYER_TITLES: Readonly<Partial<Record<Show, string>>> = { baked: "запечено (як у грі)", all: "увесь кадр (атлас)" };
 /** Параметри адреси цієї вкладки: прибираються, коли вкладку закривають. */
-const PARAMS = ["rig", "view", "flip", "anim", "layer", "scale", "marks"] as const;
+const PARAMS = ["rig", "view", "flip", "anim", "layer", "scale", "marks", "look"] as const;
+
+/** Вигляд персонажа з параметра `look` (JSON частини Look); немає чи не розібрати — типовий. */
+function lookParam(value: string | null): Look {
+  try {
+    const parsed: unknown = JSON.parse(value ?? "{}");
+    return typeof parsed === "object" && parsed !== null ? { ...DEFAULT_LOOK, ...(parsed as Partial<Look>) } : DEFAULT_LOOK;
+  } catch {
+    return DEFAULT_LOOK;
+  }
+}
 const SCALES = ["auto", "1", "2", "3", "4"] as const;
 const COLORS = { bone: 0xffd166, joint: 0xef476f, anchor: 0x06d6a0, socket: 0x4cc9f0, floor: 0x8a8296 } as const;
 
@@ -170,6 +181,9 @@ function mount(ctx: GalleryContext): GalleryView {
   const params = new URLSearchParams(window.location.search);
   const pick = <T extends string>(name: string, options: readonly T[], fallback: T): T => options.find((o) => o === params.get(name)) ?? fallback;
   const marks = params.get("marks") !== "0";
+  // Вигляд персонажа з адреси (`look={"topCut":7,"top":6}` — частина Look): обвіс і кольори, як у грі, для знімків.
+  const look = lookParam(params.get("look"));
+  RIGS.person.recipe = personRecipe(look);
   const rigName = pick("rig", Object.keys(RIGS) as RigName[], "cat");
   const state: State = {
     rig: rigName,
@@ -179,8 +193,8 @@ function mount(ctx: GalleryContext): GalleryView {
     blend: true,
     scale: pick("scale", SCALES, "auto"),
     layer: pick("layer", LAYERS, "baked"),
-    skins: { cat: { ...RIGS.cat.def.skin }, person: { ...RIGS.person.def.skin } },
-    proportions: { cat: new Set(), person: new Set() },
+    skins: { cat: { ...RIGS.cat.def.skin }, person: { ...RIGS.person.def.skin, ...personSkin(look) } },
+    proportions: { cat: new Set(), person: new Set(personProportions(look).filter((p) => typeof p === "string")) },
     kitten: 1,
     bones: marks,
     anchors: marks,
