@@ -45,11 +45,12 @@ import { BASE_WIDTH, textResolution } from "./zoom";
 import { UI_LAYERS } from "./world/layers";
 
 /** Шкали показників (§6): іконка замість назви (§11.4) — сердечко, тарілка, мило, думка. */
-const STATS: readonly { name: StatName; icon: IconName }[] = [
-  { name: "health", icon: STAT_ICONS.health },
-  { name: "satiety", icon: STAT_ICONS.satiety },
-  { name: "hygiene", icon: STAT_ICONS.hygiene },
-  { name: "sanity", icon: STAT_ICONS.sanity },
+/** Показники — дві колонки по два (§8.4): `column`, `row` — місце в сітці. */
+const STATS: readonly { name: StatName; icon: IconName; column: 0 | 1; row: 0 | 1 }[] = [
+  { name: "health", icon: STAT_ICONS.health, column: 0, row: 0 },
+  { name: "sanity", icon: STAT_ICONS.sanity, column: 0, row: 1 },
+  { name: "satiety", icon: STAT_ICONS.satiety, column: 1, row: 0 },
+  { name: "hygiene", icon: STAT_ICONS.hygiene, column: 1, row: 1 },
 ];
 
 /** Просвіти в ряду показників: від грошей до квитанції, від кружечка до суми, від суми до розкладу. */
@@ -112,10 +113,10 @@ interface BarLook {
 /** Заливка — під рамкою арту, тож її кінці — півкола: радіус — половина висоти заливки (`isoBarRects`). */
 const BAR_LOOK: Omit<BarLook, "radius"> = { trough: UI_FILL.trough, blink: STAT_BLINK, hatch: UI_FILL.hatch };
 
-/** Місце шкали показника `i` за розкладом панелі (праворуч від кружечка); рамку й заливку в ньому розкладає `isoBarRects`. */
-const barSlot = (i: number, layout: HudLayout, columns: HudColumns): BarRect => ({
-  x: layout.stats + i * columns.step + layout.bar.x,
-  y: layout.bar.y,
+/** Місце шкали показника за розкладом панелі (праворуч від кружечка, посередині ряду); рамку й заливку розкладає `isoBarRects`. */
+const barSlot = (stat: (typeof STATS)[number], layout: HudLayout, columns: HudColumns): BarRect => ({
+  x: layout.stats + stat.column * columns.step + layout.bar.x,
+  y: layout.rows[stat.row] - layout.bar.h / 2,
   w: columns.bar,
   h: layout.bar.h,
 });
@@ -205,7 +206,7 @@ export class Hud {
     // Іконки намальовані чорнилом для світлого бабла: на темній панелі їм потрібна світла підкладка. Місце й розмір — `arrange`.
     this.discs = STATS.map((stat) => ({ ring: addArt(scene, null, HUD_ART.stat), icon: addArt(scene, null, iconArt(stat.icon)) }));
     this.bars = scene.add.graphics();
-    this.effects = text(0, 0, SMALL_TEXT.effects, UI_TEXT.warning);
+    this.effects = text(0, 0, SMALL_TEXT.effects, UI_TEXT.warning).setOrigin(0, 0.5);
     this.wallet = { ring: addArt(scene, null, HUD_ART.stat), icon: addArt(scene, null, HUD_ART.purse) };
     this.money = text(0, 0, SMALL_TEXT.amount).setFontStyle("bold").setOrigin(0, 0.5);
     this.bill = {
@@ -308,23 +309,26 @@ export class Hud {
     this.calendar.root.setPosition(layout.calendarX, layout.height / 2 - CALENDAR_LIFT * layout.clock.scale).setScale(layout.clock.scale);
     const { ring, icon } = statDisc(layout.disc.outer, layout.disc.fill);
     this.discs.forEach((disc, i) => {
-      const x = layout.stats + i * columns.step + layout.disc.x;
-      disc.ring.setPosition(x, layout.disc.y).setDisplaySize(ring, ring);
-      disc.icon.setPosition(x, layout.disc.y).setDisplaySize(icon, icon);
+      const stat = STATS[i];
+      if (!stat) return;
+      const x = layout.stats + stat.column * columns.step + layout.disc.x;
+      disc.ring.setPosition(x, layout.rows[stat.row]).setDisplaySize(ring, ring);
+      disc.icon.setPosition(x, layout.rows[stat.row]).setDisplaySize(icon, icon);
     });
     const frame = uiEntry(HUD_ART.bar).size;
     this.barRects = this.barFrames.map((art, i) => {
-      const bar = isoBarRects(barSlot(i, layout, columns), frame);
+      const bar = isoBarRects(barSlot(STATS[i] ?? STATS[0]!, layout, columns), frame);
       art.place(bar.frame);
       return bar.fill;
     });
     // Заливка — під рамкою арту, тож її кінці — півкола.
     this.barLook.radius = (this.barRects[0]?.h ?? 0) / 2;
-    this.effects.setPosition(layout.stats, layout.effectsY);
+    // Рядок станів — у другому ряду, під грошима й квитанцією.
+    this.effects.setPosition(columns.money, layout.rows[1]);
     const radius = layout.disc.outer / 2;
-    this.wallet.ring.setPosition(columns.money + radius, layout.disc.y).setDisplaySize(ring, ring);
-    this.wallet.icon.setPosition(columns.money + radius, layout.disc.y).setDisplaySize(icon, icon);
-    this.money.setPosition(columns.money + layout.disc.outer + ROW_GAP.amount, layout.disc.y);
+    this.wallet.ring.setPosition(columns.money + radius, layout.rows[0]).setDisplaySize(ring, ring);
+    this.wallet.icon.setPosition(columns.money + radius, layout.rows[0]).setDisplaySize(icon, icon);
+    this.money.setPosition(columns.money + layout.disc.outer + ROW_GAP.amount, layout.rows[0]);
     this.bill.ring.setDisplaySize(ring, ring);
     this.bill.icon.setDisplaySize(icon, icon);
     this.placeBill();
@@ -338,7 +342,7 @@ export class Hud {
   private placeBill(): void {
     const { shape, columns } = this;
     if (!shape || !columns) return;
-    const y = shape.disc.y;
+    const y = shape.rows[0];
     const r = shape.disc.outer / 2;
     const disc = this.money.x + this.money.width + ROW_GAP.bill + r;
     this.bill.ring.setPosition(disc, y);

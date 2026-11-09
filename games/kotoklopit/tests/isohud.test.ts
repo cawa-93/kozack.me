@@ -159,9 +159,10 @@ describe("колонки панелі (§8.4)", () => {
   });
 
   it("на вузькій панелі коротшають шкали, а гроші й розклад лишаються в межах", () => {
-    const desktop = hudColumns(HUD_LAYOUT.desktop, room(1280));
+    // Показники — дві колонки (§8.4): на 1280 місця вже досить, тож вузька — 1000.
+    const desktop = hudColumns(HUD_LAYOUT.desktop, room(1000));
     expect(desktop.bar).toBeLessThan(HUD_LAYOUT.desktop.bar.w);
-    expect(desktop.schedule + HUD_LAYOUT.desktop.reserve.schedule).toBeLessThanOrEqual(room(1280));
+    expect(desktop.schedule + HUD_LAYOUT.desktop.reserve.schedule).toBeLessThanOrEqual(room(1000));
     const phone = hudColumns(HUD_LAYOUT.phone, room(1280));
     expect(phone.step).toBeGreaterThanOrEqual(HUD_STEP.min);
     expect(phone.schedule + HUD_LAYOUT.phone.reserve.schedule).toBeLessThanOrEqual(room(1280));
@@ -173,7 +174,7 @@ describe("колонки панелі (§8.4)", () => {
         const columns = hudColumns(layout, room(width));
         expect(layout.bar.x + columns.bar + HUD_STEP.gap).toBe(columns.step);
         expect(columns.bar).toBeGreaterThan(0);
-        expect(columns.money).toBe(layout.stats + 4 * columns.step);
+        expect(columns.money).toBe(layout.stats + 2 * columns.step);
       }
     }
   });
@@ -282,70 +283,65 @@ describe("панель на низькому екрані (hudLayout; ui-r1-9)",
     return (ring * HUD_STAT_ART.paper - icon * ICON_DRAWN) / 2;
   };
 
-  it("десктоп — як був: смуга HUD_HEIGHT, кружечок 36 з іконкою на 0,8 паперу, шкала 116 × 12 праворуч", () => {
+  it("десктоп: смуга HUD_HEIGHT, показники в два ряди — кружечок 30 з іконкою на 0,8 паперу, шкала 150 × 12 праворуч", () => {
     const d = HUD_LAYOUT.desktop;
     expect(hudLayout(1)).toBe(d);
     expect(hudLayout(cssPerUnit(1280, 720))).toBe(d);
     expect(hudLayout(cssPerUnit(1920, 1080))).toBe(d);
     expect(d.height).toBe(HUD_HEIGHT);
-    expect(d).toMatchObject({ disc: { outer: 36, fill: HUD_STAT_FILL, x: 15, y: 26 }, bar: { x: 34, y: 20, w: 116, h: 12 }, effectsY: 44 });
+    expect(d).toMatchObject({ disc: { outer: 30, fill: HUD_STAT_FILL, x: 15 }, rows: [19, 51], bar: { x: 32, w: 150, h: 12 } });
   });
 
-  it("телефон набік (там, де написи збільшено): іконки показників ≥ 18 px CSS на 844 × 390 (були ≈ 12)", () => {
+  it("телефон набік (там, де написи збільшено): іконки показників ≥ 15 px CSS на 844 × 390 — у кружечку десктопа були б ≈ 11", () => {
     for (const [w, h] of [[844, 390], [740, 360], [915, 412], [640, 360]] as const) {
       expect(hudLayout(cssPerUnit(w, h)), `${w}×${h}`).toBe(HUD_LAYOUT.phone);
     }
-    expect(iconCss(HUD_LAYOUT.desktop, 844, 390)).toBeLessThan(13);
-    expect(iconCss(HUD_LAYOUT.phone, 844, 390)).toBeGreaterThanOrEqual(18);
-    expect(iconCss(HUD_LAYOUT.phone, 915, 412)).toBeGreaterThanOrEqual(18);
-    expect(iconCss(HUD_LAYOUT.phone, 740, 360)).toBeGreaterThanOrEqual(17);
+    expect(iconCss(HUD_LAYOUT.desktop, 844, 390)).toBeLessThan(12);
+    expect(iconCss(HUD_LAYOUT.phone, 844, 390)).toBeGreaterThanOrEqual(15);
+    expect(iconCss(HUD_LAYOUT.phone, 915, 412)).toBeGreaterThanOrEqual(15);
+    expect(iconCss(HUD_LAYOUT.phone, 740, 360)).toBeGreaterThanOrEqual(14);
     // Папір довкола іконки — той самий просвіт, що на десктопі: іконка контуром не зливається з кільцем.
     expect(margin(HUD_LAYOUT.phone)).toBeGreaterThanOrEqual(margin(HUD_LAYOUT.desktop) - 0.3);
     // Перемикається там само, де збільшуються дрібні написи.
     for (const k of [0.5, 0.7, 0.705, 0.706, 0.71, 0.8]) expect(hudLayout(k) === HUD_LAYOUT.phone).toBe(hudTextScale(k) > 1);
   });
 
-  it("телефон: смуга вища лише помірно — квартира втрачає ≤ 7 px CSS (≈ 2 % висоти) на 844 × 390", () => {
+  it("телефон: два ряди показників — смуга вища помірно, квартира втрачає ≤ 15 px CSS (≈ 4 % висоти) на 844 × 390", () => {
     expect(hudHeight(1)).toBe(HUD_HEIGHT);
     const phone = hudHeight(cssPerUnit(844, 390));
     expect(phone).toBe(HUD_LAYOUT.phone.height);
-    expect((phone - HUD_HEIGHT) * cssPerUnit(844, 390)).toBeLessThanOrEqual(7);
-    expect((phone - HUD_HEIGHT) / (720 - HUD_HEIGHT)).toBeLessThan(0.025);
+    expect((phone - HUD_HEIGHT) * cssPerUnit(844, 390)).toBeLessThanOrEqual(15);
+    expect(((phone - HUD_HEIGHT) * cssPerUnit(844, 390)) / 390).toBeLessThan(0.04);
   });
 
-  it("телефон: нічого не налазить — кружечок у смузі над рядком станів, шкала праворуч від нього, показники не заходять один на одного", () => {
+  it("нічого не налазить: два ряди кружечків у паперовій частині смуги, шкала праворуч і посередині ряду, колонки не заходять одна на одну", () => {
     for (const layout of [HUD_LAYOUT.desktop, HUD_LAYOUT.phone]) {
       const r = layout.disc.outer / 2;
-      // Кружечок — у смузі, не біля самого краю екрана, і над великими літерами рядка станів (вони ≈ 0,2 кегля нижче за верх
-      // напису; на телефоні кегель — 18 × `HUD_TEXT_MAX`).
-      const k = layout === HUD_LAYOUT.phone ? HUD_TEXT_MAX : 1;
-      expect(layout.disc.y - r).toBeGreaterThanOrEqual(2);
-      expect(layout.disc.y + r).toBeLessThanOrEqual(layout.effectsY + 0.2 * 18 * k);
-      // Шкала — праворуч від кружечка, посередині його висоти; кінець — там само, де на десктопі.
+      const [top, bottom] = layout.rows;
+      // Чорнильний край смуги — останні ≈ 10 % висоти (`HUD_BAND`: край 62,6–69 з 64,4 намальованих).
+      const paper = layout.height - ((HUD_BAND.edge - 62.6) * layout.height) / (HUD_BAND.edge - HUD_BAND.top);
+      expect(top - r).toBeGreaterThanOrEqual(2);
+      expect(bottom + r).toBeLessThanOrEqual(paper);
+      expect(top + r).toBeLessThanOrEqual(bottom - r);
+      // Шкала — праворуч від кружечка; кінець — там само, де на десктопі.
       expect(layout.bar.x).toBeGreaterThanOrEqual(layout.disc.x + r);
-      expect(layout.bar.y + layout.bar.h / 2).toBe(layout.disc.y);
       expect(layout.bar.x + layout.bar.w).toBe(HUD_LAYOUT.desktop.bar.x + HUD_LAYOUT.desktop.bar.w);
-      // Лівий край кружечка — там само, де на десктопі: наступний показник (крок 158) не зачеплено.
+      // Лівий край кружечка — там само, де на десктопі.
       expect(layout.disc.x - r).toBe(HUD_LAYOUT.desktop.disc.x - HUD_LAYOUT.desktop.disc.outer / 2);
-      // Намальована рамка шкали (`isoBarRects`: на `HUD_BAR.shift` правіше за місце) — між кружечком і наступним показником.
+      // Намальована рамка шкали (`isoBarRects`: на `HUD_BAR.shift` правіше за місце) — між кружечком і наступною колонкою.
       expect(layout.bar.x + HUD_BAR.shift).toBeGreaterThanOrEqual(layout.disc.x + r);
-      expect(layout.bar.x + layout.bar.w).toBeLessThan(158 + layout.disc.x - r);
+      expect(layout.bar.x + layout.bar.w).toBeLessThan(HUD_STEP.max + layout.disc.x - r);
+      // Рамка шкали (`HUD_BAR.height`) — у своєму ряду, не заходить на сусідній.
+      expect(top + HUD_BAR.height / 2).toBeLessThanOrEqual(bottom - HUD_BAR.height / 2);
     }
   });
 
-  it("телефон: найбільші написи вміщуються в смугу — два рядки розкладу на лініях ряду й рядка станів, рядок станів під кружечками", () => {
-    const k = HUD_TEXT_MAX;
-    const p = HUD_LAYOUT.phone;
-    // Чорнильний край смуги — останні ≈ 9 одиниць (`HUD_BAND`: край 62,6–69 з 64,4 намальованих).
-    const paper = p.height - ((HUD_BAND.edge - 62.6) * p.height) / (HUD_BAND.edge - HUD_BAND.top);
-    const font = Math.round(18 * k);
-    // Перший рядок розкладу — посередині ряду кружечків, другий (і підпис квитанції) — на рядку станів тим самим кеглем.
-    expect(p.disc.y - font / 2).toBeGreaterThanOrEqual(0);
-    expect(p.effectsY + font).toBeLessThanOrEqual(paper);
-    // Рядок станів — так само далеко від чорнильного краю, як був на телефоні в смузі 76 (± 0,25).
-    const paperOf = (height: number): number => height - ((HUD_BAND.edge - 62.6) * height) / (HUD_BAND.edge - HUD_BAND.top);
-    expect(paper).toBeCloseTo(paperOf(p.height), 9);
-    expect(paper - p.effectsY).toBeGreaterThanOrEqual(paperOf(HUD_HEIGHT) - HUD_LAYOUT.desktop.effectsY - 0.25);
+  it("найбільші написи вміщуються: суми — у першому ряду, рядок станів — у другому, обидва в паперовій частині смуги", () => {
+    for (const [layout, k] of [[HUD_LAYOUT.desktop, 1], [HUD_LAYOUT.phone, HUD_TEXT_MAX]] as const) {
+      const paper = layout.height - ((HUD_BAND.edge - 62.6) * layout.height) / (HUD_BAND.edge - HUD_BAND.top);
+      expect(layout.rows[0] - Math.round(20 * k) / 2).toBeGreaterThanOrEqual(0);
+      expect(layout.rows[1] + Math.round(18 * k) / 2).toBeLessThanOrEqual(paper);
+    }
   });
 });
 
