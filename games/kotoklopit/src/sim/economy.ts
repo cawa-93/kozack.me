@@ -21,7 +21,7 @@ import {
 } from "./config";
 import { emit, endGame } from "./events";
 import { nearestFreePlace, SLOTS, slotTaken, SURFACE_IDS, VACUUM_HOME } from "./home";
-import { priceFactor } from "./modifiers";
+import { deliveryFree, deliveryHoursFactor, priceFactor, weekPriceFactor } from "./modifiers";
 import { absoluteMinute } from "./time";
 import { tidyBoxTraces } from "./traces";
 import type { Appliance, BowlItem, Delivery, Feeder, GameState, Home, HomeItem, Product, Quality, Spending, ThingKind, UtilitiesReport } from "./types";
@@ -266,16 +266,22 @@ export function incoming(state: GameState, product: Product): number {
   );
 }
 
-/** Базова ціна запасу (§6.4): модифікатор дня змінює ціну корму. */
+/** Ціна запасу в телефоні (§6.4): подія дня змінює ціну корму, тиждень цін — усіх запасів (`priceFactor`). */
 export function productPrice(state: GameState, product: Product, quality: Quality): number {
   return Math.round(PRODUCTS[product].price[quality] * priceFactor(state, product));
 }
 
+/** Ціна речі в телефоні (§6.4): тиждень «Ціни ростуть» / «Чорна п'ятниця». */
+export function thingPrice(state: GameState, thing: ThingKind, quality: Quality): number {
+  return Math.round(THINGS[thing].price[quality] * weekPriceFactor(state));
+}
+
 /**
  * Вартість доставки замовлення (§6.4): 10% бази його товарів, округлено, і надбавка за складністю
- * один раз на замовлення.
+ * один раз на замовлення; у «Безкоштовну доставку» — 0.
  */
 export function deliveryCost(state: GameState, base: number): number {
+  if (deliveryFree(state)) return 0;
   return Math.round(base * DELIVERY.share) + DELIVERY.fee[state.difficulty];
 }
 
@@ -290,8 +296,9 @@ export function order(state: GameState, product: Product, quality: Quality): Del
 export const spendingOf = (goods: { product: Product } | { thing: ThingKind }): Spending => ("product" in goods ? "supplies" : "things");
 
 /**
- * Відправити пакунок за вказану ціну й доставку окремим замовленням: гроші списано, пакунок прибуде через 6 годин (§6.4).
- * Доставку кошика списує кошик (`checkout`), тож тут вона 0.
+ * Відправити пакунок за вказану ціну й доставку окремим замовленням: гроші списано, пакунок прибуде через `DELIVERY_HOURS` (§6.4).
+ * Доставку кошика списує кошик (`checkout`), тож тут вона 0. Час прибуття фіксується тут, у мить замовлення: «Кур'єри не
+ * встигають» діють лише на замовлене цього дня (§4.1).
  */
 export function dispatch(state: GameState, goods: { product: Product } | { thing: ThingKind }, quality: Quality, price: number, shipping = 0): Delivery | null {
   if (state.end !== null || state.character.money < price + shipping) return null;
@@ -301,7 +308,7 @@ export function dispatch(state: GameState, goods: { product: Product } | { thing
     id: state.nextId++,
     ...goods,
     quality,
-    at: absoluteMinute(state.day, state.minute) + DELIVERY_HOURS * MINUTES_PER_HOUR,
+    at: absoluteMinute(state.day, state.minute) + DELIVERY_HOURS * deliveryHoursFactor(state) * MINUTES_PER_HOUR,
   };
   state.home.deliveries.push(delivery);
   emit(state, { type: "ordered", delivery, price: price + shipping });
@@ -400,7 +407,7 @@ function placeFeeder(state: GameState, quality: Quality): void {
 /** Замовити річ для котів окремим замовленням (§6.4); null, якщо немає місця чи грошей. */
 export function orderThing(state: GameState, thing: ThingKind, quality: Quality): Delivery | null {
   if (freeSlots(state, thing) <= 0) return null;
-  const base = THINGS[thing].price[quality];
+  const base = thingPrice(state, thing, quality);
   return dispatch(state, { thing }, quality, base + deliveryCost(state, base));
 }
 

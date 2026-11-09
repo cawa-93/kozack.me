@@ -1,10 +1,10 @@
 // Картки поїздок (§8.5): куди поїхати, подія на місці, аварія.
 
 import { DISEASES, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STORE_GOODS, TRIPS, VET, WEIGHT } from "../sim/config";
-import { breederCatPrice, breederCats, groomerWashes, knownSterilizeBlocker, nextTripRider, shelterCats, sterilizeMinutes, sterilizePrice, tripCat, tripCatPlace, vetManner } from "../sim/destinations";
+import { breederCatPrice, breederCats, groomerWashes, knownSterilizeBlocker, nextTripRider, shelterCats, sterilizeMinutes, sterilizePrice, tripCat, tripCatPlace, vetExamPrice, vetManner, vetTreatPrice } from "../sim/destinations";
 import { breedById, MIXED } from "../sim/breeds";
 import { visibility } from "../sim/knowledge";
-import { priceFactor, roadFactor } from "../sim/modifiers";
+import { priceFactor, roadFactor, weekPriceFactor } from "../sim/modifiers";
 import { roadMinutes, tripBlocker } from "../sim/trips";
 import { formatClock } from "../sim/time";
 import type { Cat, Destination, DiseaseId, GameState, IllnessId, Quality, VisitLog } from "../sim/types";
@@ -268,7 +268,8 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers, sto
       if (!cat) break;
       if (!log.exam) {
         body.push(whereCat(state, cat));
-        body.push(row("Огляд", `🕐 ${minutesText(TRIPS.vet.visit)}`, button(`${VET.exam}\u00a0₴`, VET.exam, h.exam)));
+        const exam = vetExamPrice(state);
+        body.push(row("Огляд", `🕐 ${minutesText(TRIPS.vet.visit)}`, button(`${exam}\u00a0₴`, exam, h.exam)));
         const sterilize = sterilizeRow();
         if (sterilize) body.push(sterilize);
         break;
@@ -289,6 +290,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers, sto
       const sterilize = sterilizeRow();
       if (sterilize) body.push(sterilize);
       const list = element("div", "shop");
+      const treat = { cheap: vetTreatPrice(state, "cheap"), premium: vetTreatPrice(state, "premium") };
       // Біля назви хвороби — та сама іконка, що в баблі, яким кіт про неї сигналізує (§11.4 «Іконка біля назви»).
       for (const d of known) {
         // Ожиріння грошима не лікують — лише дієта й ігри (§9.12, «Схильність до повноти»).
@@ -315,8 +317,8 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers, sto
           advised(row(
             diseaseLabel(d.id),
             note,
-            button(priced(SERVICE_TITLES.treat.cheap, VET.cheap), VET.cheap, () => h.treat(d.id, "cheap"), result === "controlled" || result === "failed" || left > VET.controlDays.cheap),
-            button(priced(SERVICE_TITLES.treat.premium, VET.premium), VET.premium, () => h.treat(d.id, "premium"), result === "controlled" || result === "failed" || left > VET.controlDays.premium),
+            button(priced(SERVICE_TITLES.treat.cheap, treat.cheap), treat.cheap, () => h.treat(d.id, "cheap"), result === "controlled" || result === "failed" || left > VET.controlDays.cheap),
+            button(priced(SERVICE_TITLES.treat.premium, treat.premium), treat.premium, () => h.treat(d.id, "premium"), result === "controlled" || result === "failed" || left > VET.controlDays.premium),
           ), d.id),
         );
       }
@@ -450,8 +452,9 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers, sto
   // «Додому» — її головна кнопка, доки кошик порожній.
   const shop = shopCatalog(state, "store", { ...store, checkout: h.checkout, home: h.home });
   body.push(shop.list);
-  // Подія дня, що змінює ціни того, що є в каталозі («Акція на корм», «Подорожчання корму»), і скільки знижок.
-  const repriced = catalog(state, "store").some((g) => "product" in g && priceFactor(state, g.product) !== 1);
+  // Подія дня, що змінює ціни того, що є в каталозі («Акція на корм», «Подорожчання корму»), і скільки знижок. Тиждень цін
+  // входить у `priceFactor` усіх запасів, але це не подія дня: без події множник дорівнює тижневому.
+  const repriced = catalog(state, "store").some((g) => "product" in g && priceFactor(state, g.product) !== weekPriceFactor(state));
   return { ...card, aside: [...dayEvent(state, repriced), ...discounts(shop.discounted, STORE_SECTION_TITLES[destination])], bar: shop.bar, actions: [] };
 }
 

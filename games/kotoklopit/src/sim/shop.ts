@@ -3,9 +3,8 @@
 
 import { hadCat, spend } from "./character";
 import { PRODUCTS, SELF_PRODUCTS, SHOP_TOYS_PER_ORDER, SINGLE_VARIANT, SINGLE_VARIANT_THINGS, THINGS } from "./config";
-import { GOODS, goodsKey, purchase, shopModifier, shopPrice, soldHere, type Goods } from "./destinations";
-import { canOrderProduct, deliveryCost, dispatch, feederRoom, freeSlots, isAppliance, ownsThing, productPrice } from "./economy";
-import { priceFactor } from "./modifiers";
+import { GOODS, goodsKey, goodsPriceFactor, purchase, shopModifier, shopPrice, soldHere, type Goods } from "./destinations";
+import { canOrderProduct, deliveryCost, dispatch, feederRoom, freeSlots, isAppliance, ownsThing, productPrice, thingPrice } from "./economy";
 import type { GameState, Quality, ThingKind } from "./types";
 
 export { GOODS, goodsKey, type Goods };
@@ -54,10 +53,10 @@ export function catalog(state: GameState, mode: ShopMode): Goods[] {
 /** Ціна штуки: у магазині — сьогоднішня, у телефоні — базова; доставка рахується окремо (§6.4). */
 export function unitPrice(state: GameState, goods: Goods, quality: Quality, mode: ShopMode): number {
   if (mode === "store") return shopPrice(state, goods, quality);
-  return "product" in goods ? productPrice(state, goods.product, quality) : THINGS[goods.thing].price[quality];
+  return "product" in goods ? productPrice(state, goods.product, quality) : thingPrice(state, goods.thing, quality);
 }
 
-/** Звичайна ціна штуки (§6.4, таблиця «Ціни»): без модифікатора поїздки й без подій дня. */
+/** Звичайна ціна штуки (§6.4, таблиця «Ціни»): без модифікатора поїздки, подій дня й тижня цін. */
 export function regularPrice(goods: Goods, quality: Quality): number {
   return "product" in goods ? PRODUCTS[goods.product].price[quality] : THINGS[goods.thing].price[quality];
 }
@@ -65,15 +64,14 @@ export function regularPrice(goods: Goods, quality: Quality): number {
 /**
  * Знижка варіанта товару сьогодні, у відсотках, — для бірки «−X%» на його картці (§6.4, «Бірка знижки й кошик унизу» і «Кожен
  * товар у своїй картці»; рішення автора 2026-11-03, правило — рішення виконавця): на скільки сьогоднішня ціна цього варіанта тут
- * нижча за звичайну (`regularPrice`), округлено до відсотка. У сьогоднішню ціну входять подія дня, що змінює ціну корму
- * (`priceFactor`), і на місці — модифікатор поїздки цього варіанта (`shopModifier`); у телефоні модифікатора поїздки немає. 0 —
- * бірки немає: подорожчання, знижка менше 1% чи ціна, округлена до гривні, не дешевша за звичайну. Якості, якої товар не має, —
- * теж 0.
+ * нижча за звичайну (`regularPrice`), округлено до відсотка. У сьогоднішню ціну входять подія дня, що змінює ціну корму, і тиждень
+ * цін (`goodsPriceFactor`), а на місці — ще й модифікатор поїздки цього варіанта (`shopModifier`); у телефоні модифікатора поїздки
+ * немає, тож там бірка однакова на обох варіантах. 0 — бірки немає: подорожчання, знижка менше 1% чи ціна, округлена до гривні, не
+ * дешевша за звичайну. Якості, якої товар не має, — теж 0.
  */
 export function discount(state: GameState, goods: Goods, quality: Quality, mode: ShopMode): number {
   if (!variants(goods).includes(quality)) return 0;
-  const day = "product" in goods ? priceFactor(state, goods.product) : 1;
-  const factor = day * (mode === "store" ? 1 + shopModifier(state, goods, quality) : 1);
+  const factor = goodsPriceFactor(state, goods) * (mode === "store" ? 1 + shopModifier(state, goods, quality) : 1);
   const percent = Math.round((1 - factor) * 100);
   if (percent < 1) return 0;
   return unitPrice(state, goods, quality, mode) < regularPrice(goods, quality) ? percent : 0;

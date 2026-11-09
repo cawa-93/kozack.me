@@ -6,7 +6,7 @@ import { petOver, petTolerance } from "../src/sim/actions";
 import { isMoving } from "../src/sim/body";
 import { petResting, traitLevel } from "../src/sim/cat";
 import { catOnComputer, isDirty, itemsOf, trashTipped } from "../src/sim/catai";
-import { BODY_PACE, DISEASES, DRESSING, ILLNESSES, MEDICINE, MINUTES_PER_DAY, PETTING, PRODUCTS, SHELTER, STAT_MAX, VET } from "../src/sim/config";
+import { BODY_PACE, DISEASES, DRESSING, ILLNESSES, MEDICINE, MINUTES_PER_DAY, PETTING, PRODUCTS, SHELTER, STAT_MAX } from "../src/sim/config";
 import { giveMedicine, isControlled } from "../src/sim/diseases";
 import { dressingFor } from "../src/sim/dressing";
 import { isIll, needsHumanMeds } from "../src/sim/illness";
@@ -17,7 +17,7 @@ import { stateRng } from "../src/sim/rng";
 import { boxCount, canUnpack, freeSlots, payUtilities, supplyCount, utilitiesBill, utilitiesDue } from "../src/sim/economy";
 import { checkout, room, type CartLine } from "../src/sim/shop";
 import { advance, drive, goHome, goToSleep, interact, rewindAccident } from "../src/sim/game";
-import { adopt, shelterCats, tripCat, vetExam, vetTreat } from "../src/sim/destinations";
+import { adopt, shelterCats, tripCat, vetExam, vetExamPrice, vetTreat, vetTreatPrice } from "../src/sim/destinations";
 import { canLeave, startTrip } from "../src/sim/trips";
 import { CARRIER_SPOT, distanceToRect, isSolid, isWall, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, VACUUM_HOME, type Rect } from "../src/sim/home";
 import { canGoToSleep, hoursUntilWake } from "../src/sim/sleep";
@@ -360,7 +360,7 @@ export class Bot {
       if (premium === 0 && stomach && s.character.money > PRODUCTS.catFood.price.premium + SPARE_MONEY) cart.push({ goods: { product: "catFood" }, quality: "premium", count: 1 });
       // Переноска — щойно є з чим їхати до ветеринара.
       const carrier = [...s.home.deliveries, ...s.home.porch].some((d) => "thing" in d && d.thing === "carrier");
-      if (s.home.carriers.length === 0 && !carrier && s.character.money > VET.exam + VET.premium + SPARE_MONEY && s.cats.some((c) => this.needsVet(c))) {
+      if (s.home.carriers.length === 0 && !carrier && s.character.money > vetExamPrice(s) + vetTreatPrice(s, "premium") + SPARE_MONEY && s.cats.some((c) => this.needsVet(c))) {
         cart.push({ goods: { thing: "carrier" }, quality: "cheap", count: 1 });
       }
       need("litter", Math.max(2, cats));
@@ -632,7 +632,7 @@ export class Bot {
     const s = this.state;
     if (s.home.carriers.length === 0 || this.skipped("vet") || isWorkTime(s) || !canLeave(s)) return null;
     if (s.minute < VET_TRIP_HOURS.from * 60 || s.minute > VET_TRIP_HOURS.to * 60) return null;
-    if (s.character.money < VET.exam + VET.premium + SPARE_MONEY) return null;
+    if (s.character.money < vetExamPrice(s) + vetTreatPrice(s, "premium") + SPARE_MONEY) return null;
     return s.cats.find((c) => c.away === null && this.needsVet(c)) ?? null;
   }
 

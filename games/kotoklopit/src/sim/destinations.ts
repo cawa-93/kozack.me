@@ -32,7 +32,7 @@ import { isNursing } from "./reproduction";
 import { canOrderProduct, freeSlots, place, spendingOf, stash } from "./economy";
 import { emit } from "./events";
 import { observe } from "./knowledge";
-import { priceFactor } from "./modifiers";
+import { priceFactor, vetPriceFactor, weekPriceFactor } from "./modifiers";
 import { addCat, applyMorningSanity, giveStarterPack } from "./night";
 import { createRng, deriveSeed, stateRng, type Rng } from "./rng";
 import { weekOf } from "./time";
@@ -117,9 +117,12 @@ export function shopModifier(state: GameState, goods: Goods, quality: Quality): 
   return range.min + rng.next() * (range.max - range.min);
 }
 
+/** Множник ціни товару сьогодні, без модифікатора поїздки (§6.4): запасу — `priceFactor`, речі — лише тиждень цін. */
+export const goodsPriceFactor = (state: GameState, goods: Goods): number => ("product" in goods ? priceFactor(state, goods.product) : weekPriceFactor(state));
+
 export function shopPrice(state: GameState, goods: Goods, quality: Quality): number {
-  const base = "product" in goods ? PRODUCTS[goods.product].price[quality] * priceFactor(state, goods.product) : THINGS[goods.thing].price[quality];
-  return Math.round(base * (1 + shopModifier(state, goods, quality)));
+  const regular = "product" in goods ? PRODUCTS[goods.product].price[quality] : THINGS[goods.thing].price[quality];
+  return Math.round(regular * goodsPriceFactor(state, goods) * (1 + shopModifier(state, goods, quality)));
 }
 
 /**
@@ -165,13 +168,25 @@ export function vetManner(cat: Cat): VetManner | null {
 }
 
 /**
+ * Ціни послуг ветеринара цього тижня (§8.5, `vetPriceFactor`): з них і списує симуляція, і показує картка — одне число.
+ * Ліки у ветеринара — товар каталогу (`shopPrice`), тиждень клініки їх не змінює.
+ */
+export const vetExamPrice = (state: GameState): number => Math.round(VET.exam * vetPriceFactor(state, "exam"));
+
+export const vetTreatPrice = (state: GameState, quality: Quality): number =>
+  Math.round((quality === "premium" ? VET.premium : VET.cheap) * vetPriceFactor(state, "treat"));
+
+/** Операція з оглядом у ціні (§9.8). */
+const sterilizeFullPrice = (state: GameState): number => Math.round(STERILIZATION.price * vetPriceFactor(state, "sterilize"));
+
+/**
  * Огляд (§8.5, §9.9): усі хвороби кота стають відомі; здоров'я, настрій і вага — знімок; як кіт поводився (§9.12). Знімок лягає
  * в журнал поїздки: картка показує його, а операція знає, що огляд уже оплачено (§9.8; рішення автора 2026-10-29, А3).
  */
 export function vetExam(state: GameState): VisitLog["exam"] {
   const cat = tripCat(state);
   const trip = state.trip;
-  if (!cat || trip?.destination !== "vet" || !spend(state, VET.exam, "health")) return null;
+  if (!cat || trip?.destination !== "vet" || !spend(state, vetExamPrice(state), "health")) return null;
   for (const disease of cat.diseases) disease.known = true;
   // Ветеринар бачить і фізіологічні стани, і породу (§9.9, §9.11).
   if (cat.pregnancy) cat.pregnancy.known = true;
@@ -204,7 +219,7 @@ export function vetTreat(state: GameState, disease: DiseaseId, quality: Quality,
   if (DISEASES[disease].cure.kind === "control" && (found.controlled ?? -1) >= state.day + VET.controlDays[quality]) return null;
   // Дешеве цієї поїздки не допомогло — цю хворобу вже не лікують, ні дешевим, ні дорогим (§8.5; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6).
   if (trip.log?.done.includes(`${disease}:failed`)) return null;
-  if (!spend(state, quality === "premium" ? VET.premium : VET.cheap, "health")) return null;
+  if (!spend(state, vetTreatPrice(state, quality), "health")) return null;
   trip.visit += VET.treatMinutes;
   // Що дало лікування — у журнал візиту: картка показує це в рядку хвороби.
   const logged = <R extends string>(result: R): R => {
@@ -251,7 +266,7 @@ export function knownSterilizeBlocker(state: GameState, cat: Cat): "sterilized" 
 
 /** Скільки зараз коштує операція (§9.8, А3): огляд у ціні, тож якщо огляд цієї поїздки вже оплачено окремо — без нього. */
 export function sterilizePrice(state: GameState): number {
-  return state.trip?.log?.exam ? STERILIZATION.price - VET.exam : STERILIZATION.price;
+  return state.trip?.log?.exam ? sterilizeFullPrice(state) - vetExamPrice(state) : sterilizeFullPrice(state);
 }
 
 /**
@@ -275,7 +290,7 @@ export function vetSterilize(state: GameState): boolean {
   if (!cat || !trip || trip.destination !== "vet" || knownSterilizeBlocker(state, cat) !== null) return false;
   if (state.character.money < sterilizePrice(state)) return false;
   if (!trip.log?.exam && vetExam(state) === null) return false;
-  if (cat.sterilized || sterilizeBlocker(state, cat) !== null || !spend(state, STERILIZATION.price - VET.exam, "health")) return false;
+  if (cat.sterilized || sterilizeBlocker(state, cat) !== null || !spend(state, sterilizeFullPrice(state) - vetExamPrice(state), "health")) return false;
   trip.visit += STERILIZATION.minutes;
   (trip.log ??= { exam: null, done: [] }).done.push("sterilize");
   cat.sterilized = true;
