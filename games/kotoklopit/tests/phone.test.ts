@@ -101,7 +101,10 @@ describe("рахунок за комунальні у «Домі» (§6.4)", () 
     expect(bill(state)).toBeUndefined();
     state.home.utilitiesBill = 61;
     state.character.money = 100;
-    expect(bill(state)?.textContent).toContain("За тиждень61 ₴");
+    // День 0 — перший тиждень.
+    expect(bill(state)?.find("bill-date")?.textContent).toBe("тиждень 1");
+    expect(bill(state)?.find("bill-line")?.textContent).toBe("ОСББ");
+    expect(bill(state)?.find("bill-sum")?.textContent).toBe("61 ₴");
     const pay = (): FakeElement | undefined => bill(state)?.find("bill-pay");
     expect([pay()?.textContent, pay()?.disabled]).toEqual(["Сплатити · 61 ₴", false]);
     state.character.money = 60;

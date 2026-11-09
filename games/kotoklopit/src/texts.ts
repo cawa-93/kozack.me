@@ -37,7 +37,9 @@ export const BIRTH_MESSAGE =
 export const BILL_TEXTS = {
   arrived: "Прийшов рахунок за комунальні: {сума} ₴.",
   title: "Рахунок за комунальні",
-  week: "За тиждень",
+  week: "тиждень {n}",
+  payeeLabel: "Одержувач",
+  payee: "ОСББ",
   pay: "Сплатити · {сума} ₴",
 } as const;
 

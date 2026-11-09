@@ -1043,58 +1043,146 @@
 
 /* Вкладка «Профіль» телефона (§8.4): портрет і хто персонаж — ім'я, посада, ставка, робочий час; далі стани — іконка на
    паперовому кружечку (з позначкою, як на панелі), назва, опис і, біля хвороби, чи прийнято ліки. */
-/* Рахунок за комунальні у вкладці «Дім» (`src/ui/bill.ts`, §6.4): бланк на папері з рамкою й тінню, під шапкою — пунктир,
-   рядок із крапками-провідниками, кнопка праворуч унизу. */
+/* Рахунок за комунальні у вкладці «Дім» (`src/ui/bill.ts`, §6.4) — бланк-чек на всю ширину: назва й тиждень угорі, одержувач на
+   лінії й сума в рамці посередині, рядок цифр і кнопка внизу. Заповнене — від руки (Caveat, як розклад на панелі), підписи полів —
+   дрібні великі літери. Прикраси — кола палітри: бліде велике ліворуч, червоне півколо на правому краю (за ним — поле `padding`),
+   червона цятка за назвою. */
 .bill {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-width: 360px;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "head date"
+    "payee payee"
+    "micr pay";
+  align-items: center;
+  gap: 16px 24px;
   margin-bottom: 12px;
-  padding: 10px 14px 12px;
+  padding: 14px 64px 12px 20px;
   border: 2px solid var(--ink);
   border-radius: 6px;
   background: var(--paper) var(--paper-tile) 0 0 / 256px 256px;
   box-shadow: 0 4px 0 var(--shade-base);
 }
 
+.bill::before,
+.bill::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  border-radius: 50%;
+}
+
+.bill::before {
+  left: -70px;
+  top: -40px;
+  width: 230px;
+  height: 230px;
+  background: var(--enamel);
+  opacity: 0.55;
+}
+
+.bill::after {
+  right: -46px;
+  top: calc(50% - 46px);
+  width: 92px;
+  height: 92px;
+  background: var(--red);
+}
+
 .bill-head {
+  grid-area: head;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding-bottom: 6px;
-  border-bottom: 2px dashed var(--ink-soft);
+  gap: 10px;
+  min-width: 0;
 }
 
 .bill-head > img {
   flex: none;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
 }
 
 .bill-title {
   margin: 0;
-  font: 400 20px/1.15 var(--hand);
+  font: 400 22px/1.15 var(--hand);
   color: var(--ink);
 }
 
-.bill-row {
+/* Червона цятка за назвою — як на бланку з референсу. */
+.bill-title::after {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-left: 10px;
+  border-radius: 50%;
+  background: var(--red);
+  vertical-align: 0.1em;
+}
+
+.bill-hand {
+  font: 600 24px/1 "Caveat", var(--hand);
+  color: var(--ink);
+}
+
+.bill-date {
+  grid-area: date;
+  margin: 0;
+  min-width: 130px;
+  padding: 0 6px 2px;
+  border-bottom: 2px solid var(--ink-soft);
+  text-align: center;
+}
+
+.bill-payee {
+  grid-area: payee;
   display: flex;
-  align-items: baseline;
-  gap: 6px;
-  font: 400 18px/1.2 var(--hand);
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.bill-label {
+  flex: none;
+  font: 400 13px/1.2 system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.bill-line {
+  flex: 1;
+  min-width: 0;
+  padding: 0 8px 2px;
+  border-bottom: 2px solid var(--ink-soft);
+}
+
+.bill-sum {
+  flex: none;
+  min-width: 96px;
+  padding: 4px 10px;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: var(--paper);
+  font: 400 20px/1.1 var(--hand);
+  text-align: right;
   color: var(--ink);
 }
 
-.bill-dots {
-  flex: 1;
-  min-width: 12px;
-  border-bottom: 2px dotted var(--ink-soft);
+.bill-micr {
+  grid-area: micr;
+  margin: 0;
+  font: 400 15px/1 ui-monospace, "Consolas", monospace;
+  letter-spacing: 0.22em;
+  color: var(--ink-soft);
 }
 
 .bill-pay {
-  align-self: flex-end;
-  margin-top: 4px;
+  grid-area: pay;
+  justify-self: end;
 }
 
 .profile-card {

@@ -1,6 +1,8 @@
-// Рахунок за комунальні у вкладці «Дім» телефона (§6.4): бланк із сумою тижня й кнопкою «Сплатити»; без грошей вона неактивна.
+// Рахунок за комунальні у вкладці «Дім» телефона (§6.4): бланк-чек на всю ширину — назва й тиждень угорі, одержувач і сума в
+// рамці посередині, рядок цифр чека й кнопка «Сплатити» внизу; без грошей кнопка неактивна. Вигляд — `.bill` в `overlay.css`.
 
 import { utilitiesBill } from "../sim/economy";
+import { weekOf } from "../sim/time";
 import type { GameState } from "../sim/types";
 import { BILL_TEXTS, fill } from "../texts";
 import { UTILITIES_ICON } from "../view/symbols";
@@ -11,16 +13,27 @@ import { element } from "./overlay";
 export function billCard(state: GameState, onPay: () => void): HTMLElement | null {
   const bill = utilitiesBill(state);
   if (bill === 0) return null;
+  const { address } = state.character;
+  const week = weekOf(state.day);
   const box = element("div", "bill");
+
   const head = element("div", "bill-head");
   const icon = iconImage(UTILITIES_ICON);
   if (icon) head.append(icon);
   head.append(element("p", "bill-title", BILL_TEXTS.title));
-  const row = element("div", "bill-row");
-  row.append(element("span", "bill-name", BILL_TEXTS.week), element("span", "bill-dots"), element("span", "bill-sum", `${bill} ₴`));
-  const pay = element("button", "button primary bill-pay", fill(BILL_TEXTS.pay, state.character.address, { сума: bill }));
+  const date = element("p", "bill-date bill-hand", fill(BILL_TEXTS.week, address, { n: week }));
+
+  const payee = element("div", "bill-payee");
+  payee.append(element("span", "bill-label", BILL_TEXTS.payeeLabel), element("span", "bill-line bill-hand", BILL_TEXTS.payee), element("span", "bill-sum", `${bill} ₴`));
+
+  // Рядок цифр чека — прикраса: тиждень і сума, як номер рахунку й сума внизу справжнього чека.
+  // Символів MICR (⑆, ⑈) у шрифтах телефонів часто немає — замість них ASCII.
+  const micr = element("p", "bill-micr", `|: ${String(week).padStart(4, "0")} |: ${String(bill).padStart(6, "0")} ||`);
+  micr.setAttribute("aria-hidden", "true");
+
+  const pay = element("button", "button primary bill-pay", fill(BILL_TEXTS.pay, address, { сума: bill }));
   pay.disabled = state.character.money < bill;
   pay.addEventListener("click", onPay);
-  box.append(head, row, pay);
+  box.append(head, date, payee, micr, pay);
   return box;
 }

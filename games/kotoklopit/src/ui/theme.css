@@ -54,6 +54,7 @@
   --grey-hi: #cdc6be;
   --grey-lo: #716869;
   --orange: #d9843f;
+  --red: #c4524b;
   --red-lo: #963b3a;
   /* Тінь shade з непрозорістю base 0,3 і soft 0,16; затемнення тла під карткою — чорнилом. */
   --shade-base: rgb(63 37 65 / 0.3);
