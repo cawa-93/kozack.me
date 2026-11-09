@@ -25,6 +25,7 @@ import { targetById, targetCenter, targetOf } from "../src/sim/targets";
 import type { BowlItem, Cat, GameState, Medicine, NightReport, Product, Save, Trip, Vec } from "../src/sim/types";
 import { isWorkday, isWorkTime, positionOf, standupToday } from "../src/sim/work";
 import { powerOut } from "../src/sim/modifiers";
+import { isSunday } from "../src/sim/time";
 import { POSITIONS, TOOL_REACH, WORK_END_MINUTE, WORK_START_MINUTE } from "../src/sim/config";
 
 /** Скільки ігрових хвилин один крок ходьби. */
@@ -168,8 +169,9 @@ export class Bot {
     const s = this.state;
     const ch = s.character;
     if (ch.held) return named("handleHeld", () => this.handleHeld());
-    // Рахунок за комунальні — щойно є чим сплатити (§6.4): не сплачений до нового — виселення.
-    payUtilities(s);
+    // Рахунок за комунальні (§6.4) — коли після нього лишається на їжу, а в неділю — за будь-яких грошей: несплачений до нового
+    // рахунку виселяє. Сплачений одразу в понеділок лишав бота без їжі.
+    if (s.character.money - utilitiesBill(s) >= POOR_MONEY || isSunday(s.day)) payUtilities(s);
     this.orderSupplies();
     const escaped = s.cats.find((c) => c.away !== null);
     if (escaped || s.home.porch.length > 0) return named("use", () => this.use("door"));
