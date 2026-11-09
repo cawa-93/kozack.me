@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 37" width="40" height="37">
+<!-- person/hem/wide/back — низ широкої штанини над взуттям (слоти hem-far і hem-near), ракурс back (¾ ззаду). Гардероб, низ.
+size 40×37; pivot (20, 20) — кісточка (точка foot ноги); верх (на 14 вище) — ширина person/leg/wide, без контуру; низ — на 3 над підлогою.
+Шари: fill-bottom, shade, ink. Ззаду — без стрілки, складка над п'ятою.
+-->
+<defs>
+<path id="person-hem-wide-back-shape" d="M7.4 6L31.6 6C32 12 32.6 18 33 24C33 25 33.1 26 33.1 27C27 29.8 13 29.8 6.9 27.2C6.8 26.2 6.8 25 6.8 24C7 18 7.2 12 7.4 6Z"/>
+<clipPath id="person-hem-wide-back-clip"><use href="#person-hem-wide-back-shape"/></clipPath>
+</defs>
+<g id="fill-bottom">
+<use href="#person-hem-wide-back-shape" fill="#ffffff"/>
+</g>
+<g id="shade" clip-path="url(#person-hem-wide-back-clip)">
+<path d="M4 6C7.4 8 10 12 11.6 33L4 33Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M4 25.8C10 23.4 30 23.2 36 25.6L36 33L4 33Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<g id="ink">
+<path d="M15.2 13Q14.4 20 12.8 25.6Q15.6 20 15.2 13Z" fill="#2e1f29"/>
+<path d="M9 25.6C14 24 26 24 31 25.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7.4 6C7.2 12 7 18 6.8 24C6.8 25 6.8 26.2 6.9 27.2C13 29.8 27 29.8 33.1 27C33.1 26 33 25 33 24C32.6 18 32 12 31.6 6" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

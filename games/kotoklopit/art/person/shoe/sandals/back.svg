@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 39 25" width="39" height="25">
+<!-- person/shoe/sandals/back — сандалі (слоти shoe-far і shoe-near), носком праворуч, ракурс back (¾ ззаду). Гардероб, взуття.
+size 39×25; pivot (16, 8) — кісточка; верх — ремінець на кісточці (на 1,2 над нею); підошва — на висоті person/shoe.
+Шари: fill-shoes (ремінці й силует підошви), fill-skin (стопа), detail (підошва cardboard), shade, ink. Ззаду — п'ята на підошві й
+ремінець довкола кісточки з задником; стопа без контуру згори.
+-->
+<defs>
+<path id="person-shoe-sandals-back-foot" d="M11 6.2C10.4 7.8 8.6 10.4 7.8 12.4C7 14 7.4 15.8 9 16.4C11 17 15 16.7 19 16.7C22.6 16.7 26.4 16.5 28.2 16.1C29.6 15.7 30.2 14.6 29.8 13.4C29.4 12.4 28.2 11.6 26.8 11C25 10.2 23.2 9.2 22.2 8.2C21.6 7.6 21.4 7 21.4 6.2Z"/>
+<path id="person-shoe-sandals-back-sole" d="M7.6 15.2C12 16 22 16 30.8 15C31.6 15.8 31.4 18.2 30 18.6C25 19.2 13 19.2 8.8 18.9C7.2 18.6 6.8 16.2 7.6 15.2Z"/>
+<path id="person-shoe-sandals-back-straps" d="M10.8 6.8C14 7.6 18 7.6 21.6 6.8L22.2 10.6C18 11.6 14 11.6 10.2 10.6ZM8.2 10L11.6 10.6L10.8 15.8L7.4 15.6Z"/>
+<clipPath id="person-shoe-sandals-back-clip"><use href="#person-shoe-sandals-back-foot"/><use href="#person-shoe-sandals-back-sole"/></clipPath>
+</defs>
+<g id="fill-shoes">
+<use href="#person-shoe-sandals-back-sole" fill="#ffffff"/>
+<use href="#person-shoe-sandals-back-straps" fill="#ffffff"/>
+</g>
+<g id="fill-skin">
+<use href="#person-shoe-sandals-back-foot" fill="#ffffff"/>
+</g>
+<g id="detail">
+<use href="#person-shoe-sandals-back-sole" fill="#c39a66"/>
+</g>
+<g id="shade" clip-path="url(#person-shoe-sandals-back-clip)">
+<path d="M21 9C23 10.6 27 12 31 13.4L31 21L21 21Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M5 17.4C14 18.2 24 18.2 33 17.2L33 21L5 21Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<g id="ink">
+<path d="M26.2 12.6Q27.2 13.8 27 15.2Q26.2 14 26.2 12.6Z" fill="#2e1f29"/>
+<path d="M11 6.2C10.4 7.8 8.6 10.4 7.8 12.4M28.2 16.1C29.6 15.7 30.2 14.6 29.8 13.4C29.4 12.4 28.2 11.6 26.8 11C25 10.2 23.2 9.2 22.2 8.2C21.6 7.6 21.4 7 21.4 6.2" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M10.8 6.8C14 7.6 18 7.6 21.6 6.8L22.2 10.6C18 11.6 14 11.6 10.2 10.6ZM8.2 10L11.6 10.6L10.8 15.8L7.4 15.6Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7.6 15.2C12 16 22 16 30.8 15" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M30.8 15C31.6 15.8 31.4 18.2 30 18.6C25 19.2 13 19.2 8.8 18.9C7.2 18.6 6.8 16.2 7.6 15.2" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 39 25" width="39" height="25">
+<!-- person/shoe/barefoot/front — гола стопа (слоти shoe-far і shoe-near), пальцями праворуч, ракурс front (¾ спереду). Гардероб, взуття.
+size 39×25; pivot (16, 8) — кісточка; верх — на 1,8 над кісточкою, завширшки з кісточкою голої ноги (person/leg/bare); підошва — на висоті person/shoe.
+Шари: fill-skin, shade, ink. Згори контуру немає: шкіра ноги переходить у стопу, а на кісточці спереду — лише згин. Край довгої штанини дає person/hem/edge.
+-->
+<defs>
+<path id="person-shoe-barefoot-front-shape" d="M11 6.2C10.6 7.6 9.6 10.6 9.2 12.6C8.8 14.6 8.8 17 10.4 18.4C12 19.2 16 18.9 20 18.9C24 18.9 28.4 18.8 30.6 18.5C32 18.3 32.8 17.4 32.8 16C32.8 14.8 32 14.2 31 14C29 13.6 26.4 12.6 24.4 11.4C22.8 10.4 21.8 8.8 21.4 6.2Z"/>
+<clipPath id="person-shoe-barefoot-front-clip"><use href="#person-shoe-barefoot-front-shape"/></clipPath>
+</defs>
+<g id="fill-skin">
+<use href="#person-shoe-barefoot-front-shape" fill="#ffffff"/>
+</g>
+<g id="shade" clip-path="url(#person-shoe-barefoot-front-clip)">
+<path d="M7 9C9.4 10 11.4 13 12 19.4L7 19.4Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M7 17C16 17.8 26 17.8 35 16.8L35 21L7 21Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<g id="ink">
+<path d="M19.8 10.2Q21.6 10.4 22.8 12.2Q21 11.6 19.8 10.2Z" fill="#2e1f29"/>
+<path d="M28.4 15.2Q29.4 16.4 29.2 18Q28.4 16.6 28.4 15.2Z" fill="#2e1f29"/>
+<path d="M30.6 14.8Q31.6 15.8 31.6 17.4Q30.8 16.2 30.6 14.8Z" fill="#2e1f29"/>
+<path d="M11 6.2C10.6 7.6 9.6 10.6 9.2 12.6C8.8 14.6 8.8 17 10.4 18.4C12 19.2 16 18.9 20 18.9C24 18.9 28.4 18.8 30.6 18.5C32 18.3 32.8 17.4 32.8 16C32.8 14.8 32 14.2 31 14C29 13.6 26.4 12.6 24.4 11.4C22.8 10.4 21.8 8.8 21.4 6.2" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

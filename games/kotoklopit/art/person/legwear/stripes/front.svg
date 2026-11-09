@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33 74" width="33" height="74">
+<!-- person/legwear/stripes/front — лампас спортивних штанів поверх person/leg (слоти legwear-far і legwear-near), ракурс front (¾ спереду). Гардероб, низ.
+size 33×74; pivot (16, 18) — кульшовий суглоб, як у person/leg; уздовж зовнішнього боку ближньої ноги (спереду — ліворуч), від-під стегон торса до гумки.
+Шари: detail (смуга paper), ink (контур смуги): на білих і світлих штанах лампас тримає контур.
+-->
+<g id="detail">
+<path d="M8.7 21C9 27 9.4 34 9.7 40C9.9 45 10.2 56 10.5 62L14.9 62C14.6 56 14.3 45 14.1 40C13.8 34 13.4 27 13.1 21Z" fill="#f2e7d0"/>
+</g>
+<g id="ink">
+<path d="M8.7 21C9 27 9.4 34 9.7 40C9.9 45 10.2 56 10.5 62M13.1 21C13.4 27 13.8 34 14.1 40C14.3 45 14.6 56 14.9 62" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

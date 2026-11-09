@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 21" width="30" height="21">
+<!-- person/hem/edge/front — край довгої штанини над голою стопою (слоти hem-far і hem-near), ракурс front (¾ спереду). Гардероб, низ.
+size 30×21; pivot (15, 13) — кісточка (точка foot ноги); верх (на 6 вище) — ширина person/leg, без контуру; низ — на 1,6 під кісточкою.
+Шари: fill-bottom, ink. Над відкритою стопою (босоніж, сандалі, човники) низ ноги, що зазвичай ховається у взуття, отримує контур.
+-->
+<defs>
+<path id="person-hem-edge-front-shape" d="M7.4 7L22.4 7C22.6 9.4 22.8 11.6 22.8 13.6C19 15.2 11 15.2 7.2 13.6C7.2 11.4 7.3 9.2 7.4 7Z"/>
+</defs>
+<g id="fill-bottom">
+<use href="#person-hem-edge-front-shape" fill="#ffffff"/>
+</g>
+<g id="ink">
+<path d="M7.4 7C7.3 9.2 7.2 11.4 7.2 13.6C11 15.2 19 15.2 22.8 13.6C22.8 11.6 22.6 9.4 22.4 7" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

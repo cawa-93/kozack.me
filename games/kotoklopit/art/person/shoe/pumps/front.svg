@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 39 25" width="39" height="25">
+<!-- person/shoe/pumps/front — човники на підборах (слоти shoe-far і shoe-near), носком праворуч, ракурс front (¾ спереду). Гардероб, взуття.
+size 39×25; pivot (16, 8) — кісточка; верх — шкіра кісточки на 1,8 над нею (як person/shoe/barefoot); підошва — на висоті person/shoe.
+Шари: fill-shoes, fill-skin (підйом стопи), detail (підбор darkHi), shade, ink. Низький виріз: між кісточкою й носком — шкіра, межа —
+спільна лінія верху туфлі; підбор 3,5 (від п'яти до підлоги), п'ята піднята, носок на підлозі.
+-->
+<defs>
+<path id="person-shoe-pumps-front-skin" d="M11 6.2C10.8 7.4 10.4 8.6 9.8 9.6C11.2 10.4 14.6 11.4 18 11.6C21 11.8 24 11.8 26.4 12.2C25.2 11.4 23.8 10.6 22.8 9.6C22 8.6 21.6 7.4 21.4 6.2Z"/>
+<path id="person-shoe-pumps-front-shoe" d="M9.8 9.6C11.2 10.4 14.6 11.4 18 11.6C21 11.8 24 11.8 26.4 12.2C28.4 12.4 30.6 13.4 32 14.6C33.2 15.8 33 17.6 32 18.2C30.6 18.8 27.6 18.7 24.6 18.6C21.6 18.5 19.6 17.8 17.6 16.8C16 16 14.8 15.6 13.4 15.4L13 18.9L11.2 18.9L10.6 15.6C9.6 15.4 8.6 14.4 8.6 12.8C8.6 11.4 9 10.2 9.8 9.6Z"/>
+<clipPath id="person-shoe-pumps-front-clip"><use href="#person-shoe-pumps-front-shoe"/><use href="#person-shoe-pumps-front-skin"/></clipPath>
+</defs>
+<g id="fill-shoes">
+<use href="#person-shoe-pumps-front-shoe" fill="#ffffff"/>
+</g>
+<g id="fill-skin">
+<use href="#person-shoe-pumps-front-skin" fill="#ffffff"/>
+</g>
+<g id="detail">
+<path d="M10.6 15.4L13.4 15.4L13 18.9L11.2 18.9Z" fill="#6d6266"/>
+</g>
+<g id="shade" clip-path="url(#person-shoe-pumps-front-clip)">
+<path d="M7 11C9 11.4 11 12.6 11.8 15.6L7 15.6Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M14 15C18 17.2 26 17.8 34 17.2L34 21L14 21Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<g id="ink">
+<path d="M9.8 9.6C11.2 10.4 14.6 11.4 18 11.6C21 11.8 24 11.8 26.4 12.2" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11 6.2C10.8 7.4 10.4 8.6 9.8 9.6M21.4 6.2C21.6 7.4 22 8.6 22.8 9.6C23.8 10.6 25.2 11.4 26.4 12.2" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M26.4 12.2C28.4 12.4 30.6 13.4 32 14.6C33.2 15.8 33 17.6 32 18.2C30.6 18.8 27.6 18.7 24.6 18.6C21.6 18.5 19.6 17.8 17.6 16.8C16 16 14.8 15.6 13.4 15.4L13 18.9L11.2 18.9L10.6 15.6C9.6 15.4 8.6 14.4 8.6 12.8C8.6 11.4 9 10.2 9.8 9.6" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

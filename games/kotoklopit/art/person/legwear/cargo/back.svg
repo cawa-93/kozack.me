@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33 50" width="33" height="50">
+<!-- person/legwear/cargo/back — накладна кишеня карго з клапаном поверх person/leg (слоти legwear-far і legwear-near), ракурс back (¾ ззаду). Гардероб, низ.
+size 33×50; pivot (16, 18) — кульшовий суглоб, як у person/leg; кишеня на зовнішньому боці стегна (ззаду — праворуч), край — по силуету ноги.
+Шари: shade (під клапаном), ink. Заливки немає: кишеня кольору штанини.
+-->
+<defs>
+<clipPath id="person-legwear-cargo-back-clip"><path d="M24.8 29.4C22.6 30 20 30.2 17.6 29.8L17.2 44.4C19.6 45 22 45 24.2 44.2Z"/></clipPath>
+</defs>
+<g id="shade" clip-path="url(#person-legwear-cargo-back-clip)">
+<path d="M16 33.4C20 34.2 23 34.2 27 33.4L27 36C23 36.8 20 36.8 16 36Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<g id="ink">
+<path d="M20 31.8L21 31.1L22 31.8L21 32.6Z" fill="#2e1f29"/>
+<path d="M24.8 29.4C22.6 30 20 30.2 17.6 29.8L17.4 33.4C19.8 34 22.4 34 24.6 33.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17.4 33.4L17.2 44.4C19.6 45 22 45 24.2 44.2" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

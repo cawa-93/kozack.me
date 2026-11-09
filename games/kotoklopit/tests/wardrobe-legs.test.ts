@@ -1,7 +1,9 @@
 // Гардероб, низ і взуття (§5.1, `WARDROBE.md`, «Низ», «Взуття»; правила арту — `art/STYLE.md`, «person»): поділ спідниці й верху
-// не опускається нижче підлоги в жодній анімації; сидячи сховано те, чого на стегні й гомілці не видно, а спідниця й поділ —
-// у стані `sit`, присівши — `squat`; взуття стоїть на тій самій підошві й не вище за кісточку (стопи не ковзають); поєднання:
-// чоботи ховають низ заправленої штанини, кльош — халяву, гола нога — без плям і зі шкарпеткою під низьким взуттям.
+// не опускається нижче підлоги в жодній анімації; сидячи сховано те, чого на стегні й гомілці не видно, а будь-який поділ зі
+// станами — у стані `sit`, присівши чи зігнувшись — `squat`; взуття стоїть на тій самій підошві й не вище за кісточку (стопи не
+// ковзають); поєднання: чоботи ховають низ заправленої штанини, кльош і широкі — халяву, черевики під довгими штанами — лише
+// стопа, над голою стопою — край штанини, гола нога — без плям і зі шкарпеткою під низьким взуттям; у спідниці-олівці — хода
+// дрібним кроком, і ноги в кроці не прорізають її боки.
 
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -13,14 +15,22 @@ import type { Look } from "../src/sim/types";
 import { artEntry } from "../src/view/art/manifest";
 import { svgPath, type ArtId, type ArtView } from "../src/view/art/types";
 import { PERSON_ANIMS } from "../src/view/rig/anims";
-import { PERSON_PICKUP_GRAB_MS, PERSON_PUTDOWN_RELEASE_MS } from "../src/view/rig/anims/person/move";
+import {
+  PERSON_HOBBLE,
+  PERSON_MOVE,
+  PERSON_PICKUP_GRAB_MS,
+  PERSON_PUTDOWN_RELEASE_MS,
+  personCutAnim,
+  personGait,
+  personGaitSpeed,
+  type PersonGait,
+} from "../src/view/rig/anims/person/move";
 import { PERSON_FIT, PERSON_RIG, personSkin, personVariants } from "../src/view/rig/defs/person";
 import { Rig, slotFrame } from "../src/view/rig/rigcore";
 import type { RigAnim } from "../src/view/rig/types";
-import { BOTTOM_CUTS } from "../src/view/wardrobe/bottoms";
-import { partExtraFrame } from "../src/view/wardrobe/index";
+import { BOTTOM_CUTS, EDGE } from "../src/view/wardrobe/bottoms";
+import { partExtraFrame, wearOf } from "../src/view/wardrobe/index";
 import { SHOE_CUTS, shoeSkin } from "../src/view/wardrobe/shoes";
-import { wearOf } from "../src/view/wardrobe/index";
 
 type LooseRig = Rig<string, string, string>;
 type LooseAnim = RigAnim<string, string>;
@@ -31,6 +41,18 @@ const VIEWS: readonly ArtView[] = ["front", "back"];
 const BUILDS: readonly string[][] = [[], ["slim"], ["stocky"]];
 const ANIMS = PERSON_ANIMS as unknown as Readonly<Record<string, LooseAnim>>;
 const BASE: Look = { face: 0, skin: 0, hair: 0, hairColor: 0, eyes: 0, build: 1, top: 0, bottom: 0, shoes: 0 };
+const HEM_STATES = ["stand", "sit", "squat"];
+
+/** Усі анімації персонажа з усіх груп (`anims/person/*.ts`), і ті, що не в реєстрі назв (хода дрібним кроком). */
+const GROUPS = import.meta.glob<Record<string, unknown>>("../src/view/rig/anims/person/*.ts", { eager: true });
+const ALL_ANIMS: [string, LooseAnim][] = Object.entries(GROUPS).flatMap(([file, module]) =>
+  Object.values(module)
+    .filter((group): group is Record<string, LooseAnim> => typeof group === "object" && group !== null)
+    .flatMap((group) => Object.entries(group).map(([name, anim]) => [`${path.basename(file)}/${name}`, anim] as [string, LooseAnim])),
+);
+
+const cutOf = (pick: (c: (typeof BOTTOM_CUTS)[number]) => boolean): number => BOTTOM_CUTS.findIndex(pick);
+const shoeOf = (name: string): number => SHOE_CUTS.findIndex((c) => c.name === name);
 
 // --- Геометрія SVG ---------------------------------------------------------------------------------
 
@@ -73,17 +95,22 @@ function pathPoints(d: string): Pt[] {
   return points;
 }
 
+const FILLS = new Map<string, Pt[][]>();
+
 /**
- * Точки заливок `fill-*` кадру в стані `state` (елементи з класом іншого стану — пропущено; без класу — є в усіх станах), у
- * координатах полотна.
+ * Обриси заливок `fill-*` кадру в стані `state` (елементи з класом іншого стану — пропущено; без класу — є в усіх станах), у
+ * координатах полотна: кожна форма — окремий обрис. Кешовано: перевірки питають тисячі разів.
  */
-function fillPoints(id: ArtId, view: ArtView, state: string | null): Pt[] {
+function fillShapes(id: ArtId, view: ArtView, state: string | null): Pt[][] {
+  const key = `${id}|${view}|${state}`;
+  const known = FILLS.get(key);
+  if (known) return known;
   const entry = artEntry(id);
   if (!entry) throw new Error(`немає запису ${id}`);
   const svg = readFileSync(path.join(ART_DIR, svgPath(entry, view)), "utf8");
   const defs = new Map<string, string>();
   for (const m of svg.matchAll(/<path id="([^"]+)" d="([^"]+)"/g)) defs.set(m[1]!, m[2]!);
-  const points: Pt[] = [];
+  const shapes: Pt[][] = [];
   const tag = /<(\/?)(g|use|path)\b([^>]*)>/g;
   let depth = 0;
   let inFill = false;
@@ -109,14 +136,15 @@ function fillPoints(id: ArtId, view: ArtView, state: string | null): Pt[] {
     if (states.length > 0 && !states.includes(`st-${state}`)) continue;
     const d = name === "use" ? defs.get(/href="#([^"]+)"/.exec(attrs)?.[1] ?? "") : /\sd="([^"]+)"/.exec(attrs)?.[1];
     if (!d) throw new Error(`${id}/${view}: заливка без форми: <${name}${attrs}>`);
-    points.push(...pathPoints(d));
+    for (const part of d.split(/(?=M)/)) shapes.push(pathPoints(part));
   }
-  return points;
+  FILLS.set(key, shapes);
+  return shapes;
 }
 
 /** Найвища й найнижча точка заливок кадру, y полотна. */
 function extent(id: ArtId, view: ArtView, state: string | null = null): { top: number; bottom: number } {
-  const ys = fillPoints(id, view, state).map((p) => p[1]);
+  const ys = fillShapes(id, view, state).flat().map((p) => p[1]);
   return { top: Math.min(...ys), bottom: Math.max(...ys) };
 }
 
@@ -138,23 +166,33 @@ function stateOf(rig: LooseRig, slot: string, view: ArtView): string | null {
   return pose.art ? slotFrame(pose.art, artEntry(pose.art), pose.state, view).state : null;
 }
 
+/** Обриси заливок кадру слота в позі, що зараз на скелеті, у системі кореня. */
+function worldShapes(rig: LooseRig, slot: string, view: ArtView): Pt[][] {
+  const pose = rig.slot(slot);
+  if (!pose.visible || !pose.art) return [];
+  const entry = artEntry(pose.art);
+  if (!entry) throw new Error(`немає запису ${pose.art}`);
+  const r = (pose.rot * Math.PI) / 180;
+  const cos = Math.cos(r);
+  const sin = Math.sin(r);
+  return fillShapes(pose.art, view, stateOf(rig, slot, view)).map((shape) =>
+    shape.map(([px, py]) => {
+      const x = pose.sx * (px - entry.pivot.x);
+      const y = pose.sy * (py - entry.pivot.y);
+      return [pose.x + x * cos - y * sin, pose.y + x * sin + y * cos] as Pt;
+    }),
+  );
+}
+
 /** Найнижча точка (y кореня) заливок кадру слота в позі, що зараз на скелеті. */
 function lowest(rig: LooseRig, slot: string, view: ArtView): number {
   const pose = rig.slot(slot);
   if (!pose.visible || !pose.art) return -Infinity;
-  const entry = artEntry(pose.art);
-  if (!entry) throw new Error(`немає запису ${pose.art}`);
-  const r = (pose.rot * Math.PI) / 180;
-  let low = -Infinity;
-  for (const [px, py] of fillPoints(pose.art, view, stateOf(rig, slot, view))) {
-    const x = pose.sx * (px - entry.pivot.x);
-    const y = pose.sy * (py - entry.pivot.y);
-    low = Math.max(low, pose.y + x * Math.sin(r) + y * Math.cos(r));
-  }
+  const shapes = worldShapes(rig, slot, view);
   // Накладка самими лініями (планка, кишеня поділу верху) заливки не має й до підлоги не дістає.
-  const lines = !(entry.layers ?? []).some((layer) => layer.startsWith("fill"));
-  if (low === -Infinity && !lines) throw new Error(`${slot}: у ${pose.art} немає заливки в стані ${stateOf(rig, slot, view)}`);
-  return low;
+  const lines = !(artEntry(pose.art)?.layers ?? []).some((layer) => layer.startsWith("fill"));
+  if (shapes.length === 0 && !lines) throw new Error(`${slot}: у ${pose.art} немає заливки в стані ${stateOf(rig, slot, view)}`);
+  return Math.max(-Infinity, ...shapes.flat().map((p) => p[1]));
 }
 
 /** Моменти анімації: рівний крок і ще мить до й після кожної зміни стану кадру. */
@@ -170,7 +208,6 @@ function moments(anim: LooseAnim): number[] {
 /** Підлога — y кореня (між ступнями). */
 const FLOOR = 0;
 
-
 describe("гардероб, низ: спідниця й поділ верху", () => {
   const variants = personVariants();
   const hems: { slot: "skirt" | "top-hem"; art: ArtId }[] = [
@@ -178,15 +215,18 @@ describe("гардероб, низ: спідниця й поділ верху", 
     ...variants["top-hem"].filter((a): a is ArtId => a !== null).map((art) => ({ slot: "top-hem" as const, art })),
   ];
 
-  it("є що перевіряти: міні-спідниця зі станами stand, sit, squat", () => {
-    expect(hems.map((h) => h.art)).toContain("person/skirt/mini");
-    expect(artEntry("person/skirt/mini")?.states).toEqual(["stand", "sit", "squat"]);
+  it("є що перевіряти: спідниці низу зі станами; будь-який поділ зі станами — рівно stand, sit, squat", () => {
+    for (const art of ["person/skirt/mini", "person/skirt/midi", "person/skirt/pleated", "person/skirt/pencil"]) expect(hems.map((h) => h.art)).toContain(art);
+    for (const { art } of hems) {
+      const states = artEntry(art)?.states;
+      if (states) expect(states, art).toEqual(HEM_STATES);
+    }
   });
 
   it("поділ не нижче підлоги в жодній анімації (хіба що лежить на ній разом із тулубом)", () => {
     const problems: string[] = [];
     for (const { slot, art } of hems) {
-      for (const [name, anim] of Object.entries(ANIMS)) {
+      for (const [name, anim] of ALL_ANIMS) {
         for (const view of VIEWS) {
           for (const proportions of BUILDS) {
             const rig = rigWith({}, view, proportions, { [slot]: art });
@@ -206,23 +246,40 @@ describe("гардероб, низ: спідниця й поділ верху", 
     expect(problems.slice(0, 10)).toEqual([]);
   });
 
-  it("стоячи міні — до середини стегна: нижче промежини, вище колін", () => {
-    for (const view of VIEWS) {
-      const rig = rigWith({ bottomCut: BOTTOM_CUTS.findIndex((c) => c.skirt === "person/skirt/mini") }, view);
+  it("стоячи: міні — до середини стегна, олівець — до коліна, міді й плісе — нижче колін", () => {
+    const hipToFoot = 49.2;
+    const at = (art: string, view: ArtView): number => {
+      const rig = rigWith({ bottomCut: cutOf((c) => c.skirt === art) }, view);
       rig.evaluate(0);
-      const hip = rig.bone("leg-near").world;
-      const low = lowest(rig, "skirt", view);
-      expect(low, view).toBeGreaterThan(hip.ty + 10);
-      expect(low, view).toBeLessThan(hip.ty + 25);
+      return lowest(rig, "skirt", view) - rig.bone("leg-near").world.ty;
+    };
+    for (const view of VIEWS) {
+      expect(at("person/skirt/mini", view), view).toBeGreaterThan(10);
+      expect(at("person/skirt/mini", view), view).toBeLessThan(25);
+      expect(at("person/skirt/pencil", view), view).toBeGreaterThan(hipToFoot * 0.45);
+      expect(at("person/skirt/pencil", view), view).toBeLessThan(hipToFoot * 0.6);
+      for (const art of ["person/skirt/midi", "person/skirt/pleated"]) {
+        expect(at(art, view), `${art} ${view}`).toBeGreaterThan(hipToFoot * 0.6);
+        expect(at(art, view), `${art} ${view}`).toBeLessThan(hipToFoot * 0.85);
+      }
     }
   });
 });
 
 describe("гардероб, низ: сидячи й присівши", () => {
-  const look = { bottomCut: BOTTOM_CUTS.findIndex((c) => c.legwear === "person/legwear/jeans"), shoeCut: 0 };
-  const skin = { skirt: "person/skirt/mini" as ArtId, "top-hem": "person/skirt/mini" as ArtId, "shaft-near": "person/shaft/sock" as ArtId, "shaft-far": "person/shaft/sock" as ArtId };
+  const look = { bottomCut: cutOf((c) => c.legwear === "person/legwear/jeans"), shoeCut: 0 };
+  /** Будь-який кадр поділу зі станами (спідниця низу, поділ верху) — тут міні й міді. */
+  const skin = { skirt: "person/skirt/mini" as ArtId, "top-hem": "person/skirt/midi" as ArtId, "shaft-near": "person/shaft/sock" as ArtId, "shaft-far": "person/shaft/sock" as ArtId };
 
-  it("сидячи (робота, летючка, їжа): ближня нога — лише стегно, без взуття, халяви й низу штанини; на гомілці — без накладки; спідниця й поділ — sit", () => {
+  const at = (name: string, t: number, view: ArtView): string | null => {
+    const rig = rigWith({}, view, [], skin);
+    rig.play(ANIMS[name]!, 0, { blend: 0 });
+    rig.evaluate(t);
+    expect(stateOf(rig, "top-hem", view), `${name} ${view} @${t}`).toBe(stateOf(rig, "skirt", view));
+    return stateOf(rig, "skirt", view);
+  };
+
+  it("сидячи (робота, летючка, їжа): ближня нога — лише стегно, без взуття, халяви й низу штанини; на гомілці — без накладки; поділ — sit", () => {
     for (const name of ["work", "meeting", "eat"]) {
       const anim = ANIMS[name]!;
       for (const view of VIEWS) {
@@ -238,14 +295,7 @@ describe("гардероб, низ: сидячи й присівши", () => {
     }
   });
 
-  it("присівши (гладить, бере й опускає кота) спідниця й поділ — squat, а випроставшись — stand", () => {
-    const at = (name: string, t: number, view: ArtView): string | null => {
-      const rig = rigWith({}, view, [], skin);
-      rig.play(ANIMS[name]!, 0, { blend: 0 });
-      rig.evaluate(t);
-      expect(stateOf(rig, "top-hem", view)).toBe(stateOf(rig, "skirt", view));
-      return stateOf(rig, "skirt", view);
-    };
+  it("присівши (гладить, бере й опускає кота) поділ — squat, а випроставшись — stand", () => {
     for (const view of VIEWS) {
       for (const t of [0, 500, 999]) expect(at("pet", t, view), `pet ${view} @${t}`).toBe("squat");
       expect(at("pickUp", PERSON_PICKUP_GRAB_MS, view)).toBe("squat");
@@ -257,6 +307,18 @@ describe("гардероб, низ: сидячи й присівши", () => {
       expect(at("idle", 0, view)).toBe("stand");
     }
   });
+
+  it("справи: стан поділу — за згином у стегні (присів над лотком — squat, глибоко зігнувся чи сів на підлогу — sit, лежить — stand)", () => {
+    for (const view of VIEWS) {
+      expect(at("litter", 0, view), `litter ${view}`).toBe("squat");
+      expect(at("clean", 0, view), `clean ${view}`).toBe("sit");
+      expect(at("fix", 0, view), `fix ${view}`).toBe("sit");
+      expect(at("collapse", 700, view), `collapse ${view}`).toBe("sit");
+      expect(at("collapse", ANIMS["collapse"]!.duration, view), `collapse ${view}`).toBe("stand");
+      expect(at("collapse", 0, view), `collapse ${view}`).toBe("stand");
+      for (const name of ["phone", "meds", "door"]) expect(at(name, 0, view), `${name} ${view}`).toBe("stand");
+    }
+  });
 });
 
 describe("гардероб, взуття", () => {
@@ -264,7 +326,7 @@ describe("гардероб, взуття", () => {
 
   it("взуття — полотно й pivot кросівок, підошва на тій самій висоті, верх не вище 2 над кісточкою (стопа в ході повертається)", () => {
     const base = artEntry("person/shoe");
-    expect(shoes.length).toBe(SHOE_CUTS.length);
+    expect(shoes.length).toBeGreaterThanOrEqual(10);
     for (const id of shoes) {
       const entry = artEntry(id);
       expect({ size: entry?.size, pivot: entry?.pivot }, id).toEqual({ size: base?.size, pivot: base?.pivot });
@@ -276,15 +338,28 @@ describe("гардероб, взуття", () => {
     }
   });
 
-  it("стопи стоять: кісточка взуття на кінці ноги (точка foot) кожного фасону низу", () => {
-    const foot = artEntry("person/leg")?.points?.["foot"];
-    for (const cut of BOTTOM_CUTS) {
-      const leg = artEntry(cut.leg ?? "person/leg");
-      expect({ size: leg?.size, pivot: leg?.pivot, foot: leg?.points?.["foot"] }, cut.name).toEqual({ size: { w: 33, h: 74 }, pivot: { x: 16, y: 18 }, foot });
+  it("підбор човників — щонайменше 3: п'ята над підлогою, носок на ній", () => {
+    for (const view of VIEWS) {
+      const svg = readFileSync(path.join(ART_DIR, "person/shoe/pumps", `${view}.svg`), "utf8");
+      const heel = /<g id="detail">\s*<path d="([^"]+)"/.exec(svg)?.[1];
+      expect(heel, view).toBeDefined();
+      const ys = pathPoints(heel ?? "").map((p) => p[1]);
+      expect(Math.max(...ys) - Math.min(...ys), view).toBeGreaterThanOrEqual(3);
     }
   });
 
-  it("халява й низ штанини — на кістці ноги в кісточці (точка foot), полотно не ширше за ногу з запасом", () => {
+  it("стопи стоять: кісточка взуття на кінці ноги (точка foot) кожного фасону низу — там само відносно стегна", () => {
+    const ref = artEntry("person/leg");
+    const foot = (id: ArtId): { x: number; y: number } => {
+      const e = artEntry(id);
+      const p = e?.points?.["foot"];
+      return { x: (p?.x ?? NaN) - (e?.pivot.x ?? 0), y: (p?.y ?? NaN) - (e?.pivot.y ?? 0) };
+    };
+    for (const cut of BOTTOM_CUTS) expect(foot(cut.leg ?? "person/leg"), cut.name).toEqual(foot("person/leg"));
+    expect(ref).toBeDefined();
+  });
+
+  it("халява й низ штанини — на кістці ноги в кісточці (точка foot), в обох ракурсах", () => {
     const variants = personVariants();
     for (const slot of ["shaft-near", "hem-near"] as const) {
       for (const id of variants[slot]) {
@@ -295,44 +370,70 @@ describe("гардероб, взуття", () => {
       }
     }
   });
+
+  it("гола стопа (босоніж, сандалі, човники) — шкірою (fill-skin): тим самим тоном, що й нога", () => {
+    for (const cut of SHOE_CUTS.filter((c) => c.open)) expect(artEntry(cut.shoe ?? "person/shoe")?.layers, cut.name).toContain("fill-skin");
+  });
 });
 
 describe("гардероб: поєднання низу й взуття", () => {
-  const boots = SHOE_CUTS.findIndex((cut) => cut.tuck === true);
-  const slippers = SHOE_CUTS.findIndex((cut) => cut.sockless === true);
   const skinOf = (bottomCut: number, shoeCut: number) => personSkin({ ...BASE, bottomCut, shoeCut });
+  const long = (i: number): boolean => BOTTOM_CUTS[i]?.bare !== true;
 
-  it("чоботи: заправлені штани без низу штанини, халява на нозі; кльош — поверх халяви (її немає), низ штанини лишається", () => {
-    expect(boots).toBeGreaterThan(0);
-    BOTTOM_CUTS.forEach((cut, i) => {
-      const skin = skinOf(i, boots);
-      if (cut.over) {
-        expect([skin["shaft-near"], skin["shaft-far"]], cut.name).toEqual([null, null]);
-        expect(skin["hem-near"], cut.name).toBe(cut.hem ?? null);
-      } else {
-        expect([skin["hem-near"], skin["hem-far"]], cut.name).toEqual([null, null]);
-        expect(skin["shaft-near"], cut.name).toBe(SHOE_CUTS[boots]?.shaft);
-      }
-    });
-    // Без чобіт підкат джинсів на місці.
-    const jeans = BOTTOM_CUTS.findIndex((cut) => cut.hem === "person/hem/cuff");
-    expect(skinOf(jeans, 0)["hem-near"]).toBe("person/hem/cuff");
+  it("заправлене взуття (чоботи, черевики, високі кеди, гумові): низу довгої штанини не видно; кльош і широкі — поверх халяви", () => {
+    const tucked = SHOE_CUTS.map((c, i) => (c.tuck ? i : -1)).filter((i) => i >= 0);
+    expect(tucked.map((i) => SHOE_CUTS[i]?.name)).toEqual(["чоботи", "черевики", "високі кеди", "гумові чоботи"]);
+    for (const j of tucked) {
+      const shoe = SHOE_CUTS[j]!;
+      BOTTOM_CUTS.forEach((cut, i) => {
+        const skin = skinOf(i, j);
+        const what = `${cut.name} + ${shoe.name}`;
+        if (cut.over) {
+          expect([skin["shaft-near"], skin["shaft-far"]], what).toEqual([null, null]);
+          expect(skin["hem-near"], what).toBe(cut.hem ?? null);
+        } else if (cut.bare) {
+          expect(skin["shaft-near"], what).toBe(shoe.shaft);
+          expect(skin["hem-near"], what).toBe(cut.hem ?? null);
+        } else {
+          expect([skin["hem-near"], skin["hem-far"]], what).toEqual([null, null]);
+          // Черевики й високі кеди під довгою штаниною — лише стопа; чоботи — халява поверх заправленої штанини.
+          expect(skin["shaft-near"], what).toBe(shoe.ankle ? null : shoe.shaft);
+        }
+      });
+    }
+    // Без заправленого взуття підкат джинсів на місці.
+    expect(skinOf(cutOf((c) => c.hem === "person/hem/cuff"), 0)["hem-near"]).toBe("person/hem/cuff");
   });
 
-  it("гола нога: шкарпетка під низьким взуттям (кросівки, кеди), на босу ногу в капцях; під штанами шкарпетки немає", () => {
-    expect(slippers).toBeGreaterThan(0);
+  it("гола нога: шкарпетка під низьким взуттям (кросівки, кеди); на босу ногу в капцях, туфлях, човниках, сандалях і босоніж", () => {
     BOTTOM_CUTS.forEach((cut, i) => {
       SHOE_CUTS.forEach((shoe, j) => {
-        const shaft = skinOf(i, j)["shaft-near"];
-        if (shoe.shaft) expect(shaft, `${cut.name} + ${shoe.name}`).toBe(cut.over ? null : shoe.shaft);
-        else expect(shaft, `${cut.name} + ${shoe.name}`).toBe(cut.bare && !shoe.sockless ? "person/shaft/sock" : null);
+        if (shoe.shaft) return;
+        expect(skinOf(i, j)["shaft-near"], `${cut.name} + ${shoe.name}`).toBe(cut.bare && !shoe.sockless ? "person/shaft/sock" : null);
       });
     });
+    for (const name of ["капці", "туфлі", "човники", "сандалі", "босоніж"]) expect(SHOE_CUTS[shoeOf(name)]?.sockless, name).toBe(true);
     // Правило — у самому взутті: його слоти малюються над штаниною.
-    expect(shoeSkin(wearOf({ ...BASE, bottomCut: BOTTOM_CUTS.findIndex((c) => c.bare), shoeCut: 0 }))["shaft-far"]).toBe("person/shaft/sock");
+    expect(shoeSkin(wearOf({ ...BASE, bottomCut: cutOf((c) => c.bare === true), shoeCut: 0 }))["shaft-far"]).toBe("person/shaft/sock");
   });
 
-  it("гола нога — шкіра (fill-skin) без плям; шорти й спідниця — без плям на шкірі, легінси — з плямами штанини", () => {
+  it("відкрита стопа під довгою штаниною без свого низу — край штанини (вузький у легінсів), зі своїм низом — він; гола нога — нічого", () => {
+    const open = SHOE_CUTS.map((c, i) => (c.open ? i : -1)).filter((i) => i >= 0);
+    expect(open.map((i) => SHOE_CUTS[i]?.name)).toEqual(["човники", "сандалі", "босоніж"]);
+    for (const j of open) {
+      BOTTOM_CUTS.forEach((cut, i) => {
+        const what = `${cut.name} + ${SHOE_CUTS[j]?.name}`;
+        const hem = skinOf(i, j)["hem-near"];
+        if (!long(i)) expect(hem, what).toBe(cut.hem ?? null);
+        else expect(hem, what).toBe(cut.hem ?? cut.edge ?? EDGE);
+      });
+    }
+    expect(BOTTOM_CUTS[cutOf((c) => c.name === "легінси")]?.edge).toBe("person/hem/edge-narrow");
+    // Під закритим взуттям краю штанини немає.
+    expect(skinOf(0, 0)["hem-near"]).toBeNull();
+  });
+
+  it("гола нога — шкіра (fill-skin) без плям; бриджі, шорти й спідниці — без плям, легінси й вузькі джинси — з плямами штанини", () => {
     for (const cut of BOTTOM_CUTS.filter((c) => c.bare)) {
       const leg = cut.leg ?? "person/leg";
       expect(artEntry(leg)?.layers, cut.name).toContain("fill-skin");
@@ -344,5 +445,131 @@ describe("гардероб: поєднання низу й взуття", () => 
     }
     expect(partExtraFrame("person/leg/leggings/front")).toBe("person/leg-extra/front");
     expect(partExtraFrame("person/leg/back")).toBe("person/leg-extra/back");
+    // Широка штанина — свої плями з її полотном і pivot.
+    expect(partExtraFrame("person/leg/wide/front")).toBe("person/leg-extra/wide/front");
+    const wide = artEntry("person/leg/wide");
+    const stains = artEntry("person/leg-extra/wide");
+    expect({ size: stains?.size, pivot: stains?.pivot }).toEqual({ size: wide?.size, pivot: wide?.pivot });
+  });
+});
+
+describe("гардероб: хода у спідниці-олівці", () => {
+  const pencil = cutOf((c) => c.hobble === true);
+  const GAITS: readonly PersonGait[] = ["walk", "dash", "limp", "trudge", "dizzy"];
+  const HOBBLE = PERSON_HOBBLE as unknown as Readonly<Record<string, LooseAnim>>;
+  const MOVE = PERSON_MOVE as unknown as Readonly<Record<string, LooseAnim>>;
+
+  it("дрібним кроком — лише у вузькій спідниці (олівець) і лише ходи", () => {
+    expect(BOTTOM_CUTS.filter((c) => c.hobble).map((c) => c.name)).toEqual(["спідниця-олівець"]);
+    const look = { ...BASE, bottomCut: pencil };
+    for (const gait of GAITS) {
+      expect(personCutAnim(PERSON_MOVE[gait], look), gait).toBe(PERSON_HOBBLE[`${gait}Hobble`]);
+      expect(personCutAnim(PERSON_MOVE[gait], { ...BASE, bottomCut: cutOf((c) => c.skirt === "person/skirt/midi") }), gait).toBe(PERSON_MOVE[gait]);
+      expect(personCutAnim(PERSON_MOVE[gait], null), gait).toBe(PERSON_MOVE[gait]);
+    }
+    for (const name of ["idle", "pet", "trip"] as const) expect(personCutAnim(PERSON_MOVE[name], look), name).toBe(PERSON_MOVE[name]);
+  });
+
+  /** Найбільший кут ноги від вертикалі за анімацію (у ракурсі front). */
+  const swing = (anim: LooseAnim): number => {
+    const rig = rigWith({}, "front");
+    rig.play(anim, 0, { blend: 0 });
+    let most = 0;
+    for (let i = 0; i <= 96; i++) {
+      rig.evaluate((anim.duration * i) / 96);
+      for (const leg of ["leg-near", "leg-far"]) {
+        const m = rig.bone(leg).world;
+        most = Math.max(most, Math.abs(90 - Math.atan2(m.b, m.a) / (Math.PI / 180)));
+      }
+    }
+    return most;
+  };
+
+  it("розмах ноги — щонайбільше 13° (у звичайній ході — ≈ 30°), а темп за `personGaitSpeed` той самий: стопи не ковзають", () => {
+    for (const gait of GAITS) {
+      const hob = HOBBLE[`${gait}Hobble`]!;
+      expect(swing(hob), gait).toBeLessThan(13.6);
+      expect(swing(MOVE[gait]!), gait).toBeGreaterThan(25);
+      // Крок і тривалість менші в одній пропорції: швидкість ходи на екрані за того самого темпу відтворення — та сама.
+      const base = personGait(gait);
+      const own = personGait(gait, true);
+      expect(own.ms).toBe(hob.duration);
+      expect(Math.abs(own.stride / own.ms / (base.stride / base.ms) - 1), gait).toBeLessThan(0.01);
+      expect(personGaitSpeed(gait, 362, 0)).toBeGreaterThan(0);
+    }
+  });
+
+  it("опорна стопа дрібного кроку йде назад рівно з кроком і не йде під підлогу", () => {
+    for (const gait of GAITS) {
+      const anim = HOBBLE[`${gait}Hobble`]!;
+      const info = personGait(gait, true);
+      const cycle = anim.duration / info.cycles;
+      for (const view of VIEWS) {
+        const rig = new Rig(PERSON_RIG, { facing: { view, flip: false } }) as unknown as LooseRig;
+        rig.evaluate(0);
+        const ankle = (id: string): Pt => [rig.bone(id).world.tx, rig.bone(id).world.ty];
+        const ground = { near: ankle("foot-near"), far: ankle("foot-far") };
+        rig.play(anim, 0, { blend: 0 });
+        const speed = info.stride / anim.duration;
+        for (const leg of ["near", "far"] as const) {
+          const [from, to] = info[leg];
+          const a = (from + 0.04) * cycle;
+          const b = (to - 0.04) * cycle;
+          rig.evaluate(a);
+          const start = ankle(`foot-${leg}`);
+          for (let t = a; t <= b; t += (b - a) / 12) {
+            rig.evaluate(t);
+            const now = ankle(`foot-${leg}`);
+            expect(Math.abs(now[0] - (start[0] - speed * (t - a))), `${gait} ${view} ${leg} x @${t}`).toBeLessThan(0.6);
+            expect(Math.abs(now[1] - ground[leg][1]), `${gait} ${view} ${leg} y @${t}`).toBeLessThan(0.6);
+          }
+        }
+      }
+    }
+  });
+
+  /** Чи точка в многокутнику (парність перетинів) або ближче до його краю, ніж `pad`. */
+  const near = (p: Pt, poly: readonly Pt[], pad: number): boolean => {
+    let inside = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const [xi, yi] = poly[i]!;
+      const [xj, yj] = poly[j]!;
+      if (yi > p[1] !== yj > p[1] && p[0] < ((xj - xi) * (p[1] - yi)) / (yj - yi) + xi) inside = !inside;
+      const dx = xj - xi;
+      const dy = yj - yi;
+      const k = Math.max(0, Math.min(1, ((p[0] - xi) * dx + (p[1] - yi) * dy) / (dx * dx + dy * dy || 1)));
+      if (Math.hypot(p[0] - xi - k * dx, p[1] - yi - k * dy) <= pad) return true;
+    }
+    return inside;
+  };
+
+  /**
+   * Скільки точок обрису ніг між стегнами торса (вище ноги ховаються під ним) і подолом виходить за боки спідниці (за контур —
+   * половину лінії).
+   */
+  const cuts = (anim: LooseAnim, view: ArtView, proportions: string[]): number => {
+    const rig = rigWith({ bottomCut: pencil }, view, proportions);
+    rig.play(anim, 0, { blend: 0 });
+    let out = 0;
+    for (let i = 0; i <= 48; i++) {
+      rig.evaluate((anim.duration * i) / 48);
+      const skirt = worldShapes(rig, "skirt", view)[0] ?? [];
+      const hem = Math.max(...skirt.map((p) => p[1]));
+      const hips = lowest(rig, "torso", view);
+      for (const leg of ["leg-near", "leg-far"]) {
+        for (const shape of worldShapes(rig, leg, view)) for (const p of shape) if (p[1] > hips && p[1] < hem - 2 && !near(p, skirt, 1.8)) out++;
+      }
+    }
+    return out;
+  };
+
+  it("у ході дрібним кроком ноги не прорізають боки олівця (звичайна хода — прорізала б)", () => {
+    for (const view of VIEWS) {
+      for (const proportions of BUILDS) {
+        const what = `${view} ${proportions.join() || "звичайна"}`;
+        expect(cuts(HOBBLE["walkHobble"]!, view, proportions), what).toBe(0);
+      }
+      expect(cuts(MOVE["walk"]!, view, []), view).toBeGreaterThan(0);
+    }
   });
 });

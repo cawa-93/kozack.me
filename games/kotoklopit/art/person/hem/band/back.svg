@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 21" width="30" height="21">
+<!-- person/hem/band/back — гумка спортивних штанів над взуттям (слоти hem-far і hem-near), ракурс back (¾ ззаду). Гардероб, низ.
+size 30×21; pivot (15, 14) — кісточка (точка foot ноги); верх гумки на 6 вище (ширина person/leg), низ звужений і лягає на верх черевика.
+Шари: fill-bottom, shade, ink. Як front.
+-->
+<defs>
+<path id="person-hem-band-back-shape" d="M7.2 8C10 9.2 20 9.2 22.8 7.8C22.6 9.8 22.2 11.8 21.8 13.4C18.4 14.8 11.6 15 8.2 13.6C7.8 11.8 7.4 9.8 7.2 8Z"/>
+<clipPath id="person-hem-band-back-clip"><use href="#person-hem-band-back-shape"/></clipPath>
+</defs>
+<g id="fill-bottom">
+<use href="#person-hem-band-back-shape" fill="#ffffff"/>
+</g>
+<g id="shade" clip-path="url(#person-hem-band-back-clip)">
+<path d="M4 7.6C9 10 21 10 26 7.4L26 10.4C21 12.2 9 12.2 4 10.4Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<g id="ink">
+<path d="M10.4 10.2L10.8 12.8M13.6 10.6L13.8 13.6M16.8 10.6L16.8 13.6M19.8 10.2L19.4 12.8" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7.2 8C10 9.2 20 9.2 22.8 7.8" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M22.8 7.8C22.6 9.8 22.2 11.8 21.8 13.4C18.4 14.8 11.6 15 8.2 13.6C7.8 11.8 7.4 9.8 7.2 8" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

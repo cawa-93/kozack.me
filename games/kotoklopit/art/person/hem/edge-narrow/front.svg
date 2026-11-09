@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 21" width="30" height="21">
+<!-- person/hem/edge-narrow/front — край легінсів над голою стопою (слоти hem-far і hem-near), ракурс front (¾ спереду). Гардероб, низ.
+size 30×21; pivot (15, 13) — кісточка (точка foot ноги); верх (на 6 вище) — ширина person/leg/leggings, без контуру; низ — на 1,4 під кісточкою.
+Шари: fill-bottom, ink. Як person/hem/edge, але по вузькій нозі.
+-->
+<defs>
+<path id="person-hem-edge-narrow-front-shape" d="M9.6 7L20.4 7C20.6 9.4 20.8 11.6 20.8 13.6C18 15 12 15 9.2 13.6C9.2 11.4 9.4 9.2 9.6 7Z"/>
+</defs>
+<g id="fill-bottom">
+<use href="#person-hem-edge-narrow-front-shape" fill="#ffffff"/>
+</g>
+<g id="ink">
+<path d="M9.6 7C9.4 9.2 9.2 11.4 9.2 13.6C12 15 18 15 20.8 13.6C20.8 11.6 20.6 9.4 20.4 7" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

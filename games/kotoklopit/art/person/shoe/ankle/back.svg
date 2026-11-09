@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 39 25" width="39" height="25">
+<!-- person/shoe/ankle/back — черевики, стопа (слоти shoe-far і shoe-near), носком праворуч, ракурс back (¾ ззаду). Гардероб, взуття.
+size 39×25; pivot (16, 8) — кісточка; верх — лінія низу штанини, як у person/shoe; на голій нозі його накриває халява person/shaft/ankle.
+Шари: fill-shoes, detail (підбор і підошва darkHi), shade, ink. Ззаду — підбор і шов задника, носок коротший.
+-->
+<defs>
+<path id="person-shoe-ankle-back-shape" d="M8.6 6.6C10.2 6 13.7 7.1 16 7.1C18.3 7.1 20.6 6.3 22.2 6.6C23.8 7 24.6 8.2 25.8 9.2C27 10.1 28.4 11.1 29.2 12.1C30 13.1 30.4 14.1 30.4 15.1C30.4 16.1 30.6 17.4 28.8 18C26.8 18.6 22.4 18.5 19.6 18.4C17.6 18.3 16 17.7 14.4 17.7C14.4 18.5 14.2 18.9 13.2 19C11.4 19.1 9.8 19 8.8 18.7C7.4 18.2 7 16.9 6.6 15.6C6.2 14.3 6.5 12.5 6.8 11C7.1 9.5 7.1 7.3 8.6 6.6Z"/>
+<clipPath id="person-shoe-ankle-back-clip"><use href="#person-shoe-ankle-back-shape"/></clipPath>
+</defs>
+<g id="fill-shoes">
+<use href="#person-shoe-ankle-back-shape" fill="#ffffff"/>
+</g>
+<g id="detail" clip-path="url(#person-shoe-ankle-back-clip)">
+<path d="M4 15.4L14.4 15.4L14.4 21L4 21Z" fill="#6d6266"/>
+<path d="M14.4 16.6C20 16.9 26 16.9 33 16.2L33 21L14.4 21Z" fill="#6d6266"/>
+</g>
+<g id="shade" clip-path="url(#person-shoe-ankle-back-clip)">
+<path d="M22 8C23.2 7 27 7.8 28 9C29 10.2 29.2 14 28 15C26.8 16 22 16.2 21 15C20 13.8 20.8 9 22 8Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<g id="ink">
+<path d="M8.2 9.6Q9 12.4 8.6 15.2" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M6.8 15.4L14.4 15.4L14.4 17.6M14.4 16.6Q22 16.9 29.8 16.2" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<use href="#person-shoe-ankle-back-shape" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

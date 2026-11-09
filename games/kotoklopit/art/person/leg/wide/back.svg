@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 41 74" width="41" height="74">
+<!-- person/leg/wide/back — широка штанина (слоти leg-far і leg-near), ракурс back (¾ ззаду). Гардероб, низ.
+size 41×74; pivot (20, 18) — кульшовий суглоб; верх ховається під стегна торса; points: foot (20.6, 67.2) — ті самі відносно pivot, що в person/leg.
+Шари: fill-bottom, shade, ink. Ззаду — складки під коліном замість стрілки; тінь на задньому боці, низ — під person/hem/wide.
+-->
+<defs>
+<path id="person-leg-wide-back-shape" d="M9.6 14.4C9.2 18 9.4 24 9.2 30C9 36 8.6 42 8.4 48C8.2 54 8 60 7.8 64C14 65.6 26 65.6 32.2 64C32 60 31.8 54 31.6 48C31.4 42 31 36 30.8 30C30.6 24 30.8 18 30.4 14.4C30 10.6 28.6 8.6 26.8 7.2C25 5.8 22.4 4.8 20 4.8C17.6 4.8 15 5.8 13.2 7.2C11.4 8.6 10 10.6 9.6 14.4Z"/>
+<clipPath id="person-leg-wide-back-clip"><use href="#person-leg-wide-back-shape"/></clipPath>
+</defs>
+<g id="fill-bottom">
+<use href="#person-leg-wide-back-shape" fill="#ffffff"/>
+</g>
+<g id="shade" clip-path="url(#person-leg-wide-back-clip)">
+<path d="M9 20C12.7 18.2 27.3 18.3 31 20C34.7 21.7 32.8 28.9 31 30.4C29.2 31.9 23.7 29 20 29C16.3 29 10.8 32.1 9 30.6C7.2 29.1 5.3 21.8 9 20Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M6 30C9.6 32 12.6 36 13.6 66L6 66Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<g id="ink">
+<path d="M15.4 45.4Q18 46 20.4 46.8Q17.6 47.2 15.4 45.4Z" fill="#2e1f29"/>
+<path d="M21 46.6Q23 45.8 25.2 45.4Q23.4 47 21 46.6Z" fill="#2e1f29"/>
+<path d="M9.6 14.4C9.2 18 9.4 24 9.2 30C9 36 8.6 42 8.4 48C8.2 54 8 60 7.8 64" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M32.2 64C32 60 31.8 54 31.6 48C31.4 42 31 36 30.8 30C30.6 24 30.8 18 30.4 14.4" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 70 62" width="70" height="62">
+<!-- person/skirt/pleated/front — спідниця плісе: міді в дрібну складку (слот skirt на кістці hips), ракурс front (¾ спереду). Гардероб, низ.
+size 70×62; pivot (32, 17) — таз, як у person/torso/1 (полотно торса, зсунуте на (3, −37)); верх — лінія подолу сорочки торса.
+Шари: fill-bottom, ink. Стани: st-stand — нижче колін, складки від пояса до подолу; st-sit — сидячи (нахил ≈ 6°), як міді: до коліна, не нижче сідниць
+торса; st-squat — присів (нахил ≈ 45°): поділ упоперек ніг. Тіні немає (бюджет атласу): об'єм дають складки.
+-->
+<defs>
+<path id="person-skirt-pleated-front-stand" d="M11 12.6C12.5 14.7 16 14.3 19 14.8C22 15.3 25.7 15.3 29 15.4C32.3 15.5 36 15.5 39 15.4C42 15.3 44.9 15.1 47 14.6C49.1 14.1 50.7 14.5 51.6 12.4C51.8 13.8 52.3 17.7 52.9 21C53.5 24.3 54.3 28.3 55.1 32C55.8 35.7 56.8 39.9 57.4 43C57.9 46.1 58.4 49.3 58.6 50.6C57.2 51.1 53.1 53 50 53.8C46.9 54.6 43.3 55 40 55.2C36.7 55.4 33.3 55.3 30 55.2C26.7 55.1 23 54.8 20 54.4C17 54 14.3 53.3 12 52.6C9.7 51.9 7.1 50.6 6.1 50.2C6.2 48.5 6.6 43.4 7 40C7.4 36.6 7.9 33.2 8.3 30C8.8 26.8 9.2 23.9 9.6 21C10 18.1 10.8 14 11 12.6Z"/>
+<path id="person-skirt-pleated-front-sit" d="M11 12.6C12.5 14.7 16 14.3 19 14.8C22 15.3 25.7 15.3 29 15.4C32.3 15.5 36 15.5 39 15.4C42 15.3 44.9 15.1 47 14.6C49.1 14.1 50.7 14.5 51.6 12.4C52.2 12.2 53.9 11.7 55 11.4C56.1 11.1 57.4 10.5 58.4 10.6C59.4 10.7 60.2 10.9 60.8 12C61.4 13.1 61.9 14.6 62 17C62.1 19.4 61.3 24.8 61.2 26.4C59.7 26.8 55.2 28.1 52 29C48.8 29.9 45.3 31.2 42 31.6C38.7 32 35.7 31.6 32 31.6C28.3 31.6 22 31.4 20 31.4C18.8 31.1 14.8 31.3 13 29.6C11.2 27.9 9.7 23.8 9.4 21C9.1 18.2 10.7 14 11 12.6Z"/>
+<path id="person-skirt-pleated-front-squat" d="M11 12.6C12.5 14.7 16 14.3 19 14.8C22 15.3 25.7 15.3 29 15.4C32.3 15.5 36 15.5 39 15.4C42 15.3 44.9 15.1 47 14.6C49.1 14.1 50.7 14.5 51.6 12.4C52 12.8 52.8 13.3 54.3 14.5C55.7 15.8 58.8 18 60.3 19.8C61.8 21.7 62.9 24.8 63.4 25.8C62.4 27.1 59.9 31.2 57.5 34C55.1 36.8 51.8 40 49 42.5C46.1 44.9 41.8 47.7 40.4 48.7C38 48 29.8 45.9 26 44C22.2 42.1 19.8 40 17.4 37.6C15 35.2 12.8 32.2 11.4 29.4C10 26.6 9.3 23.4 9.2 20.6C9.1 17.8 10.7 13.9 11 12.6Z"/>
+<clipPath id="person-skirt-pleated-front-stand-clip"><use href="#person-skirt-pleated-front-stand"/></clipPath>
+<clipPath id="person-skirt-pleated-front-sit-clip"><use href="#person-skirt-pleated-front-sit"/></clipPath>
+<clipPath id="person-skirt-pleated-front-squat-clip"><use href="#person-skirt-pleated-front-squat"/></clipPath>
+</defs>
+<g id="fill-bottom">
+<use href="#person-skirt-pleated-front-stand" fill="#ffffff" class="st-stand"/>
+<use href="#person-skirt-pleated-front-sit" fill="#ffffff" class="st-sit"/>
+<use href="#person-skirt-pleated-front-squat" fill="#ffffff" class="st-squat"/>
+</g>
+<g id="ink">
+<g class="st-stand">
+<path d="M11.2 15.4C12.6 17.4 16 17 19 17.6C22 18 25.7 18.1 29 18.2C32.3 18.3 36 18.3 39 18.2C42 18.1 44.9 17.9 47 17.4C49 16.9 50.6 17.2 51.8 15.2" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M15.3 19.2L10.1 51.8" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M20 19.6L16.3 53.6" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M24.6 19.9L22.6 54.6" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M29.2 20.1L29.1 55.1" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M33.9 20.1L35.6 55.2" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M38.5 20L42 54.9" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M43.2 19.8L48.4 54" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M47.8 19L54.6 52.1" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11 12.6C12.5 14.7 16 14.3 19 14.8C22 15.3 25.7 15.3 29 15.4C32.3 15.5 36 15.5 39 15.4C42 15.3 44.9 15.1 47 14.6C49.1 14.1 50.7 14.5 51.6 12.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M51.6 12.4C51.8 13.8 52.3 17.7 52.9 21C53.5 24.3 54.3 28.3 55.1 32C55.8 35.7 56.8 39.9 57.4 43C57.9 46.1 58.4 49.3 58.6 50.6C57.2 51.1 53.1 53 50 53.8C46.9 54.6 43.3 55 40 55.2C36.7 55.4 33.3 55.3 30 55.2C26.7 55.1 23 54.8 20 54.4C17 54 14.3 53.3 12 52.6C9.7 51.9 7.1 50.6 6.1 50.2C6.2 48.5 6.6 43.4 7 40C7.4 36.6 7.9 33.2 8.3 30C8.8 26.8 9.2 23.9 9.6 21C10 18.1 10.8 14 11 12.6" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g class="st-sit">
+<path d="M11.2 15.4C12.6 17.4 16 17 19 17.6C22 18 25.7 18.1 29 18.2C32.3 18.3 36 18.3 39 18.2C42 18.1 44.9 17.9 47 17.4C49 16.9 50.6 17.2 51.8 15.2" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M25.6 19.4L33.4 31.6" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M30.2 19.6L38.4 31.6" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M34.8 19.6L43.4 31.2" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M39.4 19.4L48.3 30" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M43.9 19L53.1 28.7" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M48.5 18.3L58 27.3" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11 12.6C12.5 14.7 16 14.3 19 14.8C22 15.3 25.7 15.3 29 15.4C32.3 15.5 36 15.5 39 15.4C42 15.3 44.9 15.1 47 14.6C49.1 14.1 50.7 14.5 51.6 12.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M51.6 12.4C52.2 12.2 53.9 11.7 55 11.4C56.1 11.1 57.4 10.5 58.4 10.6C59.4 10.7 60.2 10.9 60.8 12C61.4 13.1 61.9 14.6 62 17C62.1 19.4 61.3 24.8 61.2 26.4C59.7 26.8 55.2 28.1 52 29C48.8 29.9 45.3 31.2 42 31.6C38.7 32 35.7 31.6 32 31.6C28.3 31.6 22 31.4 20 31.4C18.8 31.1 14.8 31.3 13 29.6C11.2 27.9 9.7 23.8 9.4 21C9.1 18.2 10.7 14 11 12.6" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g class="st-squat">
+<path d="M11.2 15.4C12.6 17.4 16 17 19 17.6C22 18 25.7 18.1 29 18.2C32.3 18.3 36 18.3 39 18.2C42 18.1 44.9 17.9 47 17.4C49 16.9 50.6 17.2 51.8 15.2" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M22.7 20.5L45.7 44.9" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M27.1 20.5L48.9 42.5" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M31.5 20.4L51.6 39.8" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M35.9 20.1L54.4 37" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M40.2 19.8L57.2 34.2" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M44.6 19.3L59.6 31.1" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11 12.6C12.5 14.7 16 14.3 19 14.8C22 15.3 25.7 15.3 29 15.4C32.3 15.5 36 15.5 39 15.4C42 15.3 44.9 15.1 47 14.6C49.1 14.1 50.7 14.5 51.6 12.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M51.6 12.4C52 12.8 52.8 13.3 54.3 14.5C55.7 15.8 58.8 18 60.3 19.8C61.8 21.7 62.9 24.8 63.4 25.8C62.4 27.1 59.9 31.2 57.5 34C55.1 36.8 51.8 40 49 42.5C46.1 44.9 41.8 47.7 40.4 48.7C38 48 29.8 45.9 26 44C22.2 42.1 19.8 40 17.4 37.6C15 35.2 12.8 32.2 11.4 29.4C10 26.6 9.3 23.4 9.2 20.6C9.1 17.8 10.7 13.9 11 12.6" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+</svg>

@@ -38,7 +38,7 @@ import { artEntry } from "../art/manifest";
 import { farRecipe, personRecipe } from "../art/recipes";
 import type { ArtId, TintRecipe } from "../art/types";
 import { PERSON_ANIMS } from "../rig/anims/index";
-import { personCatGrip, personVacuumBrush, personWithArms } from "../rig/anims/person/move";
+import { personCatGrip, personCutAnim, personVacuumBrush, personWithArms } from "../rig/anims/person/move";
 import { PERSON_FAR_SLOTS, PERSON_FIT, PERSON_RIG, personProportions, personSkin, type PersonSlot } from "../rig/defs/person";
 import { sameLook } from "../wardrobe/index";
 import { slotFrame } from "../rig/rigcore";
@@ -386,7 +386,7 @@ export class IsoPersonView implements PersonPart {
     this.petFarCat = shot ? null : reach.petFar;
     this.rodCat = shot ? null : reach.rod;
     const id = shot ? shot.anim : choice.anim;
-    const main = PERSON_ANIMS[id];
+    const main = personCutAnim(PERSON_ANIMS[id], this.look);
     const droop = !shot && asleep && PERSON_BY_PROGRESS.has(choice.anim) && !movesHead(main);
     const armed = personWithArms(main, armsOverlay(id, choice.overlay), id);
     const anim = mixAnims(armed, personExtras(eyesFrame(params.eyes), this.petCat !== null, droop, this.petFarCat !== null));

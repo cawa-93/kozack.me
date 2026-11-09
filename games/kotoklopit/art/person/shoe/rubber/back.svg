@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 39 25" width="39" height="25">
+<!-- person/shoe/rubber/back — гумові чоботи, стопа (слоти shoe-far і shoe-near), носком праворуч, ракурс back (¾ ззаду). Гардероб, взуття.
+size 39×25; pivot (16, 8) — кісточка; верх — не вище 2 над кісточкою, без контуру: його накриває халява person/shaft/rubber.
+Шари: fill-shoes, detail (товста рифлена підошва dark), shade, ink. Ззаду — кругла п'ята, носок коротший.
+-->
+<defs>
+<path id="person-shoe-rubber-back-shape" d="M8.6 6.6C10.2 6 13.7 7.1 16 7.1C18.3 7.1 20.6 6.3 22.2 6.6C23.8 7 24.8 8.2 26 9.2C27.2 10.1 28.8 11.2 29.8 12.4C30.8 13.6 31 15 30.8 16.2C30.6 17.6 29.8 18.6 28 18.8C23 19.1 14 19 9.8 18.9C7.8 18.8 6.8 17.6 6.6 16C6.4 14.4 6.5 12.5 6.8 11C7.1 9.5 7.1 7.3 8.6 6.6Z"/>
+<clipPath id="person-shoe-rubber-back-clip"><use href="#person-shoe-rubber-back-shape"/></clipPath>
+</defs>
+<g id="fill-shoes">
+<use href="#person-shoe-rubber-back-shape" fill="#ffffff"/>
+</g>
+<g id="detail" clip-path="url(#person-shoe-rubber-back-clip)">
+<path d="M4 15.4C12 15.8 24 15.8 34 15.2L34 21L4 21Z" fill="#4b4146"/>
+</g>
+<g id="shade" clip-path="url(#person-shoe-rubber-back-clip)">
+<path d="M22 8C23.2 7 27 7.8 28 9C29 10.2 29.2 14 28 15C26.8 16 22 16.2 21 15C20 13.8 20.8 9 22 8Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<g id="ink">
+<path d="M11.4 16.8L11.4 18.4M16.4 16.8L16.4 18.4M21.4 16.8L21.4 18.4M26.2 16.6L26.2 18.2" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M6.8 15.4Q18 15.9 30.8 15.2" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M23.2 7.2C24.2 7.8 25 8.4 26 9.2C27.2 10.1 28.8 11.2 29.8 12.4C30.8 13.6 31 15 30.8 16.2C30.6 17.6 29.8 18.6 28 18.8C23 19.1 14 19 9.8 18.9C7.8 18.8 6.8 17.6 6.6 16C6.4 14.4 6.5 12.5 6.8 11C6.9 10.4 7 9.6 7.1 8.8" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

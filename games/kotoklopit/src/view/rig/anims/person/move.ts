@@ -40,9 +40,12 @@
 //   (0 — на підлозі, 1 — у руках); у `putDown` — навпаки, кіт на підлозі з `PERSON_PUTDOWN_RELEASE_MS`.
 
 import { BODY_SECONDS_PER_GAME_HOUR, ILLNESS_EFFECTS, MINUTES_PER_HOUR, WALK_TILES_PER_MINUTE } from "../../../../sim/config";
+import type { Look } from "../../../../sim/types";
 import { PERSON_ONE_SHOT_MS, PERSON_OWN_ARMS, type PersonAnimId } from "../../../anim/ids";
 import { artEntry } from "../../../art/manifest";
 import type { ArtView } from "../../../art/types";
+import { BOTTOM_CUTS } from "../../../wardrobe/bottoms";
+import { wearOf } from "../../../wardrobe/index";
 import { ISO_TILE } from "../../../world/projection";
 import { PERSON_RIG } from "../../defs/person";
 import { entryPoint, Rig, sampleNumber, type ProportionRef } from "../../rigcore";
@@ -325,7 +328,6 @@ const WALK_GAIT: Gait = {
 };
 const WALK_MS = cycleMs(WALK_GAIT, NOMINAL_SPEED);
 const WALK_KEYS = 24;
-const WALK = gaitTracks(WALK_MS, WALK_KEYS, WALK_GAIT);
 
 /** Ривок: довгий крок із польотом (обидві ноги в повітрі), сильний нахил. */
 const DASH_GAIT: Gait = {
@@ -335,7 +337,7 @@ const DASH_GAIT: Gait = {
 };
 const DASH_MS = 300;
 const DASH_LEAN = 22;
-const DASH = gaitTracks(DASH_MS, 20, DASH_GAIT);
+const DASH_KEYS = 20;
 
 /**
  * Кульгає на ближню ногу: на хвору ступає ненадовго, вона підгинається під вагою, а в переносі ледь відривається й не
@@ -348,7 +350,6 @@ const LIMP_GAIT: Gait = {
 };
 const LIMP_MS = cycleMs(LIMP_GAIT, NOMINAL_SPEED * ILLNESS_EFFECTS.slow);
 const LIMP_KEYS = 25;
-const LIMP = gaitTracks(LIMP_MS, LIMP_KEYS, LIMP_GAIT);
 
 /**
  * Плететься (виснажений): виснаження ходу не сповільнює (§6.5), тож крок не коротший за крок ходьби, але важкий — без
@@ -360,7 +361,6 @@ const TRUDGE_GAIT: Gait = {
 };
 const TRUDGE_MS = cycleMs(TRUDGE_GAIT, NOMINAL_SPEED);
 const TRUDGE_KEYS = 24;
-const TRUDGE = gaitTracks(TRUDGE_MS, TRUDGE_KEYS, TRUDGE_GAIT);
 
 /**
  * Паморочиться: його видно на ходу (збій керування — §6.5; оглушення завжди накрите разовими «спіткнувся» чи
@@ -375,7 +375,25 @@ const DIZZY_GAIT: Gait = {
 };
 const DIZZY_CYCLES = 2;
 const DIZZY_MS = cycleMs(DIZZY_GAIT, NOMINAL_SPEED) * DIZZY_CYCLES;
-const DIZZY = gaitTracks(DIZZY_MS, WALK_KEYS, DIZZY_GAIT, DIZZY_CYCLES);
+
+/**
+ * Найбільший кут ноги від вертикалі в ході у вузькій спідниці (`BottomCut.hobble`), градуси: далі нога стрункої статури на висоті
+ * подолу виходить за бік спідниці-олівця.
+ */
+const HOBBLE_DEG = 13;
+
+/** Та сама хода дрібним кроком: кути ноги, відрив, носок і підскок — у тій самій пропорції, частки опори — ті самі. */
+function hobbled(gait: Gait): Gait {
+  const k = HOBBLE_DEG / Math.max(gait.near.front, gait.near.back, gait.far.front, gait.far.back);
+  const leg = (l: GaitLeg): GaitLeg => ({ ...l, front: l.front * k, back: l.back * k, lift: l.lift * k, toe: l.toe * k, push: l.push * k });
+  return { near: leg(gait.near), far: leg(gait.far), ...(gait.hop !== undefined ? { hop: gait.hop * k } : {}) };
+}
+
+/**
+ * Тривалість ходи дрібним кроком: крок і тривалість менші в одній пропорції, тож темп відтворення з `personGaitSpeed` (за кроком
+ * звичайної ходи) і для неї тримає стопи на підлозі.
+ */
+const hobbleMs = (gait: Gait, ms: number): number => Math.round((ms * strideOf(hobbled(gait))) / strideOf(gait));
 
 /** Ходи: ті, де стопи йдуть по підлозі. */
 export type PersonGait = "walk" | "dash" | "limp" | "trudge" | "dizzy";
@@ -401,21 +419,32 @@ function gaitInfo(gait: Gait, ms: number, cycles = 1): PersonGaitInfo {
   };
 }
 
-/** Ходи персонажа: крок і тривалість. */
-const GAITS: Readonly<Record<PersonGait, PersonGaitInfo>> = {
-  walk: gaitInfo(WALK_GAIT, WALK_MS),
-  dash: gaitInfo(DASH_GAIT, DASH_MS),
-  limp: gaitInfo(LIMP_GAIT, LIMP_MS),
-  trudge: gaitInfo(TRUDGE_GAIT, TRUDGE_MS),
-  dizzy: gaitInfo(DIZZY_GAIT, DIZZY_MS, DIZZY_CYCLES),
+/** Кроки й тривалості ход персонажа (для анімацій і `personGait`). */
+const GAIT_SPECS: Readonly<Record<PersonGait, { gait: Gait; ms: number; cycles: number }>> = {
+  walk: { gait: WALK_GAIT, ms: WALK_MS, cycles: 1 },
+  dash: { gait: DASH_GAIT, ms: DASH_MS, cycles: 1 },
+  limp: { gait: LIMP_GAIT, ms: LIMP_MS, cycles: 1 },
+  trudge: { gait: TRUDGE_GAIT, ms: TRUDGE_MS, cycles: 1 },
+  dizzy: { gait: DIZZY_GAIT, ms: DIZZY_MS, cycles: DIZZY_CYCLES },
 };
 
+/** Ходи персонажа: крок і тривалість. */
+const GAITS = Object.fromEntries(
+  Object.entries(GAIT_SPECS).map(([id, s]) => [id, gaitInfo(s.gait, s.ms, s.cycles)]),
+) as Readonly<Record<PersonGait, PersonGaitInfo>>;
+
+/** Ходи дрібним кроком (`PERSON_HOBBLE`). */
+const HOBBLE_GAITS = Object.fromEntries(
+  Object.entries(GAIT_SPECS).map(([id, s]) => [id, gaitInfo(hobbled(s.gait), hobbleMs(s.gait, s.ms), s.cycles)]),
+) as Readonly<Record<PersonGait, PersonGaitInfo>>;
+
 /**
- * Хода персонажа: крок, тривалість і опори (для `personGaitSpeed` і тестів). Модуль анімацій експортує
- * об'єктом лише групу (`PERSON_MOVE`): будь-який інший об'єкт тести й галерея вважали б групою анімацій.
+ * Хода персонажа: крок, тривалість і опори (для `personGaitSpeed` і тестів); `hobble` — дрібним кроком (`PERSON_HOBBLE`). Модуль
+ * анімацій експортує об'єктами лише групи (`PERSON_MOVE`, `PERSON_HOBBLE`): будь-який інший об'єкт тести й галерея вважали б
+ * групою анімацій.
  */
-export function personGait(gait: PersonGait): PersonGaitInfo {
-  return GAITS[gait];
+export function personGait(gait: PersonGait, hobble = false): PersonGaitInfo {
+  return (hobble ? HOBBLE_GAITS : GAITS)[gait];
 }
 
 /**
@@ -899,6 +928,110 @@ export function personCatGrip(view: ArtView, proportions: readonly ProportionRef
   return { ...grip };
 }
 
+// --- Ходи з кроку (звичайним і дрібним, `PERSON_HOBBLE`) -----------------------------------------
+
+/** Нахил тулуба в ході й ривку дрібним кроком: спідниця на тазі йде за тулубом, і на звичайному нахилі поділ відходив би від ніг. */
+const HOBBLE_LEAN = 0.3;
+
+/**
+ * Іде (легкий підтюпцем): ноги ходою `gait`, руки широко навхрест із ногами, тулуб уперед (`lean` — частка звичайного нахилу) і
+ * пружинить двічі за цикл.
+ */
+function walkAnim(gait: Gait, ms: number, lean = 1): PersonAnim {
+  return {
+    duration: ms,
+    loop: true,
+    bones: {
+      ...gaitTracks(ms, WALK_KEYS, gait),
+      ...upperTracks(ms, WALK_KEYS, {
+        torso: (u) => lean * (7.5 + 1.5 * wave(u, 2, 0.25)),
+        head: (u) => -4.5 + 1.8 * wave(u, 2, 0.1),
+        near: (u) => -5 + 22 * wave(u, 1, 0.22),
+        far: (u) => -5 - 22 * wave(u, 1, 0.22),
+      }),
+    },
+  };
+}
+
+/**
+ * Ривок: сильно нахилений уперед (`lean` — частка звичайного нахилу), руки широко працюють (уперед більше, ніж назад), голова
+ * тягнеться вперед.
+ */
+function dashAnim(gait: Gait, ms: number, lean = 1): PersonAnim {
+  const tilt = DASH_LEAN * lean;
+  return {
+    duration: ms,
+    loop: true,
+    bones: {
+      ...gaitTracks(ms, DASH_KEYS, gait),
+      ...upperTracks(ms, DASH_KEYS, {
+        torso: (u) => tilt + 2 * lean * wave(u, 2, 0.3),
+        head: (u) => -14 + 2 * wave(u, 2, 0.15),
+        near: (u) => -tilt - 12 + 36 * wave(u, 1, 0.25),
+        far: (u) => -tilt - 12 - 36 * wave(u, 1, 0.25),
+      }),
+    },
+  };
+}
+
+/** Паморочиться на ходу: ноги ходою `gait` (`DIZZY_CYCLES` циклів), верх тіла хитається. */
+function dizzyAnim(gait: Gait, ms: number): PersonAnim {
+  return {
+    duration: ms,
+    loop: true,
+    bones: {
+      ...gaitTracks(ms, WALK_KEYS, gait, DIZZY_CYCLES),
+      ...upperTracks(ms, WALK_KEYS * DIZZY_CYCLES, {
+        torso: dizzyTorso,
+        head: dizzyHead,
+        near: dizzyNear,
+        far: dizzyFar,
+      }),
+    },
+    views: {
+      back: {
+        bones: armsOnly(upperTracks(ms, WALK_KEYS * DIZZY_CYCLES, { torso: dizzyTorso, near: (u) => -dizzyNear(u), far: (u) => -dizzyFar(u) })),
+      },
+    },
+  };
+}
+
+/** Кульгає: ноги ходою `gait`, тіло западає вперед на хворій нозі, голова кивком, ближня рука в бік. */
+function limpAnim(gait: Gait, ms: number): PersonAnim {
+  return {
+    duration: ms,
+    loop: true,
+    bones: {
+      ...gaitTracks(ms, LIMP_KEYS, gait),
+      ...upperTracks(ms, LIMP_KEYS, {
+        torso: limpTorso,
+        head: (u) => -2 + 12 * bump(u, 0.06, 0.44),
+        near: limpArm,
+        far: limpFar,
+      }),
+    },
+    views: { back: { bones: armsOnly(upperTracks(ms, LIMP_KEYS, { torso: limpTorso, near: (u) => -limpArm(u), far: limpFar })) } },
+  };
+}
+
+/** Плететься: ноги ходою `gait`, зсутулений, голова звисає й кивком падає на кроці, руки теліпаються із запізненням. */
+function trudgeAnim(gait: Gait, ms: number): PersonAnim {
+  return {
+    duration: ms,
+    loop: true,
+    bones: {
+      ...gaitTracks(ms, TRUDGE_KEYS, gait),
+      ...upperTracks(ms, TRUDGE_KEYS, {
+        torso: (u) => 15 + 2 * wave(u, 2, 0.3),
+        head: (u) => 17 + 4 * wave(u, 2, 0.12),
+        near: (u) => -12 + 8 * wave(u, 1, 0.32),
+        far: (u) => -12 - 8 * wave(u, 1, 0.32),
+        shrug: () => -1.5,
+      }),
+    },
+  };
+}
+
 export const PERSON_MOVE = defineAnims(PERSON_RIG, {
   /**
    * Стоїть: дихає (плечі й голова ледь угору), повільно переносить вагу з ноги на ногу (стопи на місці) і трохи хитає
@@ -924,37 +1057,13 @@ export const PERSON_MOVE = defineAnims(PERSON_RIG, {
    * Іде (легкий підтюпцем): ноги ходою (`WALK_GAIT`), руки широко навхрест із ногами, тулуб уперед і пружинить двічі за
    * цикл, голова тримається рівно з легким запізненням.
    */
-  walk: {
-    duration: WALK_MS,
-    loop: true,
-    bones: {
-      ...WALK,
-      ...upperTracks(WALK_MS, WALK_KEYS, {
-        torso: (u) => 7.5 + 1.5 * wave(u, 2, 0.25),
-        head: (u) => -4.5 + 1.8 * wave(u, 2, 0.1),
-        near: (u) => -5 + 22 * wave(u, 1, 0.22),
-        far: (u) => -5 - 22 * wave(u, 1, 0.22),
-      }),
-    },
-  },
+  walk: walkAnim(WALK_GAIT, WALK_MS),
 
   /**
    * Ривок: сильно нахилений уперед, довгий крок із польотом, руки широко працюють (уперед більше, ніж назад), голова
    * тягнеться вперед. Ривок короткий (≈ 0,2 с), тож поза сильна з першого кадру.
    */
-  dash: {
-    duration: DASH_MS,
-    loop: true,
-    bones: {
-      ...DASH,
-      ...upperTracks(DASH_MS, 20, {
-        torso: (u) => DASH_LEAN + 2 * wave(u, 2, 0.3),
-        head: (u) => -14 + 2 * wave(u, 2, 0.15),
-        near: (u) => -DASH_LEAN - 12 + 36 * wave(u, 1, 0.25),
-        far: (u) => -DASH_LEAN - 12 - 36 * wave(u, 1, 0.25),
-      }),
-    },
-  },
+  dash: dashAnim(DASH_GAIT, DASH_MS),
 
   /**
    * Несе річ (накладка рук): руки перед собою, річ на долоні — рівно. Тут — лише поза рук над вихідним тулубом (для реєстру
@@ -1019,24 +1128,7 @@ export const PERSON_MOVE = defineAnims(PERSON_RIG, {
    * рівновагу; тулуб хитається назад і вперед, голова хилитається із запізненням. Хода — `personGait("dizzy")` (темп той
    * самий, що в ходьби).
    */
-  dizzy: {
-    duration: DIZZY_MS,
-    loop: true,
-    bones: {
-      ...DIZZY,
-      ...upperTracks(DIZZY_MS, WALK_KEYS * DIZZY_CYCLES, {
-        torso: dizzyTorso,
-        head: dizzyHead,
-        near: dizzyNear,
-        far: dizzyFar,
-      }),
-    },
-    views: {
-      back: {
-        bones: armsOnly(upperTracks(DIZZY_MS, WALK_KEYS * DIZZY_CYCLES, { torso: dizzyTorso, near: (u) => -dizzyNear(u), far: (u) => -dizzyFar(u) })),
-      },
-    },
-  },
+  dizzy: dizzyAnim(DIZZY_GAIT, DIZZY_MS),
 
   /**
    * Вкусили чи подряпали (600 мс): плечі різко вгору, голова втягується, ближню руку смикає й трусить, тулуб і голова
@@ -1118,20 +1210,7 @@ export const PERSON_MOVE = defineAnims(PERSON_RIG, {
   },
 
   /** Кульгає на ближню ногу: на хвору ступає швидко й обережно, тіло западає вперед, голова кивком; ближня рука в бік. */
-  limp: {
-    duration: LIMP_MS,
-    loop: true,
-    bones: {
-      ...LIMP,
-      ...upperTracks(LIMP_MS, LIMP_KEYS, {
-        torso: limpTorso,
-        head: (u) => -2 + 12 * bump(u, 0.06, 0.44),
-        near: limpArm,
-        far: limpFar,
-      }),
-    },
-    views: { back: { bones: armsOnly(upperTracks(LIMP_MS, LIMP_KEYS, { torso: limpTorso, near: (u) => -limpArm(u), far: limpFar })) } },
-  },
+  limp: limpAnim(LIMP_GAIT, LIMP_MS),
 
   /**
    * Виснажений: стоїть зсутулений, голова звисає, руки висять; глибоко й повільно дихає (на видиху никне ще нижче) і ледь
@@ -1156,20 +1235,7 @@ export const PERSON_MOVE = defineAnims(PERSON_RIG, {
    * Плететься: важкі човгаючі кроки (провисає на кожному), зсутулений, голова звисає й кивком падає на кроці, руки висять і
    * теліпаються із запізненням.
    */
-  trudge: {
-    duration: TRUDGE_MS,
-    loop: true,
-    bones: {
-      ...TRUDGE,
-      ...upperTracks(TRUDGE_MS, TRUDGE_KEYS, {
-        torso: (u) => 15 + 2 * wave(u, 2, 0.3),
-        head: (u) => 17 + 4 * wave(u, 2, 0.12),
-        near: (u) => -12 + 8 * wave(u, 1, 0.32),
-        far: (u) => -12 - 8 * wave(u, 1, 0.32),
-        shrug: () => -1.5,
-      }),
-    },
-  },
+  trudge: trudgeAnim(TRUDGE_GAIT, TRUDGE_MS),
 
   /** Відмова (600 мс): розводить руками й знизує плечима, голова набік-назад. */
   refuse: sidewaysArms({
@@ -1316,6 +1382,45 @@ export const PERSON_MOVE = defineAnims(PERSON_RIG, {
     slots: squatSlots(90, 320),
   },
 });
+
+/**
+ * Ходи у вузькій спідниці (`BottomCut.hobble`, `WARDROBE.md`, «Низ»): ті самі, що в `PERSON_MOVE`, але дрібним кроком — нога не
+ * далі `HOBBLE_DEG` від вертикалі, тож у кроці не виходить за бік спідниці. Крок і тривалість менші в одній пропорції: темп
+ * `personGaitSpeed` той самий, і стопи не ковзають. Обирає `personCutAnim`.
+ */
+export const PERSON_HOBBLE = defineAnims(PERSON_RIG, {
+  walkHobble: walkAnim(hobbled(WALK_GAIT), hobbleMs(WALK_GAIT, WALK_MS), HOBBLE_LEAN),
+  dashHobble: dashAnim(hobbled(DASH_GAIT), hobbleMs(DASH_GAIT, DASH_MS), HOBBLE_LEAN),
+  limpHobble: limpAnim(hobbled(LIMP_GAIT), hobbleMs(LIMP_GAIT, LIMP_MS)),
+  trudgeHobble: trudgeAnim(hobbled(TRUDGE_GAIT), hobbleMs(TRUDGE_GAIT, TRUDGE_MS)),
+  dizzyHobble: dizzyAnim(hobbled(DIZZY_GAIT), hobbleMs(DIZZY_GAIT, DIZZY_MS)),
+});
+
+/** Хода → вона ж дрібним кроком. */
+const HOBBLE_OF: ReadonlyMap<PersonAnim, PersonAnim> = new Map<PersonAnim, PersonAnim>([
+  [PERSON_MOVE.walk, PERSON_HOBBLE.walkHobble],
+  [PERSON_MOVE.dash, PERSON_HOBBLE.dashHobble],
+  [PERSON_MOVE.limp, PERSON_HOBBLE.limpHobble],
+  [PERSON_MOVE.trudge, PERSON_HOBBLE.trudgeHobble],
+  [PERSON_MOVE.dizzy, PERSON_HOBBLE.dizzyHobble],
+]);
+
+/** Чи вигляд у вузькій спідниці — за об'єктом вигляду: вигляд персонажа той самий об'єкт, доки його не змінили. */
+const HOBBLES = new WeakMap<object, boolean>();
+
+/**
+ * Основна з поправкою на фасон низу (`look`): у вузькій спідниці (`BottomCut.hobble`) хода — дрібним кроком (`PERSON_HOBBLE`),
+ * решта — як є. Темп ходи (`personGaitSpeed`) для обох однаковий.
+ */
+export function personCutAnim(anim: PersonAnim, look: Partial<Look> | null): PersonAnim {
+  if (!look) return anim;
+  let hobble = HOBBLES.get(look);
+  if (hobble === undefined) {
+    hobble = BOTTOM_CUTS[wearOf(look).bottomCut]?.hobble === true;
+    HOBBLES.set(look, hobble);
+  }
+  return hobble ? (HOBBLE_OF.get(anim) ?? anim) : anim;
+}
 
 // --- Основна з накладкою рук -------------------------------------------------------------------
 

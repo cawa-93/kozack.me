@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33 74" width="33" height="74">
+<!-- person/legwear/skinny/front — бічний шов вузьких джинсів поверх person/leg/leggings (слоти legwear-far і legwear-near), ракурс front (¾ спереду). Гардероб, низ.
+size 33×74; pivot (16, 18) — кульшовий суглоб, як у person/leg.
+Шар: detail — гірчична строчка вздовж зовнішнього боку ближньої ноги (спереду — ліворуч) по силуету легінсів, від промежини до підкату.
+-->
+<g id="detail">
+<path d="M11 27C11.4 31 12 36 12.2 40.6C12.3 44 11.8 47 12 50.4C12.2 53.6 13 56.6 13.4 59.4C13.6 60.8 13.8 61.8 13.8 62.6" fill="none" stroke="#d4a54c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>
