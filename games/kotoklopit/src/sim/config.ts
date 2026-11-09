@@ -1150,7 +1150,7 @@ export const MODIFIERS = {
     grip: { ice: 0.6, "new-asphalt": 1.25 } as Record<string, number>,
     /** «Ціни ростуть» / «Чорна п'ятниця»: ціни запасів і речей × (§6.4). */
     prices: { "price-rise": 1.2, "black-friday": 0.8 } as Record<string, number>,
-    /** «Квартальний звіт» / «Цікавий проєкт»: здоровий глузд за годину роботи × (§8.1). */
+    /** «Квартальний звіт» / «Цікавий проєкт»: здоровий глузд за годину роботи × (§8.6). */
     workSanity: { "quarterly-report": 1.25, "fun-project": 0.8 } as Record<string, number>,
   },
 } as const;
