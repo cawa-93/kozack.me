@@ -131,6 +131,7 @@ import { enoughFor, fountainWorks, inQuietHouse, isDirty, itemsOf, litterCapacit
 import { stateRng, type Rng } from "./rng";
 import { appetiteFactor, attentionFactor, dietWeightFactor } from "./modifiers";
 import { absoluteMinute } from "./time";
+import { angryAtWindow, chatters, dogOnStairs, pigeonsFactor, strayMood, valerianCallPerHour } from "./windowdoor";
 import { addTrace, SCRATCH_TRACES, tidyBoxTraces } from "./traces";
 import type { BowlItem, Cat, CatAct, CatActKind, Dish, ForbiddenZone, GameState, HomeItem, LitterItem, Mess, MessKind, PlayPhase, Product, Quality, ToyItem, TrinketKind, Vec, WaterItem } from "./types";
 import { exercise, gainWeight, settleWeight, weightSeen } from "./weight";
@@ -240,11 +241,11 @@ const CLOCK_ACTS = new Set<CatActKind>(["sleep", "hide", "lap"]);
 const COUGH_FROM = new Set(["idle", "wander", "toy", "sleep", "beg", "attention", "follow", "hide"]);
 
 /**
- * Тригери міток (§9.12): поганий настрій, новий кіт удома, гості (щойно зайшли — до кінця дня), багато котів, брудний лоток, у
- * кішки — тічка.
+ * Тригери міток (§9.12): поганий настрій, новий кіт удома, гості (щойно зайшли — до кінця дня), чужий кіт під вікном (увесь
+ * день, §4.1), багато котів, брудний лоток, у кішки — тічка.
  */
 export function markTriggered(state: GameState, cat: Cat): boolean {
-  if (cat.mood < MARKING.mood || state.today.guestsCame === true) return true;
+  if (cat.mood < MARKING.mood || state.today.guestsCame === true || state.modifiers.day === "stray-cat") return true;
   if (cat.sex === "female" && inHeat(state, cat)) return true;
   const others = state.cats.filter((c) => c.id !== cat.id && c.away === null);
   if (others.length + 1 >= MARKING.crowd || others.some((c) => state.day - c.arrivedDay < MARKING.newCatDays)) return true;
@@ -4050,13 +4051,17 @@ function boxSeen(state: GameState, cat: Cat): void {
 const DOOR_CALL_FROM = new Set(["idle", "wander", "toy"]);
 
 /**
- * «Втікач» кричить під дверима (§9.12 «Двері й гості», рішення автора 2026-10-25): удень щогодини з шансом 4% × рівень (у
- * тічці ще +4%) 5–10 хвилин сидить під вхідними дверима й нявчить, як кіт, що просить.
+ * «Втікач» кричить під дверима (§9.12 «Двері й гості»): удень щогодини з шансом `ESCAPE.callStep` × рівень (у тічці ще
+ * `ESCAPE.heatCall`) сидить під вхідними дверима й нявчить, як кіт, що просить. Валер'янка в під'їзді кличе туди будь-кого, а
+ * пес на сходах відганяє всіх (§4.1).
  */
 function doorCall(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const level = traitLevel(cat, "escape");
-  if (level <= 0 || isNight(state.minute) || !home(state, cat) || !DOOR_CALL_FROM.has(cat.act.kind) || isAdapting(state, cat) || isNewborn(cat)) return;
-  const perHour = ESCAPE.callStep * level + (inHeat(state, cat) ? ESCAPE.heatCall : 0);
+  const valerian = valerianCallPerHour(state, cat);
+  if ((level <= 0 && valerian === 0) || dogOnStairs(state)) return;
+  if (isNight(state.minute) || !home(state, cat) || !DOOR_CALL_FROM.has(cat.act.kind) || isAdapting(state, cat) || isNewborn(cat)) return;
+  const runner = level > 0 ? ESCAPE.callStep * level + (inHeat(state, cat) ? ESCAPE.heatCall : 0) : 0;
+  const perHour = Math.min(1, runner + valerian);
   if (!rng.chance(1 - (1 - perHour) ** (minutes / MINUTES_PER_HOUR))) return;
   const { min, max } = ESCAPE.callMinutes;
   start(cat, "beg", { ...DOOR_TILE }, min + rng.next() * (max - min), "door");
@@ -4297,8 +4302,8 @@ function catnipFight(state: GameState, cat: Cat, rng: Rng): void {
 }
 
 /**
- * Вага «подивитися у вікно» серед спокійних варіантів (§9.12, «Вікно», рішення автора 2026-10-25): удень 0,4 × (1 + 0,5 × рівень);
- * «Не дивиться у вікно» (−1) — ніколи, «Злиться на вікно» (−2 і менше) — як кіт без риси; новонароджене — ніколи.
+ * Вага «подивитися у вікно» серед спокійних варіантів (§9.12, «Вікно»): «Не дивиться у вікно» (−1) — ніколи, «Злиться на вікно»
+ * (−2 і менше) — як кіт без риси; новонароджене — ніколи. Голуби на карнизі кличуть частіше всіх, крім «Злиться на вікно» (§4.1).
  */
 export function windowWeight(state: GameState, cat: Cat): number {
   const hour = hourOf(state.minute);
@@ -4307,7 +4312,7 @@ export function windowWeight(state: GameState, cat: Cat): number {
   if (level === -1) return 0;
   // Щойно злився біля вікна — якийсь час туди не йде.
   if (cat.windowAngryAt !== undefined && absoluteMinute(state.day, state.minute) - cat.windowAngryAt < WINDOW.angerPause) return 0;
-  return WINDOW.weight * (1 + WINDOW.step * Math.max(0, level));
+  return WINDOW.weight * (1 + WINDOW.step * Math.max(0, level)) * pigeonsFactor(state, cat, "weight");
 }
 
 /**
@@ -4345,13 +4350,15 @@ export function startWindow(state: GameState, cat: Cat, rng: Rng): boolean {
   const sill = free ?? (rng.chance(WINDOW.contest) ? sills[0] : undefined);
   if (!sill) return false;
   // До зайнятого — на підлогу поруч: на чужу дошку не стрибає.
-  start(cat, "window", free ? { x: sill.x, y: sill.y } : besideObject(state, sill), WINDOW.minMinutes + rng.next() * (WINDOW.maxMinutes - WINDOW.minMinutes), sill.id);
+  const minutes = (WINDOW.minMinutes + rng.next() * (WINDOW.maxMinutes - WINDOW.minMinutes)) * pigeonsFactor(state, cat, "minutes");
+  start(cat, "window", free ? { x: sill.x, y: sill.y } : besideObject(state, sill), minutes, sill.id);
   return true;
 }
 
 /**
  * Кіт на підвіконні (§9.12, «Вікно»): дивиться у вікно — потреба гри потроху знімається, настрій росте, «+» «кекає» на птахів
- * (прояв «+»); «Злиться на вікно» сіпає хвостом і за кілька хвилин злиться (прояв «−»), і дивитися у вікно йому кінець.
+ * (прояв «+»); «Злиться на вікно» сіпає хвостом і за кілька хвилин злиться (прояв «−»), і дивитися у вікно йому кінець. Чужий
+ * кіт під вікном злить так само будь-кого, хто сюди прийшов, а голуби — тішать більше (§4.1); прояв риси — лише від самої риси.
  */
 function watchWindow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const act = cat.act;
@@ -4370,20 +4377,24 @@ function watchWindow(state: GameState, cat: Cat, minutes: number, rng: Rng): voi
     cat.y = pane.seat.y;
   }
   const level = traitLevel(cat, "window");
-  if (level <= -2) {
-    if (act.elapsed < WINDOW.angerMinutes || act.refused === true) return;
+  if (angryAtWindow(state, cat)) {
+    if (act.refused === true) return;
+    if (level > -2) changeMood(state, cat, strayMood(minutes));
+    if (act.elapsed < WINDOW.angerMinutes) return;
     act.refused = true;
     act.minutes = 0;
     cat.windowAngryAt = absoluteMinute(state.day, state.minute);
     emit(state, { type: "window-angry", cat: cat.id });
+    // Злість на чужого кота — не прояв «−»: `observe` сам пропускає кота, чия риса не «−».
     observe(state, cat, "window", -1, false, WINDOW.observeEvery);
     return;
   }
   const hours = minutes / MINUTES_PER_HOUR;
-  cat.needs.play = Math.max(0, cat.needs.play - WINDOW.playPerHour * (1 + WINDOW.step * Math.max(0, level)) * hours);
-  changeMood(state, cat, (level >= WINDOW.strongLevel ? WINDOW.strongMood : WINDOW.moodPerHour) * hours);
-  if (level <= 0 || !rng.chance(1 - (1 - 1 / WINDOW.chatterMinutes) ** minutes)) return;
+  cat.needs.play = Math.max(0, cat.needs.play - WINDOW.playPerHour * (1 + WINDOW.step * Math.max(0, level)) * pigeonsFactor(state, cat, "play") * hours);
+  changeMood(state, cat, (level >= WINDOW.strongLevel ? WINDOW.strongMood : WINDOW.moodPerHour) * pigeonsFactor(state, cat, "mood") * hours);
+  if (!chatters(state, cat) || !rng.chance(1 - (1 - 1 / WINDOW.chatterMinutes) ** minutes)) return;
   emit(state, { type: "chatter", cat: cat.id });
+  // «Кекає» кіт без риси на голубів — теж не прояв: `observe` пропускає кота без «+».
   observe(state, cat, "window", 1, false, WINDOW.observeEvery);
 }
 

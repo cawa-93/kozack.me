@@ -67,6 +67,7 @@ import { isDish } from "./dish";
 import { targetById, targetOf, type Target } from "./targets";
 import type { BowlItem, Cat, GameState, HomeItem, Item, PetActivity, PlayActivity, Quality, UseActivity, Vec } from "./types";
 import { exercise } from "./weight";
+import { angryAtWindow } from "./windowdoor";
 import { startWork, stopWork } from "./work";
 
 /** Керування на цю мить: напрямок руху й чи утримується кнопка дії. */
@@ -657,8 +658,8 @@ export function catFeeling(state: GameState, cat: Cat): CatFeeling | null {
     return cat.needs.attention >= PET.wantsAttention ? "content" : "reluctant";
   }
   if (activity?.kind === "play" && activity.cat === cat.id && !activity.done) return "content";
-  // «Злиться на вікно» сіпає хвостом і мружиться на птахів за склом (§9.12, «Вікно»).
-  if (cat.act.kind === "window" && cat.act.goal === null && traitLevel(cat, "window") <= -2) return "reluctant";
+  // «Злиться на вікно» сіпає хвостом і мружиться на птахів за склом (§9.12, «Вікно»), а на чужого кота під вікном — будь-хто (§4.1).
+  if (cat.act.kind === "window" && cat.act.goal === null && angryAtWindow(state, cat)) return "reluctant";
   return null;
 }
 

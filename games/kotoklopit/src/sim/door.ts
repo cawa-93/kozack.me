@@ -12,6 +12,7 @@ import { observe } from "./knowledge";
 import { escapeBonus, isNewborn } from "./reproduction";
 import { stateRng } from "./rng";
 import type { Cat, DoorGuest, GameState, Vec } from "./types";
+import { dogOnStairs, valerianEscape } from "./windowdoor";
 
 /** Вхідні двері: від цієї точки рахується, хто біля них (§9.12). */
 export const DOOR: Vec = { x: 11, y: 10.5 };
@@ -39,7 +40,9 @@ export function openDoor(state: GameState, except: readonly number[] = []): void
   for (const cat of state.cats) {
     if (except.includes(cat.id) || cat.away !== null || isCarried(state, cat) || asleep(cat) || isNewborn(cat)) continue;
     const level = traitLevel(cat, "escape");
-    if (level < 0) {
+    // Валер'янка в під'їзді тягне до дверей і «Домосіда» (§4.1): він не відходить, а може й вибігти.
+    const valerian = valerianEscape(state, cat);
+    if (level < 0 && valerian === 0) {
       // Хто ховається, їсть чи в лотку, на двері не зважає (перевірка етапу 2026-10-26: кіт, що сховався під диван від
       // дзвінка, вилазив зі схованки, щойно гості заходили).
       if (!BELL_FROM.has(cat.act.kind) || !nearDoor(cat, level <= -2 ? ESCAPE.fearReach : ESCAPE.distance)) continue;
@@ -51,8 +54,9 @@ export function openDoor(state: GameState, except: readonly number[] = []): void
       observe(state, cat, "escape", -1);
       continue;
     }
-    if (!nearDoor(cat, ESCAPE.distance)) continue;
-    if (!rng.chance(clamp(ESCAPE.base + ESCAPE.step * level + escapeBonus(state, cat)))) continue;
+    // Пес на сходах (§4.1): цього дня на сходи не вибігає ніхто.
+    if (dogOnStairs(state) || !nearDoor(cat, ESCAPE.distance)) continue;
+    if (!rng.chance(clamp(ESCAPE.base + ESCAPE.step * level + escapeBonus(state, cat) + valerian))) continue;
     // Персонаж бачить, як кіт вислизнув, — ще поки той біля дверей (§9.9).
     observe(state, cat, "escape");
     cat.away = "stairs";
