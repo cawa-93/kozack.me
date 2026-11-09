@@ -2,6 +2,7 @@
 // Поведінку друзів і ворогів (ігри, вилизування, бійки) веде `catai.ts`.
 
 import { daysAtHome, isKitten, traitLevel } from "./cat";
+import { feudDrop, peaceNightlyFactor } from "./catfeud";
 import { KITTEN_MAX_AGE, NURTURING, RELATIONS } from "./config";
 import type { Cat, GameState } from "./types";
 
@@ -16,7 +17,7 @@ export function relation(state: GameState, a: Cat, b: Cat): number {
 export function changeRelation(state: GameState, a: Cat, b: Cat, delta: number): void {
   if (a.id === b.id) return;
   const k = key(a.id, b.id);
-  state.relations[k] = clamp((state.relations[k] ?? 0) + delta);
+  state.relations[k] = clamp((state.relations[k] ?? 0) + feudDrop(state, k, delta));
 }
 
 export const isFriend = (state: GameState, a: Cat, b: Cat): boolean => relation(state, a, b) >= RELATIONS.friend;
@@ -86,7 +87,7 @@ export function nightlyRelations(state: GameState): void {
     // Сварка (Б6 (3)) і бійка (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А12 (2): раніше бійка лишала нічні +3, і для
     // стосунків була дешевша за шипіння біля миски) однаково забирають життя разом, а ворогам — і надбавку за спокійний день.
     const peaceful = state.strife?.[k] === undefined;
-    const together = peaceful ? RELATIONS.nightly : 0;
+    const together = peaceful ? RELATIONS.nightly * peaceNightlyFactor(state) : 0;
     const calm = peaceful && value <= RELATIONS.enemy ? RELATIONS.enemyCalm : 0;
     state.relations[k] = clamp(value + together + sociability + calm);
   }
