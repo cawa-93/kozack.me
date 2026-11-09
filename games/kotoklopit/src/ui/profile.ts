@@ -1,5 +1,5 @@
 // Вкладка «Профіль» телефона (§8.4, §8.6): хто персонаж — портрет, ім'я, посада, ставка за годину й робочий час — і його стани
-// тими самими іконками, що на панелі, з назвою й описом; біля хвороби, яку лікують ліками, — чи прийнято їх сьогодні (§6.5).
+// тими самими іконками, що на панелі, з назвою й описом; біля назви хвороби — іконка ліків, коли їх сьогодні прийнято (§6.5).
 
 import { ILLNESSES, WORK_END_MINUTE, WORK_START_MINUTE } from "../sim/config";
 import { formatClock } from "../sim/time";
@@ -8,8 +8,8 @@ import { hourlyRate } from "../sim/work";
 import { fill, JOB_SEEKING, PERSON_STATE_ABOUT, personStateTitle, POSITION_TITLES, PROFILE_TEXTS } from "../texts";
 import type { IconName, Mark } from "../view/iconnames";
 import { personStates, type PersonStateId } from "../view/personstates";
-import { PERSON_STATE_ICONS } from "../view/symbols";
-import { iconImage, markImage } from "./icons";
+import { PERSON_STATE_ICONS, PRODUCT_ICONS } from "../view/symbols";
+import { iconImage, markImage, named } from "./icons";
 import { element } from "./overlay";
 import { drawPortrait, portraitCanvas } from "./portrait";
 
@@ -65,18 +65,17 @@ function stateRow(state: GameState, id: PersonStateId): HTMLElement {
   const look = PERSON_STATE_ICONS[id];
   row.append(stateIcon(look.icon, look.mark));
   const text = element("div", "profile-state-text");
-  text.append(element("p", "profile-state-name", personStateTitle(id, address)), element("p", "profile-state-about", fill(PERSON_STATE_ABOUT[id], address)));
-  const meds = ILLNESS_IDS.has(id) ? medsLine(state, id as IllnessId) : null;
-  if (meds) text.append(element("p", "profile-state-meds", meds));
+  const name = element("p", "profile-state-name", personStateTitle(id, address));
+  if (ILLNESS_IDS.has(id) && medsTaken(state, id as IllnessId)) name.append(element("span", "profile-state-meds", ` · ${named(PRODUCT_ICONS.humanMeds, PROFILE_TEXTS.medsTaken)}`));
+  text.append(name, element("p", "profile-state-about", fill(PERSON_STATE_ABOUT[id], address)));
   row.append(text);
   return row;
 }
 
-/** Хворобу, яку лікують ліками (§6.5), — чи прийнято їх сьогодні: доза одна на день. Виснаження ліки не беруть — рядка немає. */
-function medsLine(state: GameState, id: IllnessId): string | null {
-  if (ILLNESSES[id].doses === null) return null;
-  const illness = state.character.illnesses.find((i) => i.id === id);
-  return illness?.lastDose === state.day ? PROFILE_TEXTS.medsTaken : PROFILE_TEXTS.medsNotYet;
+/** Ліки від хвороби (§6.5) сьогодні прийнято: доза одна на день. Виснаження ліки не беруть. */
+function medsTaken(state: GameState, id: IllnessId): boolean {
+  if (ILLNESSES[id].doses === null) return false;
+  return state.character.illnesses.find((i) => i.id === id)?.lastDose === state.day;
 }
 
 /** Іконка стану на паперовому кружечку, з позначкою поверх (✓ «добре виспався»), як на панелі. */

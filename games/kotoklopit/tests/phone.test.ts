@@ -127,16 +127,18 @@ describe("профіль (§8.4, §6.5)", () => {
     expect(text(state)).not.toContain("за годину");
   });
 
-  it("біля застуди — чи прийнято ліки сьогодні; біля виснаження рядка немає — ліки на нього не діють", () => {
+  it("ліки — у рядку назви хвороби, лише коли їх сьогодні прийнято; «не прийнято» не пишуть", () => {
     const state = newGame({ address: "she", difficulty: "normal", seed: 8 }).current;
     expect(text(state)).toContain("Нічого особливого");
     fallIllPerson(state, "cold");
     fallIllPerson(state, "exhaustion");
-    expect(text(state)).toContain("Ліки сьогодні ще не прийнято.");
+    expect(text(state)).not.toContain("ліки");
     const cold = state.character.illnesses.find((i) => i.id === "cold");
+    if (cold) cold.lastDose = state.day - 1;
+    expect(text(state)).not.toContain("ліки");
     if (cold) cold.lastDose = state.day;
-    expect(text(state)).toContain("Ліки сьогодні прийнято.");
-    expect(text(state).match(/Ліки сьогодні/g)).toHaveLength(1);
+    expect(text(state)).toMatch(/Застуда · .*ліки сьогодні прийнято/);
+    expect(text(state).match(/ліки сьогодні прийнято/g)).toHaveLength(1);
   });
 });
 
