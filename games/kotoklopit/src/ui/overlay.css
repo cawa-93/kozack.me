@@ -350,6 +350,18 @@
   max-width: 13em;
 }
 
+/* Чотири варіанти кроку (складність) — квадратом 2 × 2: рядом три й один останній самотньо розтягувався б. */
+.card > .choices:has(> .button:nth-child(4):last-child) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(7em, 13em));
+  justify-content: center;
+}
+
+.card > .choices:has(> .button:nth-child(4):last-child) > .button {
+  max-width: none;
+  white-space: nowrap;
+}
+
 /* Кнопка — «клавіша»: верх і губа знизу; натиснута опускається на висоту губи (текст теж). */
 .button {
   min-height: 46px;
@@ -1471,6 +1483,12 @@
   margin: 0;
 }
 
+/* Ширина за назвою й без переносу в ній: не вміщуються — ряд переноситься, а не назва. */
+.game-difficulty > .choices > .button {
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
+
 .game-note {
   margin: 2px 0 0;
   color: var(--ink-soft);
@@ -1872,11 +1890,10 @@
   }
 
   .game-difficulty > .choices > .button {
-    min-width: 0;
+    min-width: auto;
     min-height: 36px;
     padding: 3px 10px 10px;
     font-size: 17px;
-    white-space: nowrap;
   }
 
   .game-difficulty > .choices > .button:active:not(:disabled),
