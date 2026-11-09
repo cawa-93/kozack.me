@@ -4,7 +4,8 @@
 
 import { describe, expect, it } from "vitest";
 
-import { BUILDS, FACES, HAIR_STYLES } from "../src/view/palette";
+import { BUILDS, FACES } from "../src/view/wardrobe/body";
+import { HAIR_STYLES } from "../src/view/wardrobe/hair";
 import { CAT_EYES, CAT_MOUTHS } from "../src/view/anim/catface";
 import { portraitHead } from "../src/view/art/compose";
 import { artEntries, artEntry } from "../src/view/art/manifest";

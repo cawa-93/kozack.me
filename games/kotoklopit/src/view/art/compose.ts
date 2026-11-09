@@ -9,7 +9,8 @@
 // кольором `source-atop` (чи множенням) → покласти на кадр. Це 3–4 операції на шар; кадр кота — ≈ 10 кроків.
 
 import type { Look } from "../../sim/types";
-import { FACES, HAIR_STYLES } from "../palette";
+import { FACES } from "../wardrobe/body";
+import { HAIR_STYLES } from "../wardrobe/hair";
 import { artEntry } from "./manifest";
 import { STUB_LOOK, stubHatch, stubPixels } from "./placement";
 import { farRecipe, personRecipe } from "./recipes";

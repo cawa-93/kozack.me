@@ -52,7 +52,7 @@ import type { CartLine } from "../sim/shop";
 import { plural } from "./titles";
 
 export { plural };
-import { LOOK_OPTIONS } from "./look";
+import { LOOK_OPTIONS, shownRow } from "./look";
 import { catProfile, type CatFacts } from "./catprofile";
 import { drawPortrait, portraitCanvas } from "./portrait";
 import { billCard } from "./bill";
@@ -663,7 +663,7 @@ function lookEditor(start: Look, shuffle: () => Look): { root: HTMLElement; look
   const sliders = element("div", "look-sliders");
   // Показати на повзунках поточну зовнішність: після «Випадково» змінюються всі одразу.
   const sync: (() => void)[] = [];
-  for (const { key, label, options } of LOOK_OPTIONS) {
+  for (const { key, label, options } of LOOK_OPTIONS.filter(shownRow)) {
     const row = element("label", "look-row");
     const value = element("span", "look-value");
     const slider = element("input");
@@ -673,8 +673,8 @@ function lookEditor(start: Look, shuffle: () => Look): { root: HTMLElement; look
     slider.step = "1";
     slider.className = "look-slider";
     const show = (): void => {
-      slider.value = String(look[key]);
-      value.textContent = options[look[key]] ?? "";
+      slider.value = String(look[key] ?? 0);
+      value.textContent = options[look[key] ?? 0] ?? "";
     };
     show();
     sync.push(show);

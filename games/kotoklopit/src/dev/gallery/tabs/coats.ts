@@ -14,7 +14,7 @@ import { addBakedArt, bakedFrame, bakeStats, releaseBaked, setBakedArt } from ".
 import { composePortrait } from "../../../view/art/compose";
 import { catRecipe, personRecipe, type CatAppearance, type CatRecipeOptions } from "../../../view/art/recipes";
 import type { ArtId, ArtView, TintRecipe } from "../../../view/art/types";
-import { BUILDS, FACES } from "../../../view/palette";
+import { BUILDS, FACES } from "../../../view/wardrobe/body";
 import type { GalleryContext, GalleryTab, GalleryView } from "../tab";
 
 /** Гени за замовчуванням: чорний короткошерстий без малюнка й білого; зразок задає лише те, чим відрізняється. */

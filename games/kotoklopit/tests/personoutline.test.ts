@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { artEntry } from "../src/view/art/manifest";
-import { BUILDS } from "../src/view/palette";
+import { BUILDS } from "../src/view/wardrobe/body";
 import { PERSON_RIG } from "../src/view/rig/defs/person";
 import type { ArtEntry, ArtId, ArtPoint } from "../src/view/art/types";
 

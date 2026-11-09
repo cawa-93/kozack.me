@@ -175,7 +175,10 @@ export interface PlayActivity {
 
 export type Activity = WorkActivity | UseActivity | PetActivity | PlayActivity;
 
-/** Зовнішність персонажа (§5.1): суто косметична; числа — номери варіантів у палітрах графіки. */
+/**
+ * Зовнішність персонажа (§5.1): суто косметична; числа — номери варіантів у реєстрах гардеробу (`WARDROBE.md`). Поля гардеробу
+ * необов'язкові: старі збереження й сценарії їх не мають, а без поля — 0, нинішній вигляд (читає лише `wearOf`).
+ */
 export interface Look {
   face: number;
   skin: number;
@@ -186,6 +189,18 @@ export interface Look {
   top: number;
   bottom: number;
   shoes: number;
+  /** Фасон верху (`TOP_CUTS`). */
+  topCut?: number;
+  /** Візерунок верху (`PATTERNS`). */
+  topPattern?: number;
+  /** Фасон низу (`BOTTOM_CUTS`). */
+  bottomCut?: number;
+  /** Візерунок низу (`PATTERNS`). */
+  bottomPattern?: number;
+  /** Фасон взуття (`SHOE_CUTS`). */
+  shoeCut?: number;
+  /** Акцент зачіски (`HAIR_ACCENTS`). */
+  hairAccent?: number;
 }
 
 export interface Character {

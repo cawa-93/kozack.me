@@ -55,7 +55,8 @@ import {
   wireBarAnchor,
 } from "../src/view/iso/markslayout";
 import { wireFixSpot } from "../src/view/iso/personspot";
-import { BUILDS, FACES, HAIR_STYLES } from "../src/view/palette";
+import { BUILDS, FACES } from "../src/view/wardrobe/body";
+import { HAIR_STYLES } from "../src/view/wardrobe/hair";
 import { PERSON_ANIMS } from "../src/view/rig/anims";
 import { PERSON_FIT, PERSON_RIG, personProportions, personSkin } from "../src/view/rig/defs/person";
 import { Rig } from "../src/view/rig/rigcore";

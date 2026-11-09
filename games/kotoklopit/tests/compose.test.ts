@@ -27,7 +27,8 @@ import {
 } from "../src/view/art/recipes";
 import { artFrameState, artLayerSource, loadArtFrames, loadArtIndex, resetArtSources, shareArtAtlas } from "../src/view/art/sources";
 import { ART_INDEX_VERSION, layerRank, type ArtIndex, type ArtLayer, type FrameId, type TintRecipe, type TintStep } from "../src/view/art/types";
-import { PALETTE } from "../src/view/palette";
+import { IRIS_COLORS } from "../src/view/wardrobe/body";
+import { CLOTHES } from "../src/view/wardrobe/clothes";
 
 // --- Усі забарвлення, які дає генетика -----------------------------------------------------------
 
@@ -292,9 +293,9 @@ describe("рецепт персонажа", () => {
       expect(new Set(colors).size, key).toBe(n);
     }
     // Низ і взуття — зі зсувом 5 у палітрі одягу: «графітовий» першим.
-    expect(personColors(base).bottom).toBe(PALETTE.clothes[5]);
-    expect(personColors({ ...base, shoes: 1 }).shoes).toBe(PALETTE.clothes[6]);
-    expect(personColors({ ...base, top: 3 }).top).toBe(PALETTE.clothes[3]);
+    expect(personColors(base).bottom).toBe(CLOTHES[5]);
+    expect(personColors({ ...base, shoes: 1 }).shoes).toBe(CLOTHES[6]);
+    expect(personColors({ ...base, top: 3 }).top).toBe(CLOTHES[3]);
   });
 
   it("русяве волосся відрізняється від кожного тону шкіри (ΔE2000 ≥ 15) і від іншого волосся — не зливається з обличчям", () => {
@@ -339,10 +340,10 @@ describe("рецепт персонажа", () => {
       }
     // На світлій шкірі карі — як у редакторі; на темній — темніші, але й далі не темні (окремий варіант) і карі (теплі).
     const brown = 3;
-    expect(personColors({ ...base, eyes: brown }).iris).toBe(PALETTE.eyes[brown]);
+    expect(personColors({ ...base, eyes: brown }).iris).toBe(IRIS_COLORS[brown]!.color);
     const dark = personColors({ ...base, skin: 4, eyes: brown }).iris;
-    expect(dark).not.toBe(PALETTE.eyes[brown]);
-    expect(deltaE2000(dark, PALETTE.eyes[0]!)).toBeGreaterThanOrEqual(15);
+    expect(dark).not.toBe(IRIS_COLORS[brown]!.color);
+    expect(deltaE2000(dark, IRIS_COLORS[0]!.color)).toBeGreaterThanOrEqual(15);
     const [, a, b] = lab(dark);
     expect(a).toBeGreaterThan(5);
     expect(b).toBeGreaterThan(5);

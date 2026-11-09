@@ -34,7 +34,8 @@
 
 import type { ArtId } from "../../art/types";
 import type { Look } from "../../../sim/types";
-import { BUILDS, FACES, HAIR_STYLES } from "../../palette";
+import { BUILDS, FACES } from "../../wardrobe/body";
+import { HAIR_STYLES } from "../../wardrobe/hair";
 import { defineFit, type ProportionRef } from "../rigcore";
 import { defineRig, type SkinOf, type SlotOf } from "../types";
 

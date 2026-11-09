@@ -19,7 +19,14 @@ import { callImpression } from "../src/sim/work";
 import { chronotypeCard, startName } from "../src/ui/cards";
 import { nameRng, randomName } from "../src/ui/charname";
 import { LOOK_OPTIONS, lookRng, randomLook } from "../src/ui/look";
-import { BUILDS, FACES, HAIR_STYLES, PALETTE } from "../src/view/palette";
+import { HAIR_ACCENTS } from "../src/view/wardrobe/accents";
+import { BUILDS, FACES, IRIS_COLORS, SKIN_TONES } from "../src/view/wardrobe/body";
+import { BOTTOM_CUTS } from "../src/view/wardrobe/bottoms";
+import { BOTTOM_COLORS, SHOE_COLORS, TOP_COLORS } from "../src/view/wardrobe/clothes";
+import { HAIR_COLORS, HAIR_STYLES } from "../src/view/wardrobe/hair";
+import { PATTERNS } from "../src/view/wardrobe/patterns";
+import { SHOE_CUTS } from "../src/view/wardrobe/shoes";
+import { TOP_CUTS } from "../src/view/wardrobe/tops";
 import { bodyMinutes, hours, recordEvents, standAt, withCatCorner } from "./helpers";
 
 /** Що відповів умивальник на дію: причина відмови чи undefined. */
@@ -159,18 +166,24 @@ describe("звертання «він / вона» — лише граматик
 });
 
 describe("редактор персонажа один для всіх (рішення автора 2026-10-29, А4)", () => {
-  it("редактор пропонує кожну частину зовнішності й усі її варіанти, які вміє намалювати графіка", () => {
+  it("редактор пропонує кожну частину зовнішності й усі варіанти її реєстру (WARDROBE.md)", () => {
     expect(LOOK_OPTIONS.map((o) => o.key).sort()).toEqual(Object.keys(DEFAULT_LOOK).sort());
     const drawn: Record<keyof Look, number> = {
       face: FACES.length,
-      skin: PALETTE.skin.length,
+      skin: SKIN_TONES.length,
       hair: HAIR_STYLES.length,
-      hairColor: PALETTE.hairColor.length,
-      eyes: PALETTE.eyes.length,
+      hairColor: HAIR_COLORS.length,
+      eyes: IRIS_COLORS.length,
       build: BUILDS.length,
-      top: PALETTE.clothes.length,
-      bottom: PALETTE.clothes.length,
-      shoes: PALETTE.clothes.length,
+      top: TOP_COLORS.length,
+      bottom: BOTTOM_COLORS.length,
+      shoes: SHOE_COLORS.length,
+      topCut: TOP_CUTS.length,
+      topPattern: PATTERNS.length,
+      bottomCut: BOTTOM_CUTS.length,
+      bottomPattern: PATTERNS.length,
+      shoeCut: SHOE_CUTS.length,
+      hairAccent: HAIR_ACCENTS.length,
     };
     for (const { key, options } of LOOK_OPTIONS) expect(options.length, key).toBe(drawn[key]);
   });
@@ -182,7 +195,7 @@ describe("редактор персонажа один для всіх (ріше
       for (const { key, options } of LOOK_OPTIONS) {
         expect(Number.isInteger(look[key]), key).toBe(true);
         expect(look[key], key).toBeGreaterThanOrEqual(0);
-        expect(look[key], key).toBeLessThan(options.length);
+        expect(look[key] ?? 0, key).toBeLessThan(options.length);
       }
       combos.add(`${look.hair}-${look.build}-${look.face}`);
     }

@@ -32,7 +32,23 @@ export const DEFAULT_NAME: Record<Address, string> = { she: "Марта", he: "�
  * Зовнішність без редактора — сценарій, нова гра в режимі розробки, тести (§5.1): одна для всіх, хоч би яке звертання (рішення
  * автора 2026-10-29, `GENERAL_REVIEW.md`, А4). Це та, що раніше була за замовчуванням у жіночого персонажа.
  */
-export const DEFAULT_LOOK: Readonly<Look> = { face: 0, skin: 1, hair: 1, hairColor: 1, eyes: 0, build: 1, top: 0, bottom: 0, shoes: 0 };
+export const DEFAULT_LOOK: Readonly<Look> = {
+  face: 0,
+  skin: 1,
+  hair: 1,
+  hairColor: 1,
+  eyes: 0,
+  build: 1,
+  top: 0,
+  bottom: 0,
+  shoes: 0,
+  topCut: 0,
+  topPattern: 0,
+  bottomCut: 0,
+  bottomPattern: 0,
+  shoeCut: 0,
+  hairAccent: 0,
+};
 
 export interface NewGameOptions {
   /** Звертання в текстах (§5.1): лише граматика, на гру не впливає. */

@@ -10,6 +10,7 @@ import diseases from "../DISEASES.md?raw";
 import design from "../GAME_DESIGN.md?raw";
 import texts from "../TEXTS.md?raw";
 import traits from "../TRAITS.md?raw";
+import wardrobe from "../WARDROBE.md?raw";
 import * as config from "../src/sim/config";
 
 const sources = Object.values(import.meta.glob<string>("../src/**/*.ts", { query: "?raw", import: "default", eager: true }));
@@ -50,7 +51,7 @@ function resolves(reference: string): boolean {
   return hasPath((config as Record<string, unknown>)[name], steps);
 }
 
-const DOCS = { "GAME_DESIGN.md": design, "TRAITS.md": traits, "DAY_MODIFIERS.md": dayModifiers, "DISEASES.md": diseases, "TEXTS.md": texts, "BREEDS.md": breeds };
+const DOCS = { "GAME_DESIGN.md": design, "TRAITS.md": traits, "DAY_MODIFIERS.md": dayModifiers, "DISEASES.md": diseases, "TEXTS.md": texts, "BREEDS.md": breeds, "WARDROBE.md": wardrobe };
 
 describe.each(Object.entries(DOCS))("%s", (_name, doc) => {
   it("посилається лише на наявні константи", () => {

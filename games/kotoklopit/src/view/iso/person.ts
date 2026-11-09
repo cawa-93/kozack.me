@@ -40,6 +40,7 @@ import type { ArtId, TintRecipe } from "../art/types";
 import { PERSON_ANIMS } from "../rig/anims/index";
 import { personCatGrip, personVacuumBrush, personWithArms } from "../rig/anims/person/move";
 import { PERSON_FAR_SLOTS, PERSON_FIT, PERSON_RIG, personProportions, personSkin, type PersonSlot } from "../rig/defs/person";
+import { sameLook } from "../wardrobe/index";
 import { slotFrame } from "../rig/rigcore";
 import { RigSprite, type RigSpriteOf, type SocketWorld } from "../rig/rigsprite";
 import type { AnimOf, RigFacing, Vec2 } from "../rig/types";
@@ -707,20 +708,6 @@ function cropTo(image: Phaser.GameObjects.Image, id: ArtId, rect: UnitRect | nul
 
 function frameKey(frame: IsoFrame): string {
   return `${frame.id}|${frame.state ?? ""}`;
-}
-
-function sameLook(a: Look, b: Look): boolean {
-  return (
-    a.face === b.face &&
-    a.skin === b.skin &&
-    a.hair === b.hair &&
-    a.hairColor === b.hairColor &&
-    a.eyes === b.eyes &&
-    a.build === b.build &&
-    a.top === b.top &&
-    a.bottom === b.bottom &&
-    a.shoes === b.shoes
-  );
 }
 
 function hex(color: string): number {

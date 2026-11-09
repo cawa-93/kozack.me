@@ -68,7 +68,7 @@ export type FillRegion = "iris" | "skin" | "hair" | "top" | "bottom" | "shoes";
 /**
  * Заливка — білий силует (#fff), який фарбує компонувальник: `fill` — шерсть кота (основний колір `coatOf`, у колорпойнта —
  * світле тіло), `fill-iris` — райдужка (4 кольори очей кота, 4 — персонажа), `fill-skin`, `fill-hair`, `fill-top`,
- * `fill-bottom`, `fill-shoes` — шкіра, волосся й одяг персонажа (палітри `palette.ts`).
+ * `fill-bottom`, `fill-shoes` — шкіра, волосся й одяг персонажа (кольори реєстрів `src/view/wardrobe/`).
  */
 export type FillLayer = "fill" | `fill-${FillRegion}`;
 

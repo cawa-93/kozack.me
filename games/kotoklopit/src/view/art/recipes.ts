@@ -11,7 +11,10 @@
 
 import { coatOf, type Coat, type EyeColor, type Pigment, type TabbyPattern } from "../../sim/genetics";
 import type { Cat, Look, Shape } from "../../sim/types";
-import { PALETTE as LOOK_PALETTE } from "../palette";
+import { IRIS_COLORS, SKIN_TONES } from "../wardrobe/body";
+import { BOTTOM_COLORS, SHOE_COLORS, TOP_COLORS } from "../wardrobe/clothes";
+import { HAIR_COLORS } from "../wardrobe/hair";
+import { wearOf } from "../wardrobe/index";
 import type { ArtLayer, PutMode, TintRecipe, TintStep, TortieLayer, WhiteLayer } from "./types";
 
 // --- Кольори -----------------------------------------------------------------------------------
@@ -307,23 +310,6 @@ export interface PersonRecipeOptions {
 }
 
 /**
- * Волосся в новому вигляді — палітра редактора (`view/palette.ts`) з поправками:
- * - чорне світліше: #2f2420 майже збігалося з чорнилом контуру, тож пасма, вихор, гумка хвостика й завитки кучерів зникали,
- *   а ззаду зачіска ставала плямою без форми (A10, хвиля 2). Та сама поправка, що й у чорного кота (`PIGMENT_LOOK.black`,
- *   рішення автора 2026-10-30): чорне — #463a40;
- * - каштанове — темне червонясто-буре #5a2216. Темно-каштанове редактора #4a2f27 зливалося з чорнилом (ΔE2000 12,2: пасма
- *   зникали), а світліше буре #5e3d2e, яким його замінила хвиля 2, — з дуже темною шкірою #6b4630 (ΔE2000 4,3: зачіска
- *   того самого кольору, що й обличчя; рецензія хвилі 3). Світлішим каштанове від шкіри 4 не відвести (стає русявим чи
- *   рудим), темнішим за чорне бути не може, тож — червоніше: від кожного тону шкіри ≥ 11,8, від чорного 17,8, від рудого
- *   21, від чорнила 18,3 (пасма видно);
- * - русяве — попелясте «мишаче» #8f8566 замість рудувато-бурого #8a5a33: те майже збігалося зі шкірою 3 #9a6b45 (ΔE2000
- *   6,4), і волосся зливалося з обличчям і шиєю. Тепер воно відрізняється від кожного тону шкіри на ΔE2000 ≥ 15, а від
- *   інших кольорів волосся — на ≥ 19 (хвиля 3, `tests/compose.test.ts`).
- * Портрет у картках малює той самий рецепт (`composePortrait`), тож колір там той самий.
- */
-const HAIR_COLORS: readonly number[] = LOOK_PALETTE.hairColor.map((color, i) => [0x463a40, 0x5a2216, 0x8f8566][i] ?? color);
-
-/**
  * Карі очі на темній і дуже темній шкірі (`Look.skin` 3, 4) — темно-карі #341808, а не карі редактора #7a5230: у ока немає
  * обведення знизу (`art/person/eyes`: лише заливка райдужки, повіка — згори), і карі на темній шкірі мали ΔE2000 10,1 і
  * 5,9 — на телефоні від очей лишалися дві цятки відблиску. Світлішими від темної шкіри карі не відвести (стають
@@ -331,23 +317,24 @@ const HAIR_COLORS: readonly number[] = LOOK_PALETTE.hairColor.map((color, i) => 
  * відрізняються на ≥ 15, від темних очей — на 16. На світлішій шкірі карі лишаються як у редакторі.
  */
 const DARK_BROWN_IRIS = 0x341808;
-/** Карі очі (`LOOK_OPTIONS`: темні, блакитні, зелені, карі) і темна шкіра, від якої вони темнішають. */
+/** Карі очі (`IRIS_COLORS`: темні, блакитні, зелені, карі) і темна шкіра, від якої вони темнішають. */
 const BROWN_EYES = 3;
 const DARK_SKIN_FROM = 3;
 
 /**
- * Кольори вигляду персонажа з палітр `view/palette.ts` за індексами `Look` (волосся — `HAIR_COLORS`, карі очі на темній шкірі —
- * `DARK_BROWN_IRIS`); їх бере й портрет.
+ * Кольори вигляду персонажа з реєстрів гардеробу (`wearOf`; карі очі на темній шкірі — `DARK_BROWN_IRIS`, низ комбінезона —
+ * кольором верху); їх бере й портрет.
  */
 export function personColors(look: Look): { skin: number; hair: number; iris: number; top: number; bottom: number; shoes: number } {
+  const wear = wearOf(look);
+  const top = TOP_COLORS[wear.top]?.color ?? 0;
   return {
-    skin: pick(LOOK_PALETTE.skin, look.skin),
-    hair: pick(HAIR_COLORS, look.hairColor),
-    iris: look.eyes === BROWN_EYES && look.skin >= DARK_SKIN_FROM ? DARK_BROWN_IRIS : pick(LOOK_PALETTE.eyes, look.eyes),
-    top: pick(LOOK_PALETTE.clothes, look.top),
-    // Низ і взуття починаються з графітового (`ui/look.ts`): зсув 5 у спільній палітрі одягу.
-    bottom: pick(LOOK_PALETTE.clothes, look.bottom + 5),
-    shoes: pick(LOOK_PALETTE.clothes, look.shoes + 5),
+    skin: SKIN_TONES[wear.skin]?.color ?? 0,
+    hair: HAIR_COLORS[wear.hairColor]?.color ?? 0,
+    iris: wear.eyes === BROWN_EYES && wear.skin >= DARK_SKIN_FROM ? DARK_BROWN_IRIS : (IRIS_COLORS[wear.eyes]?.color ?? 0),
+    top,
+    bottom: wear.suit ? top : (BOTTOM_COLORS[wear.bottom]?.color ?? 0),
+    shoes: SHOE_COLORS[wear.shoes]?.color ?? 0,
   };
 }
 
@@ -426,10 +413,6 @@ export function dullColor(color: number): number {
 
 function clampInt(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, Math.round(value)));
-}
-
-function pick(list: readonly number[], i: number): number {
-  return list[((Math.trunc(i) % list.length) + list.length) % list.length] ?? 0;
 }
 
 /** Лише задані поля: `{ dull: undefined }` не затирає стан, узятий із кота. */

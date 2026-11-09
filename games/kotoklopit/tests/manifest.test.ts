@@ -532,7 +532,7 @@ describe("маніфест: персонаж", () => {
   });
 
   it("кожен колір вигляду (Look) — шар заливки, який фарбує компонувальник; плями на одязі — накладка", () => {
-    const fills: Record<Exclude<keyof Look, "face" | "hair" | "build">, ArtLayer> = {
+    const fills: Record<"skin" | "hairColor" | "eyes" | "top" | "bottom" | "shoes", ArtLayer> = {
       skin: "fill-skin",
       hairColor: "fill-hair",
       eyes: "fill-iris",
