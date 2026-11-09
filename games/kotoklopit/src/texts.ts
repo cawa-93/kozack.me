@@ -45,6 +45,9 @@ export const BILL_TEXTS = {
   paid: "Усі рахунки сплачено",
 } as const;
 
+/** Кнопка-іконка притулку праворуч від імені кота у вкладці «Коти» (§9.8): підказка й назва для читача екрана. */
+export const GIVE_AWAY_LABEL = "Віддати в добрі руки";
+
 /** Кнопка-іконка смітника в рядку речі вкладки «Дім» (§8.7): підказка й назва для читача екрана. */
 export const DISCARD_LABEL = "Викинути";
 
@@ -753,7 +756,7 @@ export function personStateTitle(id: PersonStateId, address: Address): string {
 }
 
 /** Картка знайомства з новим котом (§9.7); `male` і `female` — надпис дорослого за статтю. */
-export const CAT_INTRO_TEXTS = { kitten: "Нове кошеня", male: "Новий кіт", female: "Нова кішка", title: "Знайомтеся", name: "Ім'я", done: "Готово" } as const;
+export const CAT_INTRO_TEXTS = { kitten: "Нове кошеня", male: "Новий кіт", female: "Нова кішка", title: "Знайомтеся", name: "Ім'я", rename: "Змінити ім'я", done: "Готово" } as const;
 
 
 /** Хвороби персонажа (§6.5). */

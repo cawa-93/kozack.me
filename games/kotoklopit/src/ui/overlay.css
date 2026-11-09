@@ -500,6 +500,93 @@
   font-weight: 600;
 }
 
+/* Ім'я кота заголовком (телефон), як ім'я персонажа в «Профілі»: за ним знак статі й малопомітний олівець, праворуч —
+   «Віддати в добрі руки». Олівцем користуються рідко — він напівпрозорий і без рамки, яскравіший лише під пальцем чи мишею. */
+.cat-profile-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+}
+
+.cat-profile-name {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 28px/1.15 var(--hand);
+  color: var(--ink);
+}
+
+/* Стать — важливий знак: великий і кольоровий (гліфи `ui/glyph/male`, `female`; 1,15 em від цього кегля). */
+.cat-sex {
+  flex: none;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.name-row > .cat-sex {
+  align-self: center;
+}
+
+.cat-rename {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 18px;
+  line-height: 1;
+  opacity: 0.4;
+  cursor: pointer;
+}
+
+.cat-rename .glyph {
+  display: block;
+  margin: 0 auto;
+}
+
+.cat-rename:hover,
+.cat-rename:focus-visible,
+.cat-rename:active {
+  opacity: 0.9;
+}
+
+.cat-profile-title > .give-away {
+  margin-left: auto;
+}
+
+/* Поле перейменування — на місці заголовка, тієї ж висоти рядка, а не велике поле знайомства. */
+.button.name-input.cat-rename-input {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  min-height: 44px;
+  padding: 4px 12px 8px;
+  font-size: 24px;
+}
+
+/* «Віддати в добрі руки» — кнопка-іконка притулку праворуч у рядку імені. */
+.button.give-away,
+.button.give-away:active:not(:disabled) {
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 4px 12px 8px;
+}
+
+.button.give-away:active:not(:disabled) {
+  padding-top: 8px;
+  padding-bottom: 4px;
+}
+
+.button.give-away > img {
+  width: 34px;
+  height: 34px;
+}
+
 .address-portrait {
   margin: 4px auto 8px;
 }

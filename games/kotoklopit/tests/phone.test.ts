@@ -154,6 +154,41 @@ describe("профіль (§8.4, §6.5)", () => {
   });
 });
 
+describe("картка кота у вкладці «Коти» (§9.7, §9.8)", () => {
+  const profile = (state: GameState): FakeElement => phoneCard(state, "cats", handlers).body.find((p) => typeof p !== "string" && (p as unknown as FakeElement).className === "cat-profile") as unknown as FakeElement;
+
+  it("ім'я — заголовком, за ним знак статі й олівець «Змінити ім'я»; праворуч — «Віддати в добрі руки»; з оголошенням — «Зняти оголошення»", () => {
+    const state = fullPhone();
+    const cat = state.cats[0]!;
+    const title = profile(state).find("cat-profile-title");
+    expect(title?.find("cat-profile-name")?.textContent).toBe(cat.name);
+    expect(title?.find("cat-sex")?.textContent).toBe(cat.sex === "male" ? "♂" : "♀");
+    expect(title?.find("cat-rename")?.attributes["aria-label"]).toBe("Змінити ім'я");
+    expect(profile(state).find("name-input")).toBeUndefined();
+    const give = title?.find("give-away");
+    expect(give?.attributes["aria-label"]).toBe("Віддати в добрі руки");
+    expect(give?.textContent).toBe("");
+    state.ads.push(cat.id);
+    expect(profile(state).find("give-away")).toBeUndefined();
+    expect(profile(state).textContent).toContain("Зняти оголошення");
+  });
+
+  it("вік, порода й стерилізація — одним рядком, без знака статі; невідоме — без нього", () => {
+    const state = fullPhone();
+    const cat = state.cats[0]!;
+    cat.breedKnown = [false, false];
+    cat.sterilized = false;
+    const head = (): string => profile(state).find("cat-profile-head")?.textContent ?? "";
+    expect(head()).toMatch(/^\d+ тиж\S*$/);
+    cat.breedKnown = [true, true];
+    cat.sterilized = true;
+    cat.sterilizedKnown = true;
+    expect(head()).toMatch(/^\d+ тиж\S* · \S.* · (кастрований|стерилізована)$/);
+    expect(profile(state).textContent).not.toContain("Порода:");
+    expect(head()).not.toMatch(/[♂♀]/);
+  });
+});
+
 describe("телефон — смартфон набік", () => {
   it("на кожній вкладці — оформлення телефона, вкладки й хрестик", () => {
     const state = fullPhone();

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- ui/glyph/edit — змінити ім'я кота (✏, малопомітна кнопка за ім'ям у картці кота вкладки «Коти» телефона, `src/ui/catprofile.ts`, §9.7).
+size 64×64; pivot (32, 32) — центр; points: —. Без станів і шарів. Гліф DOM (src/ui/glyphs.ts): на кнопці ≈ 18–20 px, напівпрозорий (CSS).
+Олівець навскіс знизу ліворуч угору праворуч: гірчичний корпус (mustard) зі світлою гранню, дерев'яний загострений кінчик (straw) із
+графітом (ink), сіра металева обойма (grey) і рожева гумка (pink); контур 6 / важкий низ 8,5 / дрібне 3,5.
+-->
+<g id="p-pencil">
+<path d="M41.5 13.5L50.5 22.5L25 48L16 39Z" fill="#d4a54c"/>
+<path d="M41.5 13.5L46 18L20.5 43.5L16 39Z" fill="#e8c47d"/>
+<path d="M16 39L25 48L11.5 52.5Z" fill="#ddc391"/>
+<path d="M13.6 45.6L18.4 50.4L11.5 52.5Z" fill="#2e1f29"/>
+<path d="M41.5 13.5L45 10Q48 7 51 10L54 13Q57 16 54 19L50.5 22.5Z" fill="#d99a93"/>
+<path d="M38.5 16.5L41.5 13.5L50.5 22.5L47.5 25.5Z" fill="#a69f9b"/>
+<path d="M45 22L19.5 47.5" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M16 39L41.5 13.5L45 10Q48 7 51 10L54 13Q57 16 54 19L25 48L11.5 52.5Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linejoin="round"/>
+<path d="M16 39L25 48M38.5 16.5L47.5 25.5M41.5 13.5L50.5 22.5" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round"/>
+</g>
+</svg>

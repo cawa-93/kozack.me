@@ -1,4 +1,5 @@
-// Картка кота (§9.7): живий портрет, поле імені й те, що про кота відомо. Та сама і в знайомстві, і у вкладці «Коти» телефона.
+// Картка кота (§9.7): живий портрет, ім'я зі знаком статі й те, що про кота відомо. Та сама і в знайомстві, і у вкладці «Коти»
+// телефона: у знайомстві ім'я — поле (кота щойно назвали), у телефоні — заголовок, а поле — лише після малопомітного олівця.
 
 import { renameCat } from "../sim/cat";
 import { NAME_MAX_LENGTH } from "../sim/config";
@@ -12,7 +13,7 @@ import { traitChips } from "./traits";
 /** Сторона портрета, px CSS. */
 const PORTRAIT_SIZE = 200;
 
-/** Що показати про кота: стать і вік, решта відомого й риси, відомі цілком. */
+/** Що показати про кота: вік, порода й стерилізація одним рядком, решта відомого й риси, відомі цілком. */
 export interface CatFacts {
   head: string;
   lines: readonly string[];
@@ -34,8 +35,52 @@ function nameField(cat: Cat): HTMLInputElement {
   return input;
 }
 
-/** `extra` — що стоїть під фактами: у телефоні це оголошення. */
-export function catProfile(cat: Cat, facts: CatFacts, extra?: HTMLElement): HTMLElement {
+/** Знак статі за ім'ям: великий і кольоровий — це важливо (гліф ♂ / ♀ малює `Overlay`, розмір — `.cat-sex` у CSS). */
+function sexMark(cat: Cat): HTMLElement {
+  const mark = element("span", `cat-sex ${cat.sex}`, cat.sex === "male" ? "♂" : "♀");
+  mark.setAttribute("aria-hidden", "true");
+  return mark;
+}
+
+/**
+ * Ім'я заголовком (телефон): за ним знак статі й малопомітний олівець — він міняє заголовок на поле; вийшли з поля чи Enter —
+ * знову заголовок з новим ім'ям. Перейменовують рідко, тож олівець ледь видно.
+ */
+function nameTitle(cat: Cat): HTMLElement {
+  const title = element("p", "cat-profile-name", cat.name);
+  const rename = element("button", "cat-rename", "✏");
+  rename.title = CAT_INTRO_TEXTS.rename;
+  rename.setAttribute("aria-label", CAT_INTRO_TEXTS.rename);
+  const row = element("div", "cat-profile-title");
+  row.append(title, sexMark(cat), rename);
+  rename.addEventListener("click", () => {
+    const input = nameField(cat);
+    input.classList.add("cat-rename-input");
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") input.blur();
+    });
+    input.addEventListener("blur", () => {
+      title.textContent = cat.name;
+      input.replaceWith(title);
+      rename.hidden = false;
+    });
+    title.replaceWith(input);
+    rename.hidden = true;
+    input.focus();
+    input.select();
+  });
+  return row;
+}
+
+/**
+ * `rename`: "field" — ім'я полем (знайомство), "title" — заголовком з олівцем (телефон). `action` — кнопка праворуч у рядку імені
+ * (у телефоні — віддати в добрі руки), `extra` — що стоїть під фактами (у телефоні — дане оголошення).
+ */
+export function catProfile(
+  cat: Cat,
+  facts: CatFacts,
+  more: { action?: HTMLElement | undefined; extra?: HTMLElement; rename?: "field" | "title" } = {},
+): HTMLElement {
   const canvas = portraitCanvas(PORTRAIT_SIZE, PORTRAIT_SIZE);
   liveCatPortrait(canvas, cat);
 
@@ -45,8 +90,17 @@ export function catProfile(cat: Cat, facts: CatFacts, extra?: HTMLElement): HTML
   if (facts.known.length > 0) about.append(traitChips(facts.known, cat.sex));
 
   const side = element("div", "cat-profile-side");
-  side.append(element("span", "look-label", CAT_INTRO_TEXTS.name), nameField(cat), about);
-  if (extra) side.append(extra);
+  if (more.rename === "title") {
+    const head = nameTitle(cat);
+    if (more.action) head.append(more.action);
+    side.append(head, about);
+  } else {
+    const name = element("div", "name-row");
+    name.append(nameField(cat), sexMark(cat));
+    if (more.action) name.append(more.action);
+    side.append(element("span", "look-label", CAT_INTRO_TEXTS.name), name, about);
+  }
+  if (more.extra) side.append(more.extra);
 
   const profile = element("div", "cat-profile");
   profile.append(canvas, side);

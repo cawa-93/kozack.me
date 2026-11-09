@@ -29,6 +29,7 @@ import {
   fill,
   GAME_TEXTS,
   DISCARD_LABEL,
+  GIVE_AWAY_LABEL,
   HOME_FIXTURE_TITLES,
   KITTEN_MESSAGE,
   LEDGER_TEXTS,
@@ -41,7 +42,7 @@ import {
 } from "../texts";
 import { allControls, homeControls } from "./controls";
 import { creditsLink } from "./creditslink";
-import { destinationLabel, diseaseLabel, named, productLabel } from "./icons";
+import { destinationLabel, diseaseLabel, iconImage, named, productLabel } from "./icons";
 import { element, type Card, type CardAction, type TitleSection } from "./overlay";
 import { shopCatalog, variantLabel } from "./shop";
 import { phoneStatusBar } from "./phonebar";
@@ -55,7 +56,7 @@ import { drawPortrait, portraitCanvas } from "./portrait";
 import { billCard } from "./bill";
 import { traitChips, traitHint } from "./traits";
 import { profileTab } from "./profile";
-import { HOME_FIXTURE_ICONS } from "../view/symbols";
+import { DESTINATION_ICONS, HOME_FIXTURE_ICONS } from "../view/symbols";
 
 const capitalize = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
 
@@ -371,14 +372,10 @@ export function breedAbout(cat: Cat): string[] {
   return lines;
 }
 
-/** Що про кота вже відомо (§9.9): стать і вік, рядки про породу, стани, хвороби й здогадки та риси, відомі цілком. */
+/** Що про кота вже відомо (§9.9): вік, порода й стерилізація, опис породи, стани, хвороби й здогадки та риси, відомі цілком. */
 export function catFacts(state: GameState, cat: Cat): CatFacts {
-  const lines: string[] = [];
-  const breed = breedLine(cat.breed, cat.breedKnown, cat.sex);
-  if (breed !== null) lines.push(breed);
-  lines.push(...breedAbout(cat));
+  const lines: string[] = [...breedAbout(cat)];
   const states: string[] = [];
-  if (cat.sterilized && cat.sterilizedKnown) states.push(cat.sex === "male" ? "кастрований" : "стерилізована");
   if (cat.pregnancy?.known) states.push("вагітна");
   else if (showsPregnancy(state, cat)) states.push("здається, вагітна");
   if (inHeat(state, cat)) states.push("у тічці");
@@ -406,7 +403,10 @@ export function catFacts(state: GameState, cat: Cat): CatFacts {
   // Помічене — один рядок, хоч би скільки рис (§9.9).
   if (cat.traits.some((t) => visibility(state, t) === 1)) lines.push("❓ Помічено щось дивне.");
   if (cat.traits.every((t) => visibility(state, t) === 0)) lines.push("Характер: ?");
-  return { head: `${cat.sex === "male" ? "♂" : "♀"} · ${weeks(cat.ageWeeks)}`, lines, known };
+  // Вік, порода й стерилізація — одним рядком (стать — знаком за ім'ям); невідоме — без нього.
+  const breed = breedText(cat.breed, cat.breedKnown, cat.sex);
+  const sterilized = cat.sterilized && cat.sterilizedKnown ? [cat.sex === "male" ? "кастрований" : "стерилізована"] : [];
+  return { head: [weeks(cat.ageWeeks), ...(breed === null ? [] : [breed]), ...sterilized].join(" · "), lines, known };
 }
 
 /** Картки котів (§9.7, §9.9): та сама картка, що й у знайомстві, а під нею — оголошення. */
@@ -415,18 +415,26 @@ function catCards(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
     const card = element("div", "cat-profile-extra");
     // Оголошення (§9.8): з підтвердженням (картку показує сцена) і можна зняти; новонародженого й матір новонароджених — ні.
     const blocker = giveAwayBlocker(state, cat);
+    let action: HTMLElement | undefined;
     if (state.ads.includes(cat.id)) {
       card.append(note(`Завтра вранці ${cat.name} поїде до нових господарів.`));
       const cancel = element("button", "button", "Зняти оголошення");
       cancel.addEventListener("click", () => handlers.cancelAd(cat));
       card.append(cancel);
-    } else if (blocker === null) {
-      const ad = element("button", "button", "Віддати в добрі руки");
-      ad.addEventListener("click", () => handlers.advertise(cat));
-      card.append(ad);
-    }
-    return catProfile(cat, catFacts(state, cat), card);
+    } else if (blocker === null) action = giveAwayButton(() => handlers.advertise(cat));
+    return catProfile(cat, catFacts(state, cat), { action, extra: card, rename: "title" });
   });
+}
+
+/** «Віддати в добрі руки» (§9.8): кнопка-іконка притулку праворуч у рядку імені; назва — підказкою й для читача екрана. */
+function giveAwayButton(onClick: () => void): HTMLButtonElement {
+  const button = element("button", "button give-away");
+  const icon = iconImage(DESTINATION_ICONS.shelter);
+  if (icon) button.append(icon);
+  button.title = GIVE_AWAY_LABEL;
+  button.setAttribute("aria-label", GIVE_AWAY_LABEL);
+  button.addEventListener("click", onClick);
+  return button;
 }
 
 /** Причина в альбомі (§9.7); віддані — «живе в нових руках» (§9.8), як і на титулці. */

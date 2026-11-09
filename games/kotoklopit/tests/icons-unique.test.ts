@@ -172,6 +172,8 @@ function collectCases(): Map<string, Shown[]> {
   for (const [illness, icon] of Object.entries(ILLNESS_ICONS)) add(`illness:${illness}`, { icon });
   // Стани персонажа на панелі й у профілі телефона (§8.4).
   for (const [id, look] of Object.entries(PERSON_STATE_ICONS)) add(`person-state:${id}`, look);
+  // Віддати кота в добрі руки — кнопка-іконка в картці кота.
+  add("phone:give-away", { icon: DESTINATION_ICONS.shelter });
   // Речі квартири, що є завжди, у «Домі» телефона.
   for (const [id, icon] of Object.entries(HOME_FIXTURE_ICONS)) add(`home:${id}`, { icon });
   // Пункти поїздок (§11.4 «Іконка біля назви», §8.5 «На місці — кадр парковки»): біля назви пункту в картках і на табличці на
@@ -262,6 +264,7 @@ Object.assign(SAME, {
   "застуда персонажа": { why: "персонаж застуджений: відмова ривка, «Застуда» в лікаря й на панелі — градусник", ids: ["refusal:cold", "illness:cold", "person-state:cold"] },
   "виснаження персонажа": { why: "персонаж виснажений: «Виснаження» в лікаря й на панелі — та сама хвороба (§6.5)", ids: ["illness:exhaustion", "person-state:exhaustion"] },
   сонливість: { why: "персонаж сонний: думка «zz» над ним і стан на панелі — та сама сонливість (§8.8)", ids: ["state:drowsy", "person-state:drowsy"] },
+  "кіт іде з дому": { why: "притулок на карті поїздок і кнопка «Віддати в добрі руки» в картці кота: кіт іде з дому до інших людей (§9.8)", ids: ["destination:shelter", "phone:give-away"] },
   // Виснаження — не група: ривка воно не забирає, а відмова «без сил» (батарейка) — від здоров'я нижче 25 (рецензія 2026-11-02).
 });
 
@@ -344,7 +347,8 @@ describe("унікальна іконка на унікальний кейс (§
     const icon = (id: string): IconName | undefined => cases.get(id)?.[0]?.icon;
     for (const destination of DESTINATION_LIST) {
       expect(cases.has(`destination:${destination}`), destination).toBe(true);
-      expect(meaningOf(`destination:${destination}`), destination).toBe(`destination:${destination}`);
+      // Притулок — спільний лише з кнопкою «Віддати в добрі руки» (група «кіт іде з дому»).
+      expect(meaningOf(`destination:${destination}`), destination).toBe(destination === "shelter" ? "кіт іде з дому" : `destination:${destination}`);
     }
     expect(new Set(DESTINATION_LIST.map((d) => DESTINATION_ICONS[d])).size).toBe(DESTINATION_LIST.length);
     // Ветеринар і лікар — не аптечка, не ліки й не хвороби; притулок — не будиночок із магазину.

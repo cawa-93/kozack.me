@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- ui/glyph/male — знак статі «кіт» (♂, за ім'ям у картці кота й у списках притулку й розплідника, §9.7): коло зі стрілкою вгору
+праворуч, товстий синій штрих (blue) у чорнильному контурі — стать важлива, її видно здалеку й однаково на будь-якому телефоні.
+size 64×64; pivot (32, 32) — центр; points: —. Без станів і шарів. Гліф DOM (src/ui/glyphs.ts).
+-->
+<g id="p-ink">
+<circle cx="26" cy="38" r="14" fill="none" stroke="#2e1f29" stroke-width="9"/>
+<path d="M36 28L51 13M39.5 13H51V24.5" fill="none" stroke="#2e1f29" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-sign">
+<circle cx="26" cy="38" r="14" fill="none" stroke="#6c84a3" stroke-width="4"/>
+<path d="M36 28L51 13M39.5 13H51V24.5" fill="none" stroke="#6c84a3" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>
