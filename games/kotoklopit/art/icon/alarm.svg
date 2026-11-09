@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/alarm — будильник, що дзвенить: недосип (стан персонажа на панелі й у профілі телефона, §8.8).
+size 64×64; pivot (32, 32) — центр; points — немає. Без станів і шарів: один кадр у готових кольорах; контур 6 / важкий низ 8,5 / дрібне й лінії 3,5.
+Червоний корпус (red) на двох ніжках, циферблат paper зі стрілками, два латунні дзвоники (mustard) і молоточок між ними, дуги дзвону обабіч.
+Не сон (zz: літери «Z»), не «ще рано» (moon) і не виснаження (exhausted: обличчя з мішками під очима) — будильник, що підняв, не давши виспатися.
+-->
+<defs><clipPath id="icon-alarm-body"><circle cx="32" cy="36" r="17.5"/></clipPath></defs>
+<g id="p-legs">
+<path d="M21 50L16.5 56.5" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M43 50L47.5 56.5" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-bells">
+<circle cx="17.5" cy="17" r="7.2" fill="#d4a54c"/>
+<circle cx="46.5" cy="17" r="7.2" fill="#d4a54c"/>
+<circle cx="17.5" cy="17" r="7.2" fill="none" stroke="#2e1f29" stroke-width="6"/>
+<circle cx="46.5" cy="17" r="7.2" fill="none" stroke="#2e1f29" stroke-width="6"/>
+<path d="M32 18.5L32 11.5" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="32" cy="10" r="3.2" fill="#2e1f29"/>
+</g>
+<g id="p-ring">
+<path d="M9.5 26Q6.2 31 9.5 36" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M54.5 26Q57.8 31 54.5 36" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-body">
+<circle cx="32" cy="36" r="17.5" fill="#c4524b"/>
+<path d="M0 41Q32 46 64 41V64H0Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-alarm-body)"/>
+<circle cx="32" cy="36" r="11.5" fill="#f2e7d0"/>
+<circle cx="32" cy="36" r="11.5" fill="none" stroke="#2e1f29" stroke-width="3.5"/>
+<path d="M32 36L32 28.5" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M32 36L38.2 39.6" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="32" cy="36" r="17.5" fill="none" stroke="#2e1f29" stroke-width="6"/>
+<path d="M16.7 44.5A17.5 17.5 0 0 0 47.3 44.5" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

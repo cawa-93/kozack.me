@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/job-search — велика лупа, а в склі — силует людини (голова й плечі): пошук роботи (стан персонажа на панелі й у профілі
+телефона, §8.6).
+size 64×64; pivot (32, 32) — центр; points — немає. Без станів і шарів: один кадр у готових кольорах; контур 6 / важкий низ 8,5 / дрібне й лінії 3,5.
+Скло glassHi з відблиском paper, людина blue, ручка mustard у чорнильній облямівці 9 навскіс донизу ліворуч.
+Не відмова з вакансії (cv-rejected: аркуш резюме з червоним «✗») — силует лупи, без аркуша.
+-->
+<defs><clipPath id="icon-job-search-lens"><circle cx="36" cy="26" r="15.5"/></clipPath></defs>
+<g id="p-handle">
+<path d="M24.5 38.5L11.5 51.5" fill="none" stroke="#2e1f29" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M23.8 39.2L12.2 50.8" fill="none" stroke="#d4a54c" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-lens">
+<circle cx="36" cy="26" r="15.5" fill="#d4e3dc"/>
+<g clip-path="url(#icon-job-search-lens)">
+<path d="M25.5 43Q25.5 31 36 31Q46.5 31 46.5 43Z" fill="#6c84a3"/>
+<path d="M25.5 43Q25.5 31 36 31Q46.5 31 46.5 43" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="36" cy="23.5" r="5.5" fill="#6c84a3"/>
+<circle cx="36" cy="23.5" r="5.5" fill="none" stroke="#2e1f29" stroke-width="3.5"/>
+<path d="M0 34Q36 38 64 34V64H0Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<path d="M24.5 22Q26 15 32 13" fill="none" stroke="#f2e7d0" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="36" cy="26" r="15.5" fill="none" stroke="#2e1f29" stroke-width="6"/>
+<path d="M22 33A15.5 15.5 0 0 0 50 33" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

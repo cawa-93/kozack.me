@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/sick-leave — листок відривного календаря на двох кільцях із великим червоним хрестом: лікарняний (стан персонажа на панелі й
+у профілі телефона, §6.5).
+size 64×64; pivot (32, 32) — центр; points — немає. Без станів і шарів: один кадр у готових кольорах; контур 6 / важкий низ 8,5 / дрібне й лінії 3,5.
+Аркуш paper, шапка blue, хрест red у чорнильній облямівці 3,5.
+Не резюме (cv-rejected: аркуш із загнутим кутом і фото), не аптечка (kit) і не лікар (doctor-office) — день у календарі, закреслений хворобою.
+-->
+<defs><clipPath id="icon-sick-leave-page"><path d="M15 12.5Q32 12 49 12.5Q54 12.5 54 17.5Q54.4 33 54 49Q54 54 49 54Q32 54.4 15 54Q10 54 10 49Q9.6 33 10 17.5Q10 12.5 15 12.5Z"/></clipPath></defs>
+<g id="p-page">
+<path d="M15 12.5Q32 12 49 12.5Q54 12.5 54 17.5Q54.4 33 54 49Q54 54 49 54Q32 54.4 15 54Q10 54 10 49Q9.6 33 10 17.5Q10 12.5 15 12.5Z" fill="#f2e7d0"/>
+<g clip-path="url(#icon-sick-leave-page)">
+<path d="M0 0H64V24Q32 24.6 0 24Z" fill="#6c84a3"/>
+<path d="M0 48Q32 51 64 48V64H0Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<path d="M10 24.2Q32 24.8 54 24.2" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M28.5 29.5H35.5V35.5H41.5V42.5H35.5V48.5H28.5V42.5H22.5V35.5H28.5Z" fill="#c4524b"/>
+<path d="M28.5 29.5H35.5V35.5H41.5V42.5H35.5V48.5H28.5V42.5H22.5V35.5H28.5Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M15 12.5Q32 12 49 12.5Q54 12.5 54 17.5Q54.4 33 54 49Q54 54 49 54Q32 54.4 15 54Q10 54 10 49Q9.6 33 10 17.5Q10 12.5 15 12.5Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14 54.2Q32 54.8 50 54.2" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-rings">
+<path d="M22 8L22 17.5" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M22 8.6L22 16.9" fill="none" stroke="#cdc6be" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M42 8L42 17.5" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M42 8.6L42 16.9" fill="none" stroke="#cdc6be" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

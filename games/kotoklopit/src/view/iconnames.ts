@@ -147,6 +147,12 @@ export const ICON_NAMES = [
   // «холодна вода» в душі.
   "no-power",
   "cold-water",
+  // Стани персонажа на панелі й у профілі телефона (§8.4, §8.8, §8.6, §6.5): недосип, виспався (з ✓ — добре), пошук роботи,
+  // лікарняний.
+  "alarm",
+  "rested",
+  "job-search",
+  "sick-leave",
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];
