@@ -8,7 +8,8 @@ import { createCat } from "../src/sim/cat";
 import { GUESTS, MODIFIERS, PRODUCTS, STORAGE_LIMITS } from "../src/sim/config";
 import { landFlying, unpack } from "../src/sim/economy";
 import { advance, carryFoundling, deserialize, goToSleep, interact, newGame, serialize } from "../src/sim/game";
-import { active, answerCall, chooseDayModifier, chooseWeekModifier, decideFoundling, ignoreCall, patienceDecayFactor, startModifiers, tickModifiers } from "../src/sim/modifiers";
+import { active, answerCall, chooseDayModifier, chooseWeekModifier, decideFoundling, ignoreCall, moveFactor, patienceDecayFactor, startModifiers, tickModifiers } from "../src/sim/modifiers";
+import { fallIllPerson } from "../src/sim/illness";
 import { coughWakes } from "../src/sim/night";
 import { nightlyStates } from "../src/sim/reproduction";
 import { scheduleOf } from "../src/view/schedule";
@@ -40,7 +41,8 @@ describe("вибір модифікаторів: перевірка модифі
   it("безробітному «Планове відключення» буває, «Швидкий інтернет» — ні; на лікарняному робочих немає; суперечливі з тижнем не випадають", () => {
     const jobless = seen((save) => (save.current.job.unemployed = true));
     expect(jobless.has("outage")).toBe(true);
-    expect(jobless.has("fast-internet")).toBe(false);
+    // Дзеркало відключення (§11.1): «Швидкий інтернет» буває й безробітному.
+    expect(jobless.has("fast-internet")).toBe(true);
     const sick = seen((save) => {
       save.current.job.sickLeaveFrom = 2;
       save.current.job.sickLeaveUntil = 2;
@@ -347,36 +349,33 @@ describe("вибір модифікаторів (§4.1)", () => {
     }
   });
 
-  it("«Тиждень профілактики»: з пари «Застуда ↔ Бадьорість» лишається тільки «Бадьорість» — день, що мав стати «Застудою», стає «Бадьорістю», решта та сама (рішення автора 2026-10-29, А14)", () => {
-    const pick = (seed: number, week: string | null): string | null => {
-      const save = game();
-      save.current.modifiers.day = null;
-      save.current.modifiers.week = week;
-      return chooseDayModifier(save.current, 2, createRng(seed));
-    };
-    let replaced = 0;
-    for (let seed = 0; seed < 3000; seed++) {
-      const usual = pick(seed, null);
-      const prevention = pick(seed, "human-prevention");
-      expect(prevention).not.toBe("sick");
-      if (usual === "sick") {
-        replaced += 1;
-        expect(prevention).toBe("vigor");
-      } else expect(prevention).toBe(usual);
-    }
-    expect(replaced).toBeGreaterThan(20);
-    // Учора була «Бадьорість» — сьогодні з цієї пари нічого: модифікатор не повторюється два дні поспіль.
+  it("«Тиждень профілактики» — увесь тиждень як «Бадьорість»; «Застуда» й «Бадьорість» днем не випадають (§4.1)", () => {
     const save = game();
     save.current.modifiers.week = "human-prevention";
-    for (let seed = 0; seed < 600; seed++) {
-      save.current.modifiers.day = "vigor";
+    for (let seed = 0; seed < 3000; seed++) {
+      save.current.modifiers.day = null;
       expect(["sick", "vigor"]).not.toContain(chooseDayModifier(save.current, 2, createRng(seed)));
+    }
+    save.current.modifiers.day = "deadline";
+    expect(moveFactor(save.current)).toBe(MODIFIERS.vigor);
+    save.current.modifiers.week = null;
+    expect(moveFactor(save.current)).toBe(1);
+  });
+
+  it("«Застуда» не випадає, поки персонаж застуджений (§4.1)", () => {
+    const save = game();
+    fallIllPerson(save.current, "cold");
+    for (let seed = 0; seed < 3000; seed++) {
+      save.current.modifiers.day = null;
+      expect(chooseDayModifier(save.current, 2, createRng(seed))).not.toBe("sick");
     }
   });
 
   describe("котячі модифікатори тижня — лише коли є кіт (рішення автора 2026-10-29, А14)", () => {
     const CAT_WEEKS = ["cat-march", "calm-season", "heat-wave", "cold-snap", "cat-flu", "cat-prevention"];
-    const withCat = (save: Save): void => addCat(save.current, createCat(save.current, createRng(3), { source: "shelter", ageWeeks: 4, at: { x: 5.5, y: 8.5 } }));
+    // Доросла нестерилізована кішка: «Котячий березень ↔ Спокійний сезон» — лише з нею (§4.1).
+    const withCat = (save: Save): void =>
+      addCat(save.current, createCat(save.current, createRng(3), { source: "shelter", ageWeeks: 40, sex: "female", at: { x: 5.5, y: 8.5 } }));
     const weeks = (save: Save): (string | null)[] => Array.from({ length: 400 }, (_, i) => chooseWeekModifier(save.current, i + 1));
 
     it("без котів їх немає, а модифікатор тижня однаково щотижня; з котом — бувають; не котячий тиждень від котів не залежить (§6.1)", () => {
@@ -520,7 +519,7 @@ describe("ефекти (§4.1)", () => {
     expect(morning("reprimand", 0.5).save.current.job.reputation).toBeCloseTo(0.5);
   });
 
-  it("робоча субота й вихідний посеред тижня змінюють робочий день", () => {
+  it("робоча субота й вихідний у будень змінюють робочий день", () => {
     const save = game();
     save.current.day = 5;
     expect(isWorkday(save.current)).toBe(false);

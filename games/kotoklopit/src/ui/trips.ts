@@ -8,7 +8,7 @@ import { priceFactor, roadFactor } from "../sim/modifiers";
 import { roadMinutes, tripBlocker } from "../sim/trips";
 import { formatClock } from "../sim/time";
 import type { Cat, Destination, DiseaseId, GameState, IllnessId, Quality, VisitLog } from "../sim/types";
-import { accidentLines, BREED_ABOUT, DAY_MODIFIER_TEXTS, fill, GROOMED, minutesText, VET_ADVICE, VET_MANNER } from "../texts";
+import { accidentLines, BREED_ABOUT, DAY_MODIFIER_TEXTS, fill, GROOMED, minutesText, SHOW_PRIZE_TEXTS, VET_ADVICE, VET_MANNER } from "../texts";
 import { destinationLabel, diseaseLabel, iconImage, illnessLabel } from "./icons";
 import { shopCatalog, type CatalogOptions } from "./shop";
 import { DESTINATION_TITLES, SERVICE_TITLES, STORE_SECTION_TITLES } from "./titles";
@@ -417,8 +417,11 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers, sto
         body.push(row("Участь", `🕐 ${minutesText(TRIPS.show.visit)}`, button(`${MODIFIERS.show.fee}\u00a0₴`, MODIFIERS.show.fee, h.show)));
         break;
       }
+      // Місце — за сумою призу (`MODIFIERS.show.prizes` від першого): тон підказує, як кіт виступив (§11.3).
       const prize = Number(result.slice(5));
-      body.push(prize > 0 ? `${cat.name} отримує приз: ${prize} ₴! Журі в захваті.` : `${cat.name} цього разу без призу, зате всі охали й ахали.`);
+      const place = MODIFIERS.show.prizes.findIndex((p) => p.money === prize);
+      const text = SHOW_PRIZE_TEXTS[place];
+      body.push(text ? fill(text, cat.sex, { кіт: cat.name, сума: prize }) : `${cat.name} цього разу без призу, зате всі охали й ахали.`);
       break;
     }
     case "office":
@@ -447,7 +450,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers, sto
   // «Додому» — її головна кнопка, доки кошик порожній.
   const shop = shopCatalog(state, "store", { ...store, checkout: h.checkout, home: h.home });
   body.push(shop.list);
-  // Подія дня, що змінює ціни того, що є в каталозі («Акція в зоомагазині», «Подорожчання корму»), і скільки знижок.
+  // Подія дня, що змінює ціни того, що є в каталозі («Акція на корм», «Подорожчання корму»), і скільки знижок.
   const repriced = catalog(state, "store").some((g) => "product" in g && priceFactor(state, g.product) !== 1);
   return { ...card, aside: [...dayEvent(state, repriced), ...discounts(shop.discounted, STORE_SECTION_TITLES[destination])], bar: shop.bar, actions: [] };
 }

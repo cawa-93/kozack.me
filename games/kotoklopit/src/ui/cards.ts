@@ -9,7 +9,7 @@ import { diseaseMedicine, dosedToday } from "../sim/diseases";
 import { giveAwayBlocker } from "../sim/farewell";
 import { visibility } from "../sim/knowledge";
 import { WEEK_PAIRS } from "../sim/modifiers";
-import { inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
+import { hasFertileFemale, inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
 import { DEFAULT_NAME } from "../sim/game";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { Address, AlbumEntry, Appliance, Cat, Chronotype, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Quality, Sex, ThingKind } from "../sim/types";
@@ -17,6 +17,7 @@ import {
   ADDRESS_TEXTS,
   BILL_TEXTS,
   BIRTH_MESSAGE,
+  CALL_TEXTS,
   BREED_ABOUT,
   BREED_HALF,
   CAT_DOSE_TODAY,
@@ -75,15 +76,15 @@ function note(...lines: string[]): HTMLElement {
 const isTouch = (): boolean => window.matchMedia("(pointer: coarse)").matches;
 
 /**
- * Чи показує титулка модифікатор тижня (§4.1): того, що вже не про персонажа, — ні. Робочого — безробітному (звільнили посеред
- * тижня — «Аврал» уже не про нього; перевірка модифікаторів 2026-10-28), котячого — коли котів немає: останній помер чи пішов
- * у ніч на понеділок, коли тиждень уже обрано за вечором неділі, чи посеред тижня (рецензія реалізації А14). Погода — «Хвиля
- * спеки» й «Похолодання» — лишається: спека й без котів знижує гігієну персонажа.
+ * Чи показує титулка модифікатор тижня (§4.1): того, що вже не про персонажа, — ні. Робочого — безробітному, котячого — коли
+ * котів немає (останній помер чи пішов, коли тиждень уже обрано), «Котячого березня» й «Спокійного сезону» — без нестерилізованої
+ * дорослої кішки. Погода — «Хвиля спеки» й «Похолодання» — лишається: і без котів вона змінює гігієну персонажа.
  */
 function weekShown(state: GameState, id: string): boolean {
   const pair = WEEK_PAIRS.find((p) => p.hard === id || p.easy === id);
   if (pair?.when === "work") return !state.job.unemployed;
   if (pair?.when === "cat") return state.cats.length > 0 || id === "heat-wave" || id === "cold-snap";
+  if (pair?.when === "fertile") return hasFertileFemale(state);
   return true;
 }
 
@@ -107,6 +108,8 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
       if (cat) events.push([fill(WAKE_TEXTS[reason], cat.sex, { кіт: cat.name, час: formatClock(WAKE_UP.morningMinute) })]);
     }
   }
+  // Сусіди розбудили раніше (§4.1): ефект — наступного ранку, коли модифікатор уже інший, тож титулка називає причину.
+  if (night?.neighborsWoke !== undefined) events.push([fill(WAKE_TEXTS.neighbors, address, { час: formatClock(night.neighborsWoke) })]);
   const newCats = (night?.newCats ?? []).map((id) => state.cats.find((c) => c.id === id)).filter((c) => c !== undefined);
   for (const cat of newCats.filter((c) => c.source !== "born")) {
     events.push([fill(KITTEN_MESSAGE, address, { персонаж: name, кошеня: cat.name })]);
@@ -140,7 +143,7 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
   }
   // Прийшов рахунок за комунальні (§6.4); нульового немає.
   const utilities = night?.utilities;
-  if (utilities?.outcome === "billed" && utilities.bill > 0) events.push([fill(BILL_TEXTS.arrived, address, { сума: utilities.bill })]);
+  if (utilities?.outcome === "billed" && utilities.bill > 0) events.push([fill(utilities.recalculated ? BILL_TEXTS.arrivedRecalculated : BILL_TEXTS.arrived, address, { сума: utilities.bill })]);
   // Куди пішли гроші минулого тижня (§6.4, рішення автора 2026-10-27, Е4).
   if (night?.ledger) events.push([LEDGER_TEXTS.heading, ...ledgerLines(night.ledger)]);
   if (night === null && state.day === 0) {
@@ -569,7 +572,7 @@ export function foundlingCard(onTake: () => void, onShelter: () => void): Card {
   return {
     kicker: "Знайда",
     title: "Кошеня під дверима",
-    body: ["Змокле, тремтить і дивиться так, ніби давно на вас чекало."],
+    body: ["Худеньке, тремтить і дивиться так, ніби давно на вас чекало."],
     actions: [
       { label: `Віднести в ${destinationLabel("shelter").toLowerCase()} · 🕐 ${minutesText(MODIFIERS.foundlingShelterMinutes)}`, onSelect: onShelter },
       { label: "Узяти додому", primary: true, onSelect: onTake },
@@ -578,12 +581,12 @@ export function foundlingCard(onTake: () => void, onShelter: () => void): Card {
   };
 }
 
-/** Дзвінок мами (§4.1): відповісти — пів години, не відповісти — здоровий глузд падає. */
-export function callCard(onAnswer: () => void, onIgnore: () => void): Card {
+/** Дзвінок мами (§4.1): відповісти — пів години, не відповісти — здоровий глузд падає. Без котів мама питає про кота, а не про котів. */
+export function callCard(cats: boolean, onAnswer: () => void, onIgnore: () => void): Card {
   return {
     kicker: "Телефон",
     title: "Дзвонить мама",
-    body: ["Мама питає, як справи, чи ви їсте й чи не забагато в домі котів."],
+    body: [cats ? CALL_TEXTS.body : CALL_TEXTS.bodyNoCats],
     actions: [
       { label: "Не відповідати", onSelect: onIgnore },
       { label: `Відповісти · 🕐 ${minutesText(MODIFIERS.call.minutes)}`, primary: true, onSelect: onAnswer },

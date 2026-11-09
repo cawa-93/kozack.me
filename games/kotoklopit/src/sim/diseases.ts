@@ -22,7 +22,9 @@ export function illnessChance(state: GameState, cat: Cat, id: DiseaseId, base: n
   const hardiness = Math.max(0, 1 - ILLNESS.hardinessStep * traitLevel(cat, "hardiness"));
   const risk = BREED_RISK.diseases[id];
   const breed = risk === undefined ? 1 : 1 + BREED_RISK.step * riskHalves(cat.breed, risk);
-  return Math.min(1, base * hardiness * breed * ILLNESS.difficulty[state.difficulty] * catIllnessFactor(state));
+  // Тиждень «Котячий грип» / профілактики — лише заразним (§9.5): травма в аварії чи камені від корму від грипу не частішають.
+  const week = DISEASES[id].contagious !== null ? catIllnessFactor(state) : 1;
+  return Math.min(1, base * hardiness * breed * ILLNESS.difficulty[state.difficulty] * week);
 }
 
 /** Кіт захворів (якщо ще не хворіє цим). */

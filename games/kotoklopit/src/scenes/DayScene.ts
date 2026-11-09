@@ -5,7 +5,7 @@ import { canDash, dash, isMoving } from "../sim/body";
 import { changeLook } from "../sim/character";
 import { meetCat, nextNewcomer } from "../sim/cat";
 import { inStandoff, isDirty } from "../sim/catai";
-import { LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES, SUPPLY_FLIGHT } from "../sim/config";
+import { LOW_STAT, MODIFIERS, SUPPLY_FLIGHT } from "../sim/config";
 import { carrierRoom, discardCarrier } from "../sim/carriers";
 import { discard, discardAppliance, discardLock, payUtilities, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
@@ -22,7 +22,7 @@ import { canGoToSleep, collapseMinute, isDrowsy } from "../sim/sleep";
 import { CARRIER_TARGET, targetOf } from "../sim/targets";
 import { clockFrame, weekOf } from "../sim/time";
 import type { Address, Chronotype, Difficulty, GameState, HomeItem, Quality, Save, ThingKind } from "../sim/types";
-import { isWorking, isWorkday, isWorkTime, patienceLevel, standupToday, workGoesOn } from "../sim/work";
+import { inMeeting, isWorking, isWorkTime, patienceLevel, workGoesOn } from "../sim/work";
 import { RADIO } from "../audio/config";
 import type { Radio } from "../audio/radio/radio";
 import type { SoundMode, Sounds } from "../audio/sfx/sounds";
@@ -843,16 +843,12 @@ export class DayScene extends Phaser.Scene {
       else this.bubbles.setState(id, "say", null, 0, 0);
     };
     const working = isWorking(state);
-    // Летючки в день без світла немає (§4.1, рішення автора 2026-11-02) — і камера над комп'ютером її не обіцяє.
-    const standup = standupToday(state) && state.minute >= STANDUP_MINUTE && state.minute < STANDUP_MINUTE + STANDUP_MINUTES;
     let computer: IconName | null = null;
-    const day = state.minute % 1440;
-    // Нарада — лише в робочий день: звільненого чи на лікарняному камера не чекає (перевірка модифікаторів 2026-10-28).
-    const meeting = state.modifiers.day === "meeting" && isWorkday(state) && day >= MODIFIERS.meeting.from && day < MODIFIERS.meeting.from + MODIFIERS.meeting.minutes;
     // Дріт перегризено (§9.12, «Гризіння»): над комп'ютером — перегризений дріт, доки його не полагодять.
     const icons = STATE_ICONS.computer;
     if (state.home.wireChewed === true) computer = icons.wireChewed;
-    else if (!working && (standup || meeting)) computer = icons.call;
+    // Летючка чи нарада — та сама умова, що в звуку й анімації (`inMeeting`).
+    else if (!working && inMeeting(state)) computer = icons.call;
     else if (!working && isWorkTime(state)) {
       const level = patienceLevel(state);
       computer = level === "out" ? icons.patienceOut : level === "warning" ? icons.patienceWarning : null;
@@ -1065,6 +1061,7 @@ export class DayScene extends Phaser.Scene {
   /** Картка дзвінка мами (§4.1): коли мама подзвонила, і знову після перезавантаження, поки гравець не вирішив. */
   private showCall(): void {
     const card = callCard(
+      this.state.cats.length > 0,
       () => {
         this.overlay.close();
         // Дзвінок уже вирішено (подвійне натискання) — розмова не повторюється.
@@ -1096,15 +1093,16 @@ export class DayScene extends Phaser.Scene {
         // назви (з іконкою, як у ветеринара, — §11.4 «Іконка біля назви») й поради до них дає `homeVetText`. Оглядати не було
         // кого — картка каже, хто гуляв на сходах (рецензія 2026-11-03).
         const cats = this.state.cats
-          .filter((c) => c.away === null)
-          .map((c) => ({ name: c.name, sex: c.sex, diseases: c.diseases.map((d) => d.id), manner: vetManner(c) }));
+          .filter((c) => c.away === null || c.away === "carrier")
+          .map((c) => ({ name: c.name, sex: c.sex, diseases: c.diseases.map((d) => d.id), manner: vetManner(c), pregnant: c.pregnancy !== null && c.pregnancy !== undefined }));
         const stairs = this.state.cats.filter((c) => c.away === "stairs").map((c) => ({ name: c.name, sex: c.sex }));
         this.notice("Заходила ветеринарка", homeVetText(cats, diseaseLabel, stairs));
         return;
       }
       case "inspection": {
         const paid = Math.floor(paidNow ?? value);
-        const fine = money > 0 ? `Представник ОСББ поморщився й виписав штраф: ${money} ₴.${paid < money ? ` Заплатили ${paid} ₴ — усе, що було.` : ""}` : "Представник ОСББ не знайшов, до чого причепитися.";
+        const short = paid <= 0 ? " Заплатити не було чим." : ` Заплатили ${paid} ₴ — усе, що було.`;
+        const fine = money > 0 ? `Представник ОСББ поморщився й виписав штраф: ${money} ₴.${paid < money ? short : ""}` : "Представник ОСББ не знайшов, до чого причепитися.";
         this.notice("Перевірка ОСББ", fine);
         return;
       }
@@ -1112,7 +1110,7 @@ export class DayScene extends Phaser.Scene {
         this.notice("Прийшли гості", guestsText(guests));
         return;
       case "inspection-away":
-        this.notice("Перевірка ОСББ", "Представник ОСББ дзвонив у двері, але вдома нікого не було.");
+        this.notice("Представник ОСББ не застав", "Представник ОСББ дзвонив у двері, але вдома нікого не було.");
         return;
       case "guests-away":
         this.notice("Гості не застали", "Гості дзвонили в двері, але вдома нікого не було.");

@@ -280,7 +280,7 @@ describe("бірка знижки замість стрілки (§6.4)", () => 
     expect(shop.discounted).toBe(list.findAll("price-tag").length);
   });
 
-  it("у телефоні звичайного дня бірок немає, а в «Акцію в зоомагазині» — на корм", () => {
+  it("у телефоні звичайного дня бірок немає, а в «Акцію на корм» — на корм", () => {
     const state = at(null);
     expect(open(state, "delivery", false).list.findAll("price-tag")).toEqual([]);
     state.modifiers.day = "pet-sale";
@@ -622,12 +622,12 @@ describe("картки поїздок (§8.5)", () => {
     expect(n).toBeGreaterThan(1);
     expect(visitCard(state, { exam: null, done: [] }, handlers).aside).toEqual([`${n} ${plural(n, "знижка", "знижки", "знижок")}`]);
     state.modifiers.day = "pet-sale";
-    expect(visitCard(state, { exam: null, done: [] }, handlers).aside?.[0]).toBe("Акція в зоомагазині");
+    expect(visitCard(state, { exam: null, done: [] }, handlers).aside?.[0]).toBe("Акція на корм");
     // До першого кота корму в каталозі немає — і події про корм біля заголовка теж.
     const early = newGame({ address: "she", difficulty: "normal", seed: 8 }).current;
     early.modifiers.day = "pet-sale";
     early.trip = { ...state.trip!, seed: 2 };
-    expect(visitCard(early, { exam: null, done: [] }, handlers).aside ?? []).not.toContain("Акція в зоомагазині");
+    expect(visitCard(early, { exam: null, done: [] }, handlers).aside ?? []).not.toContain("Акція на корм");
   });
 
   it("ветеринар і лікар: біля заголовка — на що знижки («ліки: 1 знижка»), а не просто «1 знижка»", () => {

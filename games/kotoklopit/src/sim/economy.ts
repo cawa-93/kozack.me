@@ -551,11 +551,12 @@ export function billUtilities(state: GameState): UtilitiesReport {
     endGame(state, "eviction");
     return { outcome: "evicted", bill: 0 };
   }
-  // Перерахунок комунальних (§4.1) зменшує цей рахунок.
+  // Перерахунок комунальних (§4.1) зменшує цей рахунок — і титулка це каже.
   const bill = utilitiesThisWeek(state);
+  const recalculated = state.today.utilitiesDiscount > 0;
   state.today.utilitiesDiscount = 0;
   // Ремонт іде в цей рахунок, далі рахується наново.
   state.home.repairs = 0;
   state.home.utilitiesBill = bill;
-  return { outcome: "billed", bill };
+  return { outcome: "billed", bill, ...(recalculated ? { recalculated: true } : {}) };
 }

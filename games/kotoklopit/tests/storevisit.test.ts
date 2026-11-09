@@ -226,7 +226,7 @@ describe("бірка знижки «−X%» (§6.4; правило — ріше�
     for (const s of [1, 2, 3, 4, 5]) expect(discount(at("shop", s), { product: "collar" }, "premium", "store")).toBe(0);
   });
 
-  it("подія дня входить у сьогоднішню ціну: «Акція в зоомагазині» — бірка й у телефоні, «Подорожчання корму» — ні", () => {
+  it("подія дня входить у сьогоднішню ціну: «Акція на корм» — бірка й у телефоні, «Подорожчання корму» — ні", () => {
     const state = at(null);
     const catFood = { product: "catFood" } as const;
     for (const g of catalog(state, "delivery")) for (const q of variants(g)) expect(discount(state, g, q, "delivery"), `${goodsKey(g)} ${q}`).toBe(0);

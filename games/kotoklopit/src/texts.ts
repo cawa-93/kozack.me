@@ -28,6 +28,8 @@ export const WAKE_TEXTS = {
   night: "{кіт} не [давав|давала] спати вночі.",
   morning: "{кіт} [вимагав|вимагала] сніданку о {час}.",
   hairball: "{кіт} [розбудив|розбудила] вас уночі кахиканням.",
+  /** «Галасливі сусіди» (§4.1): розбудили раніше пробудження; ефект — наступного ранку, коли модифікатор уже інший. */
+  neighbors: "Сусіди гуляли до ранку й розбудили вас о {час}.",
 } as const;
 
 /** Пологи (§9.8): форма `[одне|кілька]` — за кількістю кошенят, а не за статтю. */
@@ -37,6 +39,8 @@ export const BIRTH_MESSAGE =
 /** Рахунок за комунальні (§6.4): `arrived` — на титулці понеділка, решта — бланк у вкладці «Дім» телефона. */
 export const BILL_TEXTS = {
   arrived: "Прийшов рахунок за комунальні: {сума} ₴.",
+  /** Рахунок зі знижкою «Перерахунку комунальних» (§4.1): інакше знижки не видно. */
+  arrivedRecalculated: "Прийшов рахунок за комунальні: {сума} ₴ — уже з перерахунком.",
   title: "Рахунок за комунальні",
   week: "тиждень {n}",
   payeeLabel: "Одержувач",
@@ -149,17 +153,20 @@ export const DAY_MODIFIER_TEXTS: Record<string, { title: string; situation?: str
   },
   "meeting": {
     title: "Важлива нарада",
-    situation: "Годинний відеодзвінок з керівництвом.",
+    situation: "Годинний відеодзвінок із керівництвом.",
   },
   "lunch": {
     title: "Довга обідня перерва",
     situation: "Керівництво йде на корпоративний обід.",
   },
   "pay-delay": {
-    title: "Затримка зарплати",
-    situation: "Бухгалтерія «щось не встигла».",
+    title: "Урізана зарплата",
+    situation: "Бухгалтерія «оптимізує витрати».",
   },
-  "bonus": { title: "Премія" },
+  "bonus": {
+    title: "Премія",
+    situation: "Бухгалтерія сьогодні щедра.",
+  },
   "reprimand": {
     title: "Догана",
     situation: "Вашу роботу розкритикували в загальному чаті.",
@@ -173,7 +180,7 @@ export const DAY_MODIFIER_TEXTS: Record<string, { title: string; situation?: str
     situation: "Терміново треба вийти на роботу. У суботу.",
   },
   "midweek-off": {
-    title: "Вихідний посеред тижня",
+    title: "Вихідний у будень",
     situation: "Державне свято!",
   },
   "full-moon": {
@@ -190,7 +197,7 @@ export const DAY_MODIFIER_TEXTS: Record<string, { title: string; situation?: str
   },
   "quiet-evening": {
     title: "Тихий вечір",
-    situation: "Місто затихло рано.",
+    situation: "Увечері місто рано затихне.",
   },
   "home-vet": {
     title: "Ветеринарка вдома",
@@ -206,20 +213,20 @@ export const DAY_MODIFIER_TEXTS: Record<string, { title: string; situation?: str
   },
   "renovation": {
     title: "Ремонт у сусідів",
-    situation: "За стіною зранку свердлять.",
+    situation: "Сусіди за стіною взялися за перфоратор.",
   },
   "neighbors-away": {
     title: "Сусіди у відпустці",
-    situation: "У під'їзді незвична тиша.",
+    situation: "За стіною незвична тиша.",
   },
   "outage": {
     title: "Планове відключення",
-    // Світла немає весь день (§4.1); титулка — ситуація без пояснення ефекту (§11.3а).
-    situation: "У районі на весь день вимкнуть світло.",
+    // Світла немає від самого пробудження (§4.1): не «вимкнуть».
+    situation: "За графіком світла не буде весь день.",
   },
   "fast-internet": {
     title: "Швидкий інтернет",
-    situation: "Провайдер нарешті полагодив лінію.",
+    situation: "Провайдер сьогодні тестує нову лінію: усе літає.",
   },
   "inspection": {
     title: "Перевірка ОСББ",
@@ -232,7 +239,7 @@ export const DAY_MODIFIER_TEXTS: Record<string, { title: string; situation?: str
   // Пара «Будівельний пил ↔ Прибиральниця» (§4.1).
   "construction-dust": {
     title: "Будівельний пил",
-    situation: "У під'їзді ремонт.",
+    situation: "У під'їзді шліфують стіни.",
   },
   "cleaner": {
     title: "Прибиральниця",
@@ -244,20 +251,23 @@ export const DAY_MODIFIER_TEXTS: Record<string, { title: string; situation?: str
   },
   "friend-help": {
     title: "Друг доглядає котів",
-    situation: "Друг обіцяв зайти вдень і допомогти з котами.",
+    situation: "Друг має ключі й удень наглядатиме за котами.",
   },
   "noisy-neighbors": {
     title: "Галасливі сусіди",
-    situation: "У сусідів вечірка, і вона нескоро скінчиться.",
+    situation: "Сусіди ввечері святкують — обіцяють гуляти до ранку.",
   },
-  "quiet-night": { title: "Тиха ніч" },
+  "quiet-night": {
+    title: "Тиха ніч",
+    situation: "Цієї ночі, здається, вдасться виспатися.",
+  },
   "sick": {
     title: "Застуда",
     situation: "Зранку дере горло й закладає ніс.",
   },
   "vigor": {
     title: "Бадьорість",
-    situation: "Прокинутися вдалося напрочуд легко.",
+    situation: "Кава сьогодні напрочуд міцна.",
   },
   "mom-call": {
     title: "Мама дзвонить",
@@ -273,10 +283,12 @@ export const DAY_MODIFIER_TEXTS: Record<string, { title: string; situation?: str
     situation: "Усі, здається, сидять удома.",
   },
   "food-price-up": { title: "Подорожчання корму" },
-  "pet-sale": { title: "Акція в зоомагазині" },
+  "pet-sale": { title: "Акція на корм" },
   "show": { title: "Виставка котів" },
-  "office": { title: "Збори в офісі" },
-  "foundling": { title: "Знайда" },
+  "office": {
+    title: "Збори в офісі",
+    situation: "Керівництво хоче бачити всіх особисто.",
+  },
 };
 
 /** Модифікатори тижня (§4.1, `DAY_MODIFIERS.md`). */
@@ -286,7 +298,7 @@ export const WEEK_MODIFIER_TEXTS: Record<string, { title: string; situation?: st
     situation: "Цілий тиждень — гарячка на роботі.",
   },
   "quiet-week": {
-    title: "Тихий тиждень",
+    title: "Тиждень затишшя",
     situation: "На роботі сезон відпусток.",
   },
   "crunch": {
@@ -295,7 +307,7 @@ export const WEEK_MODIFIER_TEXTS: Record<string, { title: string; situation?: st
   },
   "vacation": {
     title: "Відпустка",
-    situation: "Нарешті відпустка!",
+    situation: "Заяву нарешті підписали.",
   },
   "cat-march": {
     title: "Котячий березень",
@@ -307,7 +319,10 @@ export const WEEK_MODIFIER_TEXTS: Record<string, { title: string; situation?: st
   },
   "heat-wave": { title: "Хвиля спеки" },
   "cold-snap": { title: "Похолодання" },
-  "cat-flu": { title: "Котячий грип" },
+  "cat-flu": {
+    title: "Котячий грип",
+    situation: "У ветклініках черги: коти по всьому місту чхають.",
+  },
   "cat-prevention": {
     title: "Тиждень котячої профілактики",
     situation: "Ветклініки розсилають поради, як берегти котів.",
@@ -847,9 +862,22 @@ export function accidentLines(state: GameState): string[] {
  * Повідомлення дня «Мамині гостинці» (§4.1, рішення автора 2026-10-26): мама заходила й поставила судочки в холодильник
  * чи лишила пакет під дверима — він у ящиках біля входу.
  */
+/** Приз виставки котів за місцем (§4.1): перше, друге, третє — як `MODIFIERS.show.prizes`. */
+export const SHOW_PRIZE_TEXTS: readonly string[] = [
+  "{кіт} — перше місце й {сума} ₴! Журі в захваті.",
+  "{кіт} — друге місце й {сума} ₴. Журі задоволене.",
+  "{кіт} — третє місце й {сума} ₴. Журі всміхалося.",
+];
+
+/** Дзвінок мами (§4.1): мама насторожено ставиться до котів, а без них питає, чи не надумали завести. */
+export const CALL_TEXTS = {
+  body: "Мама питає, як справи, чи ви їсте й чи не забагато в домі котів.",
+  bodyNoCats: "Мама питає, як справи, чи ви їсте й чи не надумали, бува, завести кота.",
+} as const;
+
 export const MOM_FOOD_TEXTS = {
   visit: { title: "Заходила мама", text: "Мама привезла повні судочки й сама поставила їх у холодильник." },
-  porch: { title: "Гостинці від мами", text: "Мама вас не застала й лишила під дверима пакет із судочками. Він у ящиках біля входу." },
+  porch: { title: "Гостинці від мами", text: "Мама вас не застала й лишила пакет із судочками. Він у ящиках біля входу." },
 } as const;
 
 /** Заголовок картки прибиральниці (§4.1): і коли персонаж удома, і коли його не було. */
@@ -879,6 +907,7 @@ export function cleanerText(visit: CleanerVisit | undefined, home: boolean): str
 export function guestsText(visit: GuestsVisit | undefined): string {
   const { mess = false, hissed = false, delighted = false } = visit ?? {};
   if (mess && hissed) return "Гості чемно не помітили ні безладу, ні шипіння з-під дивана. Але ви помітили, що вони помітили.";
+  if (hissed && delighted) return "Гості в захваті від котів, хоч з-під дивана на них і шипіли.";
   if (hissed) return "Гості хвалили чистоту, але з-під дивана на них шипіли.";
   if (mess && delighted) return "Гості в захваті від котів — безладу майже не помітили.";
   if (mess) return "Гості чемно не помітили безладу. Але ви помітили, що вони помітили.";
@@ -906,7 +935,7 @@ export const HOME_VET_NOBODY = {
  * сходах (`stairs`), той і причина (`HOME_VET_NOBODY`).
  */
 export function homeVetText(
-  cats: readonly { name: string; sex: Sex; diseases: readonly string[]; manner: "calm" | "hiss" | "hid" | null }[],
+  cats: readonly { name: string; sex: Sex; diseases: readonly string[]; manner: "calm" | "hiss" | "hid" | null; pregnant?: boolean }[],
   title: (id: string) => string = diseaseTitle,
   stairs: readonly { name: string; sex: Sex }[] = [],
 ): string {
@@ -922,8 +951,10 @@ export function homeVetText(
     ? `${only.name}: ${only.diseases.length > 0 ? `знайшла — ${titles(only)}` : "хвороб не знайшла"}.`
     : homeVetFound(cats, titles);
   const advice = [...new Set(cats.flatMap((c) => c.diseases))].flatMap((id) => VET_ADVICE[id] ?? []);
+  // Вагітність огляд відкриває (§9.9): від неї залежить стерилізація й гніздо (§9.8), тож картка її називає.
+  const pregnant = cats.flatMap((c) => (c.pregnant ? [`${c.name} вагітна.`] : []));
   const behaved = cats.flatMap((c) => (c.manner ? [fill(VET_MANNER.home[c.manner], c.sex, { кіт: c.name })] : []));
-  return [found, ...advice, ...behaved].join(" ");
+  return [found, ...advice, ...pregnant, ...behaved].join(" ");
 }
 
 // «Оглянула котів», а не «всіх котів»: кота на сходах вона не оглядає (загальна ревізія 2026-10-29).

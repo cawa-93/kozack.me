@@ -1,7 +1,7 @@
 // Короткий розклад дня в інтерфейсі (§8.4): заплановані події, про які персонаж знає, — спершу важливі, у межах групи за часом.
 
 import { constructionDustHours } from "../sim/cleaner";
-import { MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES, WORK_START_MINUTE } from "../sim/config";
+import { MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES, WORK_END_MINUTE, WORK_START_MINUTE } from "../sim/config";
 import { dayGuestLetIn } from "../sim/door";
 import { absoluteMinute, formatClock } from "../sim/time";
 import type { GameState } from "../sim/types";
@@ -23,7 +23,7 @@ const DAY_EVENTS: Record<string, [number, string]> = {
   // Пара «Будівельний пил ↔ Прибиральниця» (§4.1): пил, як і робота, — лише початок і лише до нього (§8.4).
   cleaner: at(MODIFIERS.cleaner.minute, "прибиральниця"),
   "construction-dust": at(dust.from, "пил"),
-  office: [18 * 60, "до 18:00 офіс"],
+  office: [WORK_END_MINUTE, `до ${formatClock(WORK_END_MINUTE)} офіс`],
 };
 
 /**
@@ -50,6 +50,9 @@ export function scheduleOf(state: GameState): string[] {
   // гостю», рішення автора 2026-11-03): у розкладі його вже немає. Чий це день, каже `GUEST_DAY`, а не збіг назв.
   const done = (state.modifiers.day === "office" && state.today.officeDone) || dayGuestLetIn(state);
   if (event && minute < event[0] && (!work || isWorkday(state)) && !done) important.push(event);
+  // Обідня перерва, поки триває, — до її кінця: з тієї хвилини поїздка знову штрафується (§8.6).
+  const lunch = MODIFIERS.lunch;
+  if (state.modifiers.day === "lunch" && isWorkday(state) && minute >= lunch.from && minute < lunch.to) important.push([lunch.to, `до ${formatClock(lunch.to)} обідня перерва`]);
   const today = absoluteMinute(state.day, 0);
   const next = Math.min(...state.home.deliveries.map((d) => d.at - today));
   if (Number.isFinite(next)) {

@@ -39,6 +39,11 @@ export interface Daylight {
   power: boolean;
 }
 
+/** Світло доби в «Дощ» (§4.1, §8.9): сонця у вікнах немає, тон доби той самий. */
+export function overcast(d: Daylight): Daylight {
+  return { ...d, sun: null };
+}
+
 /** Хвилина доби 0–1440: `state.minute` після півночі більший за 1440, доки персонаж не ляже (сова — до 26:00). */
 export function dayMinute(minute: number): number {
   return ((minute % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;

@@ -1097,6 +1097,8 @@ export interface UtilitiesReport {
   outcome: "billed" | "evicted";
   /** Новий рахунок, ₴; 0 — нараховувати нічого. */
   bill: number;
+  /** У рахунку знижка «Перерахунку комунальних» (§4.1). */
+  recalculated?: true;
 }
 
 /** Що сталося вночі: з цього будуються ранкові повідомлення (§4). */
@@ -1113,6 +1115,8 @@ export interface NightReport {
   wakeUps: { cat: number; reason: "morning" | "night" | "hairball" }[];
   /** Хвилина нового дня, коли персонаж прокинувся. */
   wokeMinute: number;
+  /** Розбудили «Галасливі сусіди» (§4.1): хвилина нового дня; немає — не вони. */
+  neighborsWoke?: number;
   /** Кроки ночі в порядку виконання. */
   steps: NightStep[];
   lostCats: number[];
@@ -1167,6 +1171,8 @@ export interface ModifierDay {
   meetingMinutes: number;
   /** Сьогодні вже були в офісі. */
   officeDone: boolean;
+  /** «Гості» вже зайшли: до кінця дня — тригер міток (§9.12 «Мітки»). */
+  guestsCame?: true;
   /** Сьогодні вже брали участь у виставці котів. */
   showDone?: boolean;
   /** Під дверима знайда, рішення ще не ухвалено. */

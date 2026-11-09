@@ -61,7 +61,7 @@ describe("«Планове відключення» — день без світ
   it("титулка — ситуація без пояснення ефекту (TEXTS.md §11.3а): світло вимкнуть на весь день, без годин і без інтернету", () => {
     const text = DAY_MODIFIER_TEXTS["outage"];
     expect(text?.title).toBe("Планове відключення");
-    expect(text?.situation).toBe("У районі на весь день вимкнуть світло.");
+    expect(text?.situation).toBe("За графіком світла не буде весь день.");
     expect(text?.situation).not.toMatch(/\d|інтернет/u);
   });
 

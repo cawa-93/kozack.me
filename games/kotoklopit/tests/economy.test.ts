@@ -208,11 +208,11 @@ describe("рахунок за комунальні (§6.4)", () => {
     const due = utilitiesDue(state);
     state.today.utilitiesDiscount = 10;
     state.home.repairs = 5;
-    expect(sundayNight(save, 0)?.utilities).toEqual({ outcome: "billed", bill: due + 5 - 10 });
+    expect(sundayNight(save, 0)?.utilities).toEqual({ outcome: "billed", bill: due + 5 - 10, recalculated: true });
     expect([state.home.repairs, state.today.utilitiesDiscount]).toEqual([0, 0]);
     state.home.utilitiesBill = 0;
     state.today.utilitiesDiscount = due + 100;
-    expect(sundayNight(save, 0)?.utilities).toEqual({ outcome: "billed", bill: 0 });
+    expect(sundayNight(save, 0)?.utilities).toEqual({ outcome: "billed", bill: 0, recalculated: true });
     expect(hasUnpaidUtilities(state)).toBe(false);
     expect(sundayNight(save, 0)?.utilities?.outcome).toBe("billed");
   });

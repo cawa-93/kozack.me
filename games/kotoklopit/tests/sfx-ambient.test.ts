@@ -49,7 +49,7 @@ describe("тло квартири (§11.4а, «Тло»)", () => {
     expect(streetSound(at(AMBIENT.festivalFrom - 1, "festival"))).toBe("evening");
     expect(streetSound(at(AMBIENT.festivalFrom, "festival"))).toBe("festival");
     expect(streetSound(at(MODIFIERS.festival.minute, "festival"))).toBe("festival");
-    expect(streetSound(at(MODIFIERS.festival.minute + MODIFIERS.festival.hideMinutes, "festival"))).toBe("evening");
+    expect(streetSound(at(MODIFIERS.festival.minute + MODIFIERS.festival.minutes, "festival"))).toBe("evening");
   });
 
   it("вечірка в сусідів — увечері за стіною вітальні", () => {
@@ -97,7 +97,7 @@ describe("ремонт уривками (§11.4а, «Тло»)", () => {
   }
 
   it("«Ремонт у сусідів» — дриль чи молоток у робочі години сусідів, не частіше за проміжок і не одразу", () => {
-    const state = at(AMBIENT.renovation.from, "renovation");
+    const state = at(MODIFIERS.neighborsHours.from, "renovation");
     const [min, max] = AMBIENT.renovation.everyMs;
     const repairs = new Repairs(() => 0);
     expect(listen(repairs, state, min - 100)).toEqual([]);
@@ -106,7 +106,7 @@ describe("ремонт уривками (§11.4а, «Тло»)", () => {
     expect(heard.length).toBeLessThanOrEqual(Math.ceil((max * 3) / min));
     expect(new Set(heard)).toEqual(new Set(["drill"]));
     expect(new Set(listen(new Repairs(() => 0.9), state, max * 3))).toEqual(new Set(["hammer"]));
-    expect(listen(new Repairs(() => 0), at(AMBIENT.renovation.to, "renovation"), max * 3)).toEqual([]);
+    expect(listen(new Repairs(() => 0), at(MODIFIERS.neighborsHours.to, "renovation"), max * 3)).toEqual([]);
     expect(listen(new Repairs(() => 0), at(12 * 60), max * 3)).toEqual([]);
   });
 
@@ -118,7 +118,7 @@ describe("ремонт уривками (§11.4а, «Тло»)", () => {
   });
 
   it("скинули — перший уривок знову чекає свій проміжок", () => {
-    const state = at(AMBIENT.renovation.from, "renovation");
+    const state = at(MODIFIERS.neighborsHours.from, "renovation");
     const [min] = AMBIENT.renovation.everyMs;
     const repairs = new Repairs(() => 0);
     listen(repairs, state, min - 100);

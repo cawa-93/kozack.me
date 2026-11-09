@@ -349,7 +349,7 @@ export function enterShow(state: GameState, rng: Rng): number | null {
   return prize.money;
 }
 
-/** Збори в офісі (§8.5): 3 години рахуються як робота. */
+/** Збори в офісі (§8.5): гроші й репутація за час зборів за посадою, без `CAREER_PACE`. */
 export function officeMeeting(state: GameState): void {
   const trip = state.trip;
   // Збори зараховуються раз на день: і після перезавантаження сторінки посеред них (перевірка циклу гри 2026-10-27).

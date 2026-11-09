@@ -1,5 +1,5 @@
-// Пара дня «Будівельний пил ↔ Прибиральниця» (§4.1, рішення автора 2026-11-03). Прибиральниця — невидимий візит: дзвонить у
-// двері за `GUESTS.ringLead` хвилин і о 13:00 миттєво прибирає квартиру із запасів гравця. Будівельний пил з 10:00 до 12:00
+// Пара дня «Будівельний пил ↔ Прибиральниця» (§4.1). Прибиральниця — невидимий візит: дзвонить у двері за `GUESTS.ringLead`
+// хвилин і о `MODIFIERS.cleaner.minute` миттєво прибирає квартиру із запасів гравця. Будівельний пил (`MODIFIERS.constructionDust`)
 // осідає кімната за кімнатою — без випадковості, як і звичайний пил (§8.7 «Пил і павутина»). Викликає `tickModifiers`.
 
 import { BOWL_CAPACITY, GUESTS, HOUSEHOLD, MODIFIERS } from "./config";
@@ -105,7 +105,7 @@ export function cleanHome(state: GameState): CleanerVisit {
  * наповнювача брудний після першого ж відвідування), за рівного — де відвідин більше. Інакше, коли наповнювача на всі не
  * вистачало, останній пакет міг піти в лоток, яким скористалися раз, а брудний, у який коти вже не ходять, лишався брудним.
  */
-function litterOrder(items: readonly HomeItem[]): LitterItem[] {
+export function litterOrder(items: readonly HomeItem[]): LitterItem[] {
   const left = (box: LitterItem): number => litterCapacity(box) - box.uses;
   return items
     .filter((i): i is LitterItem => i.kind === "litter" && (i.uses > 0 || i.litter === null))

@@ -15,6 +15,9 @@ import type { Cat, CatAct, GameState, HouseItem } from "./types";
 /** Дорослий для розмноження: від 2 тижнів, нестерилізований (§9.8). */
 const fertile = (cat: Cat): boolean => !cat.sterilized && cat.ageWeeks >= BREEDING.minAge;
 
+/** Є нестерилізована доросла кішка: лише тоді діє «Котячий березень ↔ Спокійний сезон» (§4.1). */
+export const hasFertileFemale = (state: GameState): boolean => state.cats.some((c) => c.sex === "female" && fertile(c));
+
 export const inHeat = (state: GameState, cat: Cat): boolean => state.day <= cat.heatUntil;
 
 /** Кішка годує кошенят: тиждень після пологів. */

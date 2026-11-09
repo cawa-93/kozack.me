@@ -122,7 +122,7 @@ import { emit, type HissCause, type ScratchSpot } from "./events";
 import { clearPath, robotAt, robotProgress, wearOut } from "./household";
 import { inView, observe, sees, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
-import { catFatigueFactor, isCold, isHot, playFactor, thirstFactor, warmthBonus } from "./modifiers";
+import { active, catFatigueFactor, isCold, isHot, playFactor, thirstFactor, warmthBonus } from "./modifiers";
 import { WINDOWS, AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, COOL_TILE, HIGH_PLACES, isPresent, WIRE_TILE, PAPER_TRAIL, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, nearestFreePlace, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SLOTS, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend, isNewcomer, isPal, noteStrife, relation } from "./relations";
 import { DOOR, DOOR_TILE } from "./door";
@@ -239,11 +239,11 @@ const CLOCK_ACTS = new Set<CatActKind>(["sleep", "hide", "lap"]);
 const COUGH_FROM = new Set(["idle", "wander", "toy", "sleep", "beg", "attention", "follow", "hide"]);
 
 /**
- * Тригери міток (§9.12, рішення автора 2026-10-25): поганий настрій (нижче 50), новий кіт удома (до 3 днів), гості, від 4
- * котів, брудний лоток, у кішки — тічка.
+ * Тригери міток (§9.12): поганий настрій, новий кіт удома, гості (щойно зайшли — до кінця дня), багато котів, брудний лоток, у
+ * кішки — тічка.
  */
 export function markTriggered(state: GameState, cat: Cat): boolean {
-  if (cat.mood < MARKING.mood || state.modifiers.day === "guests") return true;
+  if (cat.mood < MARKING.mood || state.today.guestsCame === true) return true;
   if (cat.sex === "female" && inHeat(state, cat)) return true;
   const others = state.cats.filter((c) => c.id !== cat.id && c.away === null);
   if (others.length + 1 >= MARKING.crowd || others.some((c) => state.day - c.arrivedDay < MARKING.newCatDays)) return true;
@@ -680,8 +680,9 @@ function urgent(state: GameState, cat: Cat): boolean {
   return n.toilet >= NEED_THRESHOLD.toilet || n.hunger >= hungerThreshold(cat) || n.thirst >= NEED_THRESHOLD.thirst || n.fatigue >= sleepThreshold(cat, state.minute);
 }
 
-/** Точка сонячної плями цієї години (§8.9): там, де вигляд малює смуги сонця; смуг немає — null. */
-export function sunSpot(minute: number): Vec | null {
+/** Точка сонячної плями цієї години (§8.9): там, де вигляд малює смуги сонця; смуг немає, зокрема в «Дощ», — null. */
+export function sunSpot(minute: number, rain = false): Vec | null {
+  if (rain) return null;
   const m = hourOf(minute) * MINUTES_PER_HOUR;
   const spot = SUN_SPOTS.find((s) => m >= s.from && m < s.to);
   return spot ? { x: spot.x, y: spot.y } : null;
@@ -794,7 +795,7 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
     // спати там, де стояв), а лягає поруч — `sleptBeside`.
     options.push({ weight, value: { at: tileOf(other), target: `pile:${other.id}` } });
   }
-  const sun = sunSpot(state.minute);
+  const sun = sunSpot(state.minute, active(state, "rain"));
   if (sun) options.push({ weight: Math.max(0, WARMTH.sun + WARMTH.sunStep * warmth), value: at(tileOf(sun)) });
   // Прохолодна плитка у ванній: для «Не мерзне», а в «Спеку» — для всіх (§9.12, «Теплолюбність»).
   // Плитка одна: поки на ній спить кіт чи вже йде туди спати, інший її не обирає (перевірка етапу 2026-10-26: у спеку коти лягали
@@ -3384,7 +3385,7 @@ function sleptWarm(state: GameState, cat: Cat): void {
   }
   const o = objectAt(state, Math.floor(cat.x), Math.floor(cat.y));
   if (level > 0 && o?.kind === "bed" && (isCold(state) || level >= WARMTH.blanketLevel)) cat.act.blanket = true;
-  const sun = sunSpot(state.minute);
+  const sun = sunSpot(state.minute, active(state, "rain"));
   const sunny = sun !== null && Math.floor(cat.x) === Math.floor(sun.x) && Math.floor(cat.y) === Math.floor(sun.y);
   // Шлях веде лише до середини клітинки, а смуга вузька: дійшовши, кіт лягає на саму пляму (§8.9).
   if (sunny && cat.act.target === null) {

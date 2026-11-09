@@ -107,7 +107,7 @@ export const AMBIENT = {
   /** Сусіди — за правою стіною вітальні. */
   neighbors: { x: 18.6, y: 8 },
   /** Сусіди ремонтують у свої робочі години. */
-  renovation: { from: 9 * 60, to: 19 * 60, everyMs: [9000, 26000] },
+  renovation: { everyMs: [9000, 26000] },
   /** Ремонт у під'їзді — поки осідає будівельний пил (`constructionDustHours`). */
   stairwell: { everyMs: [7000, 18000] },
   /** Гомін фестивалю — з цієї хвилини до кінця феєрверків (`MODIFIERS.festival`). */

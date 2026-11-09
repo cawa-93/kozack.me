@@ -1048,11 +1048,12 @@ export const MODIFIERS = {
   foundlingGapDays: 14,
   foundlingShelterMinutes: 120,
   deadline: { decay: 2, reputation: 1.5 },
-  lull: { decay: 0.5, reputation: 0.5 },
+  // Дзеркало «Дедлайну» за обома множниками (§11.1): ×2 ↔ ×½ терпіння, ×1,5 ↔ ×⅔ репутації.
+  lull: { decay: 0.5, reputation: 2 / 3 },
   /** `present`, `absent` — × репутація за годину посади. */
   meeting: { from: 14 * 60, minutes: 60, attended: 0.5, present: 1.5, absent: -5 },
   lunch: { from: 12 * 60, to: 14 * 60 },
-  /** Множник зарплати дня; `outage` — без світла персонаж працює з телефона. */
+  /** Множник зарплати дня (§8.6); `outage` — комп'ютер від зарядної станції (§4.1). */
   pay: { "pay-delay": 0.5, bonus: 1.5, "fast-internet": 1.25, outage: 0.75 } as Record<string, number>,
   /** × репутація за годину посади. */
   reprimand: -3,
@@ -1061,15 +1062,21 @@ export const MODIFIERS = {
   reputationKeep: { min: 1, max: 99 },
   fullMoonPlay: 1.5,
   rainFatigue: 1.3,
-  festival: { minute: 21 * 60, hideMinutes: 60, mood: -5, wake: 0.3 },
+  /** `minutes` — скільки гримлять феєрверки: гомін тла й схованка несміливих (`NOISE.big.fireworks`). */
+  festival: { minute: 21 * 60, minutes: 60, mood: -5, wake: 0.3 },
   quietEvening: { minute: 20 * 60, mood: 2 },
   homeVetMinute: 11 * 60,
   heat: { thirst: 1.5, fatigue: 1.2, hygiene: 1.2 },
-  coldWarmth: 3,
+  /** «Холод» — дзеркало «Спеки» (§4.1, §11.1): тепло місць сну, менша спрага котів і повільніший спад гігієни персонажа. */
+  cold: { warmth: 3, thirst: 0.75, hygiene: 0.85 },
+  /** Робочі години сусідів (§4.1): лише тоді чути «Ремонт у сусідів» і тихо в «Сусіди у відпустці». */
+  neighborsHours: { from: 9 * 60, to: 19 * 60 },
   renovation: { unpleasant: 1.2, catMoodPerHour: -0.5 },
-  neighborsAway: 0.8,
+  neighborsAway: { unpleasant: 0.8, catMoodPerHour: 0.5 },
   /** «Планове відключення»: множники. */
   outage: { reputation: 0.75, search: 0.75, cook: 1.25, showerHygiene: 0.8, showerMinutes: 0.5 },
+  /** «Швидкий інтернет» — дзеркало відключення (§11.1): репутація й пошук роботи. */
+  fastInternet: { reputation: 1.25, search: 1.25 },
   /** Штрафи за безлад, лоток, шерсть. */
   inspection: { minute: 15 * 60, mess: 8, litter: 8, fur: 15 },
   /** Знижка комунальних. */
@@ -1081,6 +1088,8 @@ export const MODIFIERS = {
   constructionDust: { from: 10 * 60, every: 30, rooms: ["living", "bathroom", "kitchen", "bedroom"] as readonly RoomId[] },
   friend: { from: 10 * 60, to: 16 * 60 },
   noisyWake: { min: 60, max: 120 },
+  /** «Тиха ніч» (§8.8): сон діє, як довший на стільки хвилин — дзеркало `noisyWake`. */
+  quietNight: { sleepBonus: 60 },
   vigor: 1.15,
   call: { from: 10 * 60, to: 20 * 60, minutes: 30, ignored: -5 },
   /** «Мамині гостинці»: `until` — прийде, щойно персонаж повернувся, якщо до цього. */
@@ -1288,7 +1297,7 @@ export const STUN_PAUSE_MINUTES = 5;
 export const HISS_PAUSE_MINUTES = 20;
 /** Гучний звук (§9.12): `big` — хвилини схованки; `reach` — чути з проходу. */
 export const NOISE = {
-  big: { vacuum: 20, robot: 20, fireworks: 60 },
+  big: { vacuum: 20, robot: 20, fireworks: MODIFIERS.festival.minutes },
   smallStep: 0.5,
   smallMinutes: 10,
   stressStep: 0.25,

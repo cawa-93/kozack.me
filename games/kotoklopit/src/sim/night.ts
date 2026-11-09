@@ -153,16 +153,17 @@ function plannedWakeUps(state: GameState, rng: Rng, from: number, to: number): P
     // Кіт під замком кричить: хто вже нагадує про себе, будить персонажа (§8.7).
     if (cat.away === "carrier" && cageStage(cat) !== "calm") wakes.push({ cat, minute: from + Math.floor(rng.next() * (to - from)), reason: "night" });
     if (cat.away !== null || isNewborn(cat)) continue;
-    // Тиха ніч: коти не будять (§4.1).
-    if (state.modifiers.day === "quiet-night" || state.modifiers.day === "quiet-evening") continue;
+    // «Тиха ніч»: коти не будять зовсім; «Тихий вечір» — уночі не будять, а голодний на світанку будить, як завжди (§4.1).
+    if (state.modifiers.day === "quiet-night") continue;
+    const quiet = state.modifiers.day === "quiet-evening";
     // Після феєрверків коти неспокійні.
     // Неспокій — після феєрверків о 21:00, а не раніше (перевірка модифікаторів 2026-10-28).
     const fireworks = Math.max(from, MODIFIERS.festival.minute);
     if (state.modifiers.day === "festival" && fireworks < to && rng.chance(MODIFIERS.festival.wake)) wakes.push({ cat, minute: fireworks + Math.floor(rng.next() * (to - fireworks)), reason: "night" });
     const nocturnal = traitLevel(cat, "nocturnal");
     // Кішка в тічці кричить уночі (§9.8).
-    if (inHeat(state, cat) && rng.chance(BREEDING.heatWake)) wakes.push({ cat, minute: from + Math.floor(rng.next() * (to - from)), reason: "night" });
-    if (nocturnal > 0 && rng.chance(WAKE_UP.nightStep * nocturnal)) {
+    if (!quiet && inHeat(state, cat) && rng.chance(BREEDING.heatWake)) wakes.push({ cat, minute: from + Math.floor(rng.next() * (to - from)), reason: "night" });
+    if (!quiet && nocturnal > 0 && rng.chance(WAKE_UP.nightStep * nocturnal)) {
       wakes.push({ cat, minute: from + Math.floor(rng.next() * (to - from)), reason: "night", trait: "nocturnal" });
     }
     // Чи кіт справді будить, вирішиться о 05:00: якщо він голодний, а миски порожні. «Живий будильник» будить і
@@ -262,9 +263,13 @@ function sleep({ state, report, rng }: Night): void {
   report.sleptHours = slept;
   wakingSight(state, bed, onBed, nightMinutes);
   report.wokeMinute = woke - MINUTES_PER_DAY;
+  // Розбудили сусіди (§4.1): ніч скінчилася саме тоді, коли вони, а не раніше через кота — титулка каже, о котрій.
+  if (state.today.earlyWake > 0 && woke === planned) report.neighborsWoke = planned - MINUTES_PER_DAY;
   postponeDeliveries(state);
   passSleepTime(state, slept);
-  state.character.sleepSpeed = sleepSpeedAfter(slept);
+  // «Тиха ніч» (§4.1): сон діє, як довший — лише на швидкість дня; справжніх годин сну, здоров'я й «Виснаження» це не міняє.
+  const bonus = state.modifiers.day === "quiet-night" ? MODIFIERS.quietNight.sleepBonus / MINUTES_PER_HOUR : 0;
+  state.character.sleepSpeed = sleepSpeedAfter(slept + bonus);
   nightlyIllness(state, slept);
 }
 

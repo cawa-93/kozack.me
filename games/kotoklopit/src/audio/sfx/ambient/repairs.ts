@@ -3,7 +3,7 @@
 
 import { AMBIENT } from "../../config";
 import { constructionDustHours } from "../../../sim/cleaner";
-import { active } from "../../../sim/modifiers";
+import { active, inNeighborsHours } from "../../../sim/modifiers";
 import type { GameState } from "../../../sim/types";
 import type { Cue } from "../types";
 
@@ -13,8 +13,7 @@ const HAMMER: readonly Cue[] = [{ sound: "hammer", at: AMBIENT.neighbors }];
 const STAIRWELL: readonly Cue[] = [{ sound: "stairwell", at: "door" }];
 const DUST = constructionDustHours();
 
-export const renovating = (state: GameState): boolean =>
-  active(state, "renovation") && state.minute >= AMBIENT.renovation.from && state.minute < AMBIENT.renovation.to;
+export const renovating = (state: GameState): boolean => active(state, "renovation") && inNeighborsHours(state.minute);
 
 export const stairwellWork = (state: GameState): boolean => active(state, "construction-dust") && state.minute >= DUST.from && state.minute < DUST.to;
 

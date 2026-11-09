@@ -23,11 +23,11 @@
 
 import Phaser from "phaser";
 
-import { powerOut } from "../../sim/modifiers";
+import { active, powerOut } from "../../sim/modifiers";
 import type { GameState } from "../../sim/types";
 import { artEntry } from "../art/manifest";
 import { CEILING_HEIGHT, CEILING_LAMPS, PANES, type Pane } from "../decor";
-import { daylight, type Daylight } from "../light/daylight";
+import { daylight, overcast, type Daylight } from "../light/daylight";
 import {
   apartmentOutline,
   CELL_RX,
@@ -163,7 +163,8 @@ export class IsoLightView implements LightPart {
   }
 
   update(state: GameState, frame: WorldFrame): void {
-    const d = frame.lightMinute === null ? null : daylight(frame.lightMinute, !powerOut(state));
+    const clear = frame.lightMinute === null ? null : daylight(frame.lightMinute, !powerOut(state));
+    const d = clear && active(state, "rain") ? overcast(clear) : clear;
     if (!d) {
       this.hide();
       return;

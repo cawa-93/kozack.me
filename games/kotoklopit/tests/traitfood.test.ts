@@ -850,8 +850,12 @@ describe("«Мітки» (рішення автора 2026-10-25)", () => {
     cat.mood = 40;
     expect(markTriggered(save.current, cat)).toBe(true);
     cat.mood = 80;
+    // День «Гості» — тригер, лише коли вони вже зайшли (§9.12 «Мітки»).
     save.current.modifiers.day = "guests";
+    expect(markTriggered(save.current, cat)).toBe(false);
+    save.current.today.guestsCame = true;
     expect(markTriggered(save.current, cat)).toBe(true);
+    delete save.current.today.guestsCame;
     save.current.modifiers.day = null;
     const box = save.current.home.items.find((i): i is LitterItem => i.kind === "litter") as LitterItem;
     box.uses = 3;

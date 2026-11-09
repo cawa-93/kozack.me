@@ -69,7 +69,7 @@ export function onSickLeave(state: GameState, day = state.day): boolean {
 export function isWorkday(state: GameState): boolean {
   // Безробітний і на лікарняному — без робочих днів: керівництво нічого не чекає (§6.5, §8.6).
   if (state.job.unemployed || onSickLeave(state)) return false;
-  // Робоча субота, аврал, вихідний посеред тижня, відпустка (§4.1).
+  // Робоча субота, аврал, вихідний у будень, відпустка (§4.1).
   return workdayOverride(state) ?? weekdayOf(state.day) < WORKDAYS_PER_WEEK;
 }
 
@@ -238,7 +238,7 @@ export function inMeeting(state: GameState): boolean {
   return state.modifiers.day === "meeting" && minute >= meeting.from && minute < meeting.from + meeting.minutes;
 }
 
-/** Щоденна летючка о 10:00 на 15 хвилин (§8.6). */
+/** Щоденна летючка (§8.6). */
 function tickStandup(state: GameState, from: number, to: number): void {
   if (!standupToday(state)) return;
   const start = STANDUP_MINUTE;

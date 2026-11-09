@@ -13,7 +13,7 @@ type Street = Extract<AmbientSound, "birds" | "city" | "evening" | "rain" | "cic
 /** Що чути з вікон: погода дня — увесь день, фестиваль — увечері, інакше — вулиця за часом доби (`DAYLIGHT`). */
 export function streetSound(state: GameState): Street {
   const minute = state.minute;
-  if (state.modifiers.day === "festival" && minute >= AMBIENT.festivalFrom && minute < MODIFIERS.festival.minute + MODIFIERS.festival.hideMinutes) return "festival";
+  if (state.modifiers.day === "festival" && minute >= AMBIENT.festivalFrom && minute < MODIFIERS.festival.minute + MODIFIERS.festival.minutes) return "festival";
   if (active(state, "rain")) return "rain";
   if (active(state, "heat")) return "cicadas";
   if (active(state, "cold")) return "wind";

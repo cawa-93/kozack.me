@@ -8,14 +8,14 @@ import { addCat, applyMorningSanity } from "./night";
 import { putDownCat, stopBath } from "./actions";
 import { hideSpot, isCarried, isDirty, startAct } from "./catai";
 import { visibleFloorNear } from "./catmove";
-import { isNewborn } from "./reproduction";
+import { hasFertileFemale, isNewborn } from "./reproduction";
 import { vetManner } from "./destinations";
 import { observe } from "./knowledge";
 import { changeStat, earn, spend } from "./character";
-import { DIFFICULTY, GUESTS, ILLNESS_EFFECTS, MODIFIERS, POSITIONS, PRODUCTS, VET } from "./config";
+import { BOWL_CAPACITY, DIFFICULTY, GUESTS, ILLNESS_EFFECTS, MODIFIERS, POSITIONS, PRODUCTS, VET, WORK_END_MINUTE } from "./config";
 import { addSupply, stash, takeSupply } from "./economy";
 import { emit } from "./events";
-import { fallIllPerson } from "./illness";
+import { fallIllPerson, isIll } from "./illness";
 import { createRng, deriveSeed, stateRng, streamSeed, type Rng } from "./rng";
 import { weekdayOf } from "./time";
 import type { Cat, GameState } from "./types";
@@ -23,7 +23,7 @@ import { fillFountainTank, furVisible, putVacuumDown, stockBowl } from "./househ
 import { waterCapacity } from "./resources";
 import { loudNoise } from "./noise";
 import { callImpression, changeReputation, isWorkday, noticeCallLook, onSickLeave, stopWork } from "./work";
-import { tickCleaner, tickConstructionDust } from "./cleaner";
+import { litterOrder, tickCleaner, tickConstructionDust } from "./cleaner";
 
 type When = "any" | "weekday" | "saturday" | "cat" | "work" | "workday" | "weekend-cat";
 
@@ -47,14 +47,13 @@ export const DAY_PAIRS: readonly Pair[] = [
   pair("work-saturday", "midweek-off", "work", "saturday", "workday"),
   pair("full-moon", "rain", "cats", "cat"),
   pair("festival", "quiet-evening", "cats", "cat"),
-  // «Ветеринарка вдома» — без пари: «Щеплення» прибрано (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А14; §11.1 це дозволяє).
-  // Він, як і раніше, лише легкий бік: випадає, коли випав легкий.
+  // «Ветеринарка вдома» — без пари, лише легкий бік (§11.1): випадає, коли випав легкий.
   pair(null, "home-vet", "cats", "cat"),
   pair("heat", "cold", "cats", "cat"),
   pair("renovation", "neighbors-away", "home", "any"),
   // «Планове відключення» лишається й безробітному: без світла пошук роботи йде ×0,75 (§8.6, §4.1, рішення автора 2026-11-02;
   // раніше відключення інтернету зупиняло пошук — перевірка модифікаторів 2026-10-28).
-  pair("outage", "fast-internet", "home", "weekday", "workday"),
+  pair("outage", "fast-internet", "home", "weekday"),
   pair("inspection", "recalculation", "home", "any"),
   // Прибиральниця прибирає й без котів (пил, безлад, прання), тож пара — будь-коли (рішення автора 2026-11-03, §4.1).
   pair("construction-dust", "cleaner", "home", "any"),
@@ -79,10 +78,10 @@ const SPECIAL: readonly { id: string; when: When; group: Pair["group"] }[] = [
  * 2026-10-29, `GENERAL_REVIEW.md`, А14: без котів тиждень із ними був порожнім). «Хвиля спеки ↔ Похолодання» — тижневі «Спека» й
  * «Холод», а ті бувають лише з котом.
  */
-export const WEEK_PAIRS: readonly { hard: string; easy: string; when: "any" | "work" | "cat" }[] = [
+export const WEEK_PAIRS: readonly { hard: string; easy: string; when: "any" | "work" | "cat" | "fertile" }[] = [
   { hard: "deadline-week", easy: "quiet-week", when: "work" },
   { hard: "crunch", easy: "vacation", when: "work" },
-  { hard: "cat-march", easy: "calm-season", when: "cat" },
+  { hard: "cat-march", easy: "calm-season", when: "fertile" },
   { hard: "heat-wave", easy: "cold-snap", when: "cat" },
   { hard: "cat-flu", easy: "cat-prevention", when: "cat" },
   { hard: "human-flu", easy: "human-prevention", when: "any" },
@@ -92,18 +91,19 @@ export const WEEK_PAIRS: readonly { hard: string; easy: string; when: "any" | "w
 export function active(state: GameState, id: string): boolean {
   const { day, week } = state.modifiers;
   if (day === id || week === id) return true;
-  return (id === "heat" && week === "heat-wave") || (id === "cold" && week === "cold-snap");
+  return (id === "heat" && week === "heat-wave") || (id === "cold" && week === "cold-snap") || (id === "vigor" && week === "human-prevention");
 }
 
 /** Модифікатор дня, що суперечить модифікатору тижня, не випадає (§4.1). */
 function contradicts(week: string | null, id: string, group: Pair["group"]): boolean {
   if (week === "vacation" && group === "work") return true;
   // Аврал: вихідних не буде — ні робочої суботи (вона й так робоча), ні вихідного посеред тижня; тиждень дедлайнів — не
-  // «Затишшя», тихий тиждень — не «Дедлайн» (DAY_MODIFIERS.md; перевірка модифікаторів 2026-10-28).
-  if (week === "crunch" && (id === "work-saturday" || id === "midweek-off")) return true;
+  // «Затишшя», тиждень затишшя — не «Дедлайн» (DAY_MODIFIERS.md; перевірка модифікаторів 2026-10-28).
+  if (week === "crunch" && (id === "work-saturday" || id === "midweek-off" || id === "lull")) return true;
   if (week === "deadline-week" && id === "lull") return true;
   if (week === "quiet-week" && id === "deadline") return true;
   if ((week === "heat-wave" || week === "cold-snap") && (id === "heat" || id === "cold")) return true;
+  if (week === "human-prevention" && (id === "sick" || id === "vigor")) return true;
   return false;
 }
 
@@ -155,7 +155,8 @@ export function chooseWeekModifier(state: GameState, week: number): string | nul
   if (!rng.chance(MODIFIERS.weekShare)) return null;
   const hard = rng.chance(MODIFIERS.hardShare[state.difficulty]);
   const order = shuffled(rng, WEEK_PAIRS.length);
-  const fits = (when: (typeof WEEK_PAIRS)[number]["when"]): boolean => (when === "work" ? !state.job.unemployed : when === "cat" ? state.cats.length > 0 : true);
+  const fits = (when: (typeof WEEK_PAIRS)[number]["when"]): boolean =>
+    when === "work" ? !state.job.unemployed : when === "cat" ? state.cats.length > 0 : when === "fertile" ? hasFertileFemale(state) : true;
   const chosen = order.map((i) => WEEK_PAIRS[i]!).find((p) => fits(p.when));
   if (!chosen) return null;
   return hard ? chosen.hard : chosen.easy;
@@ -189,14 +190,12 @@ export function chooseDayModifier(state: GameState, day: number, rng: Rng): stri
   // репутацію, а нарада й обідня перерва були на титулці, хоч і не діяли). Збори в офісі — теж ні, і не у відпустку (перевірка
   // поїздок 2026-10-28: випадали, і поїздка туди платила зарплату).
   const sick = onSickLeave(state, day);
+  // «Застуда» застудженому нічого не дала б, а титулка писала б про нову хворобу (§4.1).
   const possible = (id: string, when: When, group: Pair["group"]): boolean =>
-    !(group === "work" && sick) && fits(state, day, when) && !contradicts(week, id, group) && id !== previous;
+    !(group === "work" && sick) && fits(state, day, when) && !contradicts(week, id, group) && id !== previous && !(id === "sick" && isIll(state, "cold"));
   const sides = order.map((i) => {
     const p = DAY_CATALOG[i]!;
     const easy = possible(p.easy, p.whenEasy, p.group) ? p.easy : null;
-    // Тиждень профілактики: з пари «Застуда ↔ Бадьорість» лишається тільки «Бадьорість» — і коли випав важкий бік (рішення автора
-    // 2026-10-29, `GENERAL_REVIEW.md`, А14). Раніше «Застуда» просто не випадала, і замість неї приходив інший важкий день.
-    if (week === "human-prevention" && p.hard === "sick") return { hard: easy, easy };
     return { hard: p.hard !== null && possible(p.hard, p.whenHard, p.group) ? p.hard : null, easy };
   });
   const wanted = sides.find((s) => (wantHard ? s.hard : s.easy) !== null);
@@ -218,6 +217,7 @@ export function startModifiers(state: GameState, rng: Rng): void {
   delete today.showDone;
   today.earlyWake = 0;
   delete today.mom;
+  delete today.guestsCame;
   // Гість, якому так і не відчинили (персонаж ліг, не дочекавшись), уже не під дверима (§9.12).
   clearGuest(state);
   const perHour = POSITIONS[state.job.position]?.reputation ?? 1;
@@ -246,7 +246,7 @@ export function startModifiers(state: GameState, rng: Rng): void {
       today.mom = { at: MODIFIERS.mom.from + Math.floor(rng.next() * (MODIFIERS.mom.to - MODIFIERS.mom.from)) };
       break;
     case "recalculation":
-      // Два перерахунки за тиждень — дві знижки (перевірка модифікаторів 2026-10-28: друга нічого не давала).
+      // Два перерахунки за тиждень — дві знижки.
       today.utilitiesDiscount += MODIFIERS.recalculation;
       break;
     case "noisy-neighbors":
@@ -336,28 +336,27 @@ export function patienceDecayFactor(state: GameState): number {
   return factor;
 }
 
-/** Репутація за годину роботи (§8.6): дедлайн і затишшя; без світла («Планове відключення», §4.1) — ×0,75. */
+/** Репутація за годину роботи (§8.6): дедлайн і затишшя; «Планове відключення» й «Швидкий інтернет» (§4.1). */
 export function reputationFactor(state: GameState): number {
   if (active(state, "deadline")) return MODIFIERS.deadline.reputation;
   if (active(state, "lull")) return MODIFIERS.lull.reputation;
   if (powerOut(state)) return MODIFIERS.outage.reputation;
+  if (active(state, "fast-internet")) return MODIFIERS.fastInternet.reputation;
   return 1;
 }
 
-/** Зарплата за годину (§8.6): «Затримка зарплати», «Премія», «Швидкий інтернет», «Планове відключення» — `MODIFIERS.pay`. */
+/** Зарплата за годину (§8.6): «Урізана зарплата», «Премія», «Швидкий інтернет», «Планове відключення» — `MODIFIERS.pay`. */
 export function payFactor(state: GameState): number {
   return MODIFIERS.pay[state.modifiers.day ?? ""] ?? 1;
 }
 
-/** Пошук роботи за годину (§8.6): без світла («Планове відключення», §4.1, рішення автора 2026-11-02) — ×0,75. */
+/** Пошук роботи за годину (§8.6): «Планове відключення» й «Швидкий інтернет» (§4.1). */
 export function searchFactor(state: GameState): number {
-  return powerOut(state) ? MODIFIERS.outage.search : 1;
+  if (powerOut(state)) return MODIFIERS.outage.search;
+  return active(state, "fast-internet") ? MODIFIERS.fastInternet.search : 1;
 }
 
-/**
- * У скільки разів довше готує плита (§8.7): без світла страву гріють на газовому пальнику — ×1,25, і підгорає вона так само пізніше
- * («Планове відключення», §4.1, рішення автора 2026-11-02).
- */
+/** У скільки разів довше готує плита (§8.7): без світла — газовий пальник (`MODIFIERS.outage.cook`), і підгорає страва так само пізніше. */
 export function cookFactor(state: GameState): number {
   return powerOut(state) ? MODIFIERS.outage.cook : 1;
 }
@@ -371,29 +370,44 @@ export function workdayOverride(state: GameState): boolean | null {
 }
 
 /**
- * Планове відключення електрики (§4.1, рішення автора 2026-11-02): увесь день «Планового відключення» світла немає — від
- * пробудження до наступного пробудження, як і будь-який модифікатор дня. Читають і сим (робота, плита, душ, прання, робот), і
+ * Планове відключення електрики (§4.1): увесь день «Планового відключення» світла немає — від пробудження до наступного
+ * пробудження, як і будь-який модифікатор дня. Читають і сим (робота, плита, душ, прання, робот), і
  * вигляд (світло доби, свічки, бойлер).
  */
 export function powerOut(state: GameState): boolean {
   return active(state, "outage");
 }
 
-/** Неприємні справи (§8.1): ремонт у сусідів — дорожче, сусіди у відпустці — дешевше. */
+/** Хвилина дня в робочі години сусідів (§4.1): лише тоді чути ремонт і тиша відчутна. */
+export function inNeighborsHours(minute: number): boolean {
+  const at = minute % 1440;
+  return at >= MODIFIERS.neighborsHours.from && at < MODIFIERS.neighborsHours.to;
+}
+
+/** Скільки хвилин кроку `[from, from + minutes)` припадає на робочі години сусідів. */
+function neighborsMinutes(from: number, minutes: number): number {
+  const day = from - (from % 1440);
+  const start = Math.max(from, day + MODIFIERS.neighborsHours.from);
+  const end = Math.min(from + minutes, day + MODIFIERS.neighborsHours.to);
+  return Math.max(0, end - start);
+}
+
+/** Неприємні справи (§8.1): ремонт у сусідів — дорожче, сусіди у відпустці — дешевше; лише в робочі години сусідів. */
 export function unpleasantFactor(state: GameState): number {
+  if (!inNeighborsHours(state.minute)) return 1;
   if (active(state, "renovation")) return MODIFIERS.renovation.unpleasant;
-  if (active(state, "neighbors-away")) return MODIFIERS.neighborsAway;
+  if (active(state, "neighbors-away")) return MODIFIERS.neighborsAway.unpleasant;
   return 1;
 }
 
 export const moveFactor = (state: GameState): number => (active(state, "vigor") ? MODIFIERS.vigor : 1);
-export const hygieneFactorMod = (state: GameState): number => (active(state, "heat") ? MODIFIERS.heat.hygiene : 1);
+export const hygieneFactorMod = (state: GameState): number => (active(state, "heat") ? MODIFIERS.heat.hygiene : active(state, "cold") ? MODIFIERS.cold.hygiene : 1);
 export const playFactor = (state: GameState): number => (active(state, "full-moon") ? MODIFIERS.fullMoonPlay : 1);
 export function catFatigueFactor(state: GameState): number {
   return (active(state, "rain") ? MODIFIERS.rainFatigue : 1) * (active(state, "heat") ? MODIFIERS.heat.fatigue : 1);
 }
-export const thirstFactor = (state: GameState): number => (active(state, "heat") ? MODIFIERS.heat.thirst : 1);
-export const warmthBonus = (state: GameState): number => (active(state, "cold") ? MODIFIERS.coldWarmth : 0);
+export const thirstFactor = (state: GameState): number => (active(state, "heat") ? MODIFIERS.heat.thirst : active(state, "cold") ? MODIFIERS.cold.thirst : 1);
+export const warmthBonus = (state: GameState): number => (active(state, "cold") ? MODIFIERS.cold.warmth : 0);
 /** «Холод» і «Спека» (§4.1) — дня чи тижня: від них залежить «Теплолюбність» (§9.12). */
 export const isCold = (state: GameState): boolean => active(state, "cold");
 export const isHot = (state: GameState): boolean => active(state, "heat");
@@ -401,13 +415,13 @@ export const isHot = (state: GameState): boolean => active(state, "heat");
 export const toOffice = (state: GameState): boolean => state.trip?.destination === "office" && state.trip.phase !== "accident";
 
 export const trafficFactor = (state: GameState): number => MODIFIERS.traffic[state.modifiers.day ?? ""] ?? 1;
-/** Довжина дороги (§8.5): «Затори» подовжують, «Порожні дороги» скорочують (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А14). */
+/** Довжина дороги (§8.5): «Затори» подовжують, «Порожні дороги» скорочують. */
 export const roadFactor = (state: GameState): number => MODIFIERS.road[state.modifiers.day ?? ""] ?? 1;
 export function priceFactor(state: GameState, product: string): number {
   return product === "catFood" || product === "sterileFood" ? (MODIFIERS.catFoodPrice[state.modifiers.day ?? ""] ?? 1) : 1;
 }
 
-/** Шанс хвороб котів (§9.5): котячий грип чи профілактика (щеплення прибрано — рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А14). */
+/** Шанс заразних хвороб котів (§9.5): «Котячий грип» чи «Тиждень котячої профілактики». */
 export function catIllnessFactor(state: GameState): number {
   return MODIFIERS.week.catIllness[state.modifiers.week ?? ""] ?? 1;
 }
@@ -501,8 +515,8 @@ export function homeVetVisit(state: GameState): void {
     return;
   }
   openDoor(state);
-  // Ветеринари оглядають усіх доступних котів (рішення автора 2026-10-27, Х7): ветеринарка — всіх, хто вдома.
-  const cats = state.cats.filter((c) => c.away === null);
+  // Ветеринарка оглядає всіх, хто вдома, — і котів під замком у переносці: вони там і лишаються.
+  const cats = state.cats.filter((c) => c.away === null || c.away === "carrier");
   const rng = stateRng(state, "behavior");
   for (const cat of cats) {
     for (const d of cat.diseases) d.known = true;
@@ -514,7 +528,7 @@ export function homeVetVisit(state: GameState): void {
     // б кіт не був, — якщо персонаж удома. «Кошмар ветеринара» вирвався й потім ховається.
     const manner = vetManner(cat);
     if (manner !== null) observe(state, cat, "vet", manner === "calm" ? 1 : -1, true);
-    if (manner === "hid") {
+    if (manner === "hid" && cat.away === null) {
       // Кіт на руках персонажа справді виривається з рук і стає на підлогу поруч, як «cat-broke-free» у catai: інакше
       // повідомлення казало «вирвався з рук і сховався», а кіт лишався на руках (загальна ревізія 2026-10-29).
       if (isCarried(state, cat)) {
@@ -601,6 +615,8 @@ export function guestsVisit(state: GameState): void {
   // 2026-10-29), межа — до множника. Сором і шипіння — втрати, їх множник не стосується.
   const total = shame + Math.min(GUESTS.delightMax, delight) * DIFFICULTY[state.difficulty].catSanity + hissing;
   changeStat(state, "sanity", total);
+  // Від цієї хвилини до кінця дня гості — тригер міток (§9.12 «Мітки»).
+  state.today.guestsCame = true;
   emit(state, { type: "modifier", kind: "guests", value: total, guests: { mess: shame < 0, hissed: hissing < 0, delighted: delight > 0 } });
 }
 
@@ -635,9 +651,11 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
     loudNoise(state, "fireworks", null);
     emit(state, { type: "modifier", kind: "fireworks", value: 0 });
   }
-  if (day === "quiet-evening" && crossed(from, minutes, m.quietEvening.minute)) for (const cat of state.cats) changeMood(state, cat, m.quietEvening.mood);
-  if (day === "renovation") {
-    for (const cat of state.cats) if (cat.away === null && !asleep(cat)) changeMood(state, cat, (m.renovation.catMoodPerHour * minutes) / 60);
+  if (day === "quiet-evening" && crossed(from, minutes, m.quietEvening.minute)) for (const cat of state.cats) if (cat.away === null) changeMood(state, cat, m.quietEvening.mood);
+  if (day === "renovation" || day === "neighbors-away") {
+    const perHour = day === "renovation" ? m.renovation.catMoodPerHour : m.neighborsAway.catMoodPerHour;
+    const heard = neighborsMinutes(from, minutes);
+    if (heard > 0) for (const cat of state.cats) if (cat.away === null && !asleep(cat)) changeMood(state, cat, (perHour * heard) / 60);
   }
   if (day === "mom-food") tickMom(state, from, minutes);
   // Дзвонять за `GUESTS.ringLead` хвилин до оголошеного часу, коли заходять, — двері відчинено (§9.12 «Двері й гості»; рішення автора 2026-10-29, А5).
@@ -646,11 +664,11 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
   if (day === "guests" && crossed(from, minutes, m.guests.minute - GUESTS.ringLead)) ringBell(state, "guests");
   if (day === "inspection" && crossed(from, minutes, m.inspection.minute) && takeGuest(state, "inspection")) inspectionVisit(state);
   if (day === "guests" && crossed(from, minutes, m.guests.minute) && takeGuest(state, "guests")) guestsVisit(state);
-  // Хто до 18:00 уже їде на збори, той поїхав (§4.1): раніше штраф наздоганяв його в дорозі (перевірка поїздок 2026-10-28).
-  if (day === "office" && crossed(from, minutes, 18 * 60) && !today.officeDone && !toOffice(state) && isWorkday(state)) {
+  // Хто до кінця робочого дня вже їде на збори, той поїхав (§4.1).
+  if (day === "office" && crossed(from, minutes, WORK_END_MINUTE) && !today.officeDone && !toOffice(state) && isWorkday(state)) {
     const delta = m.officeAbsent * (POSITIONS[state.job.position]?.reputation ?? 1);
     changeReputation(state, delta);
-    // Збори минули: поїхати після 18:00 уже нема на що (перевірка поїздок 2026-10-28: офіс лишався в списку й платив за збори).
+    // Збори минули: їхати вже нема на що.
     today.officeDone = true;
     emit(state, { type: "modifier", kind: "office-missed", value: delta });
   }
@@ -682,14 +700,15 @@ function friendHelps(state: GameState, from: number, minutes: number): void {
   if (hour < m.from || hour >= m.to) return;
   fillFountainTank(state);
   for (const item of state.home.items) {
-    if (item.kind === "bowl") stockBowl(state, item);
+    // Корм для стерилізованих — коли в домі живе стерилізований, хоч би де він зараз: «можна поїхати» — сенс цього дня (§9.8).
+    if (item.kind === "bowl") stockBowl(state, item, BOWL_CAPACITY, { includeAway: true });
     if (item.kind === "water") item.water = waterCapacity(item);
-    if (item.kind === "litter" && item.uses > 0) {
-      const litter = takeSupply(state, "litter");
-      if (litter !== null) {
-        item.uses = 0;
-        item.litter = litter;
-      }
-    }
+  }
+  // Лотки — як у прибиральниці (§4.1): використані й порожні, брудні першими.
+  for (const box of litterOrder(state.home.items)) {
+    const litter = takeSupply(state, "litter");
+    if (litter === null) break;
+    box.uses = 0;
+    box.litter = litter;
   }
 }
