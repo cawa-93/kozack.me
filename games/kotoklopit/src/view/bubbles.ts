@@ -100,6 +100,8 @@ const place = (at: Anchor): { x: number; y: number } | null => (typeof at === "f
 
 export class Bubbles {
   private readonly states = new Map<string, StateBubble>();
+  /** Бабли стану, підтверджені цього кадру (`setState` з іконкою); решту прибирає `sweepStates`. */
+  private readonly confirmed = new Set<string>();
   private readonly floaters = new Set<Floater>();
   /** Як лежить бабл кожного виду (з маніфесту). */
   private readonly looks: Readonly<Record<BubbleKind, IsoBubbleLook>> = { say: isoBubbleLook("say"), think: isoBubbleLook("think") };
@@ -173,6 +175,7 @@ export class Bubbles {
       this.states.delete(anchor);
       return;
     }
+    this.confirmed.add(anchor);
     if (current && current.name === icon && current.kind === kind && current.count === count) {
       current.visible = !this.busy(anchor);
       current.x = x;
@@ -189,6 +192,20 @@ export class Bubbles {
     this.states.set(anchor, { container, kind, name: icon, count, owner: anchor, icon, x, y, span: look.span, height: look.height, visible, target: 0, dx: 0, placed: false });
     // Стає в ряд одразу, ще до кадру.
     this.arrange(0);
+  }
+
+  /**
+   * Прибрати бабли стану, яких цього кадру ніхто не підтвердив (§11.4): їхнього власника вже немає — лоток викинули чи взяли
+   * в руки, кота віддали. Викликати раз за кадр, після всіх `setState`: так бабл не переживає власника, хоч би хто це був, і
+   * кожному новому виду речей не треба свого прибирання.
+   */
+  sweepStates(): void {
+    for (const [anchor, bubble] of this.states) {
+      if (this.confirmed.has(anchor)) continue;
+      bubble.container.destroy();
+      this.states.delete(anchor);
+    }
+    this.confirmed.clear();
   }
 
   hasState(anchor: string): boolean {
@@ -360,6 +377,7 @@ export class Bubbles {
   clear(): void {
     for (const bubble of this.states.values()) bubble.container.destroy();
     this.states.clear();
+    this.confirmed.clear();
     for (const f of this.floaters) f.container.destroy();
     this.floaters.clear();
     this.laid.length = 0;

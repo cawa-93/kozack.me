@@ -106,8 +106,6 @@ export class DayScene extends Phaser.Scene {
   private readonly overlay = new Overlay();
   /** Квартира, котячий куточок, коти, персонаж і позначки (крок 16): сцена лише кличе їх щокадру й питає, де що. */
   private world!: World;
-  /** Коти, яких світ малював минулого кадру: зниклому з дому прибрати бабл стану. */
-  private readonly catsShown = new Set<number>();
   private viewport!: Viewport;
   private gloom!: Phaser.GameObjects.Rectangle;
   /** Темрява засинання — над усім, і над інтерфейсом. */
@@ -276,7 +274,6 @@ export class DayScene extends Phaser.Scene {
     this.viewport.jump();
     // Коти нового стану — нові об'єкти, навіть якщо id ті самі.
     this.world.reset();
-    this.catsShown.clear();
     const state = this.state;
     if (state.end !== null) {
       this.showEnd();
@@ -781,7 +778,6 @@ export class DayScene extends Phaser.Scene {
       if (news) this.hud.say(news.title, news.text, time);
     }
     this.world.update(state, frame);
-    this.forgetGoneCats(state);
     this.showEarnings(time);
     this.bubbles.update();
     this.hearts.update();
@@ -813,15 +809,10 @@ export class DayScene extends Phaser.Scene {
     this.dark.setFillStyle(0x000000, dark);
   }
 
-  /** Кіт зник із дому (віддали, помер): його бабла стану більше немає. */
-  private forgetGoneCats(state: GameState): void {
-    const alive = new Set(state.cats.map((cat) => cat.id));
-    for (const id of this.catsShown) if (!alive.has(id)) this.bubbles.setState(`cat:${id}`, "say", null, 0, 0);
-    this.catsShown.clear();
-    for (const id of alive) this.catsShown.add(id);
-  }
-
-  /** Бабли стану (§11.4): що висить, поки триває. Над речами й котами — вголос, над персонажем — думка. */
+  /**
+   * Бабли стану (§11.4): що висить, поки триває. Над речами й котами — вголос, над персонажем — думка. Щокадру наново: чого
+   * цього кадру не поставили (власника немає — річ викинули чи взяли в руки, кота віддали), те `sweepStates` прибирає.
+   */
   private updateStateBubbles(): void {
     const state = this.state;
     // Коти під замком (§8.7): гравець завжди бачить, скільки їх, хоч би скільки було переносок.
@@ -914,6 +905,7 @@ export class DayScene extends Phaser.Scene {
     const over = personBubbleAnchor(state, this.world.person.head, "think");
     const head = this.belowHud(over, "think") ?? over;
     this.bubbles.setState("person", "think", isDrowsy(state) ? STATE_ICONS.drowsy : null, head.x, head.y);
+    this.bubbles.sweepStates();
   }
 
   /**
