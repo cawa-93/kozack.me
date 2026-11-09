@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 57 51" width="57" height="51">
+<!-- person/hair-front/streaks/back — неонові пасма, передня частина: косий рваний чубчик, ближнє пасмо закриває вухо; акцент — пасмо в чубчику й на ближньому боці, ракурс back (¾ ззаду). Рукою еталонів F1b (art/STYLE.md).
+size 57×51; pivot (29, 44) — шия, як у person/head/*; points: top (29.5, 2.5).
+Шари: fill-hair, fill-accent, shade, ink.
+Чубчик над бровами; тінь soft — пасма обабіч обличчя.
+back — порожні шари: скелет ховає передню частину зачіски ззаду.
+-->
+<g id="fill-hair"/>
+<g id="fill-accent"/>
+<g id="shade"/>
+<g id="ink"/>
+</svg>

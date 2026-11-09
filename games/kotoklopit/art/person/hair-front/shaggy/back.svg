@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 51" width="64" height="51">
+<!-- person/hair-front/shaggy/back — скуйовджена, передня частина: зубці над лобом і з боків, чубчик зубцями над бровами, ракурс back (¾ ззаду). Рукою еталонів F1b (art/STYLE.md).
+size 64×51; pivot (32, 50) — шия, як у person/head/*; points: top (33, 6).
+Шари: fill-hair, shade, ink.
+Зубці чубчика не нижчі за брови (очі відкриті); тінь soft — ближній бік і під чубчиком.
+back — порожні шари: скелет ховає передню частину зачіски ззаду.
+-->
+<g id="fill-hair"/>
+<g id="shade"/>
+<g id="ink"/>
+</svg>

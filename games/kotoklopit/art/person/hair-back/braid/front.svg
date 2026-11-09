@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 61" width="56" height="61">
+<!-- person/hair-back/braid/front — коса на плече, задня частина: гладка потилиця, волосся зібране до ближнього боку в косу через плече, ракурс front (¾ спереду). Рукою еталонів F1b (art/STYLE.md).
+size 56×61; pivot (28, 44) — шия, як у person/head/*; points: top (28.5, 2.5).
+Шари: fill-hair, shade, ink.
+Ближній бік у back — праворуч: коса йде за ближнє плече; лопаті коси по черзі, шви — звуженими штрихами; у front — об'єм за головою в тіні base.
+-->
+<defs>
+<path id="person-hair-back-braid-front-shape" d="M23.6 15C23.2 17.4 21.4 20.8 20.4 24C19.4 27.2 18.3 31.3 17.4 34C16.5 36.7 16 39.5 15 40.4C14 41.3 12.7 40.2 11.6 39.2C10.5 38.2 9.3 36.3 8.6 34.4C7.9 32.5 7.5 30.2 7.4 28C7.3 25.8 7.5 23.5 8.2 21.4C8.9 19.3 10 17.3 11.4 15.6C12.8 13.9 14.7 12.4 16.6 11.4C18.5 10.4 21.4 9 22.6 9.6C23.8 10.2 24 12.6 23.6 15Z"/>
+<clipPath id="person-hair-back-braid-front-clip"><use href="#person-hair-back-braid-front-shape"/></clipPath>
+</defs>
+<g id="fill-hair">
+<use href="#person-hair-back-braid-front-shape" fill="#ffffff"/>
+</g>
+<g id="shade" clip-path="url(#person-hair-back-braid-front-clip)">
+<path d="M-44 -42C-19 -67 81 -67 106 -42C131 -17 131 83 106 108C81 133 -19 133 -44 108C-69 83 -69 -17 -44 -42Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="ink">
+<use href="#person-hair-back-braid-front-shape" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

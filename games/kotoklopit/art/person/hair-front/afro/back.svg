@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 66 55" width="66" height="55">
+<!-- person/hair-front/afro/back — афро, передня частина: куля над лобом і з боків, обличчя відкрите від лінії волосся, ракурс back (¾ ззаду). Рукою еталонів F1b (art/STYLE.md).
+size 66×55; pivot (34, 54) — шия, як у person/head/*; points: top (33.5, 4).
+Шари: fill-hair, shade, ink.
+Ближнє вухо сховане; лінія волосся над бровами; тінь soft — ближній бік і над лобом.
+back — порожні шари: скелет ховає передню частину зачіски ззаду.
+-->
+<g id="fill-hair"/>
+<g id="shade"/>
+<g id="ink"/>
+</svg>

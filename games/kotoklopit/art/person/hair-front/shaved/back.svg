@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 51 44" width="51" height="44">
+<!-- person/hair-front/shaved/back — виголений візерунок на скроні, передня частина: коротка стрижка, ближня скроня над вухом виголена, на ній дві смуги-зигзаги, ракурс back (¾ ззаду). Рукою еталонів F1b (art/STYLE.md).
+size 51×44; pivot (25, 43) — шия, як у person/head/*; points: top (25.5, 1.5).
+Шари: fill-hair, fill-accent, shade, ink.
+Смуги — `fill-hair` під `fill-accent` без контуру (контур з'їв би смугу); виголене — шкіра голови.
+back — порожні шари: скелет ховає передню частину зачіски ззаду.
+-->
+<g id="fill-hair"/>
+<g id="fill-accent"/>
+<g id="shade"/>
+<g id="ink"/>
+</svg>

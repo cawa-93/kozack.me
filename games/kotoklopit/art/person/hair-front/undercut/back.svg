@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 53 52" width="53" height="52">
+<!-- person/hair-front/undercut/back — андеркат із чубом, передня частина: виголені скроні й високий чуб над лобом, що падає набік до ближньої скроні, ракурс back (¾ ззаду). Рукою еталонів F1b (art/STYLE.md).
+size 53×52; pivot (26, 51) — шия, як у person/head/*; points: top (29, 3.5).
+Шари: fill-hair, fill-accent, shade, ink.
+Акцент `fill-accent` — довжина чуба, корені — кольору волосся; чуб не закриває очей; виголене — у тіні base, корені — soft.
+back — порожні шари: скелет ховає передню частину зачіски ззаду.
+-->
+<g id="fill-hair"/>
+<g id="fill-accent"/>
+<g id="shade"/>
+<g id="ink"/>
+</svg>

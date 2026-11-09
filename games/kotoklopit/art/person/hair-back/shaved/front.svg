@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 46" width="50" height="46">
+<!-- person/hair-back/shaved/front — виголений візерунок на скроні, задня частина: коротка стрижка, ближня скроня (у back — праворуч) виголена з двома смугами-зигзагами, ракурс front (¾ спереду). Рукою еталонів F1b (art/STYLE.md).
+size 50×46; pivot (26, 42) — шия, як у person/head/*; points: top (26.5, 0.5).
+Шари: fill-hair, fill-accent, shade, ink.
+Виголене — шкіра голови (волосся немає); смуги — `fill-hair` під `fill-accent`, тож без акценту вони кольору волосся. У front — коротке за головою в тіні base.
+-->
+<defs>
+<path id="person-hair-back-shaved-front-shape" d="M20 14C19.7 16.9 17.4 22.2 16.8 26C16.2 29.8 17 34.8 16.4 37C15.8 39.2 14.5 39.9 13.4 39.4C12.3 38.9 10.6 36.1 9.6 34C8.6 31.9 8 29.3 7.6 27C7.2 24.7 7.1 22.1 7.4 20C7.7 17.9 8.4 16 9.4 14.4C10.4 12.8 11.9 11.2 13.4 10.2C14.9 9.2 17.5 7.8 18.6 8.4C19.7 9 20.3 11.1 20 14Z"/>
+<clipPath id="person-hair-back-shaved-front-clip"><use href="#person-hair-back-shaved-front-shape"/></clipPath>
+</defs>
+<g id="fill-hair">
+<use href="#person-hair-back-shaved-front-shape" fill="#ffffff"/>
+</g>
+<g id="fill-accent"/>
+<g id="shade" clip-path="url(#person-hair-back-shaved-front-clip)">
+<path d="M-46 -44C-21 -69 79 -69 104 -44C129 -19 129 81 104 106C79 131 -21 131 -46 106C-71 81 -71 -19 -46 -44Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="ink">
+<use href="#person-hair-back-shaved-front-shape" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

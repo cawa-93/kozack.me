@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 55" width="60" height="55">
+<!-- person/hair-back/bob/front — каре, задня частина: маса за головою до підборіддя (у back — уся потилиця з рівним зрізом), ракурс front (¾ спереду). Рукою еталонів F1b (art/STYLE.md).
+size 60×55; pivot (30, 44) — шия, як у person/head/*; points: top (30.5, 2.5).
+Шари: fill-hair, shade, ink.
+У front уся в тіні base (за головою); у back — вихор, пасма звуженими штрихами, тінь soft — низ зрізу й ближній бік.
+-->
+<defs>
+<path id="person-hair-back-bob-front-shape" d="M11.4 15.4C13.2 12.3 15.6 11 18.4 9.6C21.2 8.2 24.8 7.4 28 7C31.2 6.6 34.7 6.6 37.6 7.4C40.5 8.2 43.5 9.7 45.6 11.6C47.7 13.5 49.3 15.9 50.4 19C51.5 22.1 51.8 26.5 52 30C52.2 33.5 52 37.4 51.6 40C51.2 42.6 50.3 43.6 49.6 45.4C47.7 45.9 46.8 46.5 44 46.8C41.2 47.1 37 47.3 33 47.4C29 47.5 24.2 47.5 20 47.2C15.8 46.9 11.7 46.1 7.6 45.6C7.3 43.1 6.8 40.9 6.8 38C6.8 35.1 6.8 31.8 7.6 28C8.4 24.2 9.6 18.5 11.4 15.4Z"/>
+<clipPath id="person-hair-back-bob-front-clip"><use href="#person-hair-back-bob-front-shape"/></clipPath>
+</defs>
+<g id="fill-hair">
+<use href="#person-hair-back-bob-front-shape" fill="#ffffff"/>
+</g>
+<g id="shade" clip-path="url(#person-hair-back-bob-front-clip)">
+<path d="M-2 -2C9.7 -13.7 56.3 -13.7 68 -2C79.7 9.7 79.7 56.3 68 68C56.3 79.7 9.7 79.7 -2 68C-13.7 56.3 -13.7 9.7 -2 -2Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="ink">
+<use href="#person-hair-back-bob-front-shape" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

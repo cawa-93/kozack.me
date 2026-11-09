@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 65" width="64" height="65">
+<!-- person/hair-front/locs/back — дреди, передня частина: джгути від лінії волосся обабіч обличчя (ближні — перед вухом до плеча), ракурс back (¾ ззаду). Рукою еталонів F1b (art/STYLE.md).
+size 64×65; pivot (33, 44) — шия, як у person/head/*; points: top (33.5, 2.5).
+Шари: fill-hair, shade, ink.
+Лоб відкритий, проділи над ним; тінь soft — ближні джгути й дальні.
+back — порожні шари: скелет ховає передню частину зачіски ззаду.
+-->
+<g id="fill-hair"/>
+<g id="shade"/>
+<g id="ink"/>
+</svg>

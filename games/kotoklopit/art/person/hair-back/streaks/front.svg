@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 55" width="60" height="55">
+<!-- person/hair-back/streaks/front — неонові пасма, задня частина: каре до щелепи з рваними кінчиками й двома пасмами акценту, ракурс front (¾ спереду). Рукою еталонів F1b (art/STYLE.md).
+size 60×55; pivot (30, 44) — шия, як у person/head/*; points: top (30.5, 2.5).
+Шари: fill-hair, fill-accent, shade, ink.
+Акцент `fill-accent` — пасма з контуром fine: без акценту читаються як світліші пасма кольору волосся; у front уся в тіні base.
+-->
+<defs>
+<path id="person-hair-back-streaks-front-shape" d="M31 7.6C33.8 7.5 37 7.8 39.6 8.8C42.2 9.8 44.8 11.6 46.6 13.6C48.4 15.6 49.8 18.3 50.6 21C51.4 23.7 51.4 27.2 51.2 30C51 32.8 50.2 35.8 49.6 38C49 40.2 48.1 41.5 47.4 43.2C45.8 42.5 44.1 40.9 42.6 41.2C41.1 41.5 39.8 43.6 38.4 44.8C36.6 43.8 34.6 41.8 33 41.8C31.4 41.8 30.1 43.7 28.6 44.6C27.1 43.6 25.4 41.5 24 41.6C22.6 41.7 21.3 44 20 45.2C18.9 44.1 17.9 41.9 16.8 42C15.7 42.1 14.5 44.4 13.4 45.6C12.8 44.3 12.6 42.1 11.6 41.6C10.6 41.1 8.7 42.3 7.2 42.6C7.6 40.7 8.3 39.1 8.4 37C8.5 34.9 7.7 32.4 7.8 30C7.9 27.6 8.3 24.9 9 22.6C9.7 20.3 10.7 18 12 16.2C13.3 14.4 15.2 12.7 17 11.6C18.8 10.5 20.7 10.3 23 9.6C25.3 8.9 28.2 7.7 31 7.6Z"/>
+<clipPath id="person-hair-back-streaks-front-clip"><use href="#person-hair-back-streaks-front-shape"/></clipPath>
+</defs>
+<g id="fill-hair">
+<use href="#person-hair-back-streaks-front-shape" fill="#ffffff"/>
+</g>
+<g id="fill-accent"/>
+<g id="shade" clip-path="url(#person-hair-back-streaks-front-clip)">
+<path d="M-42 -42C-17 -67 83 -67 108 -42C133 -17 133 83 108 108C83 133 -17 133 -42 108C-67 83 -67 -17 -42 -42Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="ink">
+<use href="#person-hair-back-streaks-front-shape" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

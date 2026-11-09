@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 59 58" width="59" height="58">
+<!-- person/hair-front/middle-part/back — довге з прямим проділом, передня частина: проділ посередині, пасма обабіч обличчя (ближнє закриває вухо), ракурс back (¾ ззаду). Рукою еталонів F1b (art/STYLE.md).
+size 59×58; pivot (31, 44) — шия, як у person/head/*; points: top (31.5, 2.5).
+Шари: fill-hair, shade, ink.
+Задня частина — «довгої» (person/hair-back/1); тінь soft — пасма обабіч обличчя й під проділом.
+back — порожні шари: скелет ховає передню частину зачіски ззаду.
+-->
+<g id="fill-hair"/>
+<g id="shade"/>
+<g id="ink"/>
+</svg>

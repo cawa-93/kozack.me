@@ -29,6 +29,7 @@ import { artFrameState, artLayerSource, loadArtFrames, loadArtIndex, resetArtSou
 import { ART_INDEX_VERSION, layerRank, type ArtIndex, type ArtLayer, type FrameId, type TintRecipe, type TintStep } from "../src/view/art/types";
 import { IRIS_COLORS } from "../src/view/wardrobe/body";
 import { CLOTHES } from "../src/view/wardrobe/clothes";
+import { HAIR_STYLES } from "../src/view/wardrobe/hair";
 
 // --- Усі забарвлення, які дає генетика -----------------------------------------------------------
 
@@ -600,7 +601,8 @@ describe("поза браузером", () => {
   });
 
   it("голова портрета — з вигляду, ракурс front, потилиця під обличчям, чубчик зверху", () => {
-    const look: Look = { face: 4, skin: 0, hair: -1, hairColor: 0, eyes: 0, build: 0, top: 0, bottom: 0, shoes: 0 };
+    // Номери поза реєстром — по колу: обличчя 4 → 1, зачіска 3 − n → 3 (кучері).
+    const look: Look = { face: 4, skin: 0, hair: 3 - HAIR_STYLES.length, hairColor: 0, eyes: 0, build: 0, top: 0, bottom: 0, shoes: 0 };
     expect(portraitHead(look).map((p) => [p.id, p.state ?? null])).toEqual([
       ["person/hair-back/3", null],
       ["person/head/1", null],
