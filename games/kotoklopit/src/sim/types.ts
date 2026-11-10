@@ -1304,6 +1304,11 @@ export interface GameState {
   cats: Cat[];
   /** «Альбом пам'яті» (§9.7): коти, яких більше немає. */
   album: AlbumEntry[];
+  /**
+   * Події титрів життя (§4.2), яких не видно зі стану, — зміни посади й нова техніка. Немає — збереження старше за титри: такі
+   * події до нього в стрічку не потрапляють.
+   */
+  story?: StoryEntry[];
   /** Стосунки пар котів −100…+100 (§9.4): ключ — `id-id`, менший id першим. */
   relations: Record<string, number>;
   /**
@@ -1321,6 +1326,14 @@ export interface GameState {
   lastNight: NightReport | null;
   end: GameEnd | null;
 }
+
+/** Техніка, перша поява якої — подія титрів життя (§4.2). */
+export type StoryThing = "robot" | "fountain" | "feeder";
+
+/** Запис титрів життя (§4.2): зміна посади (`position` — індекс у `POSITIONS` після зміни) чи нова техніка вдома. */
+export type StoryEntry =
+  | { kind: "career"; day: number; change: "promoted" | "demoted" | "fired" | "hired"; position: number }
+  | { kind: "thing"; day: number; thing: StoryThing; quality: Quality };
 
 /** Збереження: поточний стан і знімки для перегравання (§6.1). */
 export interface Save {

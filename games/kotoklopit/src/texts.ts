@@ -3,11 +3,12 @@
 import { catsAxis, careerAxis, type CareerAxis, type CatsAxis } from "./sim/finale";
 import { lifeLevel } from "./sim/farewell";
 import type { CleanerVisit, GuestsVisit } from "./sim/events";
+import type { StoryItem } from "./sim/story";
 import type { TraitArea } from "./sim/traits";
 import type { PersonStateId } from "./view/personstates";
 import { formatClock } from "./sim/time";
 import { accidentBedtime, accidentHome, accidentOf } from "./sim/trips";
-import type { AccidentLoss, Address, AlbumEntry, FarewellCause, GameEnd, GameState, IllnessId, Ledger, Medicine, ParcelsPickup, Product, Quality, Sex, Spending } from "./sim/types";
+import type { AccidentLoss, Address, AlbumEntry, Cat, FarewellCause, GameEnd, GameState, IllnessId, Ledger, Medicine, ParcelsPickup, Product, Quality, Sex, Spending } from "./sim/types";
 import { plural } from "./ui/titles";
 
 /**
@@ -1343,3 +1344,27 @@ export const TRAIT_ABOUT: Record<string, readonly [string, string]> = {
   chubby: ["Від ласощів і зайвих порцій кругліє на очах.", "Тримає форму, хоча від частих ласощів і зайвих порцій потроху кругліє."],
   warmth: ["Шукає тепла: спить над батареєю, під ковдрою й на теплому комп'ютері, а в холод мерзне.", "Тепла шукає рідко, охоче спить на прохолодній плитці у ванній, а в спеку знемагає й більше п'є."],
 };
+
+// ── Титри життя (§4.2, `TEXTS.md`, «Титри життя»). КОНТРАКТ: сигнатури спільні; тексти заповнює пакет «сим і тексти». ──
+
+/** Дата події стрічки: «Тиждень N, день». */
+export function storyDate(day: number): string {
+  return `Тиждень ${Math.floor(day / 7) + 1}`;
+}
+
+/** Підпис полароїда чи рядка: `title` — на полі від руки (чи сам рядок), `text` — довший текст під полароїдом. */
+export interface StoryCaption {
+  date: string;
+  title: string;
+  text?: string;
+}
+
+export function storyCaption(item: StoryItem, state: GameState): StoryCaption {
+  void state;
+  return { date: storyDate(item.day), title: item.kind };
+}
+
+/** Кіт, що лишається вдома (§4.2, «Живі коти»): ім'я на полі й як йому живеться зараз, у теперішньому часі. */
+export function livingCatCaption(cat: Cat): { title: string; text: string } {
+  return { title: cat.name, text: "" };
+}
