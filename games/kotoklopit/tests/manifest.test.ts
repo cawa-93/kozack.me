@@ -422,6 +422,8 @@ describe("маніфест: речі котів, у руках, бруд", () =>
       burnt: "item/dish/burnt",
       // Зіпсована страва (§8.7): своя тарілка; зіпсований мамин судочок — той самий судочок.
       spoiled: "item/dish/spoiled",
+      // Робот-пилосос із базою (§8.7, «Переставити річ»): у руках — сам робот.
+      robot: "item/robot/cheap",
       catfood: "item/scoop",
       cat: null,
       toy: "item/toy/cheap",

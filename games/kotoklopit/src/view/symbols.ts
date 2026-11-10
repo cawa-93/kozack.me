@@ -2,7 +2,7 @@
 // перевірити, що кожна відмова має свою іконку.
 
 import type { GameEvent, HissCause, Need, Refusal } from "../sim/events";
-import { movableItem } from "../sim/targets";
+import { movableThing } from "../sim/moving";
 import type { Cat, Destination, Dish, GameState, Item, Product, Quality, StatName, ThingKind } from "../sim/types";
 import type { IconName, Mark } from "./iconnames";
 import type { PersonStateId } from "./personstates";
@@ -137,9 +137,10 @@ export function showerIcon(activity: GameState["character"]["activity"], power: 
 export function carryIcon(state: GameState): IconName | null {
   const { held, activity } = state.character;
   if (held?.kind === "thing") return THING_ICONS[held.item.kind];
+  if (held?.kind === "robot") return THING_ICONS.robot;
   if (held !== null || activity !== null) return null;
-  const item = movableItem(state);
-  return item ? THING_ICONS[item.kind] : null;
+  const thing = movableThing(state);
+  return thing === null ? null : THING_ICONS[thing === "robot" ? "robot" : thing.kind];
 }
 
 /**
@@ -173,6 +174,8 @@ export function itemIcon(item: Item): IconName {
       return "vacuum";
     case "thing":
       return THING_ICONS[item.item.kind];
+    case "robot":
+      return THING_ICONS.robot;
   }
 }
 

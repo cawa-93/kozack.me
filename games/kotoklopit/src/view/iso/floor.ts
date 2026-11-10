@@ -14,7 +14,7 @@ import { carriedToy } from "../../sim/catai";
 import { CARRIER } from "../../sim/config";
 import { DUST_SPOTS, dustOf } from "../../sim/dust";
 import type { GameEvent } from "../../sim/events";
-import { CARRIER_SPOT, itemPoint, ROBOT_DOCK, slotCenter } from "../../sim/home";
+import { CARRIER_SPOT, itemPoint, robotDockAt, robotDocked, slotCenter } from "../../sim/home";
 import { cleaningTool, FUR_SPOTS, robotAt, tuftCat, tuftsOf } from "../../sim/household";
 import { thingSpot } from "../../sim/moving";
 import { CARRIER_TARGET, VACUUM_TARGET, type Target } from "../../sim/targets";
@@ -321,10 +321,15 @@ export class IsoFloorView implements WorldPart {
   private drawHousehold(state: GameState, time: number): void {
     const { home } = state;
     const robot = home.appliances.robot;
-    if (robot) {
+    // Робота з базою несуть у руках (§8.7) — у квартирі їх немає.
+    const docked = robotDocked(state);
+    if (robot && docked) {
       // Док плаский: робот на ньому — над ним.
-      this.single("dock", dockFrame(state), ROBOT_DOCK, 14, { flat: true, half: 32 });
+      this.single("dock", dockFrame(state), robotDockAt(state), 14, { flat: true, half: 32 });
       this.single("robot", robotFrame(state, robot), robotAt(state), isoItemLook("robot", robot).height, { id: "robot", half: isoItemLook("robot", robot).half });
+    } else {
+      this.hideSingle("dock");
+      this.hideSingle("robot");
     }
     this.drawCarriers(state, time);
     this.single("basket", { id: "env/laundry-basket", state: basketState(home.clothes) }, BASKET_AT, isoItemLook("basket").height, {
@@ -358,9 +363,10 @@ export class IsoFloorView implements WorldPart {
   /** Поки річ у руках, видно, де вона стане (§8.7): напівпрозора річ і контур клітинки. Поставити нікуди — нічого не видно. */
   private drawThingSpot(state: GameState): void {
     const held = state.character.held;
-    const place = held?.kind === "thing" ? thingSpot(state) : null;
+    const place = held?.kind === "thing" || held?.kind === "robot" ? thingSpot(state) : null;
+    this.drawRobotGhost(state, held?.kind === "robot" ? place : null);
     if (held?.kind !== "thing" || place === null) {
-      this.placeMark.hide();
+      if (held?.kind !== "robot" || place === null) this.placeMark.hide();
       return;
     }
     const { kind, quality } = held.item;
@@ -373,6 +379,28 @@ export class IsoFloorView implements WorldPart {
     ghost.image.setAlpha(GHOST_ALPHA);
     for (const extra of ghost.extras.values()) extra.image.setAlpha(GHOST_ALPHA);
     this.placeMark.show(at);
+  }
+
+  /** Напівпрозорі база й робот там, де стануть (§8.7, «Переставити річ»); `place` null — їх не видно. */
+  private drawRobotGhost(state: GameState, place: Vec | null): void {
+    const robot = state.home.appliances.robot;
+    if (place === null || !robot) {
+      this.hideSingle("ghost:dock");
+      this.hideSingle("ghost:robot");
+      return;
+    }
+    const at = { x: place.x + 0.5, y: place.y + 0.5 };
+    const look = isoItemLook("robot", robot);
+    const dock = this.single("ghost:dock", dockFrame(state), at, 14, { flat: true, half: 32 });
+    const body = this.single("ghost:robot", { id: `item/robot/${robot}`, state: "charging" }, at, look.height, { half: look.half });
+    dock.image.setAlpha(GHOST_ALPHA);
+    body.image.setAlpha(GHOST_ALPHA);
+    this.placeMark.show(at);
+  }
+
+  /** Сховати одиночну річ (`single`), якщо її вже малювали. */
+  private hideSingle(name: string): void {
+    this.singles.get(name)?.image.setVisible(false);
   }
 
   private single(name: string, frame: IsoFrame, at: Vec, height: number, options: IsoPointOptions, under?: string): Spot {

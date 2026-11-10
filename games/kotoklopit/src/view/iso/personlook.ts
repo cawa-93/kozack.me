@@ -168,6 +168,8 @@ export const BROOM_HELD = { frame: { id: "item/broom", state: null } as IsoFrame
 
 /** Річ котячого кутка в руках (§8.7): той самий кадр, що на підлозі; велику несуть меншою, інакше вона закрила б персонажа. */
 const THING_HELD: Record<PlacedItem["kind"], number> = { bowl: 1, water: 1, litter: 0.62, house: 0.55, scratcher: 0.5 };
+/** Масштаб робота-пилососа в руках: диск ширший за миску, тож менше, як лоток. */
+const ROBOT_HELD = 0.6;
 
 /** Кадри пилу з-під віника (`fx/sweep-dust`) і скільки триває кожен, мс. */
 const SWEEP_DUST = { frames: ["a", "b", "c"], ms: 170 } as const;
@@ -213,6 +215,9 @@ export function heldFrame(item: Item | null, anim: PersonAnimId | null = null, t
       return tool === "vacuum" ? { socket: "held", frame: VACUUM_HELD.frame, scale: VACUUM_HELD.scale } : { socket: "held", frame: BROOM_HELD.frame, scale: BROOM_HELD.scale };
     case "thing":
       return { socket: "held", frame: item.feeder ? feederFrame(item.feeder) : placedFrame(item.item), scale: THING_HELD[item.item.kind] };
+    // Робот-пилосос із базою (§8.7): у руках видно сам робот, вимкнений, як на базі.
+    case "robot":
+      return { socket: "held", frame: { id: `item/robot/${item.quality}`, state: "charging" }, scale: ROBOT_HELD };
     default:
       return null;
   }

@@ -97,8 +97,14 @@ export interface CarriedThing {
   feeder?: Feeder;
 }
 
+/** Робот-пилосос із базою в руках (§8.7, «Переставити річ»): поки його несуть, він не прибирає. */
+export interface HeldRobot {
+  kind: "robot";
+  quality: Quality;
+}
+
 /** Річ у руках (§8.4): у руках лише одна. */
-export type Item = Dish | CatFoodScoop | CarriedCat | HeldToy | HeldVacuum | CarriedThing;
+export type Item = Dish | CatFoodScoop | CarriedCat | HeldToy | HeldVacuum | CarriedThing | HeldRobot;
 
 /** Положення персонажа в квартирі, у клітинках підлоги (§8.4). */
 export interface Body {
@@ -595,6 +601,10 @@ export interface Home {
   caged?: number[];
   /** Техніка (§8.7): якість кожної, null — немає. */
   appliances: Record<Appliance, Quality | null>;
+  /** Де база робота-пилососа (§8.7, «Переставити річ»): центр клітинки; немає — на старому місці (`ROBOT_DOCK`). */
+  robotDock?: Vec;
+  /** Робота з базою несуть у руках (§8.7): у квартирі їх немає, і робот не прибирає. */
+  robotCarried?: true;
   /** Автогодівниці над мисками (§9.12). */
   feeders?: Feeder[];
   /** Шерсть на меблях 0–100 (§8.7). */

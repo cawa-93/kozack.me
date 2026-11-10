@@ -1,6 +1,6 @@
 // Де звучать речі дому (§11.4а): точки, яких немає серед речей квартири за id, — сховища запасів, уламки.
 
-import { CARRIER_SPOT, ROBOT_DOCK } from "../../../sim/home";
+import { CARRIER_SPOT, robotDockAt } from "../../../sim/home";
 import { STORAGES } from "../../../sim/storage";
 import type { GameState, Product } from "../../../sim/types";
 import type { SoundAt } from "../types";
@@ -16,7 +16,7 @@ export function storageAt(product: Product): SoundAt {
  */
 export function brokeAt(state: GameState, what: string): SoundAt {
   if (what === "carrier") return CARRIER_SPOT;
-  if (what === "robot") return ROBOT_DOCK;
+  if (what === "robot") return robotDockAt(state);
   const messes = state.home.messes;
   for (let i = messes.length - 1; i >= 0; i--) {
     const mess = messes[i]!;

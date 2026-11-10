@@ -264,8 +264,18 @@ export const LAUNDRY_BASKET: Vec = { x: 9.5, y: 1.75 };
  */
 export const VACUUM_HOME: Vec = { x: 16.5, y: 10.5 };
 
-/** База робота-пилососа (§8.7). */
+/** База робота-пилососа на старті (§8.7); її можна переставити (`robotDockAt`). */
 export const ROBOT_DOCK: Vec = { x: 17.6, y: 8.2 };
+
+/** Де база робота-пилососа (§8.7, «Переставити річ»); поки робота несуть, — де вона стояла. */
+export function robotDockAt(state: Pick<GameState, "home">): Vec {
+  return state.home.robotDock ?? ROBOT_DOCK;
+}
+
+/** База робота стоїть у квартирі: робот є, і його не несуть (§8.7). */
+export function robotDocked(state: Pick<GameState, "home">): boolean {
+  return state.home.appliances.robot !== null && state.home.robotCarried !== true;
+}
 
 /**
  * Велика коробка дня «Велика коробка» (§4.1): клітинка килима вітальні між шляхами від дверей до ванної й до кухні. Речі сюди й
@@ -415,13 +425,12 @@ export function centerOf(r: Rect): Vec {
 }
 
 /**
- * Вільна підлога, куди річ усе одно не ставлять (§8.7): кошик, переноска, база робота й стілець за комп'ютером; позаду меблів і
+ * Вільна підлога, куди річ усе одно не ставлять (§8.7): кошик, переноска й стілець за комп'ютером (база робота — де стоїть, `placeFree`); позаду меблів і
  * ящиків її не видно (`tests/places.test.ts`); на решті клітинок кіт щось робить сам і стояв би на речі.
  */
 const NO_PLACE: readonly Vec[] = [
   LAUNDRY_BASKET,
   CARRIER_TILE,
-  ROBOT_DOCK,
   { x: 6, y: 7 },
   { x: 7, y: 7 },
   { x: 4, y: 4 },
@@ -473,10 +482,11 @@ export function slotTaken(state: Pick<GameState, "home">, id: string): boolean {
   return state.home.items.some((i) => "slot" in i && i.slot === id);
 }
 
-/** На клітинку можна поставити річ (§8.7): немає речі, автогодівниці й того, що річ закрила б собою. */
+/** На клітинку можна поставити річ (§8.7): немає речі, автогодівниці, бази робота й того, що річ закрила б собою. */
 function placeFree(state: Pick<GameState, "home">, place: Place): boolean {
   const { items, feeders, messes, vacuumAt } = state.home;
   const here = (p: Vec): boolean => sameTile(p, place.x, place.y);
+  if (robotDocked(state) && here(robotDockAt(state))) return false;
   if (slotTaken(state, place.id) || feeders?.some((f) => f.slot === place.id) === true) return false;
   if (items.some((i) => i.kind === "toy" && i.hidden === undefined && here(i))) return false;
   return !messes.some(here) && !(vacuumAt && here(vacuumAt));

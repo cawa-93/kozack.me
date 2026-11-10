@@ -9,7 +9,7 @@ import { addSupply, flySupply, settleFeeders, takeSupplies, topQuality, useSuppl
 import { emit } from "./events";
 import { hygieneFactorMod, powerOut, sheddingFactor } from "./modifiers";
 import { addMess, whereIs } from "./catai";
-import { CARRIER_TILE, hiddenTile, isSolid, isWall, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, ROBOT_DOCK, roomAt, slotCenter, STASHES } from "./home";
+import { CARRIER_TILE, hiddenTile, isFixedSolid, isSolid, isWall, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, ROBOT_DOCK, robotDockAt, robotDocked, roomAt, slotCenter, STASHES } from "./home";
 import { loudNoise, quietRobot } from "./noise";
 import { waterCapacity } from "./resources";
 import type { Rng } from "./rng";
@@ -348,7 +348,7 @@ function vacuumFits(state: GameState, x: number, y: number): boolean {
   if (isSolid(state, x, y) || hiddenTile(x, y) || objectAt(state, x, y) !== null) return false;
   const home = state.home;
   const on = (p: Vec): boolean => Math.floor(p.x) === x && Math.floor(p.y) === y;
-  if (on(LAUNDRY_BASKET) || (home.carriers.length > 0 && on(CARRIER_TILE)) || (home.appliances.robot && on(ROBOT_DOCK))) return false;
+  if (on(LAUNDRY_BASKET) || (home.carriers.length > 0 && on(CARRIER_TILE)) || (robotDocked(state) && on(robotDockAt(state)))) return false;
   return !home.items.some((item) => on(itemTile(item)));
 }
 
@@ -514,7 +514,7 @@ function robotClean(state: GameState, quality: Quality, start: number, from: num
     return;
   }
   const heard = (state.home.robotHeard ??= []);
-  const at = along(ROBOT_ROUTE, (hi - start) / HOUSEHOLD.robotMinutes);
+  const at = along(routePlan(robotDockAt(state)), (hi - start) / HOUSEHOLD.robotMinutes);
   const fresh = (cat: Cat): boolean => !heard.includes(cat.id);
   heard.push(...(ROBOT[quality].loud ? loudNoise(state, "robot", at, fresh) : quietRobot(state, at, fresh)));
 }
@@ -528,9 +528,10 @@ const ROBOT_SWEEP_STEP = 0.05;
 /** Робот-пилосос проїхав маршрутом від частки `from` до `to` (0–1): прибрати, повз що він проїхав (§8.7). Павутини не дістає. */
 function robotSweep(state: GameState, quality: Quality, from: number, to: number): void {
   const { reach, messes } = ROBOT[quality];
-  const steps = Math.max(1, Math.ceil(((to - from) * ROUTE_LENGTH) / ROBOT_SWEEP_STEP));
+  const plan = routePlan(robotDockAt(state));
+  const steps = Math.max(1, Math.ceil(((to - from) * plan.total) / ROBOT_SWEEP_STEP));
   const swept: Swept = { tufts: [], dust: [], messes: [] };
-  for (let k = 0; k <= steps; k++) sweep(state, along(ROBOT_ROUTE, from + ((to - from) * k) / steps), { floor: reach, web: 0 }, messes, swept);
+  for (let k = 0; k <= steps; k++) sweep(state, along(plan, from + ((to - from) * k) / steps), { floor: reach, web: 0 }, messes, swept);
   reportSwept(state, "robot", swept);
 }
 
@@ -540,7 +541,8 @@ function robotSweep(state: GameState, quality: Quality, from: number, to: number
  */
 export function robotProgress(state: GameState): number | null {
   const quality = state.home.appliances.robot;
-  if (!quality || powerOut(state)) return null;
+  // Робота несуть у руках (§8.7, «Переставити річ»): він не прибирає.
+  if (!quality || !robotDocked(state) || powerOut(state)) return null;
   const minute = state.minute % 1440;
   const start = ROBOT[quality].starts.find((s) => minute >= s && minute < s + HOUSEHOLD.robotMinutes);
   return start === undefined ? null : (minute - start) / HOUSEHOLD.robotMinutes;
@@ -608,28 +610,86 @@ const ROBOT_ROUTE: readonly Vec[] = [
   ROBOT_DOCK,
 ];
 
-/** Довжини відрізків маршруту робота-пилососа й увесь маршрут, клітинки. */
-const ROUTE_LENGTHS: readonly number[] = ROBOT_ROUTE.slice(1).map((p, i) => Math.hypot(p.x - (ROBOT_ROUTE[i]?.x ?? 0), p.y - (ROBOT_ROUTE[i]?.y ?? 0)));
-const ROUTE_LENGTH = ROUTE_LENGTHS.reduce((a, b) => a + b, 0);
+/** Маршрут робота від бази й назад (§8.7): точки, довжини відрізків і весь шлях, клітинки. */
+interface RoutePlan {
+  points: readonly Vec[];
+  lengths: readonly number[];
+  total: number;
+}
+
+/** Об'їзд квартири без самої бази: з будь-якої бази робот їде до його початку й вертається з кінця. */
+const TOUR = ROBOT_ROUTE.slice(1, -1);
+const plans = new Map<string, RoutePlan>();
+
+function planOf(points: readonly Vec[]): RoutePlan {
+  const lengths = points.slice(1).map((p, i) => Math.hypot(p.x - (points[i]?.x ?? 0), p.y - (points[i]?.y ?? 0)));
+  return { points, lengths, total: lengths.reduce((a, b) => a + b, 0) };
+}
+
+/**
+ * Маршрут від бази (§8.7, «Переставити річ»): зі старої бази — `ROBOT_ROUTE`, з переставленої — найкоротший шлях клітинками до
+ * початку об'їзду, сам об'їзд і назад тим самим шляхом. Шлях іде центрами сусідніх клітинок підлоги, тож крізь стіни й меблі
+ * не проходить. Рахується раз на кожне місце бази.
+ */
+function routePlan(dock: Vec): RoutePlan {
+  const key = `${dock.x},${dock.y}`;
+  let plan = plans.get(key);
+  if (!plan) {
+    const first = TOUR[0] ?? ROBOT_DOCK;
+    const last = TOUR[TOUR.length - 1] ?? ROBOT_DOCK;
+    const same = dock.x === ROBOT_DOCK.x && dock.y === ROBOT_DOCK.y;
+    plan = planOf(same ? ROBOT_ROUTE : [dock, ...floorPath(dock, first), ...TOUR, ...floorPath(dock, last).reverse(), dock]);
+    plans.set(key, plan);
+  }
+  return plan;
+}
+
+/** Центри клітинок між `from` і `to` найкоротшим шляхом підлогою (без їхніх власних клітинок), лише на поворотах. */
+function floorPath(from: Vec, to: Vec): Vec[] {
+  const start = { x: Math.floor(from.x), y: Math.floor(from.y) };
+  const goal = { x: Math.floor(to.x), y: Math.floor(to.y) };
+  const key = (p: Vec): string => `${p.x},${p.y}`;
+  const previous = new Map<string, Vec | null>([[key(start), null]]);
+  const queue: Vec[] = [start];
+  for (let head = 0; head < queue.length && !previous.has(key(goal)); head++) {
+    const tile = queue[head]!;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const next = { x: tile.x + dx, y: tile.y + dy };
+      if (previous.has(key(next)) || isWall(next.x, next.y) || isFixedSolid(next.x, next.y)) continue;
+      previous.set(key(next), tile);
+      queue.push(next);
+    }
+  }
+  const tiles: Vec[] = [];
+  for (let tile = previous.get(key(goal)); tile && key(tile) !== key(start); tile = previous.get(key(tile))) tiles.unshift(tile);
+  const centers = tiles.map((t) => ({ x: t.x + 0.5, y: t.y + 0.5 }));
+  // Проміжні клітинки на прямій нічого не змінюють: лише повороти.
+  return centers.filter((c, i) => {
+    const a = i === 0 ? from : centers[i - 1]!;
+    const b = i === centers.length - 1 ? to : centers[i + 1]!;
+    return (c.x - a.x) * (b.y - c.y) - (c.y - a.y) * (b.x - c.x) !== 0;
+  });
+}
 
 /** Точка на маршруті за часткою пройденого шляху 0–1. */
-function along(route: readonly Vec[], progress: number): Vec {
-  const lengths = route === ROBOT_ROUTE ? ROUTE_LENGTHS : route.slice(1).map((p, i) => Math.hypot(p.x - (route[i]?.x ?? 0), p.y - (route[i]?.y ?? 0)));
-  let left = progress * lengths.reduce((a, b) => a + b, 0);
+function along(plan: RoutePlan, progress: number): Vec {
+  const { points, lengths } = plan;
+  let left = progress * plan.total;
   for (let i = 0; i < lengths.length; i++) {
     const length = lengths[i] ?? 0;
-    const a = route[i] ?? ROBOT_DOCK;
-    const b = route[i + 1] ?? ROBOT_DOCK;
+    const a = points[i] ?? ROBOT_DOCK;
+    const b = points[i + 1] ?? ROBOT_DOCK;
     if (left <= length) return { x: a.x + ((b.x - a.x) * left) / length, y: a.y + ((b.y - a.y) * left) / length };
     left -= length;
   }
-  return route[route.length - 1] ?? ROBOT_DOCK;
+  return points[points.length - 1] ?? ROBOT_DOCK;
 }
 
 /** Де робот-пилосос: у дорозі — на маршруті, інакше — на базі (§8.7). */
 export function robotAt(state: GameState): Vec {
   const progress = robotProgress(state);
-  return progress === null ? ROBOT_DOCK : along(ROBOT_ROUTE, progress);
+  const dock = robotDockAt(state);
+  return progress === null ? dock : along(routePlan(dock), progress);
 }
 
 /**

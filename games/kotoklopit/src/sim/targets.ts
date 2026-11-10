@@ -118,6 +118,7 @@ function fitsHeld(state: GameState, target: Target): boolean {
       return target.type === "cat" || object === "trash";
     case "vacuum":
     case "thing":
+    case "robot":
       return false;
   }
 }

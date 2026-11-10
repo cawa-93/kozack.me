@@ -3,7 +3,7 @@
 
 import type { GameEvent, ModifierEvent } from "../../../sim/events";
 import { cleaningTool } from "../../../sim/household";
-import { CARRIER_SPOT, itemPoint, ROBOT_DOCK } from "../../../sim/home";
+import { CARRIER_SPOT, itemPoint, robotDockAt } from "../../../sim/home";
 import type { GameState } from "../../../sim/types";
 import type { Cue, SoundAt } from "../types";
 import type { HomeSound } from "./sounds";
@@ -47,9 +47,10 @@ const RECEIVED: readonly HomeCue[] = [
   { sound: "door", at: "door", delayMs: 250 },
   { sound: "parcel", at: "door", delayMs: 700 },
 ];
-const ROBOT_BACK: readonly HomeCue[] = [
-  { sound: "beep-high", at: ROBOT_DOCK },
-  { sound: "beep-low", at: ROBOT_DOCK, delayMs: 220 },
+/** Робот повернувся на базу (§8.7): два писки звідти, де вона стоїть. */
+const robotBack = (state: GameState): readonly HomeCue[] => [
+  { sound: "beep-high", at: robotDockAt(state) },
+  { sound: "beep-low", at: robotDockAt(state), delayMs: 220 },
 ];
 const LAUNDRY: Record<Extract<GameEvent, { type: "laundry" }>["stage"], readonly HomeCue[]> = {
   cat: one("washer-open", "washer"),
@@ -83,6 +84,8 @@ export function homeCues(event: GameEvent, state: GameState): readonly HomeCue[]
       return kitchen(event.object, event.type === "took");
     case "thing-moved":
       return one(event.stage === "taken" ? "thing-take" : "thing-put", itemPoint(event.item));
+    case "robot-moved":
+      return one(event.stage === "taken" ? "thing-take" : "thing-put", event.at);
     case "trashed":
       return STATIC.trashed;
     case "discarded":
@@ -107,7 +110,7 @@ export function homeCues(event: GameEvent, state: GameState): readonly HomeCue[]
       if (cleaningTool(state) !== "vacuum") return NONE;
       return event.stage === "taken" ? STATIC.vacuumOn : one("vacuum-off", state.home.vacuumAt ?? "person");
     case "robot":
-      return ROBOT_BACK;
+      return robotBack(state);
     case "broke":
       return one("broke", brokeAt(state, event.what));
     case "modifier":

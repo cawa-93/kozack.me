@@ -53,6 +53,9 @@ export function heldThing(item: Item | null): HeldThing | null {
     case "vacuum":
     case "thing":
       return item.kind;
+    // Базу робота несуть, як річ котячого кутка (§8.7).
+    case "robot":
+      return "thing";
   }
 }
 
@@ -183,6 +186,7 @@ export function personEventAnim(event: GameEvent): PersonOneShot | null {
     case "put":
       return once("put");
     case "thing-moved":
+    case "robot-moved":
       return once(event.stage === "taken" ? "take" : "put");
     case "cat-seated":
     case "carrier-opened":

@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { freeSlots, place, utilitiesDue } from "../src/sim/economy";
 import { newGame } from "../src/sim/game";
-import { CARRIER_TILE, hiddenTile, isWall, LAUNDRY_BASKET, MAP_HEIGHT, nearestFreePlace, OBJECTS, PLACES, ROBOT_DOCK, roomAt, slotById, SLOTS } from "../src/sim/home";
+import { CARRIER_TILE, hiddenTile, isWall, LAUNDRY_BASKET, MAP_HEIGHT, nearestFreePlace, OBJECTS, PLACES, roomAt, slotById, SLOTS } from "../src/sim/home";
 import { WALL_HEIGHT, WALL_SEGMENTS } from "../src/view/art/manifest/lib/geometry";
 import type { GameState, HomeItem, Vec } from "../src/sim/types";
 import { boxCovers, wallsToFade } from "../src/view/iso/geometry";
@@ -51,9 +51,10 @@ describe("клітинки для речей (§8.7)", () => {
     }
   });
 
-  it("немає кошика, переноски, бази робота й стільців, засунутих чи висунутих", () => {
+  // База робота — де стоїть зараз (її переставляють, §8.7): на неї речі не стають (`tests/robotdock.test.ts`).
+  it("немає кошика, переноски й стільців, засунутих чи висунутих", () => {
     const seats = SEATS.flatMap((seat) => [seatAt(seat, "tucked"), seatAt(seat, "pulled")].map((p) => ({ x: p.x, y: p.y })));
-    for (const p of [LAUNDRY_BASKET, CARRIER_TILE, ROBOT_DOCK, ...seats]) expect(placeTiles.has(tile(p)), tile(p)).toBe(false);
+    for (const p of [LAUNDRY_BASKET, CARRIER_TILE, ...seats]) expect(placeTiles.has(tile(p)), tile(p)).toBe(false);
   });
 
   // Місця магазину — сталий розклад, і сховища поруч можуть заступати річ скраю: тут лише решта клітинок.

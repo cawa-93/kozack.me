@@ -1,0 +1,12 @@
+{
+  "name": "Робот у руках",
+  "description": "Середа першого тижня, 10:00. Персонажка несе робот-пилосос із базою (§8.7, «Переставити річ»): на підлозі видно, де стане база. Натисніть кнопку перестановки (F) — база стане там; о 12:00 робот виїде з нової бази й вернеться на неї.",
+  "game": { "address": "she", "difficulty": "normal", "seed": 5 },
+  "state": {
+    "day": 2,
+    "minute": 600,
+    "modifiers": { "day": null },
+    "character": { "body": { "x": 4.2, "y": 9.5, "facing": { "x": 1, "y": 0 } }, "held": { "kind": "robot", "quality": "premium" } },
+    "home": { "appliances": { "robot": "premium" }, "robotCarried": true }
+  }
+}
