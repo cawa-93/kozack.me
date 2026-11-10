@@ -131,7 +131,11 @@ export function bathe(state: GameState, rng: Rng): boolean {
   const scratched = feel.scratch > 0 && rng.chance(feel.scratch);
   if (scratched) claw(state, cat, "bath");
   cat.bathedDay = state.day;
-  if (quality === "premium") cureDisease(state, cat, "dermatitis", rng);
+  // Дорогий шампунь лікує дерматит і виводить бліх (§8.7).
+  if (quality === "premium") {
+    cureDisease(state, cat, "dermatitis", rng);
+    cureDisease(state, cat, "fleas", rng);
+  }
   emit(state, { type: "bathed", cat: cat.id });
   if (water <= -2) {
     // Вирвався з рук і тікає ховатися.

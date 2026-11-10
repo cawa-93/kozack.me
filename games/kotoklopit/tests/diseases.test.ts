@@ -511,6 +511,26 @@ describe("дерматит безшерстих (§8.7)", () => {
   });
 });
 
+describe("купання від бліх (§8.7)", () => {
+  it("купання дорогим шампунем виводить бліх, дешевим — ні", () => {
+    const bathed = (shampoo: "cheap" | "premium"): { cat: Cat; events: GameEvent[] } => {
+      const save = game();
+      const cat = withCat(save);
+      fallIll(save.current, cat, "fleas");
+      save.current.home.supplies.shampoo = { cheap: shampoo === "cheap" ? 1 : 0, premium: shampoo === "premium" ? 1 : 0 };
+      hold(save, cat);
+      const log = recordEvents();
+      bathe(save.current, createRng(1));
+      log.stop();
+      return { cat, events: log.events };
+    };
+    const premium = bathed("premium");
+    expect(hasDisease(premium.cat, "fleas")).toBe(false);
+    expect(premium.events).toContainEqual({ type: "cat-cured", cat: premium.cat.id, disease: "fleas" });
+    expect(hasDisease(bathed("cheap").cat, "fleas")).toBe(true);
+  });
+});
+
 describe("симптоми (§9.5)", () => {
   it("свербіж видно, поки кіт не спить; уві сні — ні", () => {
     const itches = (sleeping: boolean): number => {
