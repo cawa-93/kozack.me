@@ -41,7 +41,7 @@ export interface HomeObject extends Rect {
   interactive: boolean;
   /** Сховище, що з'являється вдома лише після першого отримання одного з цих запасів (§6.4). */
   requires?: readonly Product[];
-  /** Крізь річ можна пройти: вона не заступає дорогу (ящики біля входу). */
+  /** Річ не тверда: на неї стають коти (підвіконня, ящики біля входу); персонаж крізь ящики не проходить (`blocksPerson`). */
   walkable?: true;
 }
 
@@ -120,7 +120,7 @@ export const OBJECTS: readonly HomeObject[] = [
   object("litter-bag", "litterBag", 5, 6, 1, 1, ["litter"]),
   object("sterile-bin", "sterileBin", 18, 6, 1, 1, ["sterileFood"]),
   object("cat-kit", "catKit", 13, 6, 1, 1, ["pills", "drops", "treats", "collar", "catnip"]),
-  // Ящики біля входу (§6.4): стоять, поки в них є куплені запаси; невисокі — через них переступають.
+  // Ящики біля входу (§6.4): стоять, поки в них є куплені запаси чи сусідські посилки; коти на них вилазять, персонаж обходить.
   // Не в ряду біля дверей: його закриває передня стіна (камера «три чверті»).
   { ...object("boxes", "boxes", 12, 9), walkable: true },
 ];
@@ -375,6 +375,13 @@ const covers = (o: Rect, x: number, y: number): boolean => x >= o.x && x < o.x +
 /** Клітинка непрохідна; усе за межами карти — теж. */
 export function isSolid(state: Pick<GameState, "home" | "modifiers" | "today">, x: number, y: number): boolean {
   return (SOLID[y]?.[x] ?? true) || OPTIONAL.some((o) => covers(o, x, y) && isPresent(state, o)) || (x === BIG_BOX.x && y === BIG_BOX.y && hasBigBox(state));
+}
+
+const BOXES = OBJECTS.find((o) => o.kind === "boxes");
+
+/** Крізь клітинку не пройде персонаж (§6.4): вона тверда — чи там купа ящиків біля входу, на яку вилазять лише коти. */
+export function blocksPerson(state: Pick<GameState, "home" | "modifiers" | "today">, x: number, y: number): boolean {
+  return isSolid(state, x, y) || (BOXES !== undefined && covers(BOXES, x, y) && hasBoxes(state));
 }
 
 /** Річ квартири на клітинці, якщо вона там є: на меблях коти сплять і ховаються. */

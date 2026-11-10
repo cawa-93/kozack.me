@@ -4,7 +4,7 @@ import { changeStat } from "../src/sim/character";
 import { BODY_PACE } from "../src/sim/config";
 import { onEvent, type GameEvent } from "../src/sim/events";
 import { advance, drive, goToSleep, interact } from "../src/sim/game";
-import { distanceToRect, isSolid, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, type Rect } from "../src/sim/home";
+import { blocksPerson, distanceToRect, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, type Rect } from "../src/sim/home";
 import { hoursUntilWake } from "../src/sim/sleep";
 import type { NightReport, Save, Vec } from "../src/sim/types";
 
@@ -84,7 +84,7 @@ function reachTiles(id: string): Vec[] {
   const tiles: Vec[] = [];
   for (let y = 0; y < MAP_HEIGHT; y++) {
     for (let x = 0; x < MAP_WIDTH; x++) {
-      if (!isSolid(current!.current, x, y) && distanceToRect({ x: x + 0.5, y: y + 0.5 }, o) <= 0.55) tiles.push({ x, y });
+      if (!blocksPerson(current!.current, x, y) && distanceToRect({ x: x + 0.5, y: y + 0.5 }, o) <= 0.55) tiles.push({ x, y });
     }
   }
   return tiles;
@@ -111,7 +111,7 @@ function path(from: Vec, id: string): Vec[] {
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
       const next = { x: tile.x + dx, y: tile.y + dy };
       const nextKey = `${next.x},${next.y}`;
-      if (isSolid(current!.current, next.x, next.y) || previous.has(nextKey)) continue;
+      if (blocksPerson(current!.current, next.x, next.y) || previous.has(nextKey)) continue;
       previous.set(nextKey, key);
       queue.push(next);
     }

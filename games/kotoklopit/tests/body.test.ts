@@ -287,3 +287,23 @@ describe("квартира", () => {
     expect(targetOf(save.current)).toBeNull();
   });
 });
+
+describe("ящики біля входу (§6.4)", () => {
+  /** Персонаж під ящиками йде вгору, на них: де він зупиниться. */
+  const walkUp = (withBoxes: boolean): number => {
+    const save = game();
+    if (withBoxes) save.current.home.boxes = { food: { cheap: 2, premium: 0 } };
+    const boxes = OBJECTS.find((o) => o.id === "boxes")!;
+    const body = save.current.character.body;
+    body.x = boxes.x + 0.5;
+    body.y = boxes.y + boxes.h + 0.5;
+    for (let i = 0; i < 200; i++) advance(save, 0.05, { move: { x: 0, y: -1 }, hold: false });
+    return body.y;
+  };
+
+  it("персонаж крізь купу ящиків не проходить, а без ящиків — іде далі", () => {
+    const boxes = OBJECTS.find((o) => o.id === "boxes")!;
+    expect(walkUp(true)).toBeGreaterThanOrEqual(boxes.y + boxes.h + BODY_RADIUS - 0.01);
+    expect(walkUp(false)).toBeLessThan(boxes.y);
+  });
+});

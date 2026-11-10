@@ -19,7 +19,7 @@ import { checkout, room, type CartLine } from "../src/sim/shop";
 import { advance, drive, goHome, goToSleep, interact, rewindAccident } from "../src/sim/game";
 import { adopt, shelterCats, tripCat, vetExam, vetExamPrice, vetTreat, vetTreatPrice } from "../src/sim/destinations";
 import { canLeave, startTrip } from "../src/sim/trips";
-import { CARRIER_SPOT, distanceToRect, isSolid, isWall, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, SURFACE_IDS, VACUUM_HOME, type Rect } from "../src/sim/home";
+import { blocksPerson, CARRIER_SPOT, distanceToRect, isWall, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, SURFACE_IDS, VACUUM_HOME, type Rect } from "../src/sim/home";
 import { canGoToSleep, hoursUntilWake } from "../src/sim/sleep";
 import { targetById, targetCenter, targetOf } from "../src/sim/targets";
 import type { BowlItem, Cat, GameState, Medicine, NightReport, Product, Save, Trip, Vec } from "../src/sim/types";
@@ -527,7 +527,7 @@ export class Bot {
     let bestDistance = Infinity;
     for (let y = 0; y < MAP_HEIGHT; y++) {
       for (let x = 0; x < MAP_WIDTH; x++) {
-        if (isSolid(this.state, x, y)) continue;
+        if (blocksPerson(this.state, x, y)) continue;
         const center = { x: x + 0.5, y: y + 0.5 };
         const distance = Math.hypot(center.x - at.x, center.y - at.y);
         if (distance < bestDistance && this.clearLine(center, { x: at.x, y: at.y, w: 0, h: 0 })) {
@@ -951,7 +951,7 @@ export class Bot {
     const on = new Set<string>();
     for (let y = 0; y < MAP_HEIGHT; y++) {
       for (let x = 0; x < MAP_WIDTH; x++) {
-        if (isSolid(this.state, x, y) || exclude.has(`${x},${y}`)) continue;
+        if (blocksPerson(this.state, x, y) || exclude.has(`${x},${y}`)) continue;
         // Запас на похибку округлення: кіт на меблях рівно за 0,7 клітинки.
         const distance = distanceToRect({ x: x + 0.5, y: y + 0.5 }, rect) - 1e-6;
         // Крізь стіну не дотягнутися: такі клітинки не годяться.
@@ -980,7 +980,7 @@ export class Bot {
       for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
         const next = { x: tile.x + dx, y: tile.y + dy };
         const nextKey = `${next.x},${next.y}`;
-        if (isSolid(this.state, next.x, next.y) || previous.has(nextKey)) continue;
+        if (blocksPerson(this.state, next.x, next.y) || previous.has(nextKey)) continue;
         previous.set(nextKey, key);
         queue.push(next);
       }

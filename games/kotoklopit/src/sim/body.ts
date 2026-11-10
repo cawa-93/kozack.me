@@ -28,7 +28,7 @@ import { emit } from "./events";
 import { moveFactor } from "./modifiers";
 import { canDashWhenIll, illnessSpeed, isIll, maybeInjure } from "./illness";
 import { observe } from "./knowledge";
-import { isSolid, SPAWN } from "./home";
+import { blocksPerson, SPAWN } from "./home";
 import { hearSteps, loudNoise } from "./noise";
 import { stateRng } from "./rng";
 import { isDrowsy } from "./sleep";
@@ -238,7 +238,7 @@ function overlapsSolid(state: GameState, x: number, y: number): boolean {
   const r = BODY_RADIUS;
   for (let ty = Math.floor(y - r); ty <= Math.floor(y + r - GAP); ty++) {
     for (let tx = Math.floor(x - r); tx <= Math.floor(x + r - GAP); tx++) {
-      if (isSolid(state, tx, ty)) return true;
+      if (blocksPerson(state, tx, ty)) return true;
     }
   }
   return false;
