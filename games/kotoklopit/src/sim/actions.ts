@@ -64,8 +64,8 @@ import { waterCapacity } from "./resources";
 import { stateRng } from "./rng";
 import { canGoToSleep } from "./sleep";
 import { absoluteMinute } from "./time";
-import { isDish } from "./dish";
-import { targetById, targetOf, type Target } from "./targets";
+import { fridgeSupply, isDish } from "./dish";
+import { anyTargetOf, targetById, targetOf, type Target } from "./targets";
 import type { BowlItem, Cat, GameState, HomeItem, Item, PetActivity, PetHand, PlayActivity, Quality, UseActivity, Vec } from "./types";
 import { exercise } from "./weight";
 import { angryAtWindow } from "./windowdoor";
@@ -92,12 +92,6 @@ function refuse(state: GameState, target: string, refusal: Refusal | BareRefusal
   return null;
 }
 
-/** Запас холодильника в руках (§6.4): сира порція — продукти, мамин судочок — судочки; інше — null. */
-function fridgeSupply(item: Item | null): { product: "food" | "momMeal"; quality: Quality } | null {
-  if (item?.kind === "raw") return { product: "food", quality: item.quality };
-  return item?.kind === "meal" && item.mom === true ? { product: "momMeal", quality: item.quality } : null;
-}
-
 /** Коротке натискання дії (§10). */
 export function tap(state: GameState): TapResult {
   const character = state.character;
@@ -109,7 +103,8 @@ export function tap(state: GameState): TapResult {
   // Під час тривалої дії натискання її не перериває: інакше можна випадково взяти страву зі столу.
   if (character.activity !== null) return null;
   const held = character.held;
-  const target = targetOf(state);
+  // З річчю в руках ціль — лише те, з чим вона щось робить (§10); такої поруч немає — найближча річ відмовить, чому тут ні.
+  const target = targetOf(state) ?? (held !== null ? anyTargetOf(state) : null);
   // Кота на руках опускають будь-де, а біля душу — купають (§8.7). Біля дверей, під якими чекає гість, — відчиняють йому, не
   // опускаючи кота: його й узяли на руки, щоб не вибіг (§9.12 «Подзвонили — двері гостю», рішення автора 2026-11-03).
   if (held?.kind === "cat") {

@@ -1,10 +1,11 @@
 // Ціль дії персонажа (§10): річ квартири, річ котячого кутка, безлад чи кіт — найближча,
 // і передусім та, на яку дивиться персонаж.
 
-import { highPlaceOf, isCarried } from "./catai";
+import { highPlaceOf, inStandoff, isCarried } from "./catai";
 import { FACING_PRIORITY, MOVING, REACH } from "./config";
-import { isDish } from "./dish";
+import { fridgeSupply, isDish } from "./dish";
 import { CARRIER_SPOT, centerOf, distanceToRect, hasPurchases, isSolid, isWall, itemPoint, objectAt, objectsOf, slotById, type HomeObject } from "./home";
+import { isDirty } from "./resources";
 import type { Body, Cat, GameState, HomeItem, Mess, PlacedItem, Vec } from "./types";
 
 export type Target =
@@ -35,6 +36,11 @@ const UNDERFOOT_FACING = -0.2;
 const MESS_PRIORITY = 0.3;
 /** Кіт на речі квартири (комп'ютер, ліжко, підвіконня) важливіший за саму річ: щоб скористатися нею, кота треба забрати. */
 const CAT_ON_OBJECT_PRIORITY = 0.4;
+/**
+ * Кіт на речі котячого кутка (§10) заступає її так само: він стоїть просто в її клітинці, тож поворот до нього не допомагає, а без
+ * штрафу річ вигравала б рівну відстань і кота було не взяти на руки.
+ */
+const CAT_ON_ITEM_PRIORITY = 0.4;
 
 /**
  * Кіт на меблях: на непрохідній речі чи на підвіконні — його клітинка прохідна, бо дошка вузька (§9.12, «Вікно»). Кіт у ящиках
@@ -74,6 +80,44 @@ function idleSurface(state: GameState, object: HomeObject): boolean {
  * збрехала б. Свої покупки в купі — ціль, як завжди: розпаковуються лише вони.
  */
 const onlyParcels = (state: GameState, object: HomeObject): boolean => object.kind === "boxes" && !hasPurchases(state);
+
+/** Річ котячого кутка чекає на персонажа (§10): порожня поїлка, брудний лоток — те, що каже її бабл стану. */
+function waitsForPerson(item: HomeItem): boolean {
+  return (item.kind === "water" && item.water === 0) || (item.kind === "litter" && isDirty(item));
+}
+
+/** На речі котячого кутка стоїть кіт (§10): тоді ціль — він, хіба що річ чекає на персонажа. */
+function coveredByCat(state: GameState, item: HomeItem): boolean {
+  if (item.kind === "toy" || waitsForPerson(item)) return false;
+  const slot = slotById(item.slot);
+  return state.cats.some((c) => c.away === null && !isCarried(state, c) && Math.floor(c.x) === slot.x && Math.floor(c.y) === slot.y);
+}
+
+/**
+ * З річчю в руках ціль — лише те, з чим ця річ щось робить (§10): решта її не заступає й не підсвічується. Кота в протистоянні
+ * торкаються й з повними руками (§9.4). Пилосос і річ котячого кутка ставлять будь-де — цілі з ними немає.
+ */
+function fitsHeld(state: GameState, target: Target): boolean {
+  const held = state.character.held;
+  if (held === null) return true;
+  const object = target.type === "object" ? target.object.kind : null;
+  const standoff = target.type === "cat" && inStandoff(target.cat);
+  switch (held.kind) {
+    case "catfood":
+      return (target.type === "item" && target.item.kind === "bowl") || object === "trash" || object === (held.sterile ? "sterileBin" : "catCabinet") || standoff;
+    case "raw":
+    case "meal":
+    case "burnt":
+      return object === "stove" || object === "table" || object === "counter" || object === "trash" || (object === "fridge" && fridgeSupply(held) !== null) || standoff;
+    case "cat":
+      return target.type === "carrier" || object === "shower" || object === "catKit" || object === "door";
+    case "toy":
+      return target.type === "cat" || object === "trash";
+    case "vacuum":
+    case "thing":
+      return false;
+  }
+}
 
 /** Усі цілі, з якими зараз можна взаємодіяти. */
 function candidates(state: GameState): Target[] {
@@ -188,12 +232,25 @@ export function movableItem(state: GameState): PlacedItem | null {
   return best;
 }
 
-/** Ціль дії: найближча, і передусім та, на яку дивиться персонаж. */
+/** Ціль дії: найближча, і передусім та, на яку дивиться персонаж; з річчю в руках — лише те, з чим вона щось робить (§10). */
 export function targetOf(state: GameState): Target | null {
+  return nearest(state, (target) => fitsHeld(state, target));
+}
+
+/**
+ * Найближча річ, хоч би що було в руках: біля неї натискання каже, чому з річчю в руках тут нічого не вийде (§10), коли
+ * справжньої цілі поруч немає.
+ */
+export function anyTargetOf(state: GameState): Target | null {
+  return nearest(state, () => true);
+}
+
+function nearest(state: GameState, fits: (target: Target) => boolean): Target | null {
   const body = state.character.body;
   let best: Target | null = null;
   let bestScore = Infinity;
   for (const target of candidates(state)) {
+    if (!fits(target)) continue;
     const distance = distanceTo(body, target);
     if (distance > REACH || !reachable(body, target)) continue;
     const facing = facingTo(body, targetCenter(target));
@@ -202,8 +259,14 @@ export function targetOf(state: GameState): Target | null {
     const high = target.type === "cat" && target.cat.stuck !== true && highPlaceOf(state, target.cat) !== null;
     const onObject = target.type === "cat" && !high && catOnFurniture(state, target.cat);
     const hidden = target.type === "item" && target.item.kind === "toy" && target.item.hidden === "fridge";
+    const covered = target.type === "item" && coveredByCat(state, target.item);
     const score =
-      distance - FACING_PRIORITY * facing - (target.type === "mess" ? MESS_PRIORITY : 0) - (onObject ? CAT_ON_OBJECT_PRIORITY : 0) + (hidden ? HIDDEN_PRIORITY : 0);
+      distance -
+      FACING_PRIORITY * facing -
+      (target.type === "mess" ? MESS_PRIORITY : 0) -
+      (onObject ? CAT_ON_OBJECT_PRIORITY : 0) +
+      (hidden ? HIDDEN_PRIORITY : 0) +
+      (covered ? CAT_ON_ITEM_PRIORITY : 0);
     if (score < bestScore) {
       best = target;
       bestScore = score;
