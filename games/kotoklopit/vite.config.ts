@@ -10,6 +10,8 @@ const { artPlugin } = (await import(new URL("./scripts/art/plugin.ts", import.me
 const { soundReviewPlugin } = (await import(new URL("./scripts/audio/reviewplugin.ts", import.meta.url).href)) as { soundReviewPlugin(): Plugin };
 // Сторінку титрів (`credits.html`, §2.1) з файлів ліцензій складає плагін — так само за адресою файлу.
 const { creditsPlugin } = (await import(new URL("./scripts/credits/plugin.ts", import.meta.url).href)) as { creditsPlugin(): Plugin };
+// Іконку гри для браузера (§2.1) з `favicon/tab.svg` робить плагін — так само за адресою файлу.
+const { faviconPlugin } = (await import(new URL("./scripts/favicon/plugin.ts", import.meta.url).href)) as { faviconPlugin(): Plugin };
 
 /**
  * Режим розробки (§11.5) потрібен і на прев'ю-деплоях Netlify, щоб тестувати гру з телефона.
@@ -25,7 +27,7 @@ const page = (file: string): string => fileURLToPath(new URL(file, import.meta.u
 export default defineConfig(({ command }) => ({
   base: command === "build" ? "/games/kotoklopit/" : "/",
   // Атлас арту з SVG теки art/: у dev — з пам'яті за адресою art/…, у збірці — файли art/ у теці збірки.
-  plugins: [artPlugin(), soundReviewPlugin(), creditsPlugin()],
+  plugins: [artPlugin(), soundReviewPlugin(), creditsPlugin(), faviconPlugin()],
   server: {
     // Сирі бібліотеки звуків і вивантаження музики (поза git, їх беруть лише скрипти `scripts/audio/`) — понад 10 тисяч
     // файлів, а наглядач Vite ставить `fs.watch` на кожен: на Windows це блокує dev-сервер на хвилини (і завантаження
