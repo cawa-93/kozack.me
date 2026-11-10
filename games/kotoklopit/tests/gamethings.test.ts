@@ -180,7 +180,8 @@ describe("що ставить гра: сховища (§8.7, «Що ставит
     expect(placedObjectLook(state, "fridge")).toEqual(isoObjectLook("fridge"));
   });
 
-  it("уранці зсунуте вертається, якщо місце звільнилося, а ні — лишається", () => {
+  // Сховища гравець переставляє сам (§8.7, «Сховища й переноски»): зсунуте з'явою лишається, де стало, як і переставлене.
+  it("сховище, що з'явилося поруч, уночі не вертається, навіть коли своє місце звільнилося", () => {
     const save = game();
     const state = save.current;
     const home = thingHome("cat-cabinet");
@@ -189,15 +190,30 @@ describe("що ставить гра: сховища (§8.7, «Що ставит
     advance(save, 1);
     const moved = tileNow(state, "cat-cabinet");
     expect(moved).not.toEqual(home);
+    state.home.items = state.home.items.filter((i) => i !== bowl);
+    state.minute = hours(23);
+    goToSleep(save);
+    expect(tileNow(save.current, "cat-cabinet")).toEqual(moved);
+  });
+
+  it("ящики, зсунуті з зайнятого місця, уранці вертаються, якщо місце звільнилося, а ні — лишаються", () => {
+    const save = game();
+    const state = save.current;
+    const home = thingHome("boxes");
+    const bowl = bowlAt(state, home);
+    state.home.boxes = { catFood: { cheap: 1, premium: 0 } };
+    advance(save, 1);
+    const moved = tileNow(state, "boxes");
+    expect(moved).not.toEqual(home);
     restoreThings(state);
-    expect(tileNow(state, "cat-cabinet")).toEqual(moved);
+    expect(tileNow(state, "boxes")).toEqual(moved);
 
     state.home.items = state.home.items.filter((i) => i !== bowl);
     state.minute = hours(23);
     goToSleep(save);
-    expect(save.current.home.displaced?.["cat-cabinet"]).toBeUndefined();
-    expect(tileNow(save.current, "cat-cabinet")).toEqual(home);
-    expect(objectAt(save.current, home.x, home.y)?.id).toBe("cat-cabinet");
+    expect(save.current.home.displaced?.boxes).toBeUndefined();
+    expect(tileNow(save.current, "boxes")).toEqual(home);
+    expect(objectAt(save.current, home.x, home.y)?.id).toBe("boxes");
   });
 });
 
@@ -296,14 +312,13 @@ describe("речі гри поруч зі своїм місцем і коти (�
     expect(isSolid(state, side.x, side.y), `${side.x},${side.y}`).toBe(false);
   });
 
-  it("кіт, що спить у ящиках чи переносці, уранці переїжджає разом із ними на їхнє місце", () => {
-    for (const thing of ["boxes", "carrier"] as const) {
+  it("кіт, що спить у ящиках, уранці переїжджає разом із ними на їхнє місце", () => {
+    for (const thing of ["boxes"] as const) {
       const save = game();
       const state = save.current;
       const home = thingHome(thing);
       const bowl = bowlAt(state, home);
-      if (thing === "boxes") state.home.boxes = { catFood: { cheap: 1, premium: 0 } };
-      else state.home.carriers.push({ quality: "cheap", wear: 0 });
+      state.home.boxes = { catFood: { cheap: 1, premium: 0 } };
       advance(save, 1);
       const moved = tileNow(state, thing);
       expect(moved, thing).not.toEqual(home);

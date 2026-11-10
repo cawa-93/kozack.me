@@ -85,6 +85,7 @@ export function homeCues(event: GameEvent, state: GameState): readonly HomeCue[]
     case "thing-moved":
       return one(event.stage === "taken" ? "thing-take" : "thing-put", itemPoint(event.item));
     case "robot-moved":
+    case "game-thing-moved":
       return one(event.stage === "taken" ? "thing-take" : "thing-put", event.at);
     case "trashed":
       return STATIC.trashed;

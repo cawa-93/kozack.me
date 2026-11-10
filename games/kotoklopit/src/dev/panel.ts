@@ -513,7 +513,7 @@ export class DevPanel {
       `збої керування ${round(glitchChance(state) * 100)}%/хв`,
       `тіло ${round(ch.body.x)}, ${round(ch.body.y)} · ривок ${round(ch.body.dashCooldown)} хв`,
       `дія ${ch.activity ? JSON.stringify(ch.activity) : "—"}`,
-      `у руках ${ch.held ? (ch.held.kind === "cat" ? `кіт ${ch.held.cat}` : ch.held.kind === "toy" ? "іграшка" : ch.held.kind === "vacuum" ? `пилосос ${round(ch.held.minutes ?? 0)} хв` : ch.held.kind === "thing" ? `${ch.held.item.kind}/${ch.held.item.quality}` : `${ch.held.kind}/${ch.held.quality}`) : "—"} · плита ${home.stove.item?.kind ?? "—"} ${round(home.stove.minutes)} хв`,
+      `у руках ${ch.held ? (ch.held.kind === "cat" ? `кіт ${ch.held.cat}` : ch.held.kind === "toy" ? "іграшка" : ch.held.kind === "vacuum" ? `пилосос ${round(ch.held.minutes ?? 0)} хв` : ch.held.kind === "thing" ? `${ch.held.item.kind}/${ch.held.item.quality}` : ch.held.kind === "gameThing" ? ch.held.thing : `${ch.held.kind}/${ch.held.quality}`) : "—"} · плита ${home.stove.item?.kind ?? "—"} ${round(home.stove.minutes)} хв`,
       `шерсть ${round(home.fur)} · жмутів ${home.tufts?.length ?? 0} · пилу ${home.dust?.length ?? 0} · пилосос ${home.vacuumAt ? `${round(home.vacuumAt.x)}, ${round(home.vacuumAt.y)}` : "у руках"}`,
       `доставки ${home.deliveries.map((d) => `${"product" in d ? d.product : d.thing}@${formatClock(d.at % 1440)}`).join(", ") || "—"} · під дверима ${home.porch.length}`,
       `рахунок комунальних ${home.utilitiesBill ?? 0}`,

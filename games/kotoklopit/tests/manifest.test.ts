@@ -433,6 +433,8 @@ describe("маніфест: речі котів, у руках, бруд", () =>
       vacuum: "item/vacuum",
       // Річ котячого кутка: той самий кадр, що на підлозі.
       thing: "item/house/cheap",
+      // Сховище чи переноски (§8.7, «Сховища й переноски»): той самий кадр, що в квартирі.
+      gameThing: "env/cat-cabinet",
     };
     for (const id of Object.values(held)) if (id !== null) entry(id);
     for (const kind of ["raw", "meal", "burnt"] as const satisfies readonly Dish["kind"][]) expect(states(`item/dish/${kind}`)).toEqual(keys(QUALITIES));

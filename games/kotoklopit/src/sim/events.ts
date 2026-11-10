@@ -1,7 +1,7 @@
 // Події симуляції. З них сцена показує бабли (§11.4) і ранкові повідомлення (§4),
 // а режим розробки веде журнал прихованих змін (§11.5). Стан гри від підписників не залежить.
 
-import type { AccidentLoss, AlbumEntry, CatTrace, Destination, Delivery, DiseaseId, Dish, ForbiddenZone, GameEnd, GameState, HomeItem, IllnessId, Item, Medicine, Mess, NightReport, ParcelsPickup, PlacedItem, Product, Quality, TraitLevel, TrinketKind, Vec } from "./types";
+import type { AccidentLoss, AlbumEntry, CatTrace, Destination, Delivery, DiseaseId, Dish, ForbiddenZone, GameEnd, GameState, HomeItem, IllnessId, Item, CarryThing, Medicine, Mess, NightReport, ParcelsPickup, PlacedItem, Product, Quality, TraitLevel, TrinketKind, Vec } from "./types";
 
 /** Рівень терпіння керівництва (§8.6): ok, «!» чи «Х». */
 export type PatienceLevel = "ok" | "warning" | "out";
@@ -186,6 +186,8 @@ export type GameEvent =
   | { type: "thing-moved"; stage: "taken" | "put"; item: PlacedItem }
   /** Базу робота-пилососа взяли в руки чи поставили (§8.7, «Переставити річ»): `at` — де вона стояла чи стала. */
   | { type: "robot-moved"; stage: "taken" | "put"; at: Vec }
+  /** Сховище чи переноски взяли в руки чи поставили (§8.7, «Переставити річ»): `at` — центр клітинки, де стояли чи стали. */
+  | { type: "game-thing-moved"; thing: CarryThing; stage: "taken" | "put"; at: Vec }
   /**
    * Пилосос у руках (`person`) чи робот-пилосос (`robot`) щойно прибрав сухе сміття (§8.7): місця жмутів шерсті (`FUR_SPOTS`) і
    * пилу (`DUST_SPOTS`) і який безлад. Без бабла — для журналу режиму розробки й вигляду: прибране пилососом у руках втягується

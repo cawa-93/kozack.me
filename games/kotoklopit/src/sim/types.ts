@@ -103,8 +103,14 @@ export interface HeldRobot {
   quality: Quality;
 }
 
+/** Сховище котячих запасів чи переноски в руках (§8.7, «Переставити річ»): у квартирі їх тоді немає. Переноски несуть усі разом. */
+export interface HeldGameThing {
+  kind: "gameThing";
+  thing: CarryThing;
+}
+
 /** Річ у руках (§8.4): у руках лише одна. */
-export type Item = Dish | CatFoodScoop | CarriedCat | HeldToy | HeldVacuum | CarriedThing | HeldRobot;
+export type Item = Dish | CatFoodScoop | CarriedCat | HeldToy | HeldVacuum | CarriedThing | HeldRobot | HeldGameThing;
 
 /** Положення персонажа в квартирі, у клітинках підлоги (§8.4). */
 export interface Body {
@@ -523,6 +529,8 @@ export interface FallenTrinket {
 /** Квартира: запаси, плита, поверхні, речі для котів, безлад і пакунки (§6.4, §8.7, §9.12). */
 /** Речі, які ставить гра, а гравець не переносить (§8.7, «Що ставить гра»): сховища, ящики біля входу, переноска, велика коробка. */
 export type GameThing = "cat-cabinet" | "litter-bag" | "sterile-bin" | "cat-kit" | "boxes" | "carrier" | "big-box";
+/** Речі гри, які гравець переставляє сам (§8.7, «Переставити річ»): сховища котячих запасів і переноски. */
+export type CarryThing = Exclude<GameThing, "boxes" | "big-box">;
 
 export interface Home {
   /** Рулон туалетного паперу у ванній розмотано (§9.12, «Мисливський інстинкт»): уранці новий. */
@@ -613,6 +621,8 @@ export interface Home {
    * запису — річ на своєму місці.
    */
   displaced?: Partial<Record<GameThing, Vec>>;
+  /** Сховище чи переноски несуть у руках (§8.7, «Переставити річ»): у квартирі їх немає. */
+  thingCarried?: CarryThing;
   /** Автогодівниці над мисками (§9.12). */
   feeders?: Feeder[];
   /** Шерсть на меблях 0–100 (§8.7). */

@@ -3,7 +3,7 @@
 
 import type { GameEvent, HissCause, Need, Refusal } from "../sim/events";
 import { movableThing } from "../sim/moving";
-import type { Cat, Destination, Dish, GameState, Item, Product, Quality, StatName, ThingKind } from "../sim/types";
+import type { CarryThing, Cat, Destination, Dish, GameState, Item, Product, Quality, StatName, ThingKind } from "../sim/types";
 import type { IconName, Mark } from "./iconnames";
 import type { PersonStateId } from "./personstates";
 import type { DiseaseId, IllnessId } from "../sim/types";
@@ -202,7 +202,22 @@ export function itemIcon(item: Item): IconName {
       return THING_ICONS[item.item.kind];
     case "robot":
       return THING_ICONS.robot;
+    case "gameThing":
+      return gameThingIcon(item.thing);
   }
+}
+
+/** Сховища котячих запасів (§6.4) як речі, які переставляють (§8.7): на кнопці перестановки й у руках. */
+export const STORAGE_ICONS: Record<Exclude<CarryThing, "carrier">, IconName> = {
+  "cat-cabinet": "cat-cabinet",
+  "sterile-bin": "sterile-bin",
+  "litter-bag": "litter-bag",
+  "cat-kit": "cat-kit",
+};
+
+/** Іконка сховища чи переносок, які переставляють (§8.7). */
+export function gameThingIcon(thing: CarryThing): IconName {
+  return thing === "carrier" ? THING_ICONS.carrier : STORAGE_ICONS[thing];
 }
 
 /**

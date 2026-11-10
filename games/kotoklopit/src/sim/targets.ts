@@ -119,6 +119,7 @@ function fitsHeld(state: GameState, target: Target): boolean {
     case "vacuum":
     case "thing":
     case "robot":
+    case "gameThing":
       return false;
   }
 }

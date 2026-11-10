@@ -27,6 +27,7 @@ const item = (i: Item): string => {
   if (i.kind === "vacuum") return "пилосос";
   if (i.kind === "thing") return placed(i.item);
   if (i.kind === "robot") return `робот-пилосос (${quality(i.quality)})`;
+  if (i.kind === "gameThing") return i.thing === "carrier" ? "переноски" : i.thing;
   const name = { raw: "сира порція", meal: "страва", burnt: "підгоріла страва", spoiled: "зіпсована страва", catfood: "порція корму" }[i.kind];
   return `${name} (${quality(i.quality)})`;
 };
@@ -200,6 +201,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return event.stage === "taken" ? `Узято в руки: ${placed(event.item)}` : `Поставлено: ${placed(event.item)} на ${event.item.slot}`;
     case "robot-moved":
       return event.stage === "taken" ? "Узято в руки: робот-пилосос із базою" : `Поставлено базу робота: ${event.at.x - 0.5},${event.at.y - 0.5}`;
+    case "game-thing-moved":
+      return event.stage === "taken" ? `Узято в руки: ${event.thing}` : `Поставлено ${event.thing}: ${event.at.x - 0.5},${event.at.y - 0.5}`;
     case "vacuumed": {
       const parts = [
         ...(event.tufts.length > 0 ? [`жмутів шерсті ${event.tufts.length}`] : []),
