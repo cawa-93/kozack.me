@@ -1,5 +1,7 @@
 // Тексти гри з TEXTS.md. `{назва}` — підстановка, `[чоловіча|жіноча]` — форма за статтю кота чи звертанням до персонажа.
 
+import { lifeMood } from "./sim/cat";
+import { POSITIONS } from "./sim/config";
 import { catsAxis, careerAxis, type CareerAxis, type CatsAxis } from "./sim/finale";
 import { lifeLevel } from "./sim/farewell";
 import type { CleanerVisit, GuestsVisit } from "./sim/events";
@@ -9,7 +11,7 @@ import type { PersonStateId } from "./view/personstates";
 import { formatClock } from "./sim/time";
 import { accidentBedtime, accidentHome, accidentOf } from "./sim/trips";
 import type { AccidentLoss, Address, AlbumEntry, Cat, FarewellCause, GameEnd, GameState, IllnessId, Ledger, Medicine, ParcelsPickup, Product, Quality, Sex, Spending } from "./sim/types";
-import { plural } from "./ui/titles";
+import { plural, VARIANT_TITLES } from "./ui/titles";
 
 /**
  * Підставити значення й обрати форми: за статтю кота чи за звертанням до персонажа («він» — чоловіча форма, «вона» — жіноча,
@@ -1345,26 +1347,149 @@ export const TRAIT_ABOUT: Record<string, readonly [string, string]> = {
   warmth: ["Шукає тепла: спить над батареєю, під ковдрою й на теплому комп'ютері, а в холод мерзне.", "Тепла шукає рідко, охоче спить на прохолодній плитці у ванній, а в спеку знемагає й більше п'є."],
 };
 
-// ── Титри життя (§4.2, `TEXTS.md`, «Титри життя»). КОНТРАКТ: сигнатури спільні; тексти заповнює пакет «сим і тексти». ──
+// ── Титри життя (§4.2, `TEXTS.md`, «Титри життя»). ──
 
-/** Дата події стрічки: «Тиждень N, день». */
-export function storyDate(day: number): string {
-  return `Тиждень ${Math.floor(day / 7) + 1}`;
+/**
+ * Підписи подій стрічки: `title` — на полі полароїда від руки, `text` — під полароїдом. Форми — за статтю кота чи звертанням
+ * персонажа; у пологах — за кількістю кошенят, як у `BIRTH_MESSAGE`. `{річ}` — назва варіанта (`VARIANT_TITLES`).
+ */
+export const STORY_TEXTS = {
+  start: { title: "{персонаж} [переїхав у|переїхала в] нову квартиру", text: "Коробки, тиша й порожні підвіконня. Котів тут ще не було." },
+  /** Котів із притулку буває багато, тож їхні тексти — з варіантами за котом (`textVariant`), як у прощанні. */
+  arrival: {
+    shelter: {
+      title: "{кіт} [знайшов|знайшла] нову оселю",
+      text: [
+        "Перший вечір [він обнюхував|вона обнюхувала] кожен куток, а тоді [заснув|заснула] на найзручнішому місці в домі. Відтоді воно — [його|її].",
+        "У переносці [він сидів|вона сиділа] тихо, ніби не [вірив|вірила] своєму щастю. Удома [освоївся|освоїлася] за вечір — і [вирішив|вирішила], що так було завжди.",
+        "З притулку — просто на підвіконня. До ранку [він уже знав|вона вже знала], де стоїть миска, де найтепліше і чиї коліна найзручніші.",
+      ],
+    },
+    "shelter-forced": {
+      title: "{кіт} [прийшов|прийшла] на допомогу",
+      text: [
+        "Нерви тріщали по швах, тож поїздка до притулку «лише подивитися» закінчилася, як і всі такі поїздки. Найкращі рішення не завжди ухвалюють на свіжу голову.",
+        "Здоровий глузд скінчився раніше за вечір, і рука сама потяглася до ключів від машини. Притулок, «лише подивитися» — і ось [він|вона] вже вдома.",
+      ],
+    },
+    breeder: {
+      title: "{кіт} [приїхав|приїхала] з розплідника",
+      text: "З родоводом, поставою й поглядом, що одразу питав, де тут обслуговування. Хто в домі головний, [він вирішив|вона вирішила] ще на порозі.",
+    },
+    foundling: {
+      title: "{кіт} [знайшовся|знайшлася] під дверима",
+      text: "Худеньке кошеня тремтіло на сходах і дивилося так, ніби давно на вас чекало. Дочекалося.",
+    },
+  },
+  births: {
+    title: "{кішка} стала мамою",
+    /** Маму не знайдено: кошеня зі сценарію чи старого збереження. */
+    orphans: "[Народилося кошеня|Народилися кошенята]",
+    text: "У домі на {кількість} більше: {кошенята}. [Крихітне, сліпе й голосне — і вже найважливіше|Крихітні, сліпі й голосні — і вже найважливіші] в домі.",
+  },
+  things: {
+    robot: {
+      title: "Робот-пилосос заступив на зміну",
+      text: "{річ} тепер сам збирає шерсть і крихти. Коти довго стежили за ним з-за рогу, а тоді вирішили, що він їм не загрожує.",
+    },
+    fountain: { title: "У домі задзюрчав фонтанчик", text: "{річ}: вода завжди свіжа й тече. Виявилося, що зі звичайної поїлки котам пити було нецікаво." },
+    feeder: {
+      title: "Автогодівниця взяла сніданки на себе",
+      text: "{річ} насипає корм за розкладом, навіть коли всі сплять. Коти швидко збагнули, кого тепер чекати біля миски.",
+    },
+  },
+  /** `{посада}` — якої дійшли: з великої в рядках і з малої на полароїдах. */
+  career: {
+    promoted: "Підвищення: {посада}",
+    demoted: "Пониження: {посада}",
+    top: {
+      title: "{персонаж} на вершині: {посада}",
+      text: "Вище — лише небо. Робочий стіл той самий, удома, зате тепер на кожній нараді чекають саме на [нього|неї].",
+    },
+    fired: { title: "{персонаж} [лишився|лишилася] без роботи", text: "Той самий комп'ютер, тільки тепер на ньому вакансії. Коти змін не помітили." },
+    hired: { title: "{персонаж} [знайшов|знайшла] нову роботу", text: "Відгуки, співбесіди, тестові, відмови — і нарешті «так». Поки що {посада}, зате знову із зарплатою." },
+  },
+  farewell: { title: "{кіт} [пішов|пішла] з життя", given: "{кіт} [поїхав|поїхала] до нових господарів" },
+} as const;
+
+/**
+ * Живий кіт на титрах (§4.2, «Живі коти»): як йому живеться зараз, від «Агонії» (0) до «Легенди» (9), як `LIFE_LEVELS`. Найчастіший
+ * рівень — «Котячий рай» — має кілька варіантів (`textVariant`): живих котів у стрічці показують поспіль.
+ */
+export const LIVING_CAT_LEVELS: readonly (string | readonly string[])[] = [
+  "{кіт} живе в агонії: голод, біль і самотність щодня поруч. Жоден кіт на таке не заслуговує.",
+  "{кіт} постійно страждає. [Він|Вона] досі тут — і досі чекає, що колись стане краще.",
+  "{кіт} здебільшого [нещасний|нещасна] й дедалі частіше дивиться у вікно, ніби шукає інший дім.",
+  "{кіт} живе нелегко. Брудний лоток, порожня миска, зачинені двері — [він звик|вона звикла], але досі не [змирився|змирилася].",
+  "{кіт} живе так собі: часто чекає на увагу, а дочікується не завжди.",
+  "{кіт} живе звичайним котячим життям: трохи сну, трохи бешкету, трохи уваги — і жодних драм.",
+  "{кіт} живе добре. Не все ідеально, та [він знає|вона знає], що [його|її] тут люблять.",
+  "{кіт} живе щасливо: дрібні образи трапляються, але забуваються ще до вечері.",
+  [
+    "{кіт} має все, про що мріє кіт: тепле місце на сонці, повну миску й руки, які завжди знаходять час погладити.",
+    "{кіт} живе так, що позаздрив би будь-який кіт: [його|її] гладять, щойно [він попросить|вона попросить], а про миску не забувають ніколи.",
+    "{кіт} засинає [ситим|ситою], прокидається в теплі й майже ніколи не нудьгує. Свій котячий рай [він уже знайшов|вона вже знайшла] — у вас удома.",
+  ],
+  "{кіт} живе, як [бог|богиня] у Стародавньому Єгипті: [йому|їй] поклоняються, [його|її] годують з рук, і жодне [його|її] бажання не лишається без відповіді. Пишайтеся собою.",
+];
+
+/** Заголовок тижня стрічки (`weekOf`): дня тижня стрічка не називає. */
+export function storyWeek(week: number): string {
+  return `Тиждень ${week}`;
 }
 
 /** Підпис полароїда чи рядка: `title` — на полі від руки (чи сам рядок), `text` — довший текст під полароїдом. */
 export interface StoryCaption {
-  date: string;
   title: string;
   text?: string;
 }
 
 export function storyCaption(item: StoryItem, state: GameState): StoryCaption {
-  void state;
-  return { date: storyDate(item.day), title: item.kind };
+  const { name, address } = state.character;
+  const person = (template: string, values: Record<string, string> = {}): string => fill(template, address, { персонаж: name, ...values });
+  switch (item.kind) {
+    case "start":
+      return { title: person(STORY_TEXTS.start.title), text: person(STORY_TEXTS.start.text) };
+    case "arrival": {
+      const { title, text } = STORY_TEXTS.arrival[item.source];
+      const cat = item.cat.cat;
+      return { title: fill(title, cat.sex, { кіт: cat.name }), text: fill(textVariant(text, cat.id), cat.sex, { кіт: cat.name }) };
+    }
+    case "births": {
+      const count = item.kittens.length;
+      // `[одне|кілька]`: «чоловіча» форма — одне кошеня.
+      const form = count === 1 ? "male" : "female";
+      const values = {
+        кішка: item.mother?.cat.name ?? "",
+        кількість: `${count} ${plural(count, "кошеня", "кошеняти", "кошенят")}`,
+        кошенята: item.kittens.map((k) => k.cat.name).join(", "),
+      };
+      const title = item.mother ? fill(STORY_TEXTS.births.title, "female", values) : fill(STORY_TEXTS.births.orphans, form);
+      return { title, text: fill(STORY_TEXTS.births.text, form, values) };
+    }
+    case "thing": {
+      const { title, text } = STORY_TEXTS.things[item.thing];
+      return { title, text: fill(text, address, { річ: VARIANT_TITLES[`thing:${item.thing}`]?.[item.quality] ?? "" }) };
+    }
+    case "career": {
+      const position = fill(POSITION_TITLES[item.position] ?? "", address);
+      const values = { посада: position.toLowerCase() };
+      const texts = STORY_TEXTS.career;
+      if (item.change === "fired" || item.change === "hired") return { title: person(texts[item.change].title), text: person(texts[item.change].text, values) };
+      if (item.change === "promoted" && item.position >= POSITIONS.length - 1) return { title: person(texts.top.title, values), text: person(texts.top.text, values) };
+      return { title: person(texts[item.change], { посада: position }) };
+    }
+    case "farewell": {
+      const { entry } = item;
+      const farewell = farewellText(entry, diseaseTitle);
+      const title = entry.cause.kind === "given" ? STORY_TEXTS.farewell.given : STORY_TEXTS.farewell.title;
+      return { title: fill(title, entry.sex, { кіт: entry.name }), text: `${farewell.cause} «${farewell.title}». ${farewell.life}` };
+    }
+  }
 }
 
 /** Кіт, що лишається вдома (§4.2, «Живі коти»): ім'я на полі й як йому живеться зараз, у теперішньому часі. */
 export function livingCatCaption(cat: Cat): { title: string; text: string } {
-  return { title: cat.name, text: "" };
+  const text = textVariant(LIVING_CAT_LEVELS[lifeLevel(lifeMood(cat))] ?? "", cat.id);
+  return { title: cat.name, text: fill(text, cat.sex, { кіт: cat.name }) };
 }

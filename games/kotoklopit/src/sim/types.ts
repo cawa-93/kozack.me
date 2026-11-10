@@ -943,6 +943,11 @@ export interface Cat {
   ageWeeks: number;
   /** День, коли кіт з'явився в домі. */
   arrivedDay: number;
+  /**
+   * Хвилина дня `arrivedDay`, коли кіт з'явився: за нею він стоїть у титрах життя серед подій того дня (§4.2). Кошеня з притулку й
+   * новонароджені — з ранку, коли персонаж прокинувся. Немає — старе збереження чи сценарій.
+   */
+  arrivedMinute?: number;
   traits: Trait[];
   /** Порода (§9.11): дві однакові — чистокровний; "mixed" — безпородний. */
   breed: [string, string];
@@ -1132,8 +1137,11 @@ export interface AlbumEntry {
    */
   days: number;
   arrivedDay: number;
+  arrivedMinute?: number;
   /** Ніч, коли кота не стало: день, що закінчився. */
   day: number;
+  /** Кота не стало не в нічних кроках (переноска, §8.7): хвилина дня `day` для порядку титрів (§4.2). */
+  minute?: number;
   /** Батьки, як у кота (`Cat.parents`): з ними кошеня з альбому стоїть у титрах поруч із мамою (§4.2). Немає — старе збереження. */
   parents?: Cat["parents"];
 }
@@ -1332,10 +1340,13 @@ export interface GameState {
 /** Техніка, перша поява якої — подія титрів життя (§4.2). */
 export type StoryThing = "robot" | "fountain" | "feeder";
 
-/** Запис титрів життя (§4.2): зміна посади (`position` — індекс у `POSITIONS` після зміни) чи нова техніка вдома. */
+/**
+ * Запис титрів життя (§4.2): зміна посади (`position` — індекс у `POSITIONS` після зміни) чи нова техніка вдома. `minute` — хвилина
+ * дня `day` (`GameState.minute`); у найперших записах її немає.
+ */
 export type StoryEntry =
-  | { kind: "career"; day: number; change: "promoted" | "demoted" | "fired" | "hired"; position: number }
-  | { kind: "thing"; day: number; thing: StoryThing; quality: Quality };
+  | { kind: "career"; day: number; minute?: number; change: "promoted" | "demoted" | "fired" | "hired"; position: number }
+  | { kind: "thing"; day: number; minute?: number; thing: StoryThing; quality: Quality };
 
 /** Збереження: поточний стан і знімки для перегравання (§6.1). */
 export interface Save {

@@ -350,6 +350,8 @@ function ageLimit({ state, report, rng }: Night): void {
 
 function births({ state, report, rng }: Night): void {
   for (const kitten of giveBirth(state, rng)) {
+    // Персонаж бачить кошенят уранці (§9.8): у титрах вони — з ранку.
+    kitten.arrivedMinute = report.wokeMinute;
     addCat(state, kitten);
     markNewcomer(kitten);
     report.newCats.push(kitten.id);
@@ -393,6 +395,7 @@ function kittenCheck({ state, report, rng }: Night): void {
   // Що видно про породу — як у притулку (§9.11; пошук багів 2026-10-25: було невідомо навіть на легкій).
   cat.breedKnown = knownBreedHalves(state, cat.breed, rng);
   cat.arrivedDay = state.day + 1;
+  cat.arrivedMinute = report.wokeMinute;
   addCat(state, cat);
   markNewcomer(cat);
   // Притулок: блохи (§9.5).

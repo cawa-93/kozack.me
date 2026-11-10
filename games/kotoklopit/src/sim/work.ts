@@ -142,7 +142,7 @@ export function changeReputation(state: GameState, delta: number): void {
 /** Зміна посади: картка посеред дня (§8.6) і запис для титрів життя (§4.2). */
 function careerChange(state: GameState, change: CareerChange, position: number): void {
   emit(state, { type: "career", change, position });
-  remember(state, { kind: "career", day: state.day, change, position });
+  remember(state, { kind: "career", day: state.day, minute: state.minute, change, position });
 }
 
 /** Сісти за комп'ютер: персонаж працює, доки сам не встане (§8.4). */

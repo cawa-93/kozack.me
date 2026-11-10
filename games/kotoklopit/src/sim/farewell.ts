@@ -2,7 +2,7 @@
 
 import { ageDue, lifeMood, traitLevel } from "./cat";
 import { changeStat } from "./character";
-import { CAT_AGE_LIMIT, DEATH, DIFFICULTY, GIVE_AWAY_GRACE_DAYS, SANITY_FLOOR } from "./config";
+import { CAT_AGE_LIMIT, DEATH, DIFFICULTY, GIVE_AWAY_GRACE_DAYS, MINUTES_PER_DAY, SANITY_FLOOR } from "./config";
 import { emit } from "./events";
 import { forgetRelations } from "./relations";
 import { isNewborn } from "./reproduction";
@@ -27,8 +27,11 @@ export function zeroHealthCause(cat: Cat): FarewellCause {
   return top.startsWith("disease:") ? { kind: "disease", disease: top.slice("disease:".length) } : { kind: "sorrow" };
 }
 
-/** Кота більше немає вдома: він іде в альбом пам'яті з повним характером. */
-export function removeCat(state: GameState, cat: Cat, cause: FarewellCause, day: number): AlbumEntry {
+/**
+ * Кота більше немає вдома: він іде в альбом пам'яті з повним характером. `minute` — хвилина дня `day`, коли це сталося (порядок
+ * титрів, §4.2); немає — кіт сценарію.
+ */
+export function removeCat(state: GameState, cat: Cat, cause: FarewellCause, day: number, minute?: number): AlbumEntry {
   state.cats = state.cats.filter((c) => c.id !== cat.id);
   forgetRelations(state, cat);
   // Кіт міг сидіти в переносці (§8.7): без цього місце лишалося б зайнятим.
@@ -49,7 +52,9 @@ export function removeCat(state: GameState, cat: Cat, cause: FarewellCause, day:
     lifeMood: lifeMood(cat),
     days: cat.moodHistory.length,
     arrivedDay: cat.arrivedDay,
+    ...(cat.arrivedMinute !== undefined ? { arrivedMinute: cat.arrivedMinute } : {}),
     day,
+    ...(minute !== undefined ? { minute } : {}),
     parents: { ...cat.parents },
   };
   state.album.push(entry);
@@ -84,7 +89,8 @@ export function giveAway(state: GameState, cat: Cat, day: number): AlbumEntry | 
   if (giveAwayBlocker(state, cat) !== null) return null;
   changeStat(state, "sanity", giveAwayLoss(state, cat, day), SANITY_FLOOR);
   state.ads = state.ads.filter((id) => id !== cat.id);
-  return removeCat(state, cat, { kind: "given" }, day);
+  // Забирають уранці, ще в кроках ночі: хвилина `state.minute` — ще вчорашнього дня.
+  return removeCat(state, cat, { kind: "given" }, day, state.minute - (day - state.day) * MINUTES_PER_DAY);
 }
 
 /** Дати оголошення (§9.8): нові господарі заберуть кота завтра вранці. */
@@ -117,7 +123,7 @@ export function zeroHealthDeaths(state: GameState, rng: Rng): AlbumEntry[] {
   const gone: AlbumEntry[] = [];
   for (const cat of [...state.cats]) {
     if (cat.health > 0 || !rng.chance(DEATH.zeroHealth)) continue;
-    gone.push(removeCat(state, cat, zeroHealthCause(cat), state.day));
+    gone.push(removeCat(state, cat, zeroHealthCause(cat), state.day, state.minute));
   }
   return gone;
 }
@@ -133,7 +139,7 @@ export function oldAgeChance(cat: Cat): number {
 export function oldAgeDeaths(state: GameState, rng: Rng): AlbumEntry[] {
   const gone: AlbumEntry[] = [];
   for (const cat of [...state.cats]) {
-    if (ageDue(state, cat) && rng.chance(oldAgeChance(cat))) gone.push(removeCat(state, cat, { kind: "old" }, state.day));
+    if (ageDue(state, cat) && rng.chance(oldAgeChance(cat))) gone.push(removeCat(state, cat, { kind: "old" }, state.day, state.minute));
   }
   return gone;
 }

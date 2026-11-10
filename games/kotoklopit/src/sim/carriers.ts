@@ -185,7 +185,7 @@ export function tickCaged(state: GameState, cat: Cat, minutes: number, rng: Rng,
 
 /** Кіт не дочекався (§8.7): помирає одразу; уночі втрату рахує ранок, як і будь-яку іншу. */
 function dieCaged(state: GameState, cat: Cat, present: boolean): void {
-  removeCat(state, cat, { kind: "carrier" }, state.day);
+  removeCat(state, cat, { kind: "carrier" }, state.day, state.minute);
   if (present) applyMorningSanity(state, 1, 0);
 }
 

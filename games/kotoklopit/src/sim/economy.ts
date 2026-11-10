@@ -403,7 +403,7 @@ function placeFeeder(state: GameState, quality: Quality): void {
   const slot = bowlsWithoutFeeder(state)[0]?.slot ?? spareSlot(state, "bowl");
   if (slot === undefined) return;
   (state.home.feeders ??= []).push({ slot, quality, food: 0, foodQuality: null, sterile: false });
-  remember(state, { kind: "thing", day: state.day, thing: "feeder", quality });
+  remember(state, { kind: "thing", day: state.day, minute: state.minute, thing: "feeder", quality });
 }
 
 /** Замовити річ для котів окремим замовленням (§6.4); null, якщо немає місця чи грошей. */
@@ -429,7 +429,7 @@ export function place(state: GameState, thing: ThingKind, quality: Quality): Hom
     // Бак новий: вода з поламаного чи викинутого не переходить (§8.7).
     if (thing === "fountain") state.home.fountainTank = 0;
     // Ручний пилосос — не подія титрів (§4.2).
-    if (thing !== "vacuum") remember(state, { kind: "thing", day: state.day, thing, quality });
+    if (thing !== "vacuum") remember(state, { kind: "thing", day: state.day, minute: state.minute, thing, quality });
     return null;
   }
   if (thing === "feeder") {
