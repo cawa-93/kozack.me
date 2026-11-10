@@ -96,7 +96,7 @@ const SCENARIOS = [
   "mom-visit", "neighbor-parcels", "cleaner-visit", "home-vet",
   "ten-cats", "birth-tomorrow", "sick-cats", "cat-fights", "pet-two", "carriers",
   "big-box", "appliances", "fur-tufts", "dusty-home", "power-outage", "vacuum-bought",
-  "utilities-due", "job-search",
+  "utilities-due", "job-search", "finale-perfect-balance",
 ];
 
 it.runIf(process.env["SAVES_RECORD"])("запис зразків поточної версії", () => {
