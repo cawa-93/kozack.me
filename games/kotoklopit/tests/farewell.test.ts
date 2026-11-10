@@ -16,6 +16,9 @@ function game(): Save {
   return newGame({ address: "she", difficulty: "normal", seed: 7 });
 }
 
+/** Стан для текстів прощання: з нього — лише складність, від якої залежить, які риси відомі (§9.9). */
+const STATE = game().current;
+
 function withCat(save: Save, ageWeeks = 3, traits: Record<string, TraitLevel> = {}): Cat {
   const cat = createCat(save.current, createRng(save.current.cats.length + 3), { source: "shelter", ageWeeks, at: { x: 9.5, y: 8.5 } });
   cat.traits = Object.entries(traits).map(([group, level]) => ({ group, level, seen: 0, known: false }));
@@ -108,7 +111,7 @@ describe("прощання (§9.7)", () => {
     cat.sex = "female";
     cat.moodHistory = [95, 92];
     const entry = removeCat(save.current, cat, { kind: "disease", disease: "cold" }, 0);
-    const text = farewellText(entry, diseaseTitle);
+    const text = farewellText(entry, diseaseTitle, STATE);
     expect(text.title).toBe("Легенда");
     expect(text.cause).toContain("недугу — застуда");
     expect(text.cause).toContain("здолала");
@@ -120,7 +123,7 @@ describe("прощання (§9.7)", () => {
     const cat = withCat(save);
     cat.sex = "male";
     const entry = removeCat(save.current, cat, { kind: "disease", disease: "heart" }, 0);
-    const { cause } = farewellText(entry, diseaseTitle);
+    const { cause } = farewellText(entry, diseaseTitle, STATE);
     expect(cause).toBe(`${entry.name} не здолав недугу — хвороба серця. Цього разу дев'ятого життя не вистачило.`);
     expect(cause).not.toMatch(/хворобу «|«Хвороба/);
     expect(albumCause(entry)).toBe("хвороба серця");
@@ -142,7 +145,7 @@ describe("прощання (§9.7)", () => {
 
     it("старість і «Котячий рай» мають по кілька варіантів: кошенята одного виводку (номери поспіль) дістають різні, а причина й опис поєднуються по-різному", () => {
       const entryOf = paradise();
-      const texts = ids.map((id) => farewellText(entryOf(id), diseaseTitle));
+      const texts = ids.map((id) => farewellText(entryOf(id), diseaseTitle, STATE));
       for (const text of texts) expect(text.title).toBe("Котячий рай");
       // Троє з виводку — три різні причини й три різні описи.
       expect(new Set(texts.slice(0, 3).map((t) => t.cause)).size).toBe(3);
@@ -155,12 +158,12 @@ describe("прощання (§9.7)", () => {
       const entryOf = paradise("female");
       for (const id of ids) {
         const entry = entryOf(id);
-        const first = farewellText(entry, diseaseTitle);
-        expect(farewellText(entry, diseaseTitle)).toEqual(first);
+        const first = farewellText(entry, diseaseTitle, STATE);
+        expect(farewellText(entry, diseaseTitle, STATE)).toEqual(first);
         // Збереження (JSON) і перегравання повертають той самий запис — з тим самим номером.
-        expect(farewellText(JSON.parse(JSON.stringify(entry)) as AlbumEntry, diseaseTitle)).toEqual(first);
+        expect(farewellText(JSON.parse(JSON.stringify(entry)) as AlbumEntry, diseaseTitle, STATE)).toEqual(first);
         // Варіант не залежить від ночі смерті: на переграванні кіт може піти іншого дня.
-        expect(farewellText({ ...entry, day: entry.day + 7 }, diseaseTitle)).toEqual(first);
+        expect(farewellText({ ...entry, day: entry.day + 7 }, diseaseTitle, STATE)).toEqual(first);
       }
     });
 
@@ -169,7 +172,7 @@ describe("прощання (§9.7)", () => {
         const entryOf = paradise(sex);
         for (const id of ids) {
           const entry = entryOf(id);
-          const { cause, life } = farewellText(entry, diseaseTitle);
+          const { cause, life } = farewellText(entry, diseaseTitle, STATE);
           for (const text of [cause, life]) {
             expect(text).not.toMatch(/[{}[\]|]/);
             expect(text.startsWith(entry.name)).toBe(true);
@@ -180,7 +183,7 @@ describe("прощання (§9.7)", () => {
 
     it("решта причин і рівнів, як і опис відданого кота, — по одному тексту", () => {
       const entryOf = paradise();
-      const count = (make: (id: number) => AlbumEntry, part: "cause" | "life"): number => new Set(ids.map((id) => farewellText(make(id), diseaseTitle)[part])).size;
+      const count = (make: (id: number) => AlbumEntry, part: "cause" | "life"): number => new Set(ids.map((id) => farewellText(make(id), diseaseTitle, STATE)[part])).size;
       // Причини, крім старості: опис «Котячого раю» й тут має варіанти, а причина — одна.
       expect(count((id) => ({ ...entryOf(id), cause: { kind: "sorrow" } }), "cause")).toBe(1);
       expect(count((id) => ({ ...entryOf(id), cause: { kind: "disease", disease: "cold" } }), "cause")).toBe(1);

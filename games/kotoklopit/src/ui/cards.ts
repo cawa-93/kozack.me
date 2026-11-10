@@ -135,14 +135,14 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
   for (const id of night?.givenCats ?? []) {
     const entry = state.album.find((e) => e.id === id);
     if (!entry) continue;
-    const text = farewellText(entry, diseaseTitle);
+    const text = farewellText(entry, diseaseTitle, state);
     events.push([fill("{кіт} [поїхав|поїхала] до нових господарів", entry.sex, { кіт: entry.name }), text.cause, `«${text.title}». ${text.life}`, ...(entry.traits.length > 0 ? [traitChips(entry.traits, entry.sex)] : [])]);
   }
   for (const id of night?.lostCats ?? []) {
     const entry = state.album.find((e) => e.id === id);
     if (!entry) continue;
     // Хвороба, від якої кіт помер, — з іконкою, як у ветеринара (§11.4 «Іконка біля назви»).
-    const text = farewellText(entry, diseaseLabel);
+    const text = farewellText(entry, diseaseLabel, state);
     // На прощанні відкривається весь характер кота (§9.7): риси з описом по дотику. «Прощавай, {кіт}» вимагало б кличного відмінка.
     events.push([`Прощання: ${entry.name}`, text.cause, `«${text.title}». ${text.life}`, ...(entry.traits.length > 0 ? [traitChips(entry.traits, entry.sex)] : [])]);
   }
@@ -230,7 +230,7 @@ function catChips(state: GameState): HTMLElement | null {
   const box = element("div", "ending-cats");
   for (const entry of state.album) {
     const chip = element("span", "ending-cat", entry.name);
-    chip.append(element("small", undefined, farewellText(entry, diseaseTitle).title));
+    chip.append(element("small", undefined, farewellText(entry, diseaseTitle, state).title));
     box.append(chip);
   }
   for (const cat of state.cats) box.append(element("span", "ending-cat", `🏠 ${cat.name}`));
@@ -462,7 +462,7 @@ export function albumCause(entry: AlbumEntry, title: (id: string) => string = di
 /** Альбом пам'яті (§9.7): ім'я, вік, усі риси, причина й опис життя. */
 function albumCards(state: GameState): (string | HTMLElement)[] {
   return [...state.album].reverse().map((entry) => {
-    const text = farewellText(entry, diseaseLabel);
+    const text = farewellText(entry, diseaseLabel, state);
     const card = note(`${entry.name}, ${weeks(entry.ageWeeks)} — ${albumCause(entry, diseaseLabel)}`, `«${text.title}». ${text.life}`);
     if (entry.traits.length > 0) card.append(traitChips(entry.traits, entry.sex));
     return card;

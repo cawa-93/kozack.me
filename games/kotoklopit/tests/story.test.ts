@@ -583,7 +583,7 @@ describe("підписи стрічки (§4.2, `TEXTS.md`, «Титри жит�
     for (const entry of [he, she, given]) {
       const c = caption(entry);
       clean(c);
-      const text = farewellText(entry, diseaseTitle);
+      const text = farewellText(entry, diseaseTitle, state);
       expect(c.text).toContain(text.cause);
       expect(c.text).toContain(text.life);
     }
@@ -601,7 +601,7 @@ describe("підписи стрічки (§4.2, `TEXTS.md`, «Титри жит�
     for (let level = 0; level <= 9; level++) {
       const pair = (["male", "female"] as const).map((sex) => {
         const c = living(sex, level);
-        const caption = livingCatCaption(c);
+        const caption = livingCatCaption(c, state);
         expect(caption.title).toBe(c.name);
         clean(caption);
         expect(caption.text).toContain(c.name);

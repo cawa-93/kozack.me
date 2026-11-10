@@ -34,6 +34,6 @@ export function creditsPlan(state: GameState): CreditsBlock[] {
     plan.push(photo ? { kind: "polaroid", caption, photo } : { kind: "line", caption, icon: storyIcon(item) });
   }
   plan.push({ kind: "summary", ...endingText(state, "retirement") });
-  for (const cat of state.cats) plan.push({ kind: "living", caption: livingCatCaption(cat), photo: livingCatPhoto(cat) });
+  for (const cat of state.cats) plan.push({ kind: "living", caption: livingCatCaption(cat, state), photo: livingCatPhoto(cat) });
   return plan;
 }

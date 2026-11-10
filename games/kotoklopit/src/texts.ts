@@ -6,11 +6,14 @@ import { catsAxis, careerAxis, type CareerAxis, type CatsAxis } from "./sim/fina
 import { lifeLevel } from "./sim/farewell";
 import type { CleanerVisit, GuestsVisit } from "./sim/events";
 import type { StoryItem } from "./sim/story";
-import type { TraitArea } from "./sim/traits";
+import { visibility } from "./sim/knowledge";
+import { TRAIT_GROUPS, type TraitArea } from "./sim/traits";
+import { TRAIT_LIFE_LINES } from "./traitlife";
+import type { LifeTone } from "./traitlife/types";
 import type { PersonStateId } from "./view/personstates";
 import { formatClock } from "./sim/time";
 import { accidentBedtime, accidentHome, accidentOf } from "./sim/trips";
-import type { AccidentLoss, Address, AlbumEntry, Cat, FarewellCause, GameEnd, GameState, IllnessId, Ledger, Medicine, ParcelsPickup, Product, Quality, Sex, Spending } from "./sim/types";
+import type { AccidentLoss, Address, AlbumEntry, Cat, FarewellCause, Trait, GameEnd, GameState, IllnessId, Ledger, Medicine, ParcelsPickup, Product, Quality, Sex, Spending } from "./sim/types";
 import { plural, VARIANT_TITLES } from "./ui/titles";
 
 /**
@@ -751,16 +754,88 @@ export function textVariant(text: string | readonly string[], id: number, shift:
   return text[(index + n) % n] ?? "";
 }
 
-/** Прощальне повідомлення: причина й опис життя. */
-export function farewellText(entry: AlbumEntry, diseaseTitle: (id: string) => string): { title: string; cause: string; life: string } {
+/** Прощальне повідомлення: причина й опис життя з характером (§9.7). */
+export function farewellText(entry: AlbumEntry, diseaseTitle: (id: string) => string, state: GameState): { title: string; cause: string; life: string } {
   const level = lifeLevel(entry.lifeMood);
   const values = { кіт: entry.name, хвороба: entry.cause.kind === "disease" ? diseaseTitle(entry.cause.disease).toLowerCase() : "" };
-  const life = (entry.cause.kind === "given" ? LIFE_LEVELS_GIVEN[level] : undefined) ?? textVariant(LIFE_LEVELS[level]?.text ?? "", entry.id, 1);
   return {
     title: LIFE_LEVELS[level]?.title ?? "",
     cause: fill(textVariant(FAREWELL_CAUSES[entry.cause.kind], entry.id), entry.sex, values),
-    life: fill(life, entry.sex, values),
+    life: lifeText(state, entry, entry.lifeMood, entry.cause.kind === "given" ? "given" : "died"),
   };
+}
+
+/** Тон звороту риси (§9.7): від `happy` — щасливе життя, від `ordinary` — звичайне, нижче — важке. Рівні — `lifeLevel`. */
+export const LIFE_TONES = { happy: 7, ordinary: 4 } as const;
+
+export function lifeTone(level: number): LifeTone {
+  return level >= LIFE_TONES.happy ? "happy" : level >= LIFE_TONES.ordinary ? "ordinary" : "hard";
+}
+
+/** Доля кота в описі життя: помер, віддали (живе деінде — «жив у вас»), живий удома (титри, теперішній час). */
+export type LifeFate = "died" | "given" | "living";
+
+/**
+ * Зачин опису життя з характером (§9.7, `TEXTS.md`): за долею й рівнем життя, від «Агонії» (0) до «Легенди» (9). Зворот риси
+ * (`src/traitlife/`) іде одразу після нього й сам ставить розділовий знак.
+ */
+export const LIFE_OPENINGS: Readonly<Record<LifeFate, readonly string[]>> = {
+  died: [
+    "{кіт} [прожив|прожила] життя в агонії",
+    "{кіт} [прожив|прожила] життя, повне страждань",
+    "{кіт} [прожив|прожила] нещасне життя",
+    "{кіт} [прожив|прожила] нелегке життя",
+    "{кіт} [прожив|прожила] так собі життя",
+    "{кіт} [прожив|прожила] звичайне котяче життя",
+    "{кіт} [прожив|прожила] добре життя",
+    "{кіт} [прожив|прожила] щасливе життя",
+    "{кіт} [прожив|прожила] життя, як у котячому раю",
+    "{кіт} [прожив|прожила] легендарне життя",
+  ],
+  given: [
+    "{кіт} [жив|жила] у вас в агонії",
+    "{кіт} [жив|жила] у вас у стражданнях",
+    "{кіт} [жив|жила] у вас нещасливо",
+    "{кіт} [жив|жила] у вас нелегко",
+    "{кіт} [жив|жила] у вас так собі",
+    "{кіт} [жив|жила] у вас звичайним котячим життям",
+    "{кіт} [жив|жила] у вас добре",
+    "{кіт} [жив|жила] у вас щасливо",
+    "{кіт} [жив|жила] у вас, як у котячому раю",
+    "{кіт} [жив|жила] у вас як легенда",
+  ],
+  living: [
+    "{кіт} живе в агонії",
+    "{кіт} живе в стражданнях",
+    "{кіт} живе нещасливо",
+    "{кіт} живе нелегко",
+    "{кіт} живе так собі",
+    "{кіт} живе звичайним котячим життям",
+    "{кіт} живе добре",
+    "{кіт} живе щасливо",
+    "{кіт} живе, як у котячому раю",
+    "{кіт} живе як легенда",
+  ],
+};
+
+/** Риса для опису життя (§9.7): найстаріша з відомих гравцеві (§9.9), а коли відомих немає, — найстаріша взагалі. */
+export function characterTrait(state: GameState, traits: readonly Trait[]): Trait | null {
+  return traits.find((trait) => visibility(state, trait) === 3) ?? traits[0] ?? null;
+}
+
+/** Опис життя з характером (§9.7): зачин за долею й рівнем + зворот риси в тоні рівня; без риси — повний текст рівня. */
+export function lifeText(state: GameState, cat: Pick<Cat, "id" | "name" | "sex" | "traits">, mood: number, fate: LifeFate): string {
+  const level = lifeLevel(mood);
+  const trait = characterTrait(state, cat.traits);
+  const group = trait && TRAIT_GROUPS.find((g) => g.id === trait.group);
+  const clause = trait && group ? TRAIT_LIFE_LINES[group.area][group.id]?.[trait.level > 0 ? "plus" : "minus"][lifeTone(level)] : undefined;
+  const values = { кіт: cat.name };
+  if (clause) return fill(fillTense(`${LIFE_OPENINGS[fate][level] ?? ""}${clause}`, fate === "living"), cat.sex, values);
+  const full =
+    fate === "living"
+      ? textVariant(LIVING_CAT_LEVELS[level] ?? "", cat.id)
+      : ((fate === "given" ? LIFE_LEVELS_GIVEN[level] : undefined) ?? textVariant(LIFE_LEVELS[level]?.text ?? "", cat.id, 1));
+  return fill(full, cat.sex, values);
 }
 
 /**
@@ -1513,7 +1588,7 @@ export function storyCaption(item: StoryItem, state: GameState): StoryCaption {
     }
     case "farewell": {
       const { entry } = item;
-      const farewell = farewellText(entry, diseaseTitle);
+      const farewell = farewellText(entry, diseaseTitle, state);
       const title = entry.cause.kind === "given" ? STORY_TEXTS.farewell.given : STORY_TEXTS.farewell.title;
       return { title: fill(title, entry.sex, { кіт: entry.name }), text: `${farewell.cause} «${farewell.title}». ${farewell.life}` };
     }
@@ -1521,7 +1596,6 @@ export function storyCaption(item: StoryItem, state: GameState): StoryCaption {
 }
 
 /** Кіт, що лишається вдома (§4.2, «Живі коти»): ім'я на полі й як йому живеться зараз, у теперішньому часі. */
-export function livingCatCaption(cat: Cat): { title: string; text: string } {
-  const text = textVariant(LIVING_CAT_LEVELS[lifeLevel(lifeMood(cat))] ?? "", cat.id);
-  return { title: cat.name, text: fill(text, cat.sex, { кіт: cat.name }) };
+export function livingCatCaption(cat: Cat, state: GameState): { title: string; text: string } {
+  return { title: cat.name, text: lifeText(state, cat, lifeMood(cat), "living") };
 }
