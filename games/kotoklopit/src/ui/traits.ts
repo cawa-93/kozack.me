@@ -1,6 +1,7 @@
 // Риси кота в картках (§9.9): чипи з назвами рис, без назв груп; ще не відкрита риса — чип «…?». Навести вказівник чи натиснути
 // на чип — над ним бабл: опис (`TRAIT_ABOUT`), а в нерозкритої — розділ чи підказка без боку й сили (`TRAIT_AREAS`, `TRAIT_HINTS`).
 
+import { visibility } from "../sim/knowledge";
 import { traitGroup, traitName } from "../sim/traits";
 import type { Cat, GameState, Sex, Trait } from "../sim/types";
 import { fill, TRAIT_ABOUT, TRAIT_ABOUT_LEVEL, TRAIT_AREAS, TRAIT_HINTS } from "../texts";
@@ -65,6 +66,21 @@ export function traitNews(state: GameState, catId: number, group: string, stage:
 /** Чипи відомих рис: назва й опис (альбом, прощання, притулок, розплідник). */
 export function traitChips(traits: readonly Pick<Trait, "group" | "level">[], sex: Sex): HTMLElement {
   return chipRow(traits.map((trait) => ({ label: fill(traitName(trait), sex), about: traitAbout(trait, sex) })));
+}
+
+/**
+ * Риси, як їх знає гравець (§9.9): відомі — назвою й описом, помічені — «…?» з підказкою чи лише розділом, решти не видно.
+ * Однаково в картці кота, на прощанні й в альбомі: прощання рис не відкриває.
+ */
+export function knownTraitChips(state: GameState, cat: Pick<Cat, "name" | "sex" | "traits">): TraitChip[] {
+  const chips: TraitChip[] = [];
+  const hidden: TraitChip[] = [];
+  for (const trait of cat.traits) {
+    const seen = visibility(state, trait);
+    if (seen === 3) chips.push({ label: fill(traitName(trait), cat.sex), about: traitAbout(trait, cat.sex) });
+    else if (seen > 0) hidden.push({ label: HIDDEN_TRAIT, about: (seen === 2 ? traitHint(cat, trait, null) : null) ?? traitArea(trait, cat.sex), hidden: true });
+  }
+  return [...chips, ...hidden];
 }
 
 /** Рядок чипів із баблом над обраним (`hintBubble`): опис — баблом над рисою, під чипами його не помічали. */

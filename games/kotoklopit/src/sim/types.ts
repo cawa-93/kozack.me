@@ -1123,7 +1123,7 @@ export interface AlbumEntry {
   sex: Sex;
   source: CatSource;
   ageWeeks: number;
-  /** Повний характер: на прощанні альбом показує всі риси (§9.9). */
+  /** Повний характер, разом зі знанням гравця (`known`, `seen`): альбом показує лише відоме (§9.9), опис життя бере й невідоме (§9.7). */
   traits: Trait[];
   breed: [string, string];
   genes: Genes;

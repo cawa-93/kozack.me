@@ -7,7 +7,6 @@ import { supplyCount } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
 import { diseaseMedicine, dosedToday } from "../sim/diseases";
 import { giveAwayBlocker } from "../sim/farewell";
-import { visibility } from "../sim/knowledge";
 import { hasFurryCat, WEEK_PAIRS } from "../sim/modifiers";
 import { hasFertileFemale, inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
 import { DEFAULT_NAME } from "../sim/game";
@@ -57,8 +56,7 @@ import { LOOK_OPTIONS, LOOK_PAGE, LOOK_TABS, rowChoices, shownRow, type LookRow,
 import { catProfile, type CatFacts } from "./catprofile";
 import { drawPortrait, portraitCanvas } from "./portrait";
 import { billCard } from "./bill";
-import { HIDDEN_TRAIT, traitAbout, traitArea, traitChips, traitHint, type TraitChip } from "./traits";
-import { traitName } from "../sim/traits";
+import { chipRow, knownTraitChips, type TraitChip } from "./traits";
 import { profileTab } from "./profile";
 import { DESTINATION_ICONS, HOME_FIXTURE_ICONS } from "../view/symbols";
 
@@ -136,16 +134,15 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
     const entry = state.album.find((e) => e.id === id);
     if (!entry) continue;
     const text = farewellText(entry, diseaseTitle, state);
-    events.push([fill("{кіт} [поїхав|поїхала] до нових господарів", entry.sex, { кіт: entry.name }), text.cause, ...(entry.traits.length > 0 ? [traitChips(entry.traits, entry.sex)] : [])]);
+    events.push([fill("{кіт} [поїхав|поїхала] до нових господарів", entry.sex, { кіт: entry.name }), text.cause, ...farewellTraits(state, entry)]);
   }
   for (const id of night?.lostCats ?? []) {
     const entry = state.album.find((e) => e.id === id);
     if (!entry) continue;
     // Хвороба, від якої кіт помер, — з іконкою, як у ветеринара (§11.4 «Іконка біля назви»).
     const text = farewellText(entry, diseaseLabel, state);
-    // На прощанні відкривається весь характер кота (§9.7): риси з описом по дотику. «Прощавай, {кіт}» вимагало б кличного відмінка.
-    // Опису прожитого життя на титулці немає (§9.7): він — в альбомі й у титрах життя.
-    events.push([`Прощання: ${entry.name}`, text.cause, ...(entry.traits.length > 0 ? [traitChips(entry.traits, entry.sex)] : [])]);
+    // «Прощавай, {кіт}» вимагало б кличного відмінка. Опису прожитого життя на титулці немає (§9.7): він — в альбомі й у титрах.
+    events.push([`Прощання: ${entry.name}`, text.cause, ...farewellTraits(state, entry)]);
   }
   // Прийшов рахунок за комунальні (§6.4); нульового немає.
   const utilities = night?.utilities;
@@ -406,14 +403,7 @@ export function catFacts(state: GameState, cat: Cat): CatFacts {
   if (found.length > 0) lines.push(`Хвороби: ${found.join(", ").toLowerCase()}.`);
   // Помічені риси — чипами (§9.9): відомі — назвою, решта — «…?»; бабл каже опис, підказку без боку чи лише розділ. Ім'я вже в
   // заголовку картки, тож підказка — без нього, як у новині телефона.
-  const chips: TraitChip[] = [];
-  const hidden: TraitChip[] = [];
-  for (const trait of cat.traits) {
-    const seen = visibility(state, trait);
-    if (seen === 3) chips.push({ label: fill(traitName(trait), cat.sex), about: traitAbout(trait, cat.sex) });
-    else if (seen > 0) hidden.push({ label: HIDDEN_TRAIT, about: (seen === 2 ? traitHint(cat, trait, null) : null) ?? traitArea(trait, cat.sex), hidden: true });
-  }
-  chips.push(...hidden);
+  const chips: TraitChip[] = knownTraitChips(state, cat);
   if (chips.length === 0) lines.push("Характер: ?");
   // Вік, порода й стерилізація — одним рядком (стать — знаком за ім'ям); невідоме — без нього.
   const breed = breedText(cat.breed, cat.breedKnown, cat.sex);
@@ -465,12 +455,18 @@ export function albumNote(entry: AlbumEntry, state: GameState): { title: string;
   return { title: `${entry.name}, ${weeks(entry.ageWeeks)} — ${albumCause(entry, diseaseLabel)}`, text: farewellText(entry, diseaseLabel, state).life };
 }
 
-/** Альбом пам'яті (§9.7): ім'я, вік, усі риси, причина й опис життя. */
+/** Риси кота на прощанні й в альбомі — як у картці кота (§9.9): прощання рис не відкриває; нічого не відомо — нічого. */
+function farewellTraits(state: GameState, entry: AlbumEntry): HTMLElement[] {
+  const chips = knownTraitChips(state, entry);
+  return chips.length > 0 ? [chipRow(chips)] : [];
+}
+
+/** Альбом пам'яті (§9.7): ім'я, вік, відомі риси, причина й опис життя. */
 function albumCards(state: GameState): (string | HTMLElement)[] {
   return [...state.album].reverse().map((entry) => {
     const { title, text } = albumNote(entry, state);
     const card = note(title, text);
-    if (entry.traits.length > 0) card.append(traitChips(entry.traits, entry.sex));
+    card.append(...farewellTraits(state, entry));
     return card;
   });
 }
