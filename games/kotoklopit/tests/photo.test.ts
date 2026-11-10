@@ -415,4 +415,19 @@ describe("фото виходу на пенсію (§4.2)", () => {
     expect(Math.sign(bodies[0]!)).not.toBe(Math.sign(bodies[1]!));
     for (const x of bodies) expect(Math.abs(x)).toBeGreaterThan(20);
   });
+
+  it("коти на фото пенсії дивляться на персонажа: голова кожного — ближче до нього, ніж тулуб", () => {
+    const state = game();
+    state.cats = [cat(state, 5), cat(state, 6), cat(state, 7)];
+    const layout = photoLayout(retirementPhoto(state));
+    const xs = (prefix: string): number[] => layout.pieces.filter((p) => p.part.id.startsWith(prefix)).map((p) => p.part.x ?? 0);
+    const heads = xs("cat/head/");
+    const bodies = xs("cat/body/");
+    expect(heads).toHaveLength(3);
+    // Голова й тулуб того самого кота — поруч; голова ближче до персонажа (до x = 0).
+    for (const body of bodies) {
+      const head = heads.reduce((best, x) => (Math.abs(x - body) < Math.abs(best - body) ? x : best));
+      expect(Math.abs(head), `тулуб ${body.toFixed(1)}, голова ${head.toFixed(1)}`).toBeLessThan(Math.abs(body));
+    }
+  });
 });

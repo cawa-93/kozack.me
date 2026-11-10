@@ -332,7 +332,9 @@ export function photoLayout(photo: Photo): PhotoLayout {
           ? { x: young.length > 1 && i >= 0 ? (i - (young.length - 1) / 2) * KITTEN_STEP : 0, y: 0 }
           : (KITTEN_SPOTS[i % KITTEN_SPOTS.length] ?? { x: 0, y: 0 });
       y = at.y;
-      for (const part of catPhotoParts(subject.cat, subject.pose)) pieces.push({ part: shifted(part, at), recipe: part.id.startsWith("cat/") ? (part.far ? far : recipe) : AS_IS });
+      // На фото пенсії коти дивляться на персонажа: кіт праворуч від нього — віддзеркалений (кадри кота дивляться праворуч).
+      const turn = person && at.x > 0;
+      for (const part of catPhotoParts(subject.cat, subject.pose)) pieces.push({ part: shifted(turn ? mirrored(part) : part, at), recipe: part.id.startsWith("cat/") ? (part.far ? far : recipe) : AS_IS });
     } else if (subject.kind === "person") {
       const recipe = personRecipe(subject.look);
       const far = farRecipe(recipe);
@@ -346,6 +348,11 @@ export function photoLayout(photo: Photo): PhotoLayout {
   groups.sort((a, b) => a.y - b.y);
   // З персонажем фото вписується за силуетом: рамка кота стиснула б персонажа.
   return { pieces: groups.flatMap((group) => group.pieces), span: person ? NO_SPAN : span };
+}
+
+/** Частина фігури, віддзеркалена довкола її початку: так фігура дивиться в інший бік (`partMatrix`: x, кут і `scaleX` — навпаки). */
+function mirrored(part: PortraitPart): PortraitPart {
+  return { ...part, x: -(part.x ?? 0), rot: -(part.rot ?? 0), scaleX: -(part.scaleX ?? 1) };
 }
 
 function shifted(part: PortraitPart, by: { x: number; y: number }): PortraitPart {
