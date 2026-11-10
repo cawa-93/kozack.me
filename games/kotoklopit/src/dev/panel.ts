@@ -24,6 +24,7 @@ import {
   saveLocalScenario,
   scenarioFromSave,
   scenarioId,
+  scenarioList,
   type Scenario,
 } from "./scenarios";
 import "./panel.css";
@@ -452,11 +453,7 @@ export class DevPanel {
   }
 
   private renderScenarios(): void {
-    const local = localScenarios();
-    const rows = [
-      ...Object.entries(FILE_SCENARIOS).map(([id, s]) => this.scenarioRow(id, s, false)),
-      ...Object.entries(local).map(([id, s]) => this.scenarioRow(id, s, true)),
-    ];
+    const rows = scenarioList(FILE_SCENARIOS, localScenarios()).map(({ id, scenario, local }) => this.scenarioRow(id, scenario, local));
     this.scenarios.replaceChildren(...rows);
   }
 

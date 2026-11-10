@@ -3,13 +3,14 @@
 
 import { WATER_CAPACITY } from "../sim/config";
 import { createCat } from "../sim/cat";
+import { removeCat } from "../sim/farewell";
 import { newGame, type NewGameOptions } from "../sim/game";
 import { addCat } from "../sim/night";
 import { changeRelation, relation } from "../sim/relations";
 import { createRng, seedDay } from "../sim/rng";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import { startTrip } from "../sim/trips";
-import type { Cat, CatSource, Destination, GameState, Product, Quality, Save, Trip } from "../sim/types";
+import type { Cat, CatSource, Destination, FarewellCause, GameState, Product, Quality, Save, Trip } from "../sim/types";
 import { rebase } from "./commands";
 
 type DeepPartial<T> = T extends readonly unknown[] ? T : T extends object ? { [K in keyof T]?: DeepPartial<T[K]> } : T;
@@ -17,12 +18,17 @@ type DeepPartial<T> = T extends readonly unknown[] ? T : T extends object ? { [K
 /** Кіт сценарію: повний кіт створюється за віком і джерелом, решта полів накладається поверх. */
 export type CatSpec = DeepPartial<Cat> & { ageWeeks: number; source?: CatSource };
 
+/** Кіт альбому (§9.7): створюється, як кіт сценарію, і прощається в ніч дня `day`; життя — з його `moodHistory`. */
+export type AlbumSpec = CatSpec & { cause: FarewellCause; day: number };
+
 export interface Scenario {
   name: string;
   description?: string;
   game?: Partial<NewGameOptions>;
   state?: DeepPartial<GameState>;
   cats?: CatSpec[];
+  /** Коти, що вже в альбомі пам'яті (§9.7), — у порядку прощання. */
+  album?: AlbumSpec[];
   /** Стосунки котів сценарію (§9.4): [номер кота, номер кота, значення], номери — з `cats`. */
   relations?: [number, number, number][];
   /** Персонаж знає про котів сценарію все (§9.9): риси, породу, стерилізацію, хвороби й вагітність — щоб перевірити картки котів. */
@@ -84,16 +90,20 @@ export function applyScenario(scenario: Scenario): Save {
   // Сценарій із котами без власних речей отримує котячий куток.
   if ((scenario.cats?.length ?? 0) > 0 && !scenario.state?.home?.items) addCatCorner(state);
   const rng = createRng(state.seed);
-  for (const spec of scenario.cats ?? []) {
+  const spawn = (spec: CatSpec): Cat => {
     const cat = createCat(state, rng, {
       source: spec.source ?? "shelter",
       ageWeeks: spec.ageWeeks,
       ...(spec.sex ? { sex: spec.sex } : {}),
       ...(spec.name ? { name: spec.name } : {}),
     });
-    addCat(state, deepMerge(cat, structuredClone(spec)));
-  }
-  const added = state.cats.slice(-(scenario.cats?.length ?? 0));
+    const merged = deepMerge(cat, structuredClone(spec));
+    addCat(state, merged);
+    return merged;
+  };
+  const added = (scenario.cats ?? []).map(spawn);
+  // Після живих: інакше кидки створення котів альбому змінили б живих котів сценарію.
+  for (const { cause, day, ...spec } of scenario.album ?? []) removeCat(state, spawn(spec), cause, day);
   if (scenario.knowAll) for (const cat of added) knowEverything(cat);
   for (const [i, j, value] of scenario.relations ?? []) {
     const a = added[i];
@@ -124,6 +134,23 @@ export function scenarioFromSave(save: Save, name: string): Scenario {
     game: { address: character.address, difficulty, seed, name: character.name, chronotype: character.chronotype },
     state: structuredClone(save.current),
   };
+}
+
+/** Сценарій у переліку панелі; `local` — збережений у браузері. */
+export interface ScenarioEntry {
+  id: string;
+  scenario: Scenario;
+  local: boolean;
+}
+
+const BY_NAME = new Intl.Collator("uk", { numeric: true });
+
+/** Сценарії з файлів і з браузера разом — за українською абеткою назв (§11.5). */
+export function scenarioList(file: Record<string, Scenario>, local: Record<string, Scenario>): ScenarioEntry[] {
+  return [
+    ...Object.entries(file).map(([id, scenario]) => ({ id, scenario, local: false })),
+    ...Object.entries(local).map(([id, scenario]) => ({ id, scenario, local: true })),
+  ].sort((a, b) => BY_NAME.compare(a.scenario.name, b.scenario.name) || BY_NAME.compare(a.id, b.id));
 }
 
 /** Сценарії з файлів `scenarios/*.json`: id — назва файлу. */

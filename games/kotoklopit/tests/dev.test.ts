@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { courierNow, crashNow, jumpTo, setTime, skipDays, skipToMonday, sleepNow } from "../src/dev/commands";
-import { applyScenario, deepMerge, FILE_SCENARIOS, scenarioFromSave, scenarioId } from "../src/dev/scenarios";
+import { applyScenario, deepMerge, FILE_SCENARIOS, scenarioFromSave, scenarioId, scenarioList, type Scenario } from "../src/dev/scenarios";
 import { describe as describeEvent } from "../src/dev/journal";
 import { drive, interact, newGame } from "../src/sim/game";
 import { NO_RACE_INPUT, newRace } from "../src/sim/race";
@@ -98,6 +98,32 @@ describe("сценарії (§11.5)", () => {
     if (!scenario) throw new Error("немає сценарію");
     const { address, chronotype, look } = applyScenario(scenario).current.character;
     expect([address, chronotype, look]).toEqual(["he", "owl", CHAOS_LOOK]);
+  });
+
+  it("панель показує сценарії за українською абеткою назв, числа — за величиною, разом зі збереженими в браузері", () => {
+    const named = (name: string): Scenario => ({ name, description: name });
+    const file = { a: named("Ящик"), b: named("Їжа"), c: named("Ґанок"), d: named("Гості"), e: named("Єнот"), f: named("10 котів") };
+    const local = { g: named("Ехо"), h: named("Іграшки"), i: named("Индик"), j: named("2 коти"), k: named("абетка") };
+    const list = scenarioList(file, local);
+    expect(list.map((s) => s.scenario.name)).toEqual(["2 коти", "10 котів", "абетка", "Гості", "Ґанок", "Ехо", "Єнот", "Индик", "Іграшки", "Їжа", "Ящик"]);
+    expect(list.filter((s) => s.local).map((s) => s.id).sort()).toEqual(["g", "h", "i", "j", "k"]);
+    expect(list.find((s) => s.id === "c")?.scenario.name).toBe("Ґанок");
+  });
+
+  it("коти альбому створюються, як коти сценарію, і вже попрощалися: причина, день і життя — з історії настрою (§9.7)", () => {
+    const base: Scenario = { name: "Альбом", description: "Альбом", state: { day: 30 }, cats: [{ ageWeeks: 10, name: "Живий" }] };
+    const save = applyScenario({
+      ...base,
+      album: [{ ageWeeks: 40, name: "Мурка", sex: "female", moodHistory: [90, 80], cause: { kind: "old" }, day: 20 }],
+    });
+    const { album, cats } = save.current;
+    expect(cats.map((c) => c.name)).toEqual(["Живий"]);
+    expect(album).toHaveLength(1);
+    expect(album[0]).toMatchObject({ name: "Мурка", sex: "female", ageWeeks: 40, cause: { kind: "old" }, day: 20, lifeMood: 85, days: 2 });
+    expect(album[0]?.genes).toBeTruthy();
+    expect(save.dayStart).toEqual(save.current);
+    // Коти альбому не змінюють живих котів сценарію.
+    expect(cats).toEqual(applyScenario(base).current.cats);
   });
 
   it("id сценарію — латиницею з назви", () => {
