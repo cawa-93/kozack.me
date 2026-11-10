@@ -10,8 +10,8 @@ import type { LifeTone } from "../src/traitlife/types";
 const AREAS = [...new Set(TRAIT_GROUPS.map((g) => g.area))];
 const SIDES = ["plus", "minus"] as const;
 const TONES: readonly LifeTone[] = ["happy", "ordinary", "hard"];
-/** Зворот іде одразу після зачину «{кіт} прожив … життя»: кома, двокрапка, тире чи нове речення з великої. */
-const START = /^(, \p{Ll}|: \p{Ll}|: [«"]|: \[| — \p{Ll}| — \[|\. \p{Lu}|\. [«"]|\. \[)/u;
+/** Розкритий зворот іде одразу після зачину «{кіт} прожив … життя»: кома, двокрапка, тире чи нове речення з великої. */
+const START = /^(, \p{Ll}|: \p{Ll}|: [«"]| — \p{Ll}|\. \p{Lu}|\. [«"])/u;
 const MAX = 170;
 
 describe.each(AREAS)("звороти розділу «%s»", (area) => {
@@ -27,7 +27,6 @@ describe.each(AREAS)("звороти розділу «%s»", (area) => {
 
   it("форма: початок — розділовий знак, кінець — крапка, форми й час розкриваються, без цифр, коротко", () => {
     for (const { id, text } of all()) {
-      expect(text, id).toMatch(START);
       expect(text, id).toMatch(/[.!…]$/);
       expect(text, id).not.toMatch(/\d/);
       expect(text, id).not.toMatch(/\{(?!кіт\})[^}]*\}/);
@@ -35,6 +34,7 @@ describe.each(AREAS)("звороти розділу «%s»", (area) => {
         for (const present of [false, true]) {
           const out = fill(fillTense(text, present), sex, { кіт: "Мурчик" });
           expect(out, `${id} ${sex} ${present ? "тепер" : "минуле"}`).not.toMatch(/[[\]<>|{}]/);
+          expect(out, `${id} ${sex} ${present ? "тепер" : "минуле"}`).toMatch(START);
           expect(out.length, id).toBeLessThanOrEqual(MAX);
         }
       }
