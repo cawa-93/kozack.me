@@ -129,7 +129,7 @@ describe("подія → фото (§4.2)", () => {
     const home = cat(state, 8, 12);
     const pose = (history: number[], mood: number): CatPhotoPose | undefined => {
       Object.assign(home, { moodHistory: history, mood });
-      const photo = livingCatPhoto(home);
+      const photo = livingCatPhoto(home, state);
       const subject = photo.subjects[0];
       if (subject?.kind === "cat") expect(subject.cat).toEqual({ cat: home, ageWeeks: 12 });
       return catPose(photo);

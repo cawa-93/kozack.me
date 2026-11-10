@@ -40,6 +40,6 @@ export function creditsPlan(state: GameState): CreditsBlock[] {
   }
   weekOfDay(state.day);
   plan.push({ kind: "retirement", caption: { title: STORY_TEXTS.retirement, text: ending.text }, photo: retirementPhoto(state) });
-  for (const cat of state.cats) plan.push({ kind: "living", caption: livingCatCaption(cat, state), photo: livingCatPhoto(cat) });
+  for (const cat of state.cats) plan.push({ kind: "living", caption: livingCatCaption(cat, state), photo: livingCatPhoto(cat, state) });
   return plan;
 }

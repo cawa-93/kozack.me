@@ -1,6 +1,7 @@
 // Пози фото титрів життя (§4.2): нерухомий кадр тих самих частин скелета, що в грі, — поза, вираз (очі, рот, вуха) і реквізит
 // пози з кадрів квартири. Тут лише розрахунок частин і рецептів; малює `src/ui/photo.ts`. Без Phaser і DOM.
 
+import { MIXED } from "../sim/breeds";
 import type { StoryCat } from "../sim/story";
 import type { AlbumEntry, Cat, Look, Quality, StoryThing, Vec } from "../sim/types";
 import { girthOf } from "../sim/weight";
@@ -14,6 +15,7 @@ import { catSize, CAT_FAR_SLOTS, fatStep, ISO_CAT_FIT, ISO_CAT_RIG, isoCatSkin, 
 import { PHONE_HELD, shadowScale } from "./iso/personlook";
 import { SEATS } from "./iso/personseat";
 import type { CatPhotoPose, PersonPhotoPose, Photo } from "./photo";
+import type { TraitCompanion, TraitProp, TraitShot } from "./traitphoto/types";
 import { CAT_ANIMS, PERSON_ANIMS } from "./rig/anims";
 import { PERSON_FAR_SLOTS, PERSON_FIT, PERSON_RIG, personProportions, personSkin } from "./rig/defs/person";
 import { Rig, slotFrame } from "./rig/rigcore";
@@ -49,13 +51,14 @@ export function photoCat(cat: Cat | AlbumEntry, ageWeeks: number): PhotoCat {
   return { ...look, traits: cat.traits, breed: cat.breed, ageWeeks, ...(weight === undefined ? {} : { weight }) };
 }
 
-/** Нерухомий кадр кота: основа, накладка (null — без неї), мить, ракурс і обличчя. */
+/** Нерухомий кадр кота: основа, накладка (null — без неї), мить, ракурс, обличчя й чи дивиться ліворуч. */
 interface CatStill {
   base: CatAnimId;
   overlay: Loose | null;
   at: number;
   view: ArtView;
   face: FaceFrames;
+  flip?: boolean;
 }
 
 const face = (eyes: string, mouth: string, ears: FaceFrames["ears"]): FaceFrames => ({ eyes, mouth, ears });
@@ -92,13 +95,86 @@ function catStill(cat: PhotoCat, pose: CatPhotoPose): CatStill {
   return pose === "nursing" && catSize(cat).kitten > 0 && cat.ageWeeks < 1 ? KITTEN_NURSING : CAT_STILLS[pose];
 }
 
+/** Кадри знімків рис — раз на знімок і позу рівня: накладка зі сталих кутів — новий об'єкт, а `composeCatAnim` кешує за ним. */
+const SHOT_STILLS = new WeakMap<TraitShot, Map<CatStill, CatStill>>();
+
+/** Поза рівня `life` зі змінами знімка риси (`TraitStill`). */
+function withShot(life: CatStill, shot: TraitShot | undefined): CatStill {
+  const change = shot?.still;
+  if (!shot || !change) return life;
+  let byLife = SHOT_STILLS.get(shot);
+  if (!byLife) {
+    byLife = new Map();
+    SHOT_STILLS.set(shot, byLife);
+  }
+  const have = byLife.get(life);
+  if (have) return have;
+  const newBase = change.base !== undefined && change.base !== life.base;
+  const overlay = change.bones
+    ? tweak(change.bones)
+    : change.overlay !== undefined
+      ? change.overlay === null
+        ? null
+        : (CAT_ANIMS[change.overlay] as Loose)
+      : newBase
+        ? null
+        : life.overlay;
+  const still: CatStill = {
+    base: change.base ?? life.base,
+    overlay,
+    at: change.at ?? (newBase ? 0 : life.at),
+    view: change.view ?? life.view,
+    face: face(change.eyes ?? life.face.eyes, change.mouth ?? life.face.mouth, change.ears ?? life.face.ears),
+    flip: change.flip ?? false,
+  };
+  byLife.set(life, still);
+  return still;
+}
+
+/**
+ * Інший кіт знімка риси (`TraitCompanion`) — сірий з білим, завжди той самий, щоб не плутався з героєм; кошеня — того самого
+ * вигляду. Для малюнка потрібні лише поля `PhotoCat`, решти полів кота в нього немає.
+ */
+const COMPANION = {
+  id: 0,
+  genes: { orange: [false], black: [true, true], dense: [false, false], agouti: [false, false], tabby: [1, 1], white: [1, 1], full: [true, true], short: [true, true], eyes: 2 },
+  shape: { muzzle: "normal", ears: "normal", tail: "long", build: "normal", legs: "normal", coat: null },
+  diseases: [],
+  collar: false,
+  traits: [],
+  breed: [MIXED, MIXED],
+  ageWeeks: 40,
+} as unknown as Cat;
+const COMPANION_RECIPE = catRecipeOf(COMPANION);
+const COMPANION_FAR = farRecipe(COMPANION_RECIPE);
+/** Вік іншого кота на фото: дорослий і кошеня, ще кошенячих пропорцій. */
+const COMPANION_WEEKS = { adult: 40, kitten: 1 } as const;
+
+/** Пози інших котів як знімки — раз на кота знімка (`withShot` пам'ятає кадр за знімком). */
+const COMPANION_SHOTS = new WeakMap<TraitCompanion, TraitShot>();
+
+function companionShot(companion: TraitCompanion): TraitShot {
+  let shot = COMPANION_SHOTS.get(companion);
+  if (!shot) {
+    shot = { idea: "", still: companion.still };
+    COMPANION_SHOTS.set(companion, shot);
+  }
+  return shot;
+}
+
+/** Річ знімка риси: місце — від кореня кота за розміром кота (`CatSize.relative`), розмір — свій. */
+function propPart(prop: TraitProp, scale: number): PortraitPart {
+  const size = prop.scale ?? 1;
+  return { ...framePart(prop.art, prop.state), x: prop.x * scale, y: prop.y * scale, rot: prop.rot ?? 0, scaleX: prop.flip ? -size : size, scaleY: size };
+}
+
 /**
  * Частини кота в позі фото: корінь — у (0, 0), масштаб — як у грі (кошеня менше, порода — свій розмір), тінь під ним — як у грі
- * (`catview.ts`: ширша на обхват).
+ * (`catview.ts`: ширша на обхват). Знімок риси `shot` змінює позу й ставить речі: позаду кота — до нього, поверх — після.
  */
-export function catPhotoParts(story: StoryCat, pose: CatPhotoPose): PortraitPart[] {
+export function catPhotoParts(story: StoryCat, pose: CatPhotoPose, shot?: TraitShot): PortraitPart[] {
   const cat = photoCat(story.cat, story.ageWeeks);
-  const still = catStill(cat, pose);
+  const still = withShot(catStill(cat, pose), shot);
   const size = catSize(cat);
   // Повнота — за вагою; у запису альбому ваги немає — звичайна.
   const girth = girthOf(cat as Cat);
@@ -112,7 +188,13 @@ export function catPhotoParts(story: StoryCat, pose: CatPhotoPose): PortraitPart
   rig.play(composeCatAnim(CAT_ANIMS[still.base] as Loose, still.overlay, still.face) as never, 0, { blend: 0 });
   rig.evaluate(still.at);
   const shadow: PortraitPart = { ...framePart("fx/shadow/cat", null), x: 0, y: 0, scaleX: size.scale * girth, scaleY: size.scale };
-  return [shadow, ...rigParts(rig, still.view, CAT_FAR, size.scale)];
+  const body = [shadow, ...rigParts(rig, still.view, CAT_FAR, size.scale)];
+  const props = shot?.props ?? [];
+  return [
+    ...props.filter((prop) => !prop.front).map((prop) => propPart(prop, size.relative)),
+    ...(still.flip ? body.map(mirrored) : body),
+    ...props.filter((prop) => prop.front).map((prop) => propPart(prop, size.relative)),
+  ];
 }
 
 // --- Персонаж ------------------------------------------------------------------------------------
@@ -334,7 +416,14 @@ export function photoLayout(photo: Photo): PhotoLayout {
       y = at.y;
       // На фото пенсії коти дивляться на персонажа: кіт праворуч від нього — віддзеркалений (кадри кота дивляться праворуч).
       const turn = person && at.x > 0;
-      for (const part of catPhotoParts(subject.cat, subject.pose)) pieces.push({ part: shifted(turn ? mirrored(part) : part, at), recipe: part.id.startsWith("cat/") ? (part.far ? far : recipe) : AS_IS });
+      for (const part of catPhotoParts(subject.cat, subject.pose, subject.shot)) pieces.push({ part: shifted(turn ? mirrored(part) : part, at), recipe: part.id.startsWith("cat/") ? (part.far ? far : recipe) : AS_IS });
+      // Інші коти знімка риси — окремими героями: свій вигляд і своє місце в черзі за відстанню до камери.
+      const scale = catSize(photoCat(subject.cat.cat, subject.cat.ageWeeks)).relative;
+      for (const companion of subject.shot?.companions ?? []) {
+        const spot = { x: at.x + companion.x * scale, y: at.y + companion.y * scale };
+        const parts = catPhotoParts({ cat: COMPANION, ageWeeks: COMPANION_WEEKS[companion.age] }, "calm", companionShot(companion));
+        groups.push({ y: spot.y, pieces: parts.map((part) => ({ part: shifted(part, spot), recipe: part.id.startsWith("cat/") ? (part.far ? COMPANION_FAR : COMPANION_RECIPE) : AS_IS })) });
+      }
     } else if (subject.kind === "person") {
       const recipe = personRecipe(subject.look);
       const far = farRecipe(recipe);

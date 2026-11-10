@@ -3,7 +3,11 @@
 import { lifeMood } from "../sim/cat";
 import { lifeLevel } from "../sim/farewell";
 import type { StoryCat, StoryItem } from "../sim/story";
-import type { Cat, GameState, Look, Quality, StoryThing } from "../sim/types";
+import { TRAIT_GROUPS } from "../sim/traits";
+import type { Cat, GameState, Look, Quality, StoryThing, Trait } from "../sim/types";
+import { characterTrait } from "../texts";
+import { TRAIT_PHOTOS } from "./traitphoto";
+import type { LifePose, TraitShot } from "./traitphoto/types";
 
 /** Поза кота на фото (§4.2). */
 export type CatPhotoPose = "curious" | "wary" | "nursing" | "content" | "calm" | "sulk" | "ill";
@@ -11,7 +15,8 @@ export type CatPhotoPose = "curious" | "wary" | "nursing" | "content" | "calm" |
 export type PersonPhotoPose = "unpack" | "desk" | "gloomy" | "phone" | "proud";
 
 export type PhotoSubject =
-  | { kind: "cat"; cat: StoryCat; pose: CatPhotoPose }
+  /** `shot` — знімок риси поверх пози рівня (прощання й живі коти); немає — лише поза. */
+  | { kind: "cat"; cat: StoryCat; pose: CatPhotoPose; shot?: TraitShot }
   | { kind: "person"; look: Look; pose: PersonPhotoPose }
   | { kind: "thing"; thing: StoryThing; quality: Quality };
 
@@ -27,7 +32,7 @@ export const PHOTO_KITTENS = 3;
  * Поза кота за рівнем життя (`lifeLevel`, §9.7) — від найвищого рівня, з якого вона: щасливе життя мружиться від задоволення,
  * звичайне — спокійно сидить, нелегке — ображено, нещасне — хворий і зіщулений (§4.2, таблиця подій, «Прощання»).
  */
-export const LIFE_PHOTO_POSES: readonly { readonly from: number; readonly pose: CatPhotoPose }[] = [
+export const LIFE_PHOTO_POSES: readonly { readonly from: number; readonly pose: LifePose }[] = [
   { from: 7, pose: "content" },
   { from: 5, pose: "calm" },
   { from: 3, pose: "sulk" },
@@ -35,12 +40,27 @@ export const LIFE_PHOTO_POSES: readonly { readonly from: number; readonly pose: 
 ];
 
 /** Поза кота за середнім настроєм життя (`LIFE_PHOTO_POSES`). */
-export function lifePhotoPose(mood: number): CatPhotoPose {
+export function lifePhotoPose(mood: number): LifePose {
   const level = lifeLevel(mood);
   return (LIFE_PHOTO_POSES.find((row) => level >= row.from) ?? LIFE_PHOTO_POSES[LIFE_PHOTO_POSES.length - 1]!).pose;
 }
 
+/** Знімок риси з опису життя (§9.7) для пози рівня; кіт без рис — немає. */
+export function traitShot(state: GameState, traits: readonly Trait[], pose: LifePose): TraitShot | undefined {
+  const trait = characterTrait(state, traits);
+  const group = trait && TRAIT_GROUPS.find((g) => g.id === trait.group);
+  if (!trait || !group) return undefined;
+  return TRAIT_PHOTOS[group.area][group.id]?.[trait.level > 0 ? "plus" : "minus"][pose];
+}
+
 const catShot = (cat: StoryCat, pose: CatPhotoPose): PhotoSubject => ({ kind: "cat", cat, pose });
+
+/** Кіт у позі за рівнем життя `mood` зі знімком своєї риси. */
+function lifeShot(state: GameState, cat: StoryCat, mood: number): PhotoSubject {
+  const pose = lifePhotoPose(mood);
+  const shot = traitShot(state, cat.cat.traits, pose);
+  return shot ? { kind: "cat", cat, pose, shot } : catShot(cat, pose);
+}
 
 /** Фото події стрічки; null — подія без фото (рядок). */
 export function storyPhoto(item: StoryItem, state: GameState): Photo | null {
@@ -60,20 +80,20 @@ export function storyPhoto(item: StoryItem, state: GameState): Photo | null {
       if (!item.milestone) return null;
       return { subjects: [{ kind: "person", look, pose: item.change === "fired" || item.change === "demoted" ? "gloomy" : "desk" }] };
     case "farewell":
-      return { subjects: [catShot({ cat: item.entry, ageWeeks: item.entry.ageWeeks }, lifePhotoPose(item.entry.lifeMood))] };
+      return { subjects: [lifeShot(state, { cat: item.entry, ageWeeks: item.entry.ageWeeks }, item.entry.lifeMood)] };
   }
 }
 
 /** Скільки котів дому щонайбільше стоїть поруч на фото виходу на пенсію. */
 export const PHOTO_HOME_CATS = 3;
 
-/** Фото виходу на пенсію (§4.2): персонаж стоїть гордо, поруч — коти, що лишаються вдома, у позі за їхнім життям. */
+/** Фото виходу на пенсію (§4.2): персонаж стоїть гордо, поруч — коти, що лишаються вдома, у позі за їхнім життям, без знімків рис. */
 export function retirementPhoto(state: GameState): Photo {
   const cats = state.cats.slice(0, PHOTO_HOME_CATS).map((cat) => catShot({ cat, ageWeeks: cat.ageWeeks }, lifePhotoPose(lifeMood(cat))));
   return { subjects: [{ kind: "person", look: state.character.look, pose: "proud" }, ...cats] };
 }
 
-/** Фото кота, що лишається вдома (§4.2, «Живі коти»): поза — за рівнем життя. */
-export function livingCatPhoto(cat: Cat): Photo {
-  return { subjects: [catShot({ cat, ageWeeks: cat.ageWeeks }, lifePhotoPose(lifeMood(cat)))] };
+/** Фото кота, що лишається вдома (§4.2, «Живі коти»): поза — за рівнем життя, зі знімком риси. */
+export function livingCatPhoto(cat: Cat, state: GameState): Photo {
+  return { subjects: [lifeShot(state, { cat, ageWeeks: cat.ageWeeks }, lifeMood(cat))] };
 }
