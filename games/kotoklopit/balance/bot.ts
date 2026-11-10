@@ -19,7 +19,7 @@ import { checkout, room, type CartLine } from "../src/sim/shop";
 import { advance, drive, goHome, goToSleep, interact, rewindAccident } from "../src/sim/game";
 import { adopt, shelterCats, tripCat, vetExam, vetExamPrice, vetTreat, vetTreatPrice } from "../src/sim/destinations";
 import { canLeave, startTrip } from "../src/sim/trips";
-import { blocksPerson, CARRIER_SPOT, distanceToRect, isWall, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, SURFACE_IDS, VACUUM_HOME, type Rect } from "../src/sim/home";
+import { blocksPerson, CARRIER_SPOT, distanceToRect, isWall, MAP_HEIGHT, MAP_WIDTH, placedObject, slotById, SURFACE_IDS, VACUUM_HOME, withThing, type Rect } from "../src/sim/home";
 import { canGoToSleep, hoursUntilWake } from "../src/sim/sleep";
 import { targetById, targetCenter, targetOf } from "../src/sim/targets";
 import type { BowlItem, Cat, GameState, Medicine, NightReport, Product, Save, Trip, Vec } from "../src/sim/types";
@@ -931,8 +931,12 @@ export class Bot {
       const at = s.home.vacuumAt;
       return at ? { x: at.x - 0.3, y: at.y - 0.3, w: 0.6, h: 0.6 } : null;
     }
-    if (id === "carrier") return { x: CARRIER_SPOT.x - 0.3, y: CARRIER_SPOT.y - 0.7, w: 0.6, h: 0.6 };
-    if (!id.includes(":")) return objectById(id);
+    // Переноска, сховища й ящики — там, де стоять: гра могла поставити їх поруч зі свого місця (§8.7, «Що ставить гра»).
+    if (id === "carrier") {
+      const at = withThing(s, "carrier", CARRIER_SPOT);
+      return { x: at.x - 0.3, y: at.y - 0.7, w: 0.6, h: 0.6 };
+    }
+    if (!id.includes(":")) return placedObject(s, id);
     const target = targetById(s, id);
     if (!target) return null;
     if (target.type === "item") {
