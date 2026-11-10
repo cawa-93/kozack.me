@@ -91,7 +91,10 @@ export function isWorking(state: GameState): boolean {
  * («Планове відключення», §4.1, рішення автора 2026-11-02) робота йде, лише повільніше.
  */
 export function workGoesOn(state: GameState, input?: Input): boolean {
-  return isWorking(state) && (input === undefined || !isMoving(input.move));
+  const activity = state.character.activity;
+  if (activity?.kind !== "work") return false;
+  // Напрям, затиснутий, коли сідали, не піднімає (§10): лише рух після того, як персонаж сів.
+  return input === undefined || !isMoving(input.move) || activity.settled !== true;
 }
 
 /** Терпіння нижче 50 — «!», на нулі — «Х» (§8.6). */

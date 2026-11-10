@@ -86,7 +86,12 @@ describe("чи йде робота (§8)", () => {
     interact(save);
     expect(workGoesOn(save.current)).toBe(true);
     expect(workGoesOn(save.current, STILL)).toBe(true);
-    // Рух знімає з-за комп'ютера на першому ж кроці кадру: увесь кадр — з ×1.
+    // Напрям, затиснутий, коли сідали, не піднімає (§10): робота йде й у цьому кадрі.
+    expect(workGoesOn(save.current, WALK)).toBe(true);
+    advance(save, 0.05, WALK);
+    expect(isWorking(save.current)).toBe(true);
+    advance(save, 0.05, STILL);
+    // Новий рух знімає з-за комп'ютера на першому ж кроці кадру: увесь кадр — з ×1.
     expect(workGoesOn(save.current, WALK)).toBe(false);
     advance(save, 0.2, WALK);
     expect(workGoesOn(save.current)).toBe(false);
