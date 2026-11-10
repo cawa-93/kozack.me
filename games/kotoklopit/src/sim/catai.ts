@@ -124,7 +124,7 @@ import { clearPath, robotAt, robotProgress, wearOut } from "./household";
 import { inView, observe, sees, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { active, catFatigueFactor, isCold, isHot, playFactor, thirstFactor, warmthBonus } from "./modifiers";
-import { WINDOWS, AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, COOL_TILE, HIGH_PLACES, isPresent, WIRE_TILE, PAPER_TRAIL, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, nearestFreePlace, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SLOTS, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
+import { WINDOWS, AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, catSpotNear, COOL_TILE, HIGH_PLACES, isPresent, WIRE_TILE, PAPER_TRAIL, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, nearestFreePlace, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SLOTS, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend, isNewcomer, isPal, noteStrife, relation } from "./relations";
 import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNest, isNewborn, motherNest, motherOf, nestOf, nestTarget, newbornSleep } from "./reproduction";
@@ -813,7 +813,7 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   // в ту саму точку, один в одного).
   const tile = WARMTH.tileStep * Math.max(0, -warmth) + (isHot(state) ? WARMTH.heatTile : 0);
   const tileTaken = state.cats.some((c) => c.id !== cat.id && home(state, c) && c.act.kind === "sleep" && c.act.target === "tile");
-  if (tile > 0 && !tileTaken) options.push({ weight: tile, value: { at: { ...COOL_TILE }, target: "tile" } });
+  if (tile > 0 && !tileTaken) options.push({ weight: tile, value: { at: { ...catSpotNear(state, COOL_TILE) }, target: "tile" } });
   // Підвіконня над батареєю — тепле місце теплолюба (фінальна перевірка рис 2026-10-26, «Живе на батареї»): найближче вільне,
   // а в «Холод» тягне ще сильніше. Ціль — id підвіконня: так його бачать зайнятим інші коти.
   const sill = warmth > 0 ? (freeSills(state, cat)[0] ?? null) : null;
@@ -1573,7 +1573,8 @@ function carryDone(state: GameState, cat: Cat): void {
   if (act.carry === "sock" && !sockFree(state, cat)) return;
   const dest = act.dest ?? "sofa";
   if (act.picked !== true) {
-    const goal = dest === "feet" ? tileOf(state.character.body) : { ...STASHES[dest].tile };
+    // Клітинку схованки зайняла річ — заганяє з вільної поруч; іграшка однаково лягає в схованку (`hideToy`, §8.7).
+    const goal = dest === "feet" ? tileOf(state.character.body) : { ...catSpotNear(state, STASHES[dest].tile) };
     start(cat, "carry", goal, dest === "feet" ? PLAYFUL.inviteMinutes : GIFTS.pickMinutes, act.target);
     Object.assign(cat.act, { carry: act.carry, dest, picked: true, ...(act.invite === true ? { invite: true } : {}) });
     return;
@@ -1613,7 +1614,7 @@ function carryAlong(state: GameState, cat: Cat, context: CatContext): void {
   if (act.dest === "feet") {
     if (!context.present) {
       act.dest = "sofa";
-      act.goal = { ...STASHES.sofa.tile };
+      act.goal = { ...catSpotNear(state, STASHES.sofa.tile) };
       act.minutes = GIFTS.pickMinutes;
     } else if (act.goal !== null && distance(cat, state.character.body) > ARRIVED) act.goal = tileOf(state.character.body);
   }
@@ -1650,13 +1651,12 @@ export function ambushWeight(cat: Cat): number {
 
 /**
  * Кіт сідає в засідку (§9.12, «Засідки»): за диваном, біля ліжка чи в проході — в одне з двох найближчих до нього місць — і
- * чекає до 10 хвилин.
+ * чекає до 10 хвилин. Місце зайняла річ — сідає на вільній клітинці поруч (§8.7).
  */
 export function startAmbush(state: GameState, cat: Cat, rng: Rng): void {
-  void state;
   const spots = [...AMBUSH_SPOTS].sort((a, b) => distance(a, cat) - distance(b, cat));
   const spot = spots[rng.int(0, Math.min(1, spots.length - 1))] ?? spots[0] ?? tileOf(cat);
-  start(cat, "ambush", { ...spot }, AMBUSH.minutes);
+  start(cat, "ambush", { ...catSpotNear(state, spot) }, AMBUSH.minutes);
 }
 
 /**
