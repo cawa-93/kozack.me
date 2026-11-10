@@ -7,13 +7,13 @@ import { changeStat } from "./character";
 import { CARRIER, CAT_ACT_MINUTES, MINUTES_PER_HOUR, NEED_THRESHOLD, PET } from "./config";
 import { emit } from "./events";
 import { removeCat } from "./farewell";
-import { CARRIER_SPOT } from "./home";
+import { CARRIER_SPOT, withThing } from "./home";
 import { observe } from "./knowledge";
 import { applyMorningSanity } from "./night";
 import { loudNoise } from "./noise";
 import { isNewborn } from "./reproduction";
 import { stateRng, type Rng } from "./rng";
-import type { Cat, CatNeed, GameState, Home, Quality, TripRider } from "./types";
+import type { Cat, CatNeed, GameState, Home, Quality, TripRider, Vec } from "./types";
 
 export type CageStage = keyof typeof CARRIER.moodPerHour;
 
@@ -72,12 +72,16 @@ function bite(state: GameState, rng: Rng): void {
   }
 }
 
+/** Низ переноски на підлозі там, де вона стоїть (її могли поставити поруч зі своїм місцем, §8.7). */
+const carrierSpot = (state: GameState): Vec => withThing(state, "carrier", CARRIER_SPOT);
+
 /** Кіт вийшов із переноски: той, кого довели до стресу, ховається й ображається (§8.7). */
 function freeCat(state: GameState, cat: Cat, rng: Rng): void {
   const upset = cageStage(cat) === "stress" || cageStage(cat) === "chew";
   delete cat.cage;
   cat.away = null;
-  const at = visibleFloorNear(state, { x: CARRIER_SPOT.x, y: CARRIER_SPOT.y - 0.6 });
+  const carrier = carrierSpot(state);
+  const at = visibleFloorNear(state, { x: carrier.x, y: carrier.y - 0.6 });
   cat.x = at.x;
   cat.y = at.y;
   cat.act = idleAct(1);
@@ -135,10 +139,12 @@ export function discardCarrier(state: GameState, index: number): boolean {
 /** Кіт догриз переноску (§8.7): вона зламана, уламки її кольору поруч, тріск, коти на волі. */
 function breakCarrier(state: GameState, index: number, rng: Rng): void {
   const quality = state.home.carriers[index]?.quality;
+  // Де стояла — до того, як її прибрали: без переносок гра забуває зсув (§8.7, «Що ставить гра»).
+  const spot = carrierSpot(state);
   removeCarrier(state, index, rng);
-  addMess(state, "broken", { x: CARRIER_SPOT.x, y: CARRIER_SPOT.y - 0.4 }, null, quality);
+  addMess(state, "broken", { x: spot.x, y: spot.y - 0.4 }, null, quality);
   emit(state, { type: "broke", what: "carrier" });
-  loudNoise(state, "broken", CARRIER_SPOT);
+  loudNoise(state, "broken", spot);
 }
 
 /** Хвилини кота під замком (§8.7). `present` — персонаж удома не спить: смерть уночі рахує ранок. */

@@ -838,7 +838,7 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   // Відчинена переноска біля дверей — будиночок для «Пасажир першого класу» (§9.12, «Переноска»).
   // Поки переноска з котом у дорозі, у ній не поспиш (перевірка етапу 2026-10-26).
   const carrier = traitLevel(cat, "carrier");
-  if (carrier > 0 && state.home.carriers.length > 0 && (state.trip?.riders?.length ?? 0) === 0) options.push({ weight: CARRIER_HOME.sleepStep * carrier, value: { at: { ...CARRIER_TILE }, target: "carrier" } });
+  if (carrier > 0 && state.home.carriers.length > 0 && (state.trip?.riders?.length ?? 0) === 0) options.push({ weight: CARRIER_HOME.sleepStep * carrier, value: { at: { ...withThing(state, "carrier", CARRIER_TILE) }, target: "carrier" } });
   // Ящики біля входу з покупками — коробки для допитливих (§9.12, «Допитливість»).
   const curiosity = traitLevel(cat, "curiosity");
   if (curiosity > 0 && hasBoxes(state)) options.push({ weight: CURIOSITY.boxStep * curiosity, value: { at: objectTile(state, "boxes"), target: "boxes" } });
@@ -1433,7 +1433,7 @@ function chewSeen(state: GameState, cat: Cat): void {
 
 /** У шафці з кормом є корм (§9.12, «Кмітливість у бешкеті»): шафка стоїть удома, і в ній щось лишилося. */
 function cabinetFood(state: GameState): boolean {
-  return isPresent(state, objectById("cat-cabinet")) && state.home.supplies.catFood.cheap + state.home.supplies.catFood.premium > 0;
+  return isPresent(state, placedObject(state, "cat-cabinet")) && state.home.supplies.catFood.cheap + state.home.supplies.catFood.premium > 0;
 }
 
 /** Смітник перекинуто, поки сміття не прибрали (§9.12, «Кмітливість у бешкеті»). */
@@ -1446,7 +1446,9 @@ export function trashTipped(state: GameState): boolean {
  */
 function startRaid(state: GameState, cat: Cat, target: "cabinet" | "trash"): void {
   const open = target === "cabinet" && state.home.cabinetOpen === true;
-  start(cat, "raid", { ...(target === "cabinet" ? CABINET_PAW : TRASH_PAW) }, open ? eatMinutes(cat) : CUNNING.pawMinutes, target);
+  // Шафку могли зсунути (§8.7): кіт лапає її збоку там, де вона стоїть, — на тій самій клітинці відносно неї, без пошуку вільної
+  // (і на своєму місці він стоїть на мисці `bowl-1`).
+  start(cat, "raid", { ...(target === "cabinet" ? withThing(state, "cat-cabinet", CABINET_PAW) : TRASH_PAW) }, open ? eatMinutes(cat) : CUNNING.pawMinutes, target);
 }
 
 /** Чи піддадуться дверцята (§9.12): без замка — так; дешевий замок відчиняє лише «Зломник», і то не завжди; надійний — ніхто. */

@@ -4,7 +4,7 @@
 import { highPlaceOf, inStandoff, isCarried } from "./catai";
 import { FACING_PRIORITY, MOVING, REACH } from "./config";
 import { fridgeSupply, isDish } from "./dish";
-import { CARRIER_SPOT, centerOf, distanceToRect, hasPurchases, isSolid, isWall, itemPoint, objectAt, objectsOf, slotById, type HomeObject } from "./home";
+import { CARRIER_SPOT, centerOf, distanceToRect, hasPurchases, isSolid, isWall, itemPoint, objectAt, objectsOf, slotById, withThing, type HomeObject } from "./home";
 import { isDirty } from "./resources";
 import type { Body, Cat, GameState, HomeItem, Mess, PlacedItem, Vec } from "./types";
 
@@ -139,7 +139,11 @@ function candidates(state: GameState): Target[] {
   // Пилосос на підлозі (§8.7): його, як іграшку, беруть лише порожніми руками, тож з повними він нічого не заступає.
   const vacuum = state.home.vacuumAt;
   if (vacuum && !handsFull) targets.push({ type: "vacuum", id: VACUUM_TARGET, at: vacuum });
-  if (state.home.carriers.length > 0) targets.push({ type: "carrier", id: CARRIER_TARGET, at: { x: CARRIER_SPOT.x, y: CARRIER_SPOT.y - 0.4 } });
+  // Переноску могли поставити поруч зі своїм місцем (§8.7, «Що ставить гра»).
+  if (state.home.carriers.length > 0) {
+    const spot = withThing(state, "carrier", CARRIER_SPOT);
+    targets.push({ type: "carrier", id: CARRIER_TARGET, at: { x: spot.x, y: spot.y - 0.4 } });
+  }
   // З річчю в руках безлад не прибрати, тож він не заступає смітник чи стіл (§10).
   if (state.character.held === null) {
     for (const mess of state.home.messes) targets.push({ type: "mess", id: messTargetId(mess), mess });
