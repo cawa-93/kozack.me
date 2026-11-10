@@ -24,6 +24,38 @@ export function fill(template: string, form: Sex | Address, values: Record<strin
     .replace(/\{([^}]+)\}/g, (match, key: string) => (key in values ? String(values[key]) : match));
 }
 
+/**
+ * Час у тексті (§9.7, «Опис життя з характером»): `<минулий|теперішній>`. Усередині кожного варіанта можуть бути форми
+ * `[чоловіча|жіноча]` — їх розкриває `fill` після цього.
+ */
+export function fillTense(template: string, present: boolean): string {
+  let out = "";
+  let i = 0;
+  while (i < template.length) {
+    const open = template.indexOf("<", i);
+    if (open < 0) break;
+    out += template.slice(i, open);
+    // Роздільник часу — «|» поза дужками форм `[…|…]`.
+    let depth = 0;
+    let split = -1;
+    let close = -1;
+    for (let j = open + 1; j < template.length; j++) {
+      const ch = template[j];
+      if (ch === "[") depth++;
+      else if (ch === "]") depth--;
+      else if (ch === "|" && depth === 0 && split < 0) split = j;
+      else if (ch === ">" && depth === 0) {
+        close = j;
+        break;
+      }
+    }
+    if (split < 0 || close < 0) return out + template.slice(open);
+    out += present ? template.slice(split + 1, close) : template.slice(open + 1, split);
+    i = close + 1;
+  }
+  return out + template.slice(i);
+}
+
 export const KITTEN_MESSAGE =
   "Нерви тріщали по швах. Тож {персонаж} [зробив|зробила] те, що робить кожна розсудлива людина на межі: [поїхав|поїхала] до притулку «лише подивитися».";
 
