@@ -1191,6 +1191,8 @@ export class DayScene extends Phaser.Scene {
     const end = this.state.end;
     if (end === null) return;
     this.sounds.moment("end");
+    // Радіо мовчить на екрані програшу й на титрах (§4.2, §8.10); перегравання й нова гра повертають його (`release`).
+    this.radio.hold();
     // Пенсія — не програш: титри життя замість екрана кінця гри (§4.2).
     if (end === "retirement") {
       const { screen, actions } = lifeCredits(this.state, () => this.chooseNewGame());

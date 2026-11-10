@@ -2,6 +2,7 @@
 // `rollmath.ts`. Стрічка їде трансформацією (плавно, з частками пікселя), а коли зупинилася чи гравець крутнув коліщатко, стає
 // звичайною прокруткою: так її можна гортати назад.
 
+import { sceneLoop, type SceneLoop } from "../audio/sfx/sounds";
 import type { GameState } from "../sim/types";
 import { timeBar } from "./cards";
 import { creditsPlan, type CreditsBlock } from "./creditsplan";
@@ -9,7 +10,7 @@ import "./lifecredits.css";
 import { element, type CardAction } from "./overlay";
 import { iconImage } from "./icons";
 import { drawPhoto } from "./photo";
-import { polaroidTilt, ROLL, rollEnd, rollOffset } from "./rollmath";
+import { creditsMusicGain, polaroidTilt, ROLL, rollEnd, rollOffset } from "./rollmath";
 import type { Photo } from "../view/photo";
 
 /** Сторона фото, px CSS: з висоти й ширини екрана, щоб полароїд із підписом умістився і на низькому телефоні. */
@@ -115,6 +116,47 @@ function block(item: CreditsBlock, index: number, photos: PhotoQueue, state: Gam
   }
 }
 
+/**
+ * Музика під титрами (§4.2): петля групи `ui`, поки стрічка на екрані. Наростає кадрами, поки звучить кінець гри й поки триває
+ * наростання; далі лише зрідка перевіряє, чи стрічка ще на екрані, щоб не крутити кадри даремно.
+ */
+function playCreditsMusic(screen: HTMLElement): void {
+  let loop: SceneLoop | null = null;
+  let born = -1;
+  const stop = (): void => {
+    loop?.stop();
+    loop = null;
+  };
+  const watch = (): void => {
+    const timer = setInterval(() => {
+      if (!screen.isConnected) {
+        clearInterval(timer);
+        stop();
+        return;
+      }
+      if (loop) return;
+      loop = sceneLoop("ui", "credits");
+      loop?.set(1, 1);
+    }, 500);
+  };
+  const frame = (now: number): void => {
+    if (!screen.isConnected) {
+      // Ще не показали — чекаємо; уже прибрали — тиша.
+      if (born < 0) requestAnimationFrame(frame);
+      else stop();
+      return;
+    }
+    if (born < 0) born = now;
+    const gain = creditsMusicGain(now - born);
+    // Звук ще не готовий (аудіо не запущено, файл не декодовано) — спробувати наступного кадру, а після наростання — зрідка.
+    if (gain > 0) loop ??= sceneLoop("ui", "credits");
+    loop?.set(gain, 1);
+    if (gain < 1) requestAnimationFrame(frame);
+    else watch();
+  };
+  requestAnimationFrame(frame);
+}
+
 /** Хто тримає прискорення: клавіша й вказівник окремо, щоб відпущена клавіша не скидала затиснутий палець. */
 interface Hold {
   key: boolean;
@@ -207,6 +249,7 @@ export function lifeCredits(state: GameState, newGame: () => void): { screen: HT
   screen.addEventListener("pointerdown", onPointerDown);
   screen.addEventListener("wheel", onWheel, { passive: true });
 
+  playCreditsMusic(screen);
   const still = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
   const frame = (now: number): void => {
     if (!screen.isConnected) {

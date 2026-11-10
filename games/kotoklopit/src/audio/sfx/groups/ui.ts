@@ -16,7 +16,6 @@ const ORDERED = cue("ordered");
 const BOUGHT = cue("bought");
 const MORNING = cue("morning");
 const END = cue("end");
-const RETIRED = cue("retired");
 const LOW = cue("low-stat");
 
 /** Відмова — тихий «бум»; порожній запас чи аптечка — свій звук, стук по порожньому (§12.3 «Звук»: частим відмовам — свій). */
@@ -42,8 +41,9 @@ export const group: SoundGroup = {
     ordered: { files: ["ordered"], gain: 0.5, voices: 1, ui: true },
     bought: { files: ["bought"], gain: 0.72, pitch: 0.03, ui: true },
     morning: { files: ["morning-1", "morning-2", "morning-3"], gain: 0.5, voices: 1, ui: true },
-    end: { files: ["end"], gain: 0.46, voices: 1, ui: true },
-    retired: { files: ["retired"], gain: 0.7, voices: 1, ui: true },
+    end: { files: ["end"], gain: 0.5, voices: 1, ui: true },
+    // Музика титрів життя (§4.2): вмикає й гасить сама стрічка (`sceneLoop`), на шині інтерфейсу — пауза картки її не приглушує.
+    credits: { files: ["credits"], gain: 0.55, loop: true, ui: true },
     "low-stat": { files: ["low-stat"], gain: 0.4, cooldownMs: 5000, voices: 1, ui: true },
   },
 
@@ -69,7 +69,7 @@ export const group: SoundGroup = {
       low.sync(state);
       return MORNING;
     }
-    if (moment === "end") return state.end === "retirement" ? RETIRED : END;
+    if (moment === "end") return END;
     return NONE;
   },
 

@@ -45,15 +45,6 @@
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
       "sha256": "242350ceea37a5cf8048a8fdffc27d5594e19c6991e9963f693d6fb3d7b397c8"
     },
-    "koshi": {
-      "file": "commons/Windglockenspiel.Koshi.ogg",
-      "url": "https://commons.wikimedia.org/wiki/File:Windglockenspiel.Koshi.ogg",
-      "title": "Windglockenspiel.Koshi",
-      "author": "Membeth",
-      "license": "CC0-1.0",
-      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
-      "sha256": "1f8b33ad604ef9ff5ba1ad901401b6d182f9db94e28f62a5ed930ff2f281b741"
-    },
     "piano-error": {
       "file": "commons/Som_de_Erro.ogg",
       "url": "https://commons.wikimedia.org/wiki/File:Som_de_Erro.ogg",
@@ -62,15 +53,6 @@
       "license": "CC0-1.0",
       "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
       "sha256": "660682ebcef9b9a4c0464c1ec3208c6f10b7c7b7e7411f0c03341e1e36056a96"
-    },
-    "fs-impact": {
-      "file": "freesound/749465__audiopapkin__sound-design-elements-impact-sfx-ps-001.wav",
-      "url": "https://freesound.org/people/AudioPapkin/sounds/749465/",
-      "title": "Sound Design Elements Impact SFX PS 001",
-      "author": "AudioPapkin",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "sha256": "ee1fd66ef27ea1a9c557848918aec67637ab5a35d31fa5dccec507e607c230ab"
     },
     "fs-ui-03": {
       "file": "freesound/380292__rhodesmas__ui-03.wav",
@@ -116,6 +98,24 @@
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "sha256": "161af60d39ea99c0601992c8639db6a339a34356febf87572e7b14b7e5f91e36"
+    },
+    "fs-game-over-3": {
+      "file": "freesound/615457__melokacool__game-over-3.wav",
+      "url": "https://freesound.org/people/melokacool/sounds/615457/",
+      "title": "game over 3",
+      "author": "melokacool",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "506f8ffde00d1e52548379316a7086fb79a6a447ba8f04f9e1ec1fa9492f8162"
+    },
+    "fs-vintage-pop-beat": {
+      "file": "freesound/578081__khong_ten__vitage-pop-beat.wav",
+      "url": "https://freesound.org/people/Khong_Ten/sounds/578081/",
+      "title": "vitage pop beat",
+      "author": "Khong_Ten",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "29b4112c2660b3f856c9d15cd4aca5385e980472a6daafca5cdfa77c3f346765"
     }
   },
   "files": {
@@ -204,26 +204,18 @@
       "fadeOut": 0.08,
       "note": "Купівля на місці: монети"
     },
-    "retired": {
-      "from": "koshi",
-      "start": 39.66,
-      "end": 42.4,
-      "fadeIn": 0.01,
-      "fadeOut": 1,
-      "note": "Кінець гри — пенсія: дзвіночки, яскравіше й довше"
-    },
     "low-stat": {
       "from": "piano-error",
       "fadeOut": 0.1,
       "note": "Шкала впала нижче LOW_STAT: дві ноти піаніно вниз"
     },
     "end": {
-      "from": "fs-impact",
-      "start": 0.3,
-      "end": 3.2,
-      "fadeIn": 0.01,
-      "fadeOut": 1.2,
-      "note": "Кінець гри (показник, виселення): глухий удар, що довго згасає"
+      "from": "fs-game-over-3",
+      "start": 0,
+      "end": 5.6,
+      "fadeIn": 0.005,
+      "fadeOut": 0.5,
+      "note": "Кінець гри — і програш, і пенсія: ігровий «game over», без тиші в кінці запису"
     },
     "morning-1": {
       "from": "fs-bird-chirps",
@@ -246,6 +238,13 @@
       "fadeOut": 0.4,
       "filter": "asplit[n0][s0];[n0]atrim=14.78:14.98,asetpts=PTS-STARTPTS[n];[s0]atrim=13.86:15.6,asetpts=PTS-STARTPTS[s];[n][s]concat=n=2:v=0:a=1,highpass=f=1000,highpass=f=1000,asendcmd=c='0.0 afftdn sn start;0.15 afftdn sn stop',afftdn=nr=10:nf=-57,atrim=start=0.225,asetpts=PTS-STARTPTS",
       "note": "Титулка ранку: ще одна фраза"
+    },
+    "credits": {
+      "from": "fs-vintage-pop-beat",
+      "start": 14.212,
+      "end": 117.051,
+      "loop": true,
+      "note": "Музика під титрами життя (§4.2): від вступу основної частини до початку кінцівки — рівно 60 тактів (такт 1,7139 с), тож коло замикається в такт; тихий вступ і кінцівку відрізано"
     }
   }
 }

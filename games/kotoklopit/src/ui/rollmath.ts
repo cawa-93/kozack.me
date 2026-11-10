@@ -7,6 +7,17 @@
  */
 export const ROLL = { speed: 0.13, fast: 6, maxStepMs: 100, startMs: 2200 } as const;
 
+/**
+ * Музика під титрами (§4.2): `delayMs` — мовчить, поки звучить кінець гри (звук `end` групи `ui` ≈ 5,6 с), `fadeMs` — далі
+ * плавно наростає.
+ */
+export const CREDITS_MUSIC = { delayMs: 4500, fadeMs: 3000 } as const;
+
+/** Гучність музики титрів через `ms` від появи стрічки: 0…1. */
+export function creditsMusicGain(ms: number): number {
+  return Math.min(1, Math.max(0, (ms - CREDITS_MUSIC.delayMs) / CREDITS_MUSIC.fadeMs));
+}
+
 /** Наступний зсув стрічки, px. */
 export function rollOffset(offset: number, dtMs: number, viewport: number, end: number, holding: boolean): number {
   const step = (ROLL.speed * (holding ? ROLL.fast : 1) * viewport * Math.min(dtMs, ROLL.maxStepMs)) / 1000;

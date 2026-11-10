@@ -53,19 +53,26 @@ describe("звуки інтерфейсу: події й моменти", () => 
     for (const cue of cues) expectPlayable(cue.sound);
   });
 
-  it("титулка ранку — свій сигнал; кінець гри — сумний, пенсія — добрий; засинання й падіння — не цієї групи", () => {
+  it("титулка ранку — свій сигнал; кінець гри — один звук і для програшу, і для пенсії; засинання й падіння — не цієї групи", () => {
     const s = fresh();
     expect(names(onScene("morning", s))).toEqual(["morning"]);
-    const ends: GameEnd[] = ["health", "satiety", "hygiene", "sanity", "eviction"];
+    const ends: GameEnd[] = ["health", "satiety", "hygiene", "sanity", "eviction", "retirement"];
     for (const end of ends) {
       s.end = end;
       expect(names(onScene("end", s)), end).toEqual(["end"]);
     }
-    s.end = "retirement";
-    expect(names(onScene("end", s))).toEqual(["retired"]);
     expect(onScene("fall-asleep", s)).toEqual([]);
     expect(onScene("collapse", s)).toEqual([]);
-    for (const sound of ["morning", "end", "retired"]) expectPlayable(sound);
+    for (const sound of ["morning", "end"]) expectPlayable(sound);
+    expect(group.sounds["retired"]).toBeUndefined();
+  });
+
+  it("музика титрів життя (§4.2) — петля на шині інтерфейсу: картка-стрічка ставить гру на паузу, а музику це не приглушує", () => {
+    const credits = group.sounds["credits"];
+    expect(credits?.loop).toBe(true);
+    expect(credits?.ui).toBe(true);
+    expect(credits?.files.length).toBeGreaterThan(0);
+    for (const file of credits?.files ?? []) expect(soundFile("ui", file), file).not.toBeNull();
   });
 });
 

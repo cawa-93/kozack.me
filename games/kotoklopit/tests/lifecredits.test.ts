@@ -7,7 +7,7 @@ import { lifeStory } from "../src/sim/story";
 import { weekOf } from "../src/sim/time";
 import { endingText } from "../src/texts";
 import { creditsPlan } from "../src/ui/creditsplan";
-import { polaroidTilt, ROLL, rollEnd, rollOffset } from "../src/ui/rollmath";
+import { CREDITS_MUSIC, creditsMusicGain, polaroidTilt, ROLL, rollEnd, rollOffset } from "../src/ui/rollmath";
 import { storyPhoto } from "../src/view/photo";
 import { CAREER_ICONS, storyIcon } from "../src/view/symbols";
 import type { StoryItem } from "../src/sim/story";
@@ -61,6 +61,16 @@ describe("титри життя: іконки на лінії часу (§4.2, �
   it("полароїди й решта подій — без іконки на лінії", () => {
     expect(storyIcon(career("fired", true))).toBeNull();
     expect(storyIcon({ kind: "start", day: 0 } as unknown as StoryItem)).toBeNull();
+  });
+});
+
+describe("титри життя: музика (§4.2)", () => {
+  it("мовчить, поки звучить кінець гри, далі плавно наростає до повної гучності й тримає її", () => {
+    expect(creditsMusicGain(0)).toBe(0);
+    expect(creditsMusicGain(CREDITS_MUSIC.delayMs - 1)).toBe(0);
+    expect(creditsMusicGain(CREDITS_MUSIC.delayMs + CREDITS_MUSIC.fadeMs / 2)).toBeCloseTo(0.5);
+    expect(creditsMusicGain(CREDITS_MUSIC.delayMs + CREDITS_MUSIC.fadeMs)).toBe(1);
+    expect(creditsMusicGain(10 * 60_000)).toBe(1);
   });
 });
 

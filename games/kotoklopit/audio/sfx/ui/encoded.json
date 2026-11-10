@@ -51,17 +51,13 @@
     "hash": "de6888c022c72f5f",
     "seconds": 0.42
   },
-  "retired": {
-    "hash": "47c206c8e5efefca",
-    "seconds": 2.74
-  },
   "low-stat": {
     "hash": "4a97d27229e061d6",
     "seconds": 0.917333
   },
   "end": {
-    "hash": "dccd17f20904a02f",
-    "seconds": 2.9
+    "hash": "b16fc7083e76b731",
+    "seconds": 5.6
   },
   "morning-1": {
     "hash": "b3253f2fc3817e74",
@@ -74,5 +70,13 @@
   "morning-3": {
     "hash": "efed41cc6fede2ea",
     "seconds": 1.715
+  },
+  "credits": {
+    "hash": "77dfa4de8deb42e8",
+    "seconds": 102.539021,
+    "loop": {
+      "start": 0.1,
+      "end": 102.639021
+    }
   }
 }

@@ -759,11 +759,6 @@
     "print": "0.6|empty-1:a6a555c6f2f4ff7a,empty-2:1336c81d22d8ed23",
     "at": "2026-11-08T06:26:53.071Z"
   },
-  "ui/retired": {
-    "decision": "ok",
-    "print": "0.7|retired:47c206c8e5efefca",
-    "at": "2026-11-08T16:08:07.174Z"
-  },
   "ui/tab": {
     "decision": "ok",
     "print": "0.11|tab:cdfa703a75c44cf7",
