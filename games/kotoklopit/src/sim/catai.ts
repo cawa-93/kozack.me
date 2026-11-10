@@ -124,7 +124,7 @@ import { clearPath, robotAt, robotProgress, wearOut } from "./household";
 import { inView, observe, sees, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { active, catFatigueFactor, isCold, isHot, playFactor, thirstFactor, warmthBonus } from "./modifiers";
-import { WINDOWS, AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, catSpotNear, COOL_TILE, HIGH_PLACES, isPresent, WIRE_TILE, PAPER_TRAIL, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, nearestFreePlace, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SLOTS, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
+import { WINDOWS, AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, catSpotNear, COOL_TILE, HIGH_PLACES, isPresent, WIRE_TILE, PAPER_TRAIL, placedObject, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, nearestFreePlace, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SLOTS, SURFACE_IDS, TRINKETS, trinketTile, withThing, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend, isNewcomer, isPal, noteStrife, relation } from "./relations";
 import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNest, isNewborn, motherNest, motherOf, nestOf, nestTarget, newbornSleep } from "./reproduction";
@@ -137,8 +137,7 @@ import { angryAtWindow, chatters, dogOnStairs, pigeonsFactor, strayMood, valeria
 import { handOn } from "./petpair";
 import { damageParcel, intactParcels } from "./parcels";
 import { addTrace, SCRATCH_TRACES, tidyBoxTraces } from "./traces";
-import { BIG_BOX_TARGET, bigBoxFree, bigBoxSpot, inBigBox, scratchesBigBox } from "./bigbox";
-import { BIG_BOX, BIG_BOX_SCRATCH } from "./home";
+import { BIG_BOX_TARGET, bigBoxAt, bigBoxFree, bigBoxScratchAt, bigBoxSpot, inBigBox, scratchesBigBox } from "./bigbox";
 import type { BowlItem, Cat, CatAct, CatActKind, Dish, ForbiddenZone, GameState, HomeItem, LitterItem, Mess, MessKind, PlayPhase, Product, Quality, ToyItem, TrinketKind, Vec, WaterItem } from "./types";
 import { exercise, gainWeight, settleWeight, weightSeen } from "./weight";
 import { isWorking, stopWork } from "./work";
@@ -594,10 +593,17 @@ function dishes(state: GameState, withStove: boolean): { id: string; dish: Dish 
   return found;
 }
 
-const objectTile = (id: string): Vec => {
-  const o = objectById(id);
+/** Клітинка речі квартири там, де вона стоїть (ящики могли зсунути, §8.7). */
+const objectTile = (state: GameState, id: string): Vec => {
+  const o = placedObject(state, id);
   return { x: o.x, y: o.y };
 };
+
+/** Звідки кіт дере й гризе ящики: збоку від купи там, де вона стоїть, а зайнято річчю — з вільної клітинки поруч (§8.7). */
+const boxScratchAt = (state: GameState): Vec => ({ ...catSpotNear(state, withThing(state, "boxes", BOX_SCRATCH)) });
+
+/** Обличчям до клітинки `t`: праворуч, якщо вона правіше за кота, інакше ліворуч. */
+const faceTile = (cat: Cat, t: Vec): 1 | -1 => (t.x + 0.5 > cat.x ? 1 : -1);
 
 /** Дії, яких кіт не кидає, навіть почувши корм: ховається, б'ється чи стоїть у протистоянні, уже їсть, у лотку. */
 const BUSY_FOR_FOOD = new Set(["eat", "fight", "standoff", "hide", "toilet"]);
@@ -835,7 +841,7 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   if (carrier > 0 && state.home.carriers.length > 0 && (state.trip?.riders?.length ?? 0) === 0) options.push({ weight: CARRIER_HOME.sleepStep * carrier, value: { at: { ...CARRIER_TILE }, target: "carrier" } });
   // Ящики біля входу з покупками — коробки для допитливих (§9.12, «Допитливість»).
   const curiosity = traitLevel(cat, "curiosity");
-  if (curiosity > 0 && hasBoxes(state)) options.push({ weight: CURIOSITY.boxStep * curiosity, value: { at: objectTile("boxes"), target: "boxes" } });
+  if (curiosity > 0 && hasBoxes(state)) options.push({ weight: CURIOSITY.boxStep * curiosity, value: { at: objectTile(state, "boxes"), target: "boxes" } });
   // Відчинена пральна машина — затишний барабан для допитливих (§8.7).
   // Один кіт на барабан (перевірка побуту 2026-10-28: двоє лягали в одну точку, як колись на плитці).
   const drumTaken = state.cats.some((c) => c.id !== cat.id && home(state, c) && c.act.kind === "sleep" && c.act.target === "washer");
@@ -967,7 +973,7 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
     if (steal && rng.chance(HUNGRY_THEFT.step * Math.max(0, thief) + starving)) {
       // Пам'ятає «ні» про кухню — не краде; «+» підходить і розвертається (§9.12, «Слухняність»).
       const verdict = noGo(state, cat, "kitchen");
-      if (verdict === "go") return start(cat, "steal", objectTile(steal.id), 1, steal.id);
+      if (verdict === "go") return start(cat, "steal", objectTile(state, steal.id), 1, steal.id);
       if (verdict === "remember") return startRemember(state, cat, "kitchen", steal.id);
     }
     // «Чесний» сідає біля їжі на столі й не чіпає її (§9.12, рішення автора 2026-10-25).
@@ -1288,7 +1294,7 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng, context: CatContext): 
     if (verdict === "go") options.push({ weight, value });
     else if (verdict === "remember") options.push({ weight, value: () => startRemember(state, cat, zone, id) });
   };
-  if (knock) allowed("kitchen", knock.id, MISCHIEF.knock * traitFactor(cat, "knocking", MISCHIEF.traitStep) * bored, active(() => start(cat, "knock", objectTile(knock.id), 0.5, knock.id)));
+  if (knock) allowed("kitchen", knock.id, MISCHIEF.knock * traitFactor(cat, "knocking", MISCHIEF.traitStep) * bored, active(() => start(cat, "knock", objectTile(state, knock.id), 0.5, knock.id)));
   // Дрібничка на столі (§9.12, «Скидання речей»): «−» ходить столами так само часто, як кіт без риси, а дійшовши — може
   // лише обнюхати її й обійти.
   const standing = standingTrinkets(state);
@@ -1301,13 +1307,13 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng, context: CatContext): 
   const steal = food[rng.int(0, food.length - 1)];
   if (steal) {
     const hungry = cat.needs.hunger >= MISCHIEF.hungryFrom ? MISCHIEF.hungrySteal : 1;
-    allowed("kitchen", steal.id, MISCHIEF.steal * traitFactor(cat, "thief", MISCHIEF.traitStep) * hungry, active(() => start(cat, "steal", objectTile(steal.id), 1, steal.id)));
+    allowed("kitchen", steal.id, MISCHIEF.steal * traitFactor(cat, "thief", MISCHIEF.traitStep) * hungry, active(() => start(cat, "steal", objectTile(state, steal.id), 1, steal.id)));
   }
   // Іграшку під меблями чи в зубах в іншого кота не поганяєш (§9.12, «Схованки»).
   const toy = nearest(cat, looseToys(state));
   if (toy) options.push({ weight: MISCHIEF.toy, value: active(() => start(cat, "toy", itemTile(toy), TOY.aloneMinutes, `item:${toy.id}`)) });
   // Велика коробка (§4.1) — гра в ній, як з іграшкою наодинці.
-  if (bigBoxFree(state, cat)) options.push({ weight: MISCHIEF.toy, value: active(() => start(cat, "toy", { ...BIG_BOX }, TOY.aloneMinutes, BIG_BOX_TARGET)) });
+  if (bigBoxFree(state, cat)) options.push({ weight: MISCHIEF.toy, value: active(() => start(cat, "toy", { ...bigBoxAt(state) }, TOY.aloneMinutes, BIG_BOX_TARGET)) });
   // Понести річ у схованку (§9.12, «Схованки»).
   const gift = giftWeight(cat);
   if (gift > 0 && (toy !== null || sockFree(state, cat))) options.push({ weight: gift, value: active(() => startCarry(state, cat, rng)) });
@@ -1369,7 +1375,7 @@ export function startChew(state: GameState, cat: Cat, rng: Rng): boolean {
   const target = chewTarget(state, rng);
   if (target === null) return false;
   const minutes = CHEWING.minMinutes + rng.next() * (CHEWING.maxMinutes - CHEWING.minMinutes);
-  start(cat, "chew", { ...(target === "wire" ? WIRE_TILE : BOX_SCRATCH) }, minutes, target);
+  start(cat, "chew", target === "wire" ? { ...WIRE_TILE } : boxScratchAt(state), minutes, target);
   return true;
 }
 
@@ -2029,12 +2035,12 @@ export function startScratch(state: GameState, cat: Cat, rng: Rng): void {
   if (post) return start(cat, "scratch", itemTile(post), SCRATCH.minutes, `item:${post.id}`);
   if (level <= -2 || (level === -1 && !rng.chance(SCRATCH.calmSofa))) {
     // Коробки дере, стоячи поруч із купою, а не на ній (перевірка етапу 2026-10-26).
-    if (hasBoxes(state) && rng.chance(SCRATCH.boxes)) return start(cat, "scratch", { ...BOX_SCRATCH }, SCRATCH.minutes, "boxes");
+    if (hasBoxes(state) && rng.chance(SCRATCH.boxes)) return start(cat, "scratch", boxScratchAt(state), SCRATCH.minutes, "boxes");
     return start(cat, "scratch", rugTile(state, rng), SCRATCH.minutes, "rug");
   }
   if (level >= 2 && rng.chance(SCRATCH.doorframe)) return start(cat, "scratch", { ...DOORFRAME }, SCRATCH.minutes, "doorframe");
   // Велика коробка забирає частину дряпання дивана (§4.1).
-  if (scratchesBigBox(state, rng)) return start(cat, "scratch", { ...BIG_BOX_SCRATCH }, SCRATCH.minutes, BIG_BOX_TARGET);
+  if (scratchesBigBox(state, rng)) return start(cat, "scratch", bigBoxScratchAt(state), SCRATCH.minutes, BIG_BOX_TARGET);
   const sofa = objectById("sofa");
   start(cat, "scratch", { x: sofa.x + rng.int(0, sofa.w - 1), y: sofa.y - 1 }, SCRATCH.minutes, "sofa");
 }
@@ -2897,8 +2903,8 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       return;
     }
     case "chew":
-      // Почав гризти — хрумтить (§9.12, «Гризіння»); дріт — обличчям до столу ліворуч, коробки — до купи ліворуч.
-      cat.facing = -1;
+      // Почав гризти — хрумтить (§9.12, «Гризіння»); дріт — обличчям до столу ліворуч, коробки — до купи, де б вона не стояла (§8.7).
+      cat.facing = act.target === "boxes" ? faceTile(cat, placedObject(state, "boxes")) : -1;
       if (act.elapsed <= minutes) emit(state, { type: "chewing", cat: cat.id, what: act.target === "boxes" ? "boxes" : "wire" });
       return;
     case "window":
@@ -2933,12 +2939,11 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       if (act.showOff === true) cat.facing = state.character.body.x >= cat.x ? 1 : -1;
       return;
     case "scratch":
-      // Дере коробки чи одвірок — обличчям до них (§9.12, «Дряпання»; перевірка етапу 2026-10-26): купа ящиків ліворуч,
-      // стіна одвірка праворуч.
-      if (act.goal === null && act.target === "boxes") cat.facing = -1;
+      // Дере коробки чи одвірок — обличчям до них (§9.12, «Дряпання»; перевірка етапу 2026-10-26): стіна одвірка праворуч,
+      // купа ящиків і велика коробка (§4.1) — там, де стоять, а збоку кіт міг стати з будь-якого боку (§8.7).
+      if (act.goal === null && act.target === "boxes") cat.facing = faceTile(cat, placedObject(state, "boxes"));
       if (act.goal === null && act.target === "doorframe") cat.facing = 1;
-      // Велика коробка (§4.1) — ліворуч, як і купа ящиків.
-      if (act.goal === null && act.target === BIG_BOX_TARGET) cat.facing = -1;
+      if (act.goal === null && act.target === BIG_BOX_TARGET) cat.facing = faceTile(cat, bigBoxAt(state));
       return;
     case "keyboard":
       // Кіт на клавіатурі: працювати не вийде (§9.12).

@@ -8,9 +8,19 @@
 
 import { idleAct } from "./cat";
 import { HOUSE_SLEEP, MODIFIERS } from "./config";
-import { BIG_BOX, hasBigBox } from "./home";
+import { BIG_BOX, BIG_BOX_SCRATCH, catSpotNear, hasBigBox, withThing } from "./home";
 import type { Rng } from "./rng";
 import type { Cat, GameState, Vec } from "./types";
+
+/** Клітинка коробки: її місце могло бути зайняте, тоді вона стоїть поруч (§8.7, «Що ставить гра»). */
+export function bigBoxAt(state: Pick<GameState, "home">): Vec {
+  return withThing(state, "big-box", BIG_BOX);
+}
+
+/** Звідки кіт дере коробку: збоку від неї там, де вона стоїть, а зайнято річчю — з вільної клітинки поруч (§8.7). */
+export function bigBoxScratchAt(state: Pick<GameState, "home" | "modifiers" | "today">): Vec {
+  return { ...catSpotNear(state, withThing(state, "big-box", BIG_BOX_SCRATCH)) };
+}
 
 /** Ціль дії кота, що в коробці чи йде до неї: сон, схованка, гра; і дряпання — збоку від неї (`BIG_BOX_SCRATCH`). */
 export const BIG_BOX_TARGET = "big-box";
@@ -26,7 +36,7 @@ export function bigBoxFree(state: GameState, cat: Cat | null): boolean {
 
 /** Коробка як місце для сну чи схованки (§9.12, «Будиночки»): з вагою картонного будиночка; немає чи зайнята — null. */
 export function bigBoxSpot(state: GameState, cat: Cat | null): { weight: number; value: { at: Vec; target: string } } | null {
-  return bigBoxFree(state, cat) ? { weight: HOUSE_SLEEP.cheap, value: { at: { ...BIG_BOX }, target: BIG_BOX_TARGET } } : null;
+  return bigBoxFree(state, cat) ? { weight: HOUSE_SLEEP.cheap, value: { at: { ...bigBoxAt(state) }, target: BIG_BOX_TARGET } } : null;
 }
 
 /** Дряпання, що пішло б у диван, іде в коробку з шансом `MODIFIERS.bigBox.scratch`; без коробки кидка немає (потоки §6.1). */
@@ -35,8 +45,10 @@ export function scratchesBigBox(state: GameState, rng: Rng): boolean {
 }
 
 /** Точка на клітинці коробки, поки вона стоїть: кіт там — у коробці, хоч би й ішов крізь неї. */
-export function inBigBox(state: Pick<GameState, "modifiers" | "today">, p: Vec): boolean {
-  return Math.floor(p.x) === BIG_BOX.x && Math.floor(p.y) === BIG_BOX.y && hasBigBox(state);
+export function inBigBox(state: Pick<GameState, "home" | "modifiers" | "today">, p: Vec): boolean {
+  if (!hasBigBox(state)) return false;
+  const box = bigBoxAt(state);
+  return Math.floor(p.x) === box.x && Math.floor(p.y) === box.y;
 }
 
 /**
