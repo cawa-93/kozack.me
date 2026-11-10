@@ -71,6 +71,7 @@ const USAGE = `Знімки сценаріїв гри та їх порівнян
     --jobs <n>           скільки сторінок знімати одночасно, за замовчуванням 2
     --url <адреса>       не запускати Vite, а знімати вже запущену гру (напр. прев'ю Netlify)
     --gpu                малювати відеокартою, а не програмно (SwiftShader)
+    --canvases           (галерея) ще й кожне полотно з data-shot — окремим PNG <out>/<data-shot>.png (фото титрів, знімки рис)
     --cache-key <назва>  свій кеш Vite для цього запуску: кілька паралельних запусків над тією самою копією гри
                          (напр. рецензенти) з різними ключами не ламають один одному залежності
     --verbose            писати кроки кожного знімка
@@ -117,6 +118,8 @@ interface ShotOptions {
   gpu: boolean;
   /** Ключ кешу Vite (`--cache-key`): паралельні запуски над тією самою текою гри з різними ключами. */
   cacheKey: string | null;
+  /** Зберегти й кожне полотно з `data-shot` окремим PNG (`--canvases`). */
+  canvases: boolean;
   verbose: boolean;
 }
 
@@ -420,6 +423,28 @@ async function shoot(browser: Browser, base: string, options: ShotOptions, targe
     result.day = time?.day ?? null;
     result.minute = time?.minute ?? null;
     await page.screenshot({ path: path.join(options.out, file), animations: "disabled", caret: "hide" });
+    if (options.canvases && kind === "gallery") {
+      // Полотно в пікселях пристрою (`--dpr`) на своєму тлі (CSS, як полароїд у грі): без рамки сторінки й прокрутки до нього.
+      const shots = await page.evaluate(() =>
+        [...document.querySelectorAll<HTMLCanvasElement>("canvas[data-shot]")].map((canvas) => {
+          const flat = document.createElement("canvas");
+          flat.width = canvas.width;
+          flat.height = canvas.height;
+          const ctx = flat.getContext("2d");
+          if (ctx) {
+            ctx.fillStyle = getComputedStyle(canvas).backgroundColor;
+            ctx.fillRect(0, 0, flat.width, flat.height);
+            ctx.drawImage(canvas, 0, 0);
+          }
+          return { name: canvas.dataset["shot"] ?? "", data: flat.toDataURL("image/png") };
+        }),
+      );
+      for (const shot of shots) {
+        if (!/^[\w.-]+$/.test(shot.name)) throw new Error(`data-shot «${shot.name}» — лише літери, цифри, «.», «-», «_»`);
+        await writeFile(path.join(options.out, `${shot.name}.png`), Buffer.from(shot.data.replace(/^data:image\/png;base64,/, ""), "base64"));
+      }
+      step(`полотен: ${shots.length}`);
+    }
     result.ok = result.errors.length === 0;
   } catch (error) {
     result.errors.push(error instanceof Error ? error.message : String(error));
@@ -619,6 +644,7 @@ const OPTIONS = {
   url: { type: "string" },
   gpu: { type: "boolean" },
   "cache-key": { type: "string" },
+  canvases: { type: "boolean" },
   verbose: { type: "boolean" },
   compare: { type: "boolean" },
   diff: { type: "string" },
@@ -695,6 +721,7 @@ async function main(): Promise<number> {
     url: values.url ?? null,
     gpu: values.gpu ?? false,
     cacheKey: values["cache-key"] ?? null,
+    canvases: values.canvases ?? false,
     verbose: values.verbose ?? false,
   };
   return runShots(options);

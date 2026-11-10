@@ -1,15 +1,21 @@
 // Вкладка галереї «Фото титрів» (§4.2, «Титри життя»): кожна поза фото на кількох котах (кошеня, дорослі різних шерстей і
 // форм), мама з кошенятами, пози персонажа на трьох зовнішностях і три речі — тим самим `drawPhoto`, що й стрічка, на полях
 // полароїда. Сітка — DOM поверх області перегляду. `?photos=cats|litters|people|things` — лише один розділ (для знімків).
+// `?photos=traits` — знімки рис (§4.2, `src/view/traitphoto/`): кожен бік кожної групи в кожній позі рівня; фільтри `area=`, `group=`
+// (через кому), `side=plus|minus`, інший кіт — `cat=<номер у CATS>`. Полотно знімка має `data-shot="<група>.<бік>.<поза>"`
+// (`shots.ts --canvases`).
 
 import { createCat } from "../../../sim/cat";
 import { DEFAULT_LOOK, newGame } from "../../../sim/game";
 import { createRng } from "../../../sim/rng";
 import type { StoryCat } from "../../../sim/story";
+import { TRAIT_GROUPS } from "../../../sim/traits";
 import type { Cat, Genes, GameState, Look, Shape } from "../../../sim/types";
 import { drawPhoto } from "../../../ui/photo";
 import { portraitCanvas } from "../../../ui/portrait";
 import { storyPhoto, type CatPhotoPose, type Photo, type PersonPhotoPose } from "../../../view/photo";
+import { TRAIT_PHOTOS } from "../../../view/traitphoto";
+import { LIFE_POSES } from "../../../view/traitphoto/types";
 import type { GalleryContext, GalleryTab, GalleryView } from "../tab";
 
 const CAT_POSES: readonly [CatPhotoPose, string][] = [
@@ -77,6 +83,12 @@ function catOf(state: GameState, seed: number, sample: CatSample, sex: Cat["sex"
 
 const story = (cat: Cat, ageWeeks = cat.ageWeeks): StoryCat => ({ cat, ageWeeks });
 
+/** Кіт знімків рис: світлий смугастий, на якому видно і вираз, і обрис. */
+const TRAIT_CAT: CatSample = { label: "Світлий смугастий", ageWeeks: 40, genes: { agouti: [true, true], dense: [false, false], tabby: [1, 1] } };
+
+/** Перша форма назви рівня: «[Спокійний|Спокійна]» → «Спокійний». */
+const firstForm = (name: string): string => name.replace(/\[([^|\]]*)\|[^\]]*\]/g, "$1");
+
 function mount(ctx: GalleryContext): GalleryView {
   const state = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
   const params = new URLSearchParams(location.search);
@@ -105,21 +117,22 @@ function mount(ctx: GalleryContext): GalleryView {
     root.append(head, grid);
     return grid;
   };
-  const row = (grid: HTMLElement, label: string): HTMLElement => {
+  const row = (grid: HTMLElement, label: string, width = 90): HTMLElement => {
     const line = document.createElement("div");
     Object.assign(line.style, { display: "flex", gap: "10px", alignItems: "flex-end", width: "100%" });
     const name = document.createElement("div");
     name.textContent = label;
-    Object.assign(name.style, { width: "90px", flex: "none", alignSelf: "center" });
+    Object.assign(name.style, { width: `${width}px`, flex: "none", alignSelf: "center" });
     line.append(name);
     grid.append(line);
     return line;
   };
-  const polaroid = (into: HTMLElement, photo: Photo | null, caption: string): void => {
+  const polaroid = (into: HTMLElement, photo: Photo | null, caption: string, shot?: string): void => {
     if (!photo) return;
     const card = document.createElement("figure");
     Object.assign(card.style, { margin: "0", padding: "8px 8px 6px", background: "#f6f1e7", borderRadius: "2px", boxShadow: "0 2px 6px rgba(0,0,0,.35)", color: "#2b2530" });
     const canvas = portraitCanvas(size, size);
+    if (shot !== undefined) canvas.dataset["shot"] = shot;
     canvas.style.display = "block";
     canvas.style.background = "#e9e1d3";
     drawPhoto(canvas, photo);
@@ -150,6 +163,31 @@ function mount(ctx: GalleryContext): GalleryView {
     polaroid(line, births(null, 2), "без мами");
     const adult = catOf(state, 230, CATS[1]!);
     polaroid(line, { subjects: [{ kind: "cat", cat: story(adult, 1), pose: "curious" }] }, "приїхав кошеням");
+  }
+
+  // Знімки рис — лише на прохання: їх сотні.
+  const traits = only === "traits" ? section("traits", "Знімки рис") : null;
+  if (traits) {
+    const list = (name: string): string[] | null => params.get(name)?.split(",").filter(Boolean) ?? null;
+    const areas = list("area");
+    const groups = list("group");
+    const sides = (list("side") ?? ["plus", "minus"]).filter((side): side is "plus" | "minus" => side === "plus" || side === "minus");
+    const sample = CATS[Number(params.get("cat"))] ?? TRAIT_CAT;
+    const model = catOf(state, 300, sample);
+    for (const group of TRAIT_GROUPS) {
+      if (areas && !areas.includes(group.area)) continue;
+      if (groups && !groups.includes(group.id)) continue;
+      for (const side of sides) {
+        const names = side === "plus" ? [group.names[0], group.names[1]] : [group.names[2], group.names[3]];
+        const line = row(traits, `${group.title} ${side === "plus" ? "+" : "−"}: ${names.map(firstForm).join(", ")}`, 170);
+        const shots = TRAIT_PHOTOS[group.area][group.id]?.[side];
+        for (const pose of LIFE_POSES) {
+          const title = CAT_POSES.find(([p]) => p === pose)?.[1] ?? pose;
+          const shot = shots?.[pose];
+          polaroid(line, { subjects: [{ kind: "cat", cat: story(model), pose, ...(shot ? { shot } : {}) }] }, shot ? title : `${title} · без знімка`, `${group.id}.${side}.${pose}`);
+        }
+      }
+    }
   }
 
   const people = section("people", "Персонаж");
