@@ -42,8 +42,9 @@ export const group: SoundGroup = {
     bought: { files: ["bought"], gain: 0.72, pitch: 0.03, ui: true },
     morning: { files: ["morning-1", "morning-2", "morning-3"], gain: 0.5, voices: 1, ui: true },
     end: { files: ["end"], gain: 0.5, voices: 1, ui: true },
-    // Музика титрів життя (§4.2): вмикає й гасить сама стрічка (`sceneLoop`), на шині інтерфейсу — пауза картки її не приглушує.
-    credits: { files: ["credits"], gain: 0.55, loop: true, ui: true },
+    // Музика титрів життя (§4.2): вмикає й гасить сама стрічка (`sceneLoop`). Шина музики й рівень треків радіо (−16 LUFS) — тож
+    // звучить, як радіо, під його повзунком; пауза картки її не приглушує.
+    credits: { files: ["credits"], loop: true, music: true },
     "low-stat": { files: ["low-stat"], gain: 0.4, cooldownMs: 5000, voices: 1, ui: true },
   },
 

@@ -7,6 +7,7 @@ const played = vi.hoisted(() => [] as string[]);
 vi.mock("../src/audio/sfx/sounds", () => ({ uiSound: (group: string, sound: string) => played.push(`${group}/${sound}`) }));
 
 import { soundFile } from "../src/audio/sfx/files";
+import { soundBus } from "../src/audio/sfx/bus";
 import { group } from "../src/audio/sfx/groups/ui";
 import type { Cue, SceneMoment } from "../src/audio/sfx/types";
 import { LOW_STAT } from "../src/sim/config";
@@ -67,10 +68,11 @@ describe("звуки інтерфейсу: події й моменти", () => 
     expect(group.sounds["retired"]).toBeUndefined();
   });
 
-  it("музика титрів життя (§4.2) — петля на шині інтерфейсу: картка-стрічка ставить гру на паузу, а музику це не приглушує", () => {
+  it("музика титрів життя (§4.2) — петля на шині музики: гучність — як у радіо (повзунок радіо), пауза картки її не приглушує", () => {
     const credits = group.sounds["credits"];
     expect(credits?.loop).toBe(true);
-    expect(credits?.ui).toBe(true);
+    expect(soundBus(credits!)).toBe("music");
+    expect(soundBus(group.sounds["end"]!)).toBe("ui");
     expect(credits?.files.length).toBeGreaterThan(0);
     for (const file of credits?.files ?? []) expect(soundFile("ui", file), file).not.toBeNull();
   });

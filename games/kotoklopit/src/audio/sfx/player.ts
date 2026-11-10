@@ -1,6 +1,7 @@
 // Відтворення звуків (§11.4а): стиснені файли тримаємо в пам'яті, декодуємо на першу потребу й лише до межі — розкодований звук
 // у 24 рази важчий за MP3. Нічого щокадру не створюється: вузли — лише на сам звук.
 
+import type { SoundBus } from "./bus";
 import { SFX } from "../config";
 import type { AudioEngine } from "../engine";
 import type { SoundFile } from "./files";
@@ -18,7 +19,7 @@ interface Decoded {
 }
 
 export interface PlayOptions {
-  bus: "world" | "ui";
+  bus: SoundBus;
   gain: number;
   pan: number;
   rate: number;

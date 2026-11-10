@@ -6,6 +6,7 @@ import type { GameState } from "../../sim/types";
 import { SFX } from "../config";
 import type { AudioEngine } from "../engine";
 import type { AudioPrefs } from "../settings";
+import { soundBus } from "./bus";
 import { allSoundFiles, soundFile } from "./files";
 import { placement, soundPoint } from "./place";
 import { Player, type LoopVoice } from "./player";
@@ -128,7 +129,7 @@ export class Sounds {
     const file = group && def?.loop ? soundFile(group.id, def.files[0] ?? "") : null;
     if (!def || !file) return null;
     const base = def.gain ?? 1;
-    const voice = this.player.loop(file, { bus: def.ui ? "ui" : "world", gain: base, pan: 0 });
+    const voice = this.player.loop(file, { bus: soundBus(def), gain: base, pan: 0 });
     if (!voice) return null;
     return { set: (gain, rate) => voice.set(base * gain, 0, rate), stop: () => voice.stop() };
   }
@@ -184,7 +185,7 @@ export class Sounds {
     const place = state ? placement(state.trip ? null : state.character.body, soundPoint(state, cue.at)) : { gain: 1, pan: 0 };
     const gain = (def.gain ?? 1) * (cue.gain ?? 1) * place.gain * jitter(def.spread);
     const rate = (cue.rate ?? 1) * jitter(def.pitch);
-    const started = this.player.play(file, { bus: def.ui ? "ui" : "world", gain, pan: place.pan, rate, delay: (cue.delayMs ?? 0) / 1000 }, () => {
+    const started = this.player.play(file, { bus: soundBus(def), gain, pan: place.pan, rate, delay: (cue.delayMs ?? 0) / 1000 }, () => {
       this.voices--;
       this.active.set(key, (this.active.get(key) ?? 1) - 1);
     });
@@ -232,7 +233,7 @@ export class Sounds {
         continue;
       }
       const file = soundFile(group.id, def.files[0] ?? "");
-      const voice = file ? this.player.loop(file, { bus: def.ui ? "ui" : "world", gain, pan: place.pan }) : null;
+      const voice = file ? this.player.loop(file, { bus: soundBus(def), gain, pan: place.pan }) : null;
       if (voice) this.loops.set(key, { voice, sound: cue.sound });
     }
   }
