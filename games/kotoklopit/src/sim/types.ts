@@ -122,6 +122,8 @@ export interface WorkActivity {
   money: number;
   reputation: number;
   sanity: number;
+  /** Персонаж уже сидів без руху (§10): відтепер рух піднімає його. Немає — ще тримають напрям, з яким сідали. */
+  settled?: true;
 }
 
 /** Тривала дія утриманням кнопки (§10): душ, їжа, прибирання. Ціль — id з `targetId`. */

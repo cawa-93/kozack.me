@@ -706,14 +706,19 @@ export function tickActivity(state: GameState, input: Input, minutes: number): v
     return;
   }
   if (isMoving(input.move)) {
-    if (activity?.kind === "work") stopWork(state);
-    else {
+    // Напрям, затиснутий, коли сідали, не піднімає (§10): інакше дія на ходу саджала за комп'ютер і наступний же крок піднімав.
+    if (activity?.kind === "work") {
+      if (activity.settled === true) stopWork(state);
+    } else {
       if (activity !== null && input.hold) character.holdSpent = true;
       character.activity = null;
     }
     return;
   }
-  if (activity?.kind === "work") return;
+  if (activity?.kind === "work") {
+    activity.settled = true;
+    return;
+  }
   if (!input.hold) {
     character.holdSpent = false;
     if (activity?.kind === "pet" || activity?.kind === "play") character.activity = null;

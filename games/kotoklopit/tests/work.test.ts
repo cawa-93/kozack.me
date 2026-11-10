@@ -40,6 +40,22 @@ describe("робота за комп'ютером (§8.6)", () => {
     expect(stopped?.type === "work-stopped" && stopped.minutes).toBeCloseTo(60);
   });
 
+  it("напрям, затиснутий, коли сідали, не піднімає з-за комп'ютера: відпустили й натиснули знову — устає (§10)", () => {
+    const save = game();
+    standAt(save, "computer");
+    const { facing } = save.current.character.body;
+    const walk = { move: { x: facing.x, y: facing.y }, hold: false };
+    // Гравець дійшов до комп'ютера й натиснув дію, ще тримаючи напрям.
+    advance(save, 0.05, walk);
+    interact(save);
+    advance(save, 0.5, walk);
+    expect(save.current.character.activity?.kind).toBe("work");
+    advance(save, 0.05);
+    expect(save.current.character.activity?.kind).toBe("work");
+    advance(save, 0.05, walk);
+    expect(save.current.character.activity).toBeNull();
+  });
+
   it("стажер заробляє 10 за годину на середній складності, 12,5 на легкій і 8 на важкій", () => {
     for (const [difficulty, pay] of [["easy", 8.75], ["normal", 7], ["hard", 5.6]] as const) {
       const save = game("she", difficulty);
