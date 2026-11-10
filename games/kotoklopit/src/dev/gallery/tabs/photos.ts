@@ -144,7 +144,7 @@ function mount(ctx: GalleryContext): GalleryView {
     const mother = catOf(state, 200, CATS[2]!);
     const litter: readonly Partial<Genes>[] = [{}, { orange: [true, false] }, { white: [1, 1] }, { orange: [true] }, {}];
     const kittens = litter.map((genes, k) => catOf(state, 210 + k, { label: "", ageWeeks: 0, genes }));
-    const births = (m: Cat | null, n: number): Photo | null => storyPhoto({ kind: "births", day: 9, mother: m ? story(m) : null, kittens: kittens.slice(0, n).map((k) => story(k, 0)) }, state);
+    const births = (m: Cat | null, n: number): Photo | null => storyPhoto({ kind: "births", day: 9, at: 12960, mother: m ? story(m) : null, kittens: kittens.slice(0, n).map((k) => story(k, 0)) }, state);
     for (const n of [1, 2, 3, 5]) polaroid(line, births(mother, n), `кошенят: ${n}`);
     polaroid(line, births(null, 2), "без мами");
     const adult = catOf(state, 230, CATS[1]!);

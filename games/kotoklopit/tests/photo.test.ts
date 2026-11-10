@@ -57,7 +57,7 @@ const eyes = (parts: readonly PortraitPart[]): string | null | undefined => part
 describe("подія → фото (§4.2)", () => {
   it("перший день — персонаж розпаковує речі, у своєму вигляді", () => {
     const state = game();
-    const photo = storyPhoto({ kind: "start", day: 0 }, state);
+    const photo = storyPhoto({ kind: "start", day: 0, at: 0 }, state);
     expect(photo?.subjects).toEqual([{ kind: "person", look: state.character.look, pose: "unpack" }]);
   });
 
@@ -65,16 +65,16 @@ describe("подія → фото (§4.2)", () => {
     const state = game();
     const kitten = cat(state, 5, 9);
     const arrived = story(kitten, 1);
-    expect(storyPhoto({ kind: "arrival", day: 3, cat: arrived, source: "shelter" }, state)?.subjects).toEqual([{ kind: "cat", cat: arrived, pose: "curious" }]);
-    for (const source of ["shelter-forced", "breeder"] as const) expect(catPose(storyPhoto({ kind: "arrival", day: 3, cat: arrived, source }, state))).toBe("curious");
-    expect(catPose(storyPhoto({ kind: "arrival", day: 3, cat: arrived, source: "foundling" }, state))).toBe("wary");
+    expect(storyPhoto({ kind: "arrival", day: 3, at: 4320, cat: arrived, source: "shelter" }, state)?.subjects).toEqual([{ kind: "cat", cat: arrived, pose: "curious" }]);
+    for (const source of ["shelter-forced", "breeder"] as const) expect(catPose(storyPhoto({ kind: "arrival", day: 3, at: 4320, cat: arrived, source }, state))).toBe("curious");
+    expect(catPose(storyPhoto({ kind: "arrival", day: 3, at: 4320, cat: arrived, source: "foundling" }, state))).toBe("wary");
   });
 
   it("пологи — мама годує, поруч кошенята віком 0; багато кошенят — на фото лише кілька", () => {
     const state = game();
     const mother = story(cat(state, 6));
     const kittens = Array.from({ length: 6 }, (_, i) => story(cat(state, 20 + i, 0), 0));
-    const photo = storyPhoto({ kind: "births", day: 9, mother, kittens }, state);
+    const photo = storyPhoto({ kind: "births", day: 9, at: 12960, mother, kittens }, state);
     const subjects = photo?.subjects ?? [];
     expect(subjects[0]).toEqual({ kind: "cat", cat: mother, pose: "nursing" });
     expect(PHOTO_KITTENS).toBeGreaterThanOrEqual(2);
@@ -82,18 +82,18 @@ describe("подія → фото (§4.2)", () => {
     expect(subjects).toHaveLength(1 + PHOTO_KITTENS);
     for (const [i, subject] of subjects.slice(1).entries()) expect(subject).toEqual({ kind: "cat", cat: kittens[i], pose: "nursing" });
     // Одне кошеня — одне на фото; мами вже немає — лише кошенята.
-    expect(storyPhoto({ kind: "births", day: 9, mother, kittens: kittens.slice(0, 1) }, state)?.subjects).toHaveLength(2);
-    expect(storyPhoto({ kind: "births", day: 9, mother: null, kittens: kittens.slice(0, 2) }, state)?.subjects.map((s) => s.kind === "cat" && s.cat)).toEqual(kittens.slice(0, 2));
+    expect(storyPhoto({ kind: "births", day: 9, at: 12960, mother, kittens: kittens.slice(0, 1) }, state)?.subjects).toHaveLength(2);
+    expect(storyPhoto({ kind: "births", day: 9, at: 12960, mother: null, kittens: kittens.slice(0, 2) }, state)?.subjects.map((s) => s.kind === "cat" && s.cat)).toEqual(kittens.slice(0, 2));
   });
 
   it("перша техніка — сама річ", () => {
     const state = game();
-    expect(storyPhoto({ kind: "thing", day: 4, thing: "fountain", quality: "premium" }, state)?.subjects).toEqual([{ kind: "thing", thing: "fountain", quality: "premium" }]);
+    expect(storyPhoto({ kind: "thing", day: 4, at: 5760, thing: "fountain", quality: "premium" }, state)?.subjects).toEqual([{ kind: "thing", thing: "fountain", quality: "premium" }]);
   });
 
   it("кар'єра: віхи — за столом, звільнення — понуро; решта — рядок без фото", () => {
     const state = game();
-    const career = (change: "promoted" | "demoted" | "fired" | "hired", milestone: boolean): StoryItem => ({ kind: "career", day: 20, change, position: 2, milestone });
+    const career = (change: "promoted" | "demoted" | "fired" | "hired", milestone: boolean): StoryItem => ({ kind: "career", day: 20, at: 28800, change, position: 2, milestone });
     const pose = (item: StoryItem): PersonPhotoPose | null | undefined => {
       const photo = storyPhoto(item, state);
       if (photo === null) return null;
@@ -113,7 +113,7 @@ describe("подія → фото (§4.2)", () => {
     const state = game();
     const at = (lifeMood: number): CatPhotoPose | undefined => {
       const entry = album(state, cat(state, 7), lifeMood);
-      const photo = storyPhoto({ kind: "farewell", day: 40, entry }, state);
+      const photo = storyPhoto({ kind: "farewell", day: 40, at: 57600, entry }, state);
       const subject = photo?.subjects[0];
       if (subject?.kind === "cat") expect(subject.cat).toEqual({ cat: entry, ageWeeks: entry.ageWeeks });
       return catPose(photo);

@@ -4,7 +4,7 @@
 import { lifeStory } from "../sim/story";
 import { weekOf } from "../sim/time";
 import type { GameState } from "../sim/types";
-import { endingText, livingCatCaption, storyCaption, type StoryCaption } from "../texts";
+import { endingText, livingCatCaption, storyCaption, storyWeek, type StoryCaption } from "../texts";
 import type { IconName } from "../view/iconnames";
 import { livingCatPhoto, storyPhoto, type Photo } from "../view/photo";
 import { storyIcon } from "../view/symbols";
@@ -27,7 +27,7 @@ export function creditsPlan(state: GameState): CreditsBlock[] {
   for (const item of lifeStory(state)) {
     if (weekOf(item.day) !== week) {
       week = weekOf(item.day);
-      plan.push({ kind: "week", label: `Тиждень ${week}` });
+      plan.push({ kind: "week", label: storyWeek(week) });
     }
     const caption = storyCaption(item, state);
     const photo = storyPhoto(item, state);
