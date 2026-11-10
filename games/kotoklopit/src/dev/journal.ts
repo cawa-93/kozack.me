@@ -26,7 +26,7 @@ const item = (i: Item): string => {
   if (i.kind === "toy") return `іграшка (${quality(i.toy.quality)})`;
   if (i.kind === "vacuum") return "пилосос";
   if (i.kind === "thing") return placed(i.item);
-  const name = { raw: "сира порція", meal: "страва", burnt: "підгоріла страва", catfood: "порція корму" }[i.kind];
+  const name = { raw: "сира порція", meal: "страва", burnt: "підгоріла страва", spoiled: "зіпсована страва", catfood: "порція корму" }[i.kind];
   return `${name} (${quality(i.quality)})`;
 };
 /** Що зробила прибиральниця (§4.1): прибране й те, що взяло запаси. */

@@ -109,6 +109,9 @@ function fitsHeld(state: GameState, target: Target): boolean {
     case "meal":
     case "burnt":
       return object === "stove" || object === "table" || object === "counter" || object === "trash" || (object === "fridge" && fridgeSupply(held) !== null) || standoff;
+    case "spoiled":
+      // Зіпсовану лише викидають (§8.7).
+      return object === "trash" || standoff;
     case "cat":
       return target.type === "carrier" || object === "shower" || object === "catKit" || object === "door";
     case "toy":

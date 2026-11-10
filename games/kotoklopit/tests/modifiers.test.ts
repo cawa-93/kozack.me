@@ -774,7 +774,7 @@ describe("ефекти (§4.1)", () => {
     // Першим із холодильника — судочок (§6.4).
     walkTo(save, "fridge");
     interact(save);
-    expect(save.current.character.held).toEqual({ kind: "meal", quality: "cheap", mom: true });
+    expect(save.current.character.held).toMatchObject({ kind: "meal", quality: "cheap", mom: true });
   });
 
   it("сценарій «Гостинці від мами під дверима»: пакет одразу в ящиках біля входу, «Розпакувати» — судочки в холодильнику", () => {

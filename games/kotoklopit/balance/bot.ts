@@ -19,7 +19,7 @@ import { checkout, room, type CartLine } from "../src/sim/shop";
 import { advance, drive, goHome, goToSleep, interact, rewindAccident } from "../src/sim/game";
 import { adopt, shelterCats, tripCat, vetExam, vetExamPrice, vetTreat, vetTreatPrice } from "../src/sim/destinations";
 import { canLeave, startTrip } from "../src/sim/trips";
-import { CARRIER_SPOT, distanceToRect, isSolid, isWall, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, VACUUM_HOME, type Rect } from "../src/sim/home";
+import { CARRIER_SPOT, distanceToRect, isSolid, isWall, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, SURFACE_IDS, VACUUM_HOME, type Rect } from "../src/sim/home";
 import { canGoToSleep, hoursUntilWake } from "../src/sim/sleep";
 import { targetById, targetCenter, targetOf } from "../src/sim/targets";
 import type { BowlItem, Cat, GameState, Medicine, NightReport, Product, Save, Trip, Vec } from "../src/sim/types";
@@ -201,6 +201,9 @@ export class Bot {
     const garbage = s.home.messes.find((m) => m.kind === "garbage");
     if (garbage && s.home.stove.item?.kind === "burnt") return named("clean", () => this.hold(`mess:${garbage.id}`));
     if (s.home.stove.item?.kind === "burnt") return named("trashBurnt", () => this.trashBurnt());
+    // Зіпсовану страву (§8.7) — у смітник: інакше вона займає стіл, і нову нікуди класти.
+    const spoiled = SURFACE_IDS.find((id) => s.home.surfaces[id]?.kind === "spoiled");
+    if (spoiled && !trashTipped(s)) return named("trashSpoiled", () => this.trashFrom(spoiled));
     if (this.wantsWork() && catOnComputer(s)) return named("shoo", () => this.shoo());
     // Безлад біля лотка заважає підійти до самого лотка, тож спершу безлад.
     const mess = this.nearestMess();
@@ -422,6 +425,10 @@ export class Bot {
         // Смітник перекинув кіт (§9.12, «Кмітливість у бешкеті»): страву — назад на плиту, спершу прибрати сміття.
         this.use(trashTipped(this.state) ? "stove" : "trash");
         return;
+      case "spoiled":
+        // Зіпсовану лише викидають (§8.7).
+        this.use("trash");
+        return;
       case "vacuum":
         this.vacuumStep();
         return;
@@ -580,7 +587,12 @@ export class Bot {
   }
 
   private trashBurnt(): void {
-    this.use("stove");
+    this.trashFrom("stove");
+  }
+
+  /** Узяти страву з плити чи поверхні й викинути. */
+  private trashFrom(id: string): void {
+    this.use(id);
     this.use("trash");
   }
 

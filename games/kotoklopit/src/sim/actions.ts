@@ -65,6 +65,7 @@ import { stateRng } from "./rng";
 import { canGoToSleep } from "./sleep";
 import { absoluteMinute } from "./time";
 import { fridgeSupply, isDish } from "./dish";
+import { freshMeal } from "./spoilage";
 import { anyTargetOf, targetById, targetOf, type Target } from "./targets";
 import type { BowlItem, Cat, GameState, HomeItem, Item, PetActivity, PetHand, PlayActivity, Quality, UseActivity, Vec } from "./types";
 import { exercise } from "./weight";
@@ -202,7 +203,7 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       if (held !== null) return refuse(state, target.id, "hands-full");
       // Спершу — мамин судочок: він уже готовий, без плити (§6.4, рішення автора 2026-10-26).
       const mom = useSupply(state, "momMeal");
-      if (mom !== null) return take(state, target, { kind: "meal", quality: mom, mom: true });
+      if (mom !== null) return take(state, target, freshMeal(state, mom, true));
       const quality = useSupply(state, "food");
       if (quality === null) return refuse(state, target.id, { reason: "empty", product: "food" });
       return take(state, target, { kind: "raw", quality });
@@ -245,7 +246,8 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
     case "stove": {
       const stove = state.home.stove;
       if (held !== null) {
-        if (!isDish(held)) return refuse(state, target.id, { reason: "not-here", item: held });
+        // Зіпсовану страву лише викидають (§8.7).
+        if (!isDish(held) || held.kind === "spoiled") return refuse(state, target.id, { reason: "not-here", item: held });
         if (stove.item !== null) return refuse(state, target.id, "occupied");
         // Поки порція на плиті, скільки вона готувалася, лічить плита (§8.7).
         const { cooked, ...dish } = held;
@@ -268,7 +270,7 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       const surfaces = state.home.surfaces;
       const item = surfaces[target.id] ?? null;
       if (held !== null) {
-        if (!isDish(held)) return refuse(state, target.id, { reason: "not-here", item: held });
+        if (!isDish(held) || held.kind === "spoiled") return refuse(state, target.id, { reason: "not-here", item: held });
         if (item !== null) return refuse(state, target.id, "occupied");
         surfaces[target.id] = held;
         character.held = null;
@@ -1137,11 +1139,12 @@ export function dropEverything(state: GameState): void {
   // Пилосос — на підлогу поруч (§8.7): уночі він не гуде.
   if (held?.kind === "vacuum") putVacuumDown(state);
   dropThing(state);
-  // Страву з рук — на вільну поверхню кухні, а не в нікуди.
-  if (back === null && (held?.kind === "meal" || held?.kind === "burnt")) {
+  // Страву з рук — на вільну поверхню кухні, а всі зайняті — лишається в руках: сама собою страва не зникає (§8.7).
+  if (back === null && isDish(held)) {
     const surfaces = state.home.surfaces;
     const free = SURFACE_IDS.find((id) => surfaces[id] === null);
-    if (free !== undefined) surfaces[free] = held;
+    if (free === undefined) return;
+    surfaces[free] = held;
   }
   character.held = null;
 }
@@ -1157,7 +1160,7 @@ export function tickStove(state: GameState, minutes: number): void {
   if (item === null) return;
   stove.minutes += minutes / cookFactor(state);
   if (item.kind === "raw" && stove.minutes >= COOK_MINUTES) {
-    stove.item = { kind: "meal", quality: item.quality };
+    stove.item = freshMeal(state, item.quality);
     emit(state, { type: "cooked", result: "ready" });
   }
   if (stove.item?.kind === "meal" && stove.minutes >= BURN_MINUTES[state.difficulty]) {

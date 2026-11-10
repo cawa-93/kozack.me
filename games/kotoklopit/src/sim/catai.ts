@@ -130,6 +130,7 @@ import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNest, isNewborn, motherNest, motherOf, nestOf, nestTarget, newbornSleep } from "./reproduction";
 import { enoughFor, fountainWorks, inQuietHouse, isDirty, itemsOf, litterCapacity } from "./resources";
 import { stateRng, type Rng } from "./rng";
+import { isEdible } from "./spoilage";
 import { appetiteFactor, attentionFactor, dietWeightFactor } from "./modifiers";
 import { absoluteMinute } from "./time";
 import { angryAtWindow, chatters, dogOnStairs, pigeonsFactor, strayMood, valerianCallPerHour } from "./windowdoor";
@@ -959,7 +960,7 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
     // столу (§9.12, «Кмітливість у бешкеті»).
     if (cabinetFood(state) && (state.home.cabinetOpen === true || rng.chance(CUNNING.openStep * Math.max(0, traitLevel(cat, "cunning"))))) return startRaid(state, cat, "cabinet");
     // Миски порожні: злодюжка краде людську їжу, а дуже голодний — будь-який кіт (§9.3).
-    const food = dishes(state, true).filter((d) => d.dish.kind !== "burnt");
+    const food = dishes(state, true).filter((d) => isEdible(d.dish));
     const steal = food[rng.int(0, food.length - 1)];
     const thief = traitLevel(cat, "thief");
     const starving = n.hunger >= HUNGRY_THEFT.starving ? HUNGRY_THEFT.base * Math.max(0, 1 + HUNGRY_THEFT.starvingStep * thief) : 0;
@@ -1296,7 +1297,7 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng, context: CatContext): 
     const weight = KNOCKING.weight * Math.max(1, traitFactor(cat, "knocking", MISCHIEF.traitStep)) * bored;
     allowed(zoneOf(trinket.object), trinket.object, weight, active(() => start(cat, "knock", trinketTile(trinket.kind), KNOCKING.sniffMinutes, `trinket:${trinket.kind}`)));
   }
-  const food = dishes(state, true).filter((d) => d.dish.kind !== "burnt");
+  const food = dishes(state, true).filter((d) => isEdible(d.dish));
   const steal = food[rng.int(0, food.length - 1)];
   if (steal) {
     const hungry = cat.needs.hunger >= MISCHIEF.hungryFrom ? MISCHIEF.hungrySteal : 1;
@@ -2248,7 +2249,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       // годину: голодний, він сідає туди знову й знову.
       if (act.target === null || !(SURFACE_IDS.includes(act.target) || act.target === "stove")) return;
       const dish = act.target === "stove" ? state.home.stove.item : state.home.surfaces[act.target];
-      if (dish && dish.kind !== "burnt" && cat.needs.hunger >= hungerThreshold(cat)) observe(state, cat, "thief", -1, false, MINUTES_PER_HOUR);
+      if (dish && isEdible(dish) && cat.needs.hunger >= hungerThreshold(cat)) observe(state, cat, "thief", -1, false, MINUTES_PER_HOUR);
       return;
     }
     case "bury": {
@@ -2543,7 +2544,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       if (!act.target) return;
       if (act.target.startsWith("item:")) return pushAway(state, cat, rng);
       const dish = act.target === "stove" ? state.home.stove.item : state.home.surfaces[act.target];
-      if (!dish || dish.kind === "burnt") return;
+      if (!dish || !isEdible(dish)) return;
       takeDish(state, act.target);
       cat.needs.hunger = Math.max(0, cat.needs.hunger - STEAL_HUNGER);
       // Людська їжа — понад порції (§9.12, «Схильність до повноти»).

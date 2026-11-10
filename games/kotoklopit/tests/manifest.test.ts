@@ -253,7 +253,8 @@ describe("маніфест: квартира", () => {
     // Пральна машина — усі стани сима; плита — кожна страва; ящики — 1…MAX_BOXES коробок; холодильник — за контрактом.
     const washer: Record<Home["washer"]["state"], true> = { idle: true, washing: true, done: true };
     expect(states("env/washer")).toEqual(expect.arrayContaining(keys(washer)));
-    const stove: Record<Dish["kind"], string> = { raw: "raw", meal: "ready", burnt: "burnt" };
+    // Зіпсованої страви на плиті не буває: там готова підгорає раніше (§8.7).
+    const stove: Record<Exclude<Dish["kind"], "spoiled">, string> = { raw: "raw", meal: "ready", burnt: "burnt" };
     expect(states("env/stove")).toEqual(expect.arrayContaining(["off", "cooking", ...Object.values(stove)]));
     expect(states("env/boxes")).toEqual(Array.from({ length: MAX_BOXES }, (_, i) => `pile-${i + 1}`));
     expect(states("env/fridge")).toEqual(["closed", "open"]);
@@ -419,6 +420,8 @@ describe("маніфест: речі котів, у руках, бруд", () =>
       raw: "item/dish/raw",
       meal: "item/dish/meal",
       burnt: "item/dish/burnt",
+      // Зіпсована страва (§8.7): своя тарілка; зіпсований мамин судочок — той самий судочок.
+      spoiled: "item/dish/spoiled",
       catfood: "item/scoop",
       cat: null,
       toy: "item/toy/cheap",

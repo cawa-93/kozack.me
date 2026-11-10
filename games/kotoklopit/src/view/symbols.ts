@@ -152,6 +152,9 @@ export function itemIcon(item: Item): IconName {
       return item.mom === true ? "mom-meal" : "meal";
     case "burnt":
       return "smoke";
+    // Зіпсована страва (§8.7), і мамин судочок теж: її лише викидають.
+    case "spoiled":
+      return "spoiled";
     case "catfood":
       return item.sterile ? "kibble-sterile" : "kibble";
     case "cat":
@@ -173,7 +176,7 @@ export function itemIcon(item: Item): IconName {
  */
 export function stoveIcon(item: Dish | null): IconName | null {
   if (item === null) return null;
-  return item.kind === "burnt" ? "smoke" : item.kind === "meal" ? itemIcon(item) : "pot";
+  return item.kind === "raw" ? "pot" : itemIcon(item);
 }
 
 /**

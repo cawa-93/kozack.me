@@ -207,6 +207,7 @@ export function heldFrame(item: Item | null, anim: PersonAnimId | null = null, t
     case "raw":
     case "meal":
     case "burnt":
+    case "spoiled":
       return { socket: "held", frame: dishFrame(item), scale: 1 };
     case "vacuum":
       return tool === "vacuum" ? { socket: "held", frame: VACUUM_HELD.frame, scale: VACUUM_HELD.scale } : { socket: "held", frame: BROOM_HELD.frame, scale: BROOM_HELD.scale };

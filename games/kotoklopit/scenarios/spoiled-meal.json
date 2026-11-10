@@ -1,0 +1,17 @@
+{
+  "name": "Зіпсована страва",
+  "description": "Середа першого тижня, 12:00. На столі зіпсована страва, на правій стільниці — зіпсований мамин судочок: над ними запах і гудуть мухи (§8.7). Візьміть страву — її можна лише викинути в смітник; плита, стіл і холодильник її не приймають.",
+  "game": { "address": "she", "difficulty": "normal", "seed": 5 },
+  "state": {
+    "day": 2,
+    "minute": 720,
+    "modifiers": { "day": null },
+    "character": { "body": { "x": 17.5, "y": 3.5 } },
+    "home": {
+      "surfaces": {
+        "table": { "kind": "spoiled", "quality": "cheap" },
+        "counter-right": { "kind": "spoiled", "quality": "premium", "mom": true }
+      }
+    }
+  }
+}

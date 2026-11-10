@@ -45,6 +45,8 @@ export function heldThing(item: Item | null): HeldThing | null {
     case "catfood":
       return item.sterile ? "sterile-scoop" : "scoop";
     case "meal":
+    // Зіпсовану страву тримають так само, як свіжу (§8.7).
+    case "spoiled":
       return item.mom === true ? "mom-meal" : "meal";
     case "raw":
     case "burnt":

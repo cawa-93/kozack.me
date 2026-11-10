@@ -1,6 +1,7 @@
 // Ніч — обробка між днями, поки персонаж спить (§4). Кроки йдуть строго в порядку §4.
 
 import { dropEverything, tickStove } from "./actions";
+import { tickSpoilage } from "./spoilage";
 import { binBigBox } from "./bigbox";
 import { newBody } from "./body";
 import { knownBreedHalves, shelterBreed } from "./breeds";
@@ -207,6 +208,7 @@ function sleep({ state, report, rng }: Night): void {
       // раніше плиту прокручували одним кроком після ночі, і всю ніч на ній лежала свіжа страва — «Злодюжка» мав на крадіжку цілу
       // ніч замість 15–45 хвилин, як удень (загальна ревізія 2026-10-29).
       tickStove(state, step);
+      tickSpoilage(state);
       tickHousehold(state, minute, step);
       // Феєрверки о 21:00 гримлять і тоді, коли персонаж уже спить (перевірка модифікаторів 2026-10-28: жайворонок, що ліг до 21:00, їх оминав).
       if (state.modifiers.day === "festival" && minute < MODIFIERS.festival.minute && minute + step >= MODIFIERS.festival.minute) {

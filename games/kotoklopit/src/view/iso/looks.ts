@@ -112,10 +112,19 @@ export function washerArtState(state: GameState): string {
   return washer === "washing" && powerOut(state) ? "idle" : washer;
 }
 
-/** Страва на столі чи стільниці (§8.7): `item/dish/*` з якістю продуктів, мамин судочок — свій. */
+/**
+ * Страва на столі чи стільниці (§8.7): `item/dish/*` з якістю продуктів, мамин судочок — свій. Зіпсована — одна на всі якості, а
+ * зіпсований судочок — той самий судочок: що він зіпсувався, каже запах над ним (`dishSmells`).
+ */
 export function dishFrame(dish: Dish): IsoFrame {
-  if (dish.kind === "meal" && dish.mom === true) return frame("item/dish/mom");
+  if (dish.mom === true) return frame("item/dish/mom");
+  if (dish.kind === "spoiled") return frame("item/dish/spoiled");
   return frame(`item/dish/${dish.kind}`, dish.quality);
+}
+
+/** Над стравою хвилі запаху (§8.7): над зіпсованою, як над брудним лотком. */
+export function dishSmells(dish: Dish | null): boolean {
+  return dish?.kind === "spoiled";
 }
 
 /**

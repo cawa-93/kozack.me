@@ -15,6 +15,7 @@ export const ICON_NAMES = [
   "pot",
   "meal",
   "smoke",
+  "spoiled",
   "empty",
   "food",
   "soap",

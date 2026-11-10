@@ -26,7 +26,7 @@ describe("мамині судочки в холодильнику (§6.4, ріш
     standAt(save, "fridge");
     const { events, stop } = recordEvents();
     interact(save);
-    expect(save.current.character.held).toEqual(SUDOCHOK);
+    expect(save.current.character.held).toMatchObject(SUDOCHOK);
     expect(meals(save)).toBe(1);
     expect(supplyCount(save.current, "food")).toBe(6);
     // Узяв — подумав, скільки судочків лишилося (§6.4).
@@ -48,7 +48,7 @@ describe("мамині судочки в холодильнику (§6.4, ріш
     interact(save);
     standAt(save, "table");
     interact(save);
-    expect(save.current.home.surfaces["table"]).toEqual(SUDOCHOK);
+    expect(save.current.home.surfaces["table"]).toMatchObject(SUDOCHOK);
     const { events, stop } = recordEvents();
     advance(save, bodyMinutes(EAT_MINUTES * 3), { move: { x: 0, y: 0 }, hold: true });
     stop();

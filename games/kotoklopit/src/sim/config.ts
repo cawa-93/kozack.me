@@ -152,6 +152,8 @@ export const INPUT_DEADZONE = 0.15;
 export const COOK_MINUTES = 20;
 /** Від того, як поставили сиру. */
 export const BURN_MINUTES: Record<Difficulty, number> = { easy: COOK_MINUTES + 45, normal: COOK_MINUTES + 30, hard: COOK_MINUTES + 15, ukro: COOK_MINUTES + 7.5 };
+/** Готова страва поза холодильником псується (§8.7): від того, як стала готовою. */
+export const SPOIL_MINUTES = 48 * MINUTES_PER_HOUR;
 export const EAT_MINUTES = 10;
 export const SHOWER_MINUTES = 10;
 export const MEAL_SATIETY: Record<Quality, number> = { cheap: 40, premium: 55 };

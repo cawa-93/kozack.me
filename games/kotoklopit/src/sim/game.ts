@@ -21,6 +21,7 @@ import { isWorking, newJob, tickWork } from "./work";
 import { momAtNight, tickModifiers } from "./modifiers";
 import { parcelsAtMorning } from "./parcels";
 import { migrate, SAVE_VERSION } from "./saves";
+import { tickSpoilage } from "./spoilage";
 
 export { SAVE_VERSION } from "./saves";
 
@@ -175,6 +176,7 @@ function tick(state: GameState, minutes: number, input: Input): void {
   tickWork(state, from, minutes);
   tickModifiers(state, from, minutes, isWorking(state));
   tickStove(state, minutes);
+  tickSpoilage(state);
   tickFlying(state, minutes);
   tickHousehold(state, from, minutes);
   tickCats(state, minutes, { present: !away, pace: BODY_PACE });

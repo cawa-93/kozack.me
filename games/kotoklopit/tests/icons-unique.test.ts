@@ -151,6 +151,7 @@ function collectCases(): Map<string, Shown[]> {
     meal: { kind: "meal", quality: "cheap" },
     mom: { kind: "meal", quality: "cheap", mom: true },
     burnt: { kind: "burnt", quality: "cheap" },
+    spoiled: { kind: "spoiled", quality: "cheap" },
   };
   for (const [id, dish] of Object.entries(dishes)) {
     const stove = stoveIcon(dish);
@@ -226,6 +227,7 @@ Object.assign(SAME, {
   страва: { why: "готова страва на плиті й на столі — одна річ", ids: ["stove:meal", "table:meal"] },
   крадіжка: { why: "кіт вкрав і хрумтить вашу їжу — хоч готову страву з плити, хоч сиру порцію зі столу: та сама втрата", ids: ["event:stole:object=stove:item=meal", "event:stole:object=table:item=raw"] },
   підгоріле: { why: "підгоріла страва на плиті й на столі — одна річ", ids: ["stove:burnt", "table:burnt"] },
+  зіпсоване: { why: "зіпсована страва (§8.7) — одна річ, хоч би де лежала", ids: ["stove:spoiled", "table:spoiled"] },
   "здоров'я": { why: "показник на панелі й думка персонажа, коли він низький", ids: ["stat:health", "thought:person:health"] },
   "здоровий глузд": { why: "показник на панелі й думка персонажа, коли він низький", ids: ["stat:sanity", "thought:person:sanity"] },
   спрага: { why: "кіт хоче пити: думка й прохання вголос біля миски для води, на умивальнику й там, де миска стояла", ids: ["thought:cat:thirst", "ask:water-bowl", "ask:sink", "ask:water"] },

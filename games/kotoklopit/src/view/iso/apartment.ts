@@ -49,6 +49,7 @@ import {
   cobwebLook,
   computerState,
   dishFrame,
+  dishSmells,
   doorState,
   fridgeLook,
   KIT_EXTRAS,
@@ -97,7 +98,16 @@ export const BACKDROP = {
  * виліз на річ, — уже над усім цим (`IsoPointHandle.place(x, y, id)`). Котячий слід (`trace`) — одразу над річчю: під
  * накладками наповнення, замком і контуром підсвітки без WebGL (`OUTLINE_ABOVE` у `highlight.ts`), бо він — частина речі.
  */
-const ON = { trace: 0.0002, overlay: 0.001, step: 0.0001, figure: 0.0012, mom: 0.0015, dish: 0.002, lamp: 0.0022, trinket: 0.0025, lock: 0.003 } as const;
+const ON = { trace: 0.0002, overlay: 0.001, step: 0.0001, figure: 0.0012, mom: 0.0015, dish: 0.002, smell: 0.0021, lamp: 0.0022, trinket: 0.0025, lock: 0.003 } as const;
+
+/** Хвилі запаху над зіпсованою стравою (§8.7): ті самі кадри й темп, що над брудним лотком (`floor.ts`). */
+const DISH_SMELL: readonly IsoFrame[] = [
+  { id: "fx/smell", state: "a" },
+  { id: "fx/smell", state: "b" },
+];
+const DISH_SMELL_MS = 450;
+/** Наскільки вище точки страви починається запах, одиниці арту: над рагу, а не з-під тарілки. */
+const DISH_SMELL_LIFT = 14;
 
 /** Дріт комп'ютера (`env/wire`): кадр і точка реєстру — у центрі клітинки `WIRE_TILE`. */
 const WIRE_AT: Vec = { x: WIRE_TILE.x + 0.5, y: WIRE_TILE.y + 0.5 };
@@ -206,6 +216,8 @@ interface OpenDoor {
 export class IsoApartmentView implements ApartmentPart {
   private readonly depth: IsoDepth;
   private readonly things = new Map<string, Thing>();
+  /** Звідки йде запах над стравою на кожній поверхні (`DISH_SMELL_LIFT`): рахується раз. */
+  private readonly smellAt = new Map<string, Point>();
   private readonly walls: Wall[] = [];
   /** Внутрішні стіни (лише вони згасають), їхні сліди для `wallsToFade` і що з них зараз щось закриває. */
   private readonly inner: Wall[] = [];
@@ -463,7 +475,7 @@ export class IsoApartmentView implements ApartmentPart {
     this.bigBox.update(state);
     this.drawTraces(state);
     const decor = decorLook(state, frame.lightMinute, this.decor);
-    this.drawSurfaces(state, decor);
+    this.drawSurfaces(state, decor, frame.time);
     this.drawDecor(decor);
     this.drawCobwebs(state);
     // Розмотаний рулон (§9.12, «Мисливський інстинкт») і перегризений дріт (§9.12, «Гризіння»; у день відключення — у гнізді
@@ -589,13 +601,15 @@ export class IsoApartmentView implements ApartmentPart {
    * лежить перед нею, — теж. У день відключення замість лампи на тому самому місці й тій самій глибині — свічка (§4.1,
    * `DESK_CANDLE`); одночасно їх не буває.
    */
-  private drawSurfaces(state: GameState, decor: DecorLook): void {
+  private drawSurfaces(state: GameState, decor: DecorLook, time: number): void {
     const { home } = state;
+    const smell = DISH_SMELL[Math.floor(time / DISH_SMELL_MS) % DISH_SMELL.length] ?? null;
     for (const id of Object.keys(home.surfaces)) {
       const thing = this.things.get(id);
       if (!thing) continue;
-      const dish = home.surfaces[id];
+      const dish = home.surfaces[id] ?? null;
       this.put(thing, "dish", dish ? dishFrame(dish) : null, ON.dish, "dish");
+      this.put(thing, "dish-smell", dishSmells(dish) ? smell : null, ON.smell, this.dishSmellAt(id));
     }
     // Дрібнички стоять на своїх місцях, поки їх не скинули; скинуті лежать на підлозі (їх показує підлога).
     for (const trinket of TRINKETS) {
@@ -605,6 +619,16 @@ export class IsoApartmentView implements ApartmentPart {
     const desk = this.get(DESK_LAMP.host);
     this.put(desk, "desk-lamp", decor.deskLamp && { id: "env/desk-lamp", state: decor.deskLamp }, ON.lamp, this.deskLamp);
     this.put(desk, "desk-candle", decor.deskCandle && { id: "env/desk-candle", state: decor.deskCandle }, ON.lamp, this.deskCandle);
+  }
+
+  private dishSmellAt(id: string): Point {
+    let at = this.smellAt.get(id);
+    if (!at) {
+      const dish = artOffset(`env/${id}`, "dish") ?? { x: 0, y: 0 };
+      at = { x: dish.x, y: dish.y - DISH_SMELL_LIFT };
+      this.smellAt.set(id, at);
+    }
+    return at;
   }
 
   /**

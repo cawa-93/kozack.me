@@ -25,3 +25,14 @@ describe("бот балансу", () => {
     expect(save.current.minute - 8 * 60).toBeLessThan(30);
   });
 });
+
+describe("бот балансу і зіпсована страва (§8.7)", () => {
+  it("зіпсовану страву зі столу викидає, а не лишає назавжди: інакше йому нема куди класти нову", () => {
+    const save = newGame({ address: "she", difficulty: "normal", seed: 7, chronotype: "lark" });
+    save.current.modifiers.day = null;
+    save.current.home.surfaces["table"] = { kind: "spoiled", quality: "cheap" };
+    save.current.character.stats.satiety = 40;
+    new Bot(save).day();
+    expect(Object.values(save.current.home.surfaces).some((d) => d?.kind === "spoiled")).toBe(false);
+  });
+});
