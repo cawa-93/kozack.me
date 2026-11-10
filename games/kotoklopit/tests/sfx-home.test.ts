@@ -3,6 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 
+import { CHORE_GRACE_MS } from "../src/audio/sfx/chores";
 import { group } from "../src/audio/sfx/groups/home";
 import { soundPoint } from "../src/audio/sfx/place";
 import type { Cue } from "../src/audio/sfx/types";
@@ -240,6 +241,9 @@ describe("петлі дому (§11.4а)", () => {
     }
     expect(heard[0]).toMatch(/^(0|16):wire$/);
     expect(heard.length).toBeGreaterThanOrEqual(3);
+    // Відпустили: ще `CHORE_GRACE_MS` дія вважається тривалою (сцена кличе симуляцію не щокадру, і прогрес стоїть, хоч кнопку
+    // тримають), тож чергова смуга, що випала на це вікно, ще звучить; далі — тиша.
+    for (let t = 0; t <= CHORE_GRACE_MS; t += 16) group.tick?.(state, 16);
     const paused = heard.length;
     for (let t = 0; t < 5000; t += 16) for (const cue of group.tick?.(state, 16) ?? []) heard.push(cue.sound);
     expect(heard.length).toBe(paused);
