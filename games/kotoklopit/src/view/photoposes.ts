@@ -175,6 +175,7 @@ const PERSON_STILLS: Readonly<Record<PersonPhotoPose, PersonStill>> = {
   desk: { anim: "work", at: 0, view: "back", props: deskProps(), phone: false, eyes: null },
   gloomy: { anim: "exhausted", at: 0, view: "front", props: null, phone: false, eyes: "half" },
   phone: { anim: "phone", at: 0, view: "front", props: null, phone: true, eyes: null },
+  proud: { anim: "idle", at: 0, view: "front", props: null, phone: false, eyes: null },
 };
 
 const PERSON_FAR: ReadonlySet<string> = new Set<string>(PERSON_FAR_SLOTS);
@@ -302,6 +303,12 @@ const KITTEN_SPOTS: readonly { x: number; y: number }[] = [
   { x: 18, y: 9 },
 ];
 const KITTEN_STEP = 26;
+/** Коти дому на фото пенсії — обабіч персонажа, третій — попереду. */
+const BESIDE_SPOTS: readonly { x: number; y: number }[] = [
+  { x: 40, y: 8 },
+  { x: -42, y: 10 },
+  { x: 74, y: 3 },
+];
 
 /** Хто й де на фото: частини всіх героїв і рецепти; хто ближче до камери (більший y місця) — пізніше. */
 export function photoLayout(photo: Photo): PhotoLayout {
@@ -310,6 +317,7 @@ export function photoLayout(photo: Photo): PhotoLayout {
   const cats = photo.subjects.filter((s) => s.kind === "cat");
   const mother = cats.find((s) => s.pose === "nursing" && catSize(photoCat(s.cat.cat, s.cat.ageWeeks)).kitten === 0);
   const young = cats.filter((s) => s !== mother);
+  const person = photo.subjects.some((s) => s.kind === "person");
   for (const subject of photo.subjects) {
     const pieces: PhotoPiece[] = [];
     let y = 0;
@@ -318,7 +326,11 @@ export function photoLayout(photo: Photo): PhotoLayout {
       const recipe = catRecipeOf(lookOf(subject.cat.cat));
       const far = farRecipe(recipe);
       const i = young.indexOf(subject);
-      const at = !mother || i < 0 ? { x: young.length > 1 && i >= 0 ? (i - (young.length - 1) / 2) * KITTEN_STEP : 0, y: 0 } : (KITTEN_SPOTS[i % KITTEN_SPOTS.length] ?? { x: 0, y: 0 });
+      const at = person
+        ? (BESIDE_SPOTS[i % BESIDE_SPOTS.length] ?? { x: 0, y: 0 })
+        : !mother || i < 0
+          ? { x: young.length > 1 && i >= 0 ? (i - (young.length - 1) / 2) * KITTEN_STEP : 0, y: 0 }
+          : (KITTEN_SPOTS[i % KITTEN_SPOTS.length] ?? { x: 0, y: 0 });
       y = at.y;
       for (const part of catPhotoParts(subject.cat, subject.pose)) pieces.push({ part: shifted(part, at), recipe: part.id.startsWith("cat/") ? (part.far ? far : recipe) : AS_IS });
     } else if (subject.kind === "person") {
@@ -332,7 +344,8 @@ export function photoLayout(photo: Photo): PhotoLayout {
     groups.push({ y, pieces });
   }
   groups.sort((a, b) => a.y - b.y);
-  return { pieces: groups.flatMap((group) => group.pieces), span };
+  // З персонажем фото вписується за силуетом: рамка кота стиснула б персонажа.
+  return { pieces: groups.flatMap((group) => group.pieces), span: person ? NO_SPAN : span };
 }
 
 function shifted(part: PortraitPart, by: { x: number; y: number }): PortraitPart {

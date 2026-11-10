@@ -14,12 +14,12 @@ import { portraitFrame, type PortraitPart } from "../src/view/art/compose";
 import { artEntries } from "../src/view/art/manifest";
 import { resetArtSources, shareArtAtlas } from "../src/view/art/sources";
 import { ART_INDEX_VERSION, framesOf, type ArtIndex, type FrameId, type IndexFrame } from "../src/view/art/types";
-import { livingCatPhoto, PHOTO_KITTENS, storyPhoto, type CatPhotoPose, type Photo, type PersonPhotoPose } from "../src/view/photo";
+import { lifePhotoPose, livingCatPhoto, PHOTO_HOME_CATS, PHOTO_KITTENS, retirementPhoto, storyPhoto, type CatPhotoPose, type Photo, type PersonPhotoPose } from "../src/view/photo";
 import { catPhotoParts, personPhotoParts, photoCat, photoLayout, thingPhotoParts } from "../src/view/photoposes";
 import { withCatCorner } from "./helpers";
 
 const CAT_POSES: readonly CatPhotoPose[] = ["curious", "wary", "nursing", "content", "calm", "sulk", "ill"];
-const PERSON_POSES: readonly PersonPhotoPose[] = ["unpack", "desk", "gloomy", "phone"];
+const PERSON_POSES: readonly PersonPhotoPose[] = ["unpack", "desk", "gloomy", "phone", "proud"];
 
 function game(): GameState {
   return withCatCorner(newGame({ address: "she", difficulty: "normal", seed: 3 })).current;
@@ -390,5 +390,29 @@ describe("drawPhoto: нерухомий кадр", () => {
     drawPhoto(canvas, { subjects: [{ kind: "person", look: s.character.look, pose: "desk" }] });
     expect(touched).toBe(false);
     expect(timers.calls()).toBe(0);
+  });
+});
+
+describe("фото виходу на пенсію (§4.2)", () => {
+  it("персонаж стоїть гордо, поруч — до `PHOTO_HOME_CATS` котів, що лишаються вдома, у позі за їхнім життям", () => {
+    const state = game();
+    expect(retirementPhoto(state).subjects).toEqual([{ kind: "person", look: state.character.look, pose: "proud" }]);
+    const cats = [1, 2, 3, 4].map((seed) => cat(state, seed));
+    for (const [i, c] of cats.entries()) c.moodHistory = [20 + i * 25];
+    state.cats = cats;
+    const subjects = retirementPhoto(state).subjects;
+    expect(subjects[0]).toEqual({ kind: "person", look: state.character.look, pose: "proud" });
+    expect(subjects.slice(1).map((s) => s.kind === "cat" && s.cat.cat)).toEqual(cats.slice(0, PHOTO_HOME_CATS));
+    expect(subjects.slice(1).map((s) => s.kind === "cat" && s.pose)).toEqual(cats.slice(0, PHOTO_HOME_CATS).map((c) => lifePhotoPose(c.moodHistory[0]!)));
+  });
+
+  it("коти на фото пенсії — обабіч персонажа, а не поверх нього", () => {
+    const state = game();
+    state.cats = [cat(state, 5), cat(state, 6)];
+    const layout = photoLayout(retirementPhoto(state));
+    const bodies = layout.pieces.filter((p) => p.part.id.startsWith("cat/body/")).map((p) => p.part.x ?? 0);
+    expect(bodies).toHaveLength(2);
+    expect(Math.sign(bodies[0]!)).not.toBe(Math.sign(bodies[1]!));
+    for (const x of bodies) expect(Math.abs(x)).toBeGreaterThan(20);
   });
 });

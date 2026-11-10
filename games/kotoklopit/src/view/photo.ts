@@ -8,7 +8,7 @@ import type { Cat, GameState, Look, Quality, StoryThing } from "../sim/types";
 /** Поза кота на фото (§4.2). */
 export type CatPhotoPose = "curious" | "wary" | "nursing" | "content" | "calm" | "sulk" | "ill";
 /** Поза персонажа на фото (§4.2). */
-export type PersonPhotoPose = "unpack" | "desk" | "gloomy" | "phone";
+export type PersonPhotoPose = "unpack" | "desk" | "gloomy" | "phone" | "proud";
 
 export type PhotoSubject =
   | { kind: "cat"; cat: StoryCat; pose: CatPhotoPose }
@@ -62,6 +62,15 @@ export function storyPhoto(item: StoryItem, state: GameState): Photo | null {
     case "farewell":
       return { subjects: [catShot({ cat: item.entry, ageWeeks: item.entry.ageWeeks }, lifePhotoPose(item.entry.lifeMood))] };
   }
+}
+
+/** Скільки котів дому щонайбільше стоїть поруч на фото виходу на пенсію. */
+export const PHOTO_HOME_CATS = 3;
+
+/** Фото виходу на пенсію (§4.2): персонаж стоїть гордо, поруч — коти, що лишаються вдома, у позі за їхнім життям. */
+export function retirementPhoto(state: GameState): Photo {
+  const cats = state.cats.slice(0, PHOTO_HOME_CATS).map((cat) => catShot({ cat, ageWeeks: cat.ageWeeks }, lifePhotoPose(lifeMood(cat))));
+  return { subjects: [{ kind: "person", look: state.character.look, pose: "proud" }, ...cats] };
 }
 
 /** Фото кота, що лишається вдома (§4.2, «Живі коти»): поза — за рівнем життя. */

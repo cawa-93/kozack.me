@@ -27,6 +27,7 @@ const PERSON_POSES: readonly [PersonPhotoPose, string][] = [
   ["desk", "за столом"],
   ["gloomy", "понуро"],
   ["phone", "телефон"],
+  ["proud", "гордо (пенсія)"],
 ];
 
 /** Розмір фото в стрічці, CSS px (стрічка — ≈ 180–280); `?photo=<px>` — інший. */

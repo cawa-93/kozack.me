@@ -7,7 +7,7 @@ import { lifeStory } from "../src/sim/story";
 import { weekOf } from "../src/sim/time";
 import { endingText } from "../src/texts";
 import { creditsPlan } from "../src/ui/creditsplan";
-import { CREDITS_MUSIC, creditsMusicGain, polaroidTilt, ROLL, rollEnd, rollOffset } from "../src/ui/rollmath";
+import { beatPx, CREDITS_INTRO, CREDITS_MUSIC, creditsMusicGain, polaroidTilt, ROLL, rollEnd, rollOffset, rollSpeed, slotHeight } from "../src/ui/rollmath";
 import { storyPhoto } from "../src/view/photo";
 import { CAREER_ICONS, storyIcon } from "../src/view/symbols";
 import type { StoryItem } from "../src/sim/story";
@@ -19,32 +19,42 @@ function finale(id: string) {
 }
 
 describe("титри життя: порядок (§4.2)", () => {
-  it("титул з ім'ям і тижнями → шлях за тижнями → підсумок → живі коти", () => {
+  it("титул (ім'я, тижні, назва фіналу) → шлях за тижнями → «Вихід на пенсію» останньою подією → живі коти", () => {
     const state = finale("finale-perfect-balance");
     const plan = creditsPlan(state);
-    const summary = plan.findIndex((b) => b.kind === "summary");
-    expect(plan[0]).toMatchObject({ kind: "title", name: "Соломія", weeks: "20 тижнів" });
-    // Шлях — кожна подія стрічки по черзі (з фото — полароїд, без — рядок), а перед першою подією тижня — його заголовок.
+    const ending = endingText(state, "retirement");
+    const retirement = plan.findIndex((b) => b.kind === "retirement");
+    expect(plan[0]).toEqual({ kind: "title", name: "Соломія", weeks: "20 тижнів", finale: ending.title });
+    // Шлях — кожна подія стрічки по черзі (з фото — полароїд, без — рядок), а перед першою подією тижня — його заголовок;
+    // пенсія — подія останнього тижня.
     const expected: string[] = [];
     let week = 0;
+    const weekOfItem = (day: number): void => {
+      if (weekOf(day) === week) return;
+      week = weekOf(day);
+      expected.push(`Тиждень ${week}`);
+    };
     for (const item of lifeStory(state)) {
-      if (weekOf(item.day) !== week) {
-        week = weekOf(item.day);
-        expected.push(`Тиждень ${week}`);
-      }
+      weekOfItem(item.day);
       expected.push(storyPhoto(item, state) ? "polaroid" : "line");
     }
-    expect(plan.slice(1, summary).map((b) => (b.kind === "week" ? b.label : b.kind))).toEqual(expected);
-    expect(plan[summary]).toMatchObject(endingText(state, "retirement"));
-    // Живі коти — після підсумку, кожен своїм полароїдом, у порядку котів дому.
-    const living = plan.slice(summary + 1);
+    weekOfItem(state.day);
+    expected.push("retirement");
+    expect(plan.slice(1, retirement + 1).map((b) => (b.kind === "week" ? b.label : b.kind))).toEqual(expected);
+    // Пенсія — ключова подія: підпис «Вихід на пенсію», під фото — текст фіналу; на фото — персонаж.
+    const key = plan[retirement];
+    expect(key?.kind === "retirement" && key.caption).toEqual({ title: "Вихід на пенсію", text: ending.text });
+    expect(key?.kind === "retirement" && key.photo.subjects.some((s) => s.kind === "person")).toBe(true);
+    expect(plan.some((b) => (b.kind as string) === "summary")).toBe(false);
+    // Живі коти — після пенсії, кожен своїм полароїдом, у порядку котів дому.
+    const living = plan.slice(retirement + 1);
     expect(living.map((b) => b.kind)).toEqual(state.cats.map(() => "living"));
     expect(living.map((b) => (b.kind === "living" ? b.caption.title : ""))).toEqual(state.cats.map((c) => c.name));
   });
 
-  it("без котів удома після підсумку нічого: стрічка закінчується підсумком", () => {
+  it("без котів удома стрічка закінчується виходом на пенсію", () => {
     const plan = creditsPlan(finale("finale-quiet-life"));
-    expect(plan.at(-1)?.kind).toBe("summary");
+    expect(plan.at(-1)?.kind).toBe("retirement");
   });
 });
 
@@ -64,8 +74,15 @@ describe("титри життя: іконки на лінії часу (§4.2, �
   });
 });
 
-describe("титри життя: музика (§4.2)", () => {
-  it("мовчить, поки звучить кінець гри, далі плавно наростає до повної гучності й тримає її", () => {
+describe("титри життя: титул і музика (§4.2)", () => {
+  it("три написи титулу — на три удари звуку кінця гри, усі до його кінця", () => {
+    expect(CREDITS_INTRO.beatsMs).toHaveLength(3);
+    const [a, b, c] = CREDITS_INTRO.beatsMs;
+    expect(a! < b! && b! < c! && c! < CREDITS_INTRO.endMs).toBe(true);
+  });
+
+  it("музика мовчить, поки звучить кінець гри, далі швидко наростає й тримає повну гучність", () => {
+    expect(CREDITS_MUSIC.delayMs).toBe(CREDITS_INTRO.endMs);
     expect(creditsMusicGain(0)).toBe(0);
     expect(creditsMusicGain(CREDITS_MUSIC.delayMs - 1)).toBe(0);
     expect(creditsMusicGain(CREDITS_MUSIC.delayMs + CREDITS_MUSIC.fadeMs / 2)).toBeCloseTo(0.5);
@@ -74,33 +91,53 @@ describe("титри життя: музика (§4.2)", () => {
   });
 });
 
-describe("титри життя: рух стрічки", () => {
+describe("титри життя: рух стрічки в такт музиці", () => {
   const viewport = 800;
-  const end = 5000;
+  const end = 50_000;
+  const beat = beatPx(viewport);
 
-  /** Секунда кадрами по 16 мс (останній — 8 мс). */
-  const second = (from: number, holding: boolean): number => {
-    let offset = from;
-    for (let t = 0; t < 1000; t += 16) offset = rollOffset(offset, Math.min(16, 1000 - t), viewport, end, holding);
+  /** Стрічка кадрами по 16 мс від `from` мс музики до `to`; `hold` — коли тримають. */
+  function run(offset: number, from: number, to: number, hold: (ms: number) => boolean = () => false): number {
+    for (let t = from; t < to; t += 16) {
+      const dt = Math.min(16, to - t);
+      offset = rollOffset(offset, dt, viewport, end, hold(t), t + dt);
+    }
     return offset;
+  }
+  /** Наскільки стрічка зсунута від сітки долей музики, px. */
+  const phase = (offset: number, ms: number): number => {
+    const e = (((offset - rollSpeed(viewport) * ms) % beat) + beat) % beat;
+    return Math.min(e, beat - e);
   };
 
-  it("їде вгору рівно: частка висоти екрана за секунду", () => {
-    expect(second(0, false)).toBeCloseTo(ROLL.speed * viewport);
-    expect(second(100, false)).toBeCloseTo(100 + ROLL.speed * viewport);
+  it("екран — за `ROLL.barsPerScreen` тактів музики; доля — чверть такту", () => {
+    expect(run(0, 0, CREDITS_MUSIC.barMs)).toBeCloseTo(viewport / ROLL.barsPerScreen, 1);
+    expect(beat).toBeCloseTo(viewport / ROLL.barsPerScreen / 4);
   });
 
   it("поки тримають — у `ROLL.fast` разів швидше", () => {
-    expect(second(0, true)).toBeCloseTo(ROLL.speed * ROLL.fast * viewport);
+    expect(run(0, 0, 1000, () => true)).toBeCloseTo(rollSpeed(viewport) * ROLL.fast * 1000, 0);
     expect(ROLL.fast).toBeGreaterThan(2);
   });
 
-  it("не їде далі за кінець", () => {
-    expect(rollOffset(end - 1, 1000, viewport, end, true)).toBe(end);
+  it("відпустили — швидко доганяє найближчу долю й далі йде в ритмі", () => {
+    const held = run(0, 0, 1300, (t) => t < 300);
+    expect(phase(held, 1300)).toBeLessThan(0.6);
+    expect(phase(run(held, 1300, 5000), 5000)).toBeLessThan(0.6);
   });
 
-  it("довга пауза кадру (вкладка у фоні) не перестрибує стрічку", () => {
-    expect(rollOffset(0, 60_000, viewport, end, false)).toBeLessThanOrEqual(ROLL.speed * viewport * (ROLL.maxStepMs / 1000) + 1e-9);
+  it("не їде далі за кінець, а довга пауза кадру (вкладка у фоні) не перестрибує стрічку", () => {
+    expect(rollOffset(end - 1, 1000, viewport, end, true, 1000)).toBe(end);
+    expect(rollOffset(0, 60_000, viewport, end, false, 60_000)).toBeLessThanOrEqual(rollSpeed(viewport) * ROLL.fast * ROLL.maxStepMs + 1e-9);
+  });
+
+  it("кожен блок займає ціле число долей — виїжджає знизу на удар, — з проміжком", () => {
+    for (const height of [10, 37, beat, 300, 512.4]) {
+      const slot = slotHeight(height, viewport);
+      expect(slot / beat).toBeCloseTo(Math.round(slot / beat), 6);
+      expect(slot).toBeGreaterThanOrEqual(height + beat * ROLL.gapBeats - 1e-9);
+      expect(slot).toBeLessThan(height + beat * (ROLL.gapBeats + 1));
+    }
   });
 
   it("кінець — коли низ стрічки дійшов до низу екрана; коротка стрічка не їде", () => {

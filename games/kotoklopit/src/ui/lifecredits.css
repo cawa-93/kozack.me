@@ -27,21 +27,31 @@
   touch-action: pan-y;
 }
 
+/* Проміжків між блоками немає: їх задає розмітка в такт (`layOut`), кожен блок — ціле число долей. */
 .credits-track {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 7vh;
-  /* Титул спершу — посередині екрана; «Нова гра» наприкінці — трохи вище низу. */
-  padding: 34vh max(16px, env(safe-area-inset-right)) 14vh max(16px, env(safe-area-inset-left));
+  padding: 0 max(16px, env(safe-area-inset-right)) 14vh max(16px, env(safe-area-inset-left));
   will-change: transform;
 }
 
+/* Титул — рівно на екран (висоту ставить `layOut`), написи посередині; кожен проявляється на свій удар звуку кінця гри. */
 .credits-title {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
   align-items: center;
-  gap: 1.5vh;
+  justify-content: center;
+  gap: 2.4vh;
+  width: 100%;
+  height: 100vh;
+}
+
+.credits-title .credits-beat {
+  opacity: 0;
+  animation: credits-beat-in 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
 .credits-name {
@@ -67,10 +77,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6vh;
   width: min(620px, 100%);
   margin: 0;
-  padding: 4vh 0;
+  padding: 0;
   list-style: none;
 }
 
@@ -101,7 +110,6 @@
 /* Заголовок тижня — на лінії часу, на темній підкладці, щоб риска не перекреслювала напис. */
 .credits-week {
   position: relative;
-  margin-top: 4vh;
   padding: 0.5vh 16px;
   background: var(--ink);
   color: var(--paper);
@@ -109,10 +117,6 @@
   letter-spacing: 0.24em;
   padding-left: calc(16px + 0.24em);
   text-transform: uppercase;
-}
-
-.credits-week:first-child {
-  margin-top: 0;
 }
 
 /* Іконка рядка — вагома точка на самій лінії часу: на паперовому кружку, як гліфи на темному. */
@@ -176,19 +180,25 @@
   line-height: 1.45;
 }
 
-.credits-summary {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2.4vh;
-  max-width: 620px;
-}
-
 .credits-finale {
   margin: 0;
 }
 
-.credits-summary-text {
+/* Вихід на пенсію — головна подія шляху: більший полароїд у теплому світлі, підпис крупніше, під ним текст фіналу й смуга часу. */
+.credits-retirement .polaroid {
+  box-shadow:
+    0 2px 0 rgb(255 255 255 / 0.4) inset,
+    0 0 0 3px var(--mustard-hi, #e8c47d),
+    0 0 46px rgb(232 196 125 / 0.45),
+    0 16px 32px rgb(10 5 9 / 0.55);
+}
+
+.credits-retirement .polaroid-caption {
+  font-size: clamp(18px, 4.6vh, 28px);
+}
+
+.credits-finale-text {
+  max-width: 560px;
   margin: 0;
   color: var(--paper);
   font-size: clamp(14px, 3.6vh, 18px);
@@ -205,8 +215,22 @@
   }
 }
 
+@keyframes credits-beat-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .credits-screen {
+  .credits-screen,
+  .credits-title .credits-beat {
     animation: none;
+    opacity: 1;
   }
 }
