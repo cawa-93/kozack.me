@@ -21,23 +21,23 @@ import type Phaser from "phaser";
 
 import { DUST_SPOTS, dustOf } from "../../sim/dust";
 import { radioLit } from "../../audio/radio/lamp";
-import { isPresent, objectById, OBJECTS, ROOMS, TOILET_ROLL, TRINKETS, WIRE_TILE, type HomeObject } from "../../sim/home";
+import { GAME_THINGS, isPresent, objectById, OBJECTS, placedObject, ROOMS, TOILET_ROLL, TRINKETS, WIRE_TILE, withThing, type HomeObject } from "../../sim/home";
 import type { GameEvent } from "../../sim/events";
 import type { Target } from "../../sim/targets";
-import type { GameState, Vec } from "../../sim/types";
+import type { GameState, GameThing, Vec } from "../../sim/types";
 import { addArt, isArtStub, setArt } from "../art/atlas";
 import { WALL_HEIGHT, WALL_SEGMENTS, type WallSegment } from "../art/manifest/lib/geometry";
 import type { ArtId } from "../art/types";
 import { BOILER, CANDLE_SHELVES, DESK_CANDLE, DESK_LAMP, PANES, POWER_STATION, POWER_STATION_BOX, POWER_STATION_ID, SCONCES } from "../decor";
 import type { PartContext } from "../world/context";
-import { isoObjectLook, type IsoFootprint, type IsoObjectLook } from "../world/objects";
+import { isoObjectLook, placedObjectLook, type IsoFootprint, type IsoObjectLook } from "../world/objects";
 import type { ApartmentPart, Point, WorldFrame } from "../world/part";
 import { ISO } from "../world/projection";
 import { decorLook, decorLookInit, type DecorLook } from "./decorlook";
 import { ISO_BACKDROP_DEPTH, isoDepth, type IsoBoxHandle, type IsoDepth, type IsoPointHandle } from "./depth";
 import { IsoBigBoxView } from "./bigboxview";
 import { IsoFxView } from "./fx";
-import { anchorLift, artOffset, BOXES_FRONT, DOOR_BOXES, objectAnchorAt, objectScreen, wallsToFade } from "./geometry";
+import { anchorLift, artOffset, BOXES_FRONT, DOOR_BOXES, objectAnchorAt, objectScreen, placeChanged, wallsToFade } from "./geometry";
 import { PERSON_DEPTH } from "./personlook";
 import { SEAT_GLIDE_RATE, SEATS, seatAt, seatMode, seatSpot, type Seat, type SeatSpot } from "./personseat";
 import { glideOffset } from "./personspot";
@@ -139,7 +139,10 @@ interface Piece {
   offset: number;
 }
 
-/** Річ квартири: малюнок, усе, що на ній, і її коробка в реєстрі глибини. */
+/**
+ * Річ квартири: малюнок, усе, що на ній, і її коробка в реєстрі глибини. Сховища й ящики біля входу гра може поставити не на
+ * своє місце (§8.7, «Що ставить гра»): `object`, `look` і `at` — там, де річ стоїть зараз.
+ */
 interface Thing {
   object: HomeObject;
   look: IsoObjectLook;
@@ -151,7 +154,12 @@ interface Thing {
   box: IsoBoxHandle;
   depth: number;
   present: boolean;
+  /** Річ гри: де її бачили востаннє (`placeChanged`); у меблів — null, вони не зсуваються. */
+  seen: Vec | null;
 }
+
+/** Речі квартири, які гра може поставити не на своє місце (§8.7, «Що ставить гра»): сховища й ящики біля входу. */
+const MOVABLE: ReadonlySet<string> = new Set(GAME_THINGS.filter((thing) => OBJECTS.some((o) => o.id === thing)));
 
 /**
  * Стілець (`SEATS`): сидіння й спинка — шматки одного кадру на різних глибинах, де він зараз (центр, клітинки) і куди їде
@@ -245,8 +253,11 @@ export class IsoApartmentView implements ApartmentPart {
   /** Ефекти над речами й котами (пара, дим, іскри, хропіння, задишка, чхання): квартира оновлюється після котів. */
   private readonly fx: IsoFxView;
   private readonly door: OpenDoor;
-  /** Передні стінки верхньої коробки купи ящиків: точка на коробці `boxes`, після кота в ній. */
-  private readonly boxesFront: { piece: Piece; point: IsoPointHandle };
+  /**
+   * Передні стінки верхньої коробки купи ящиків: точка на коробці `boxes`, після кота в ній (`at` — там, де стоїть купа), і
+   * сліди на них.
+   */
+  private readonly boxesFront: { piece: Piece; point: IsoPointHandle; at: Vec; marks: readonly TraceMark[] };
   /** Велика коробка дня «Велика коробка» (§4.1). */
   private readonly bigBox: IsoBigBoxView;
   private readonly chairs: Chair[] = [];
@@ -338,7 +349,7 @@ export class IsoApartmentView implements ApartmentPart {
       },
       { half: BOXES_FRONT.half },
     );
-    this.boxesFront = { piece: { image: front, key: "", offset: 0 }, point: frontPoint };
+    this.boxesFront = { piece: { image: front, key: "", offset: 0 }, point: frontPoint, at: BOXES_FRONT, marks: frontMarks };
     this.bigBox = new IsoBigBoxView(ctx, this.depth);
     for (const seat of SEATS) this.chairs.push(this.chair(seat));
   }
@@ -415,7 +426,8 @@ export class IsoApartmentView implements ApartmentPart {
     const look = isoObjectLook(object.id);
     const at = objectScreen(object);
     const id: ArtId = `env/${object.id}`;
-    const view = { object, look, at, body: { image: this.art(id, at, 0), key: "", offset: 0 }, extras: new Map<string, Piece>(), depth: 0, present: true };
+    const seen = MOVABLE.has(object.id) ? { x: Number.NaN, y: Number.NaN } : null;
+    const view = { object, look, at, body: { image: this.art(id, at, 0), key: "", offset: 0 }, extras: new Map<string, Piece>(), depth: 0, present: true, seen };
     const box = this.depth.addBox({ ...look.footprint, id: object.id }, (d) => {
       view.depth = d;
       view.body.image.setDepth(d);
@@ -461,8 +473,10 @@ export class IsoApartmentView implements ApartmentPart {
 
   update(state: GameState, frame: WorldFrame): void {
     this.glow.begin();
-    // Сховища з'являються в квартирі після першого отримання запасу (§6.4), ящики — лише з покупками.
+    // Сховища з'являються в квартирі після першого отримання запасу (§6.4), ящики — лише з покупками; і ті, й ті гра могла
+    // поставити не на своє місце (§8.7, «Що ставить гра»).
     for (const thing of this.things.values()) {
+      if (thing.seen && placeChanged(state, thing.object.id as GameThing, thing.seen)) this.relocate(state, thing);
       const present = isPresent(state, thing.object);
       thing.present = present;
       thing.body.image.setVisible(present);
@@ -486,6 +500,28 @@ export class IsoApartmentView implements ApartmentPart {
     this.moveChairs(state, dt);
     this.fadeWalls(state, frame.time);
     this.fx.update(state, frame.time);
+  }
+
+  /**
+   * Перенести сховище чи ящики туди, де вони стоять зараз (§8.7, «Що ставить гра»): кадр, усе, що на речі, коробку глибини (з нею
+   * — котів на речі), а в ящиків — і передні стінки зі слідами. Бабл, підсвітка й накладки далі беруть нове місце самі.
+   */
+  private relocate(state: GameState, thing: Thing): void {
+    const object = placedObject(state, thing.object.id);
+    const at = objectScreen(object);
+    const dx = at.x - thing.at.x;
+    const dy = at.y - thing.at.y;
+    thing.object = object;
+    thing.look = placedObjectLook(state, object.id);
+    thing.at = at;
+    thing.body.image.setPosition(at.x, at.y);
+    for (const piece of thing.extras.values()) piece.image.setPosition(piece.image.x + dx, piece.image.y + dy);
+    thing.box.move(thing.look.footprint);
+    if (object.id !== "boxes") return;
+    const front = this.boxesFront;
+    front.at = withThing(state, "boxes", BOXES_FRONT);
+    front.piece.image.setPosition(at.x, at.y);
+    for (const mark of front.marks) mark.piece.image.setPosition(at.x, at.y);
   }
 
   onEvent(event: GameEvent, time: number): void {
@@ -571,7 +607,7 @@ export class IsoApartmentView implements ApartmentPart {
     if (pile) {
       setPiece(front.piece, { id: "env/boxes/front", state: pile });
       front.piece.image.setVisible(true);
-      front.point.place(BOXES_FRONT.x, BOXES_FRONT.y, "boxes");
+      front.point.place(front.at.x, front.at.y, "boxes");
     } else {
       front.piece.image.setVisible(false);
       front.point.hide();
@@ -760,19 +796,18 @@ export class IsoApartmentView implements ApartmentPart {
   }
 
   /**
-   * Над річчю квартири, поки вона є (сховища з'являються після першого запасу, §6.4); над плитою з газовим пальником — над
-   * піднятою сковородою (`anchorLift`).
+   * Над річчю квартири, поки вона є (сховища з'являються після першого запасу, §6.4), — там, де вона стоїть (§8.7); над плитою з
+   * газовим пальником — над піднятою сковородою (`anchorLift`).
    */
   anchor(id: string): Point | null {
-    const thing = this.things.get(id);
-    if (!thing) return null;
+    if (!this.things.has(id)) return null;
     const state = this.ctx.state();
-    return isPresent(state, thing.object) ? objectAnchorAt(thing.object, anchorLift(state, id)) : null;
+    const object = placedObject(state, id);
+    return isPresent(state, object) ? objectAnchorAt(object, anchorLift(state, id)) : null;
   }
 
   objectAnchor(id: string): Point | null {
-    const thing = this.things.get(id);
-    return thing ? objectAnchorAt(thing.object) : null;
+    return this.things.has(id) ? objectAnchorAt(placedObject(this.ctx.state(), id)) : null;
   }
 
   /** Сяйво довкола малюнка речі (без WebGL — каркас її сліду). */

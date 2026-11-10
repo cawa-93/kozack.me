@@ -386,7 +386,7 @@ export class IsoCatsView implements CatsPart {
       mem.spot = spot;
       // На речі (не йде): з іншими на тій самій — рядком у межах її поверхні. Клубок бійки й кошенята біля матері — одна
       // фігура, їх не розсувають.
-      const place = PERCHED.has(spot.kind) && !catMoving(cat) && pair?.kind !== "brawl" && pair?.kind !== "nursing" ? perchPlace(spot) : null;
+      const place = PERCHED.has(spot.kind) && !catMoving(cat) && pair?.kind !== "brawl" && pair?.kind !== "nursing" ? perchPlace(spot, state) : null;
       if (place) {
         const m = (this.perchPool[perched.length] ??= { id: 0, key: "", at: spot.at, size: 1, area: place.area, partner: null });
         m.id = cat.id;

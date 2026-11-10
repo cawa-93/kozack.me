@@ -1,0 +1,49 @@
+{
+ "name": "Речі гри не на своїх місцях",
+ "description": "Середа другого тижня, 14:00, день «Велика коробка» (§8.7, «Що ставить гра»). Свої місця речей, які ставить гра, зайняті речами гравця: на місцях шафки з кормом, мішка наповнювача, бака стерильного корму й аптечки — миски, де стоять ящики біля входу й переноска — іграшки, а на місці великої коробки — пилосос. Тож шафка — ліворуч від свого місця, мішок і бак — на клітинку ближче, аптечка — праворуч, ящики — над диваном, переноска — ліворуч від свого місця біля дверей, велика коробка — вище на килимі. Сірко спить у переносці, Бублик — у ящиках. Персонажка стоїть перед аптечкою: над нею плашка з запасом.",
+ "game": { "address": "she", "difficulty": "normal", "seed": 31 },
+ "state": {
+  "day": 9,
+  "minute": 840,
+  "modifiers": { "day": "big-box" },
+  "character": { "body": { "x": 14.5, "y": 7.35, "facing": { "x": 0, "y": -1 } } },
+  "home": {
+   "supplies": {
+    "catFood": { "cheap": 40, "premium": 0 },
+    "litter": { "cheap": 8, "premium": 0 },
+    "sterileFood": { "cheap": 20, "premium": 0 },
+    "pills": { "cheap": 2, "premium": 0 }
+   },
+   "boxes": { "food": { "cheap": 6, "premium": 0 }, "catFood": { "cheap": 10, "premium": 0 } },
+   "carriers": [{ "quality": "cheap", "wear": 0 }],
+   "vacuumAt": { "x": 11.5, "y": 8.5 },
+   "items": [
+    { "id": 901, "kind": "bowl", "quality": "cheap", "slot": "floor-18-3", "food": 1, "foodQuality": "cheap", "sterile": false },
+    { "id": 902, "kind": "bowl", "quality": "premium", "slot": "floor-5-6", "food": 0, "foodQuality": null, "sterile": false },
+    { "id": 903, "kind": "bowl", "quality": "cheap", "slot": "floor-18-6", "food": 2, "foodQuality": "cheap", "sterile": true },
+    { "id": 904, "kind": "bowl", "quality": "premium", "slot": "floor-13-6", "food": 1, "foodQuality": "premium", "sterile": false },
+    { "id": 905, "kind": "toy", "quality": "cheap", "x": 12.5, "y": 9.5, "uses": 0 },
+    { "id": 906, "kind": "toy", "quality": "premium", "x": 8.5, "y": 9.5, "uses": 0 },
+    { "id": 907, "kind": "water", "quality": "cheap", "slot": "water-3", "water": 3 },
+    { "id": 908, "kind": "litter", "quality": "cheap", "slot": "litter-1", "litter": "cheap", "uses": 0 }
+   ],
+   "displaced": {
+    "cat-cabinet": { "x": 17, "y": 3 },
+    "litter-bag": { "x": 5, "y": 7 },
+    "sterile-bin": { "x": 18, "y": 7 },
+    "cat-kit": { "x": 14, "y": 6 },
+    "boxes": { "x": 13, "y": 8 },
+    "carrier": { "x": 7, "y": 9 },
+    "big-box": { "x": 11, "y": 7 }
+   }
+  }
+ },
+ "cats": [
+  { "source": "shelter", "ageWeeks": 40, "name": "Сірко", "sex": "male", "arrivedDay": -10, "x": 7.5, "y": 9.5,
+    "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "fatigue": 90, "attention": 10, "play": 10 },
+    "act": { "kind": "sleep", "target": "carrier", "goal": null, "minutes": 240, "elapsed": 0 } },
+  { "source": "shelter", "ageWeeks": 30, "name": "Бублик", "sex": "female", "arrivedDay": -10, "x": 13.5, "y": 8.5,
+    "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "fatigue": 90, "attention": 10, "play": 10 },
+    "act": { "kind": "sleep", "target": "boxes", "goal": null, "minutes": 240, "elapsed": 0 } }
+ ]
+}

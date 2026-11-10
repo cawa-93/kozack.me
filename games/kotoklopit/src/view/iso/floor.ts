@@ -21,7 +21,7 @@ import { CARRIER_TARGET, VACUUM_TARGET, type Target } from "../../sim/targets";
 import type { CleaningTool, GameState, HomeItem, TrinketKind, Vec } from "../../sim/types";
 import { addArt, setArt } from "../art/atlas";
 import type { PartContext } from "../world/context";
-import { isoItemLook, type IsoFootprint } from "../world/objects";
+import { isoItemLook, thingPoint, type IsoFootprint } from "../world/objects";
 import type { Point, WorldFrame, WorldPart } from "../world/part";
 import { ISO } from "../world/projection";
 import { isoDepth, type IsoDepth, type IsoPointHandle, type IsoPointOptions } from "./depth";
@@ -343,19 +343,23 @@ export class IsoFloorView implements WorldPart {
     if (vacuum) this.single(VACUUM_TARGET, TOOL_FRAME[cleaningTool(state)], vacuum, isoItemLook("vacuum").height, { id: VACUUM_TARGET, half: isoItemLook("vacuum").half });
   }
 
-  /** Переноски (§8.7): один об'єкт, купа з кількох. Кіт гризе — його переноска смикається. */
+  /**
+   * Переноски (§8.7): один об'єкт, купа з кількох, — біля дверей, а коли місце зайняте, там, куди їх поставила гра («Що ставить
+   * гра»). Кіт гризе — його переноска смикається.
+   */
   private drawCarriers(state: GameState, time: number): void {
     const shown = state.home.carriers.slice(0, CARRIER.shown);
+    const at = thingPoint(state, "carrier", CARRIER_SPOT);
     shown.forEach((carrier, index) => {
       const id = index === 0 ? "carrier" : `carrier-${index}`;
       const look = isoItemLook("carrier");
       const locked = carrierLocked(state, index);
-      const spot = this.single(id, { id: `item/carrier/${carrier.quality}`, state: locked ? "closed" : "body" }, CARRIER_SPOT, look.height, { id, half: look.half });
+      const spot = this.single(id, { id: `item/carrier/${carrier.quality}`, state: locked ? "closed" : "body" }, at, look.height, { id, half: look.half });
       this.extra(spot, "grate", !locked && index === 0 && carrierOccupied(state) ? { id: `item/carrier/${carrier.quality}`, state: "grate" } : null, ON.grate);
-      spot.point.place(CARRIER_SPOT.x + index * CARRIER_ORDER, CARRIER_SPOT.y + index * CARRIER_ORDER);
+      spot.point.place(at.x + index * CARRIER_ORDER, at.y + index * CARRIER_ORDER);
       const slot = carrierSlot(shown.length, index);
       const shake = carrierShakes(state, index) ? Math.sin(time / CARRIER_SHAKE.ms) * CARRIER_SHAKE.px : 0;
-      const s = ISO.toScreen(CARRIER_SPOT);
+      const s = ISO.toScreen(at);
       for (const image of [spot.image, ...[...spot.extras.values()].map((e) => e.image)]) image.setPosition(s.x + slot.x + shake, s.y + slot.y);
     });
   }
@@ -566,9 +570,13 @@ export class IsoFloorView implements WorldPart {
 
   /** Над річчю котячого кутка, безладом чи вертикальним пилососом на підлозі. */
   anchor(id: string): Point | null {
-    const home = this.ctx.state().home;
+    const state = this.ctx.state();
+    const home = state.home;
     if (id === VACUUM_TARGET) return home.vacuumAt ? floorAnchorAt(home.vacuumAt, isoItemLook("vacuum").height) : null;
-    if (id === CARRIER_TARGET) return home.carriers.length > 0 ? floorAnchorAt(CARRIER_SPOT, isoItemLook("carrier").height * (home.carriers.length > 1 ? 2 : 1)) : null;
+    if (id === CARRIER_TARGET) {
+      if (home.carriers.length === 0) return null;
+      return floorAnchorAt(thingPoint(state, "carrier", CARRIER_SPOT), isoItemLook("carrier").height * (home.carriers.length > 1 ? 2 : 1));
+    }
     const [kind, raw] = id.split(":");
     const number = Number(raw);
     if (kind === "item") {

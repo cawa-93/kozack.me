@@ -4,7 +4,7 @@
 
 import { carriedToy } from "../../sim/catai";
 import { HIGH_PLACES, objectAt, slotById, TRINKETS, type Rect } from "../../sim/home";
-import type { Cat, GameState, TrinketKind, Vec } from "../../sim/types";
+import type { Cat, GameState, GameThing, TrinketKind, Vec } from "../../sim/types";
 import { artEntry } from "../art/manifest";
 import type { ArtId } from "../art/types";
 import type { IsoBox } from "../world/isoorder";
@@ -64,6 +64,20 @@ export const STOVE_GAS_LIFT = (artOffset("env/stove", "pan")?.y ?? 0) - (artOffs
  */
 export function anchorLift(state: GameState, id: string): number {
   return id === "stove" && stoveArtState(state).startsWith("gas-") ? STOVE_GAS_LIFT : 0;
+}
+
+/**
+ * Чи річ гри `thing` стоїть не там, де її бачили минулого разу (`seen` — клітинка зсуву, NaN — на своєму місці; §8.7, «Що
+ * ставить гра»): так квартира щокадру дешево дізнається, що річ треба переставити. Якщо так — `seen` уже нове.
+ */
+export function placeChanged(state: Pick<GameState, "home">, thing: GameThing, seen: Vec): boolean {
+  const at = state.home.displaced?.[thing];
+  const x = at ? at.x : Number.NaN;
+  const y = at ? at.y : Number.NaN;
+  if (Object.is(x, seen.x) && Object.is(y, seen.y)) return false;
+  seen.x = x;
+  seen.y = y;
+  return true;
 }
 
 /** Точка над річчю на підлозі заввишки `height` у точці `p` (клітинки). */

@@ -4,13 +4,14 @@
 // `wire`, `cabinet`, `big-box`) чи персонаж (`character`, `food`, `feet`). Без Phaser.
 
 import { BIG_BOX_TARGET } from "../../sim/bigbox";
-import { BIG_BOX, centerOf, DOORFRAME, itemPoint, objectById, OBJECTS, RUG, TOILET_ROLL, trinketTile } from "../../sim/home";
+import { BIG_BOX, centerOf, DOORFRAME, itemPoint, objectById, OBJECTS, placedObject, RUG, TOILET_ROLL, trinketTile, withThing } from "../../sim/home";
 import type { Cat, GameState, TrinketKind, Vec } from "../../sim/types";
 
 /** Цілі-коти: префікс → інший кіт за id. */
 const CAT_PREFIXES: ReadonlySet<string> = new Set(["cat", "kitten", "licked", "declined", "pile", "cuddle"]);
 /** Цілі-речі котячого кутка: префікс → річ за id. */
 const ITEM_PREFIXES: ReadonlySet<string> = new Set(["item", "sniff", "shun"]);
+const OBJECT_IDS: ReadonlySet<string> = new Set(OBJECTS.map((o) => o.id));
 
 const center = (v: Vec): Vec => ({ x: v.x + 0.5, y: v.y + 0.5 });
 
@@ -50,15 +51,14 @@ export function targetPoint(state: GameState, target: string | null): Vec | null
       // Гризе дріт біля комп'ютера — до комп'ютера (§9.12, «Гризіння»).
       return centerOf(objectById("computer"));
     case "cabinet":
-      // Лапає дверцята шафки з кормом, стоячи збоку від неї (§9.12, «Кмітливість у бешкеті»).
-      return centerOf(objectById("cat-cabinet"));
+      // Лапає дверцята шафки з кормом, стоячи збоку від неї (§9.12, «Кмітливість у бешкеті»). Шафку, ящики й велику коробку
+      // гра могла поставити не на своє місце (§8.7, «Що ставить гра»).
+      return centerOf(placedObject(state, "cat-cabinet"));
     case BIG_BOX_TARGET:
       // Велика коробка (§4.1): дере її, стоячи збоку.
-      return center(BIG_BOX);
-    default: {
-      const object = OBJECTS.find((o) => o.id === target);
-      return object ? centerOf(object) : null;
-    }
+      return center(withThing(state, "big-box", BIG_BOX));
+    default:
+      return OBJECT_IDS.has(target) ? centerOf(placedObject(state, target)) : null;
   }
 }
 

@@ -15,7 +15,7 @@ import type { GameState, Vec } from "../../sim/types";
 import { PERSON_BY_PROGRESS, type PersonAnimId } from "../anim/ids";
 import { isoTileDir } from "../anim/iso";
 import type { RigFacing } from "../rig/types";
-import { isoObjectLook, type IsoUse } from "../world/objects";
+import { placedObjectLook, type IsoUse } from "../world/objects";
 import type { Point } from "../world/part";
 import { artOffset } from "./geometry";
 
@@ -55,10 +55,10 @@ export function touchFacing(feet: Readonly<Point>, cat: Readonly<Point>, prev: R
 
 const OBJECT_IDS: ReadonlySet<string> = new Set(OBJECTS.map((o) => o.id));
 
-/** Місце біля речі квартири `id`, якщо персонаж нею користується (`IsoObjectLook.use`). */
-function useOf(id: string): PersonSpot | null {
+/** Місце біля речі квартири `id`, якщо персонаж нею користується (`IsoObjectLook.use`), — там, де річ стоїть (§8.7). */
+function useOf(state: GameState, id: string): PersonSpot | null {
   if (!OBJECT_IDS.has(id)) return null;
-  const use = isoObjectLook(id).use;
+  const use = placedObjectLook(state, id).use;
   return use ? { at: use.at, face: use.facing, pose: use.pose } : null;
 }
 
@@ -116,15 +116,15 @@ export function personSpot(state: GameState, anim: PersonAnimId, progress: numbe
   const { body, activity } = state.character;
   const here: PersonSpot = { at: { x: body.x, y: body.y }, face: null, pose: null };
   if (anim === "fallAsleep") {
-    const bed = useOf("bed");
+    const bed = useOf(state, "bed");
     if (!bed?.face || (progress ?? 0) >= SLEEP_TURN) return bed ?? here;
     return { ...bed, face: { x: -bed.face.x, y: -bed.face.y } };
   }
-  if (activity?.kind === "work") return useOf("computer") ?? here;
+  if (activity?.kind === "work") return useOf(state, "computer") ?? here;
   if (activity?.kind === "use") {
     const target = activity.target;
     if (target === "computer") return wireFixSpot();
-    const object = useOf(target);
+    const object = useOf(state, target);
     if (object) return anim === "bath" ? { ...object, face: BATH_FACE } : object;
     const [kind, raw] = target.split(":");
     const id = Number(raw);
@@ -235,7 +235,7 @@ export function shotFace(state: GameState, place: ShotPlace): Vec | null {
     return toward(body, item ? itemPoint(item) : null);
   }
   if (!OBJECT_IDS.has(place.object)) return null;
-  const look = isoObjectLook(place.object);
+  const look = placedObjectLook(state, place.object);
   const box = look.footprint;
   const center = { x: (box.x0 + box.x1) / 2, y: (box.y0 + box.y1) / 2 };
   const face = look.use?.facing;

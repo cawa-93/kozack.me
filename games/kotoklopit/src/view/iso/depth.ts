@@ -46,6 +46,8 @@ export interface IsoBoxHandle {
    * рахується так, ніби її немає, а точки, що на ній стояли, — на підлозі.
    */
   setActive(active: boolean): void;
+  /** Перенести коробку на інший слід (річ гри, яку гра поставила поруч зі своїм місцем, §8.7): id той самий. */
+  move(footprint: IsoBox): void;
   remove(): void;
 }
 
@@ -81,10 +83,10 @@ export interface IsoPointHandle {
 
 /** Внутрішній запис коробки. Сам є `IsoBox` для `isoOrder`. */
 class BoxEntry implements IsoBoxHandle, IsoBox {
-  readonly x0: number;
-  readonly y0: number;
-  readonly x1: number;
-  readonly y1: number;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
   readonly id: string | null;
   active = true;
   removed = false;
@@ -107,6 +109,15 @@ class BoxEntry implements IsoBoxHandle, IsoBox {
   setActive(active: boolean): void {
     if (this.active === active || this.removed) return;
     this.active = active;
+    this.registry.changed();
+  }
+
+  move(f: IsoBox): void {
+    if (this.removed || (this.x0 === f.x0 && this.y0 === f.y0 && this.x1 === f.x1 && this.y1 === f.y1)) return;
+    this.x0 = f.x0;
+    this.y0 = f.y0;
+    this.x1 = f.x1;
+    this.y1 = f.y1;
     this.registry.changed();
   }
 

@@ -7,9 +7,9 @@
 // ті самі, з якими маніфест арту рахує полотна (`src/view/art/manifest/a0*.ts`; що вони збігаються, перевіряє
 // `tests/isoworld.test.ts`).
 
-import { OBJECTS } from "../../sim/home";
+import { OBJECTS, objectShift, withThing } from "../../sim/home";
 import type { FillStage } from "../../sim/storage";
-import type { GameState, HomeItem, Quality, Vec } from "../../sim/types";
+import type { GameState, GameThing, HomeItem, Quality, Vec } from "../../sim/types";
 
 // --- Ізометрія (крок 16) ------------------------------------------------------------------------
 
@@ -144,13 +144,48 @@ export function isoObjectLook(id: string): IsoObjectLook {
   return look;
 }
 
+/** Зсунутий вигляд речі за id: клітинка, куди її зсунуто, і сам вигляд (щоб не створювати нового щокадру). */
+const PLACED_LOOKS = new Map<string, { x: number; y: number; look: IsoObjectLook }>();
+
 /**
  * Вигляд речі квартири `id` там, де вона стоїть зараз (§8.7, «Що ставить гра»): сховище чи ящики, зсунуті з зайнятого місця,
- * несуть із собою слід і місце персонажа.
+ * несуть із собою слід і місце персонажа; на своєму місці й у меблів — сам `isoObjectLook`.
  */
 export function placedObjectLook(state: Pick<GameState, "home">, id: string): IsoObjectLook {
-  void state;
-  return isoObjectLook(id);
+  const own = isoObjectLook(id);
+  const to = (state.home.displaced as Partial<Record<string, Vec>> | undefined)?.[id];
+  if (!to) return own;
+  const cached = PLACED_LOOKS.get(id);
+  if (cached && cached.x === to.x && cached.y === to.y) return cached.look;
+  const shift = objectShift(state, id);
+  const look = shift.x === 0 && shift.y === 0 ? own : shiftedLook(own, shift);
+  PLACED_LOOKS.set(id, { x: to.x, y: to.y, look });
+  return look;
+}
+
+function shiftedLook(own: IsoObjectLook, d: Vec): IsoObjectLook {
+  const f = own.footprint;
+  const use = own.use && { ...own.use, at: { x: own.use.at.x + d.x, y: own.use.at.y + d.y } };
+  return { ...own, footprint: { x0: f.x0 + d.x, y0: f.y0 + d.y, x1: f.x1 + d.x, y1: f.y1 + d.y }, use };
+}
+
+/** Точки `p`, прив'язані до речі гри, — зі зсувом, за точкою й річчю: клітинка, куди річ зсунуто, і сама точка. */
+const THING_POINTS = new WeakMap<Vec, Map<GameThing, { x: number; y: number; at: Vec }>>();
+
+/**
+ * Точка `p`, прив'язана до речі гри `thing` (переноска, велика коробка), там, де річ стоїть зараз (§8.7, «Що ставить гра»): як
+ * `withThing`, але щокадру — той самий об'єкт; без зсуву — сама `p`.
+ */
+export function thingPoint(state: Pick<GameState, "home">, thing: GameThing, p: Vec): Vec {
+  const to = state.home.displaced?.[thing];
+  if (!to) return p;
+  let byThing = THING_POINTS.get(p);
+  const cached = byThing?.get(thing);
+  if (cached && cached.x === to.x && cached.y === to.y) return cached.at;
+  const at = withThing(state, thing, p);
+  if (!byThing) THING_POINTS.set(p, (byThing = new Map()));
+  byThing.set(thing, { x: to.x, y: to.y, at });
+  return at;
 }
 
 /** Де кіт на речі чи під нею: точка підлоги під лапами (клітинки) і висота над нею, одиниці арту. */
@@ -164,10 +199,9 @@ export interface IsoPerch {
  * підлозі. На речі — над своєю точкою на висоті `perch` (на сховищі-фігурі — за наповненням `stage`, `perchFull`: над
  * зіжмаканим порожнім мішком кіт не висить на висоті повного); у душовій кабіні — на мокрому піддоні біля входу; на
  * підвіконні — посередині дошки біля вікна; під річчю — визирає з-під ближчого до камери краю сліду (грань x1 чи y1), на
- * підлозі.
+ * підлозі. `look` — вигляд речі там, де вона стоїть (`placedObjectLook`: сховище могли зсунути).
  */
-export function isoCatPerch(id: string, cat: Vec, hiding: boolean, stage: FillStage | null = null): IsoPerch {
-  const look = isoObjectLook(id);
+export function isoCatPerch(id: string, cat: Vec, hiding: boolean, stage: FillStage | null = null, look: IsoObjectLook = isoObjectLook(id)): IsoPerch {
   const f = look.footprint;
   if (hiding) {
     const toRight = f.x1 - cat.x;

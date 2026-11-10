@@ -18,10 +18,10 @@ import { PERCH, type PairPlacement, type PerchArea } from "../anim/pairs";
 import { hidesUnder } from "../pose";
 import type { ArtId } from "../art/types";
 import type { RigFacing } from "../rig/types";
-import { ISO_KEYBOARD, isoCatPerch, isoObjectLook } from "../world/objects";
+import { ISO_KEYBOARD, isoCatPerch, isoObjectLook, placedObjectLook, thingPoint, type IsoFootprint } from "../world/objects";
 import { carrierSlot } from "./looks";
 import { inBigBox } from "../../sim/bigbox";
-import { BIG_BOX_FOOTPRINT, BIG_BOX_ID, BIG_BOX_PERCH, bigBoxSeat } from "./bigboxlook";
+import { BIG_BOX_FOOTPRINT, BIG_BOX_ID, BIG_BOX_PERCH, bigBoxFootprint, bigBoxSeat } from "./bigboxlook";
 import { blanketEars, catSize } from "./catrig";
 import { ISO_DEPTH_SLOT } from "./depth";
 import { artOffset, footprintCenter } from "./geometry";
@@ -210,14 +210,15 @@ function peekOpen(state: GameState, id: string, p: Vec): boolean {
  * коробкою дивана). `behind` — точка за коробкою речі, а не на ній.
  */
 export function hidePeek(state: GameState, id: string, cat: Vec): { at: Vec; behind: boolean; offset: Vec } {
-  const f = isoObjectLook(id).footprint;
+  const look = placedObjectLook(state, id);
+  const f = look.footprint;
   // Під диваном — завжди з боку сидіння, як затвердив автор. Шафи з пилососом біля торця вже немає (§8.7, рішення автора
   // 2026-11-02), і торець (16, 10) відкрився, але з торця кіт не визирає: там на старті (і часто потім) стоїть сам пилосос.
   if (id === "sofa") {
     const t = Math.min(1, Math.max(0, (cat.x - f.x0) / (f.x1 - f.x0)));
     return { at: { x: SOFA_HIDE.from + (SOFA_HIDE.to - SOFA_HIDE.from) * t, y: SOFA_HIDE.y }, behind: true, offset: ZERO };
   }
-  const near = isoCatPerch(id, cat, true).at;
+  const near = isoCatPerch(id, cat, true, null, look).at;
   const other = near.x === f.x1 ? { x: cat.x, y: f.y1 } : { x: f.x1, y: cat.y };
   const at = peekOpen(state, id, near) || !peekOpen(state, id, other) ? near : other;
   const bed = id === "bed";
@@ -490,7 +491,7 @@ export function catSpot(state: GameState, cat: Cat, anim: CatAnimId, pair: PairP
   if (act.kind === "sleep" && act.target === "carrier" && act.goal === null && carrier) {
     const inside = pointOf(`item/carrier/${carrier.quality}`, "inside");
     const slot = carrierSlot(Math.min(state.home.carriers.length, CARRIER.shown), 0);
-    return spot("carrier", CARRIER_SPOT, {
+    return spot("carrier", thingPoint(state, "carrier", CARRIER_SPOT), {
       offset: { x: inside.x + slot.x, y: inside.y + slot.y },
       above: { id: "carrier", offset: underGrate(depths.grate) },
       scale: SPOT_SCALE.carrier,
@@ -524,7 +525,7 @@ export function catSpot(state: GameState, cat: Cat, anim: CatAnimId, pair: PairP
     return spot("robot", { x: cat.x, y: cat.y }, { offset: pointOf(`item/robot/${robot}`, "top"), above: { id: "robot", offset: ABOVE_ITEM } });
   }
   // У великій коробці (§4.1) — як у ящиках біля входу: нижче за борт, передні стінки поверх (`bigboxlook.ts`).
-  if (inBigBox(state, cat)) return spot("furniture", bigBoxSeat(cat), { lift: BIG_BOX_PERCH, box: BIG_BOX_ID });
+  if (inBigBox(state, cat)) return spot("furniture", bigBoxSeat(state, cat), { lift: BIG_BOX_PERCH, box: BIG_BOX_ID });
   // У парі (`catPairs`) — зсунутий уздовж горизонталі екрана: той самий зсув у клітинках дає і місце, і глибину.
   const tile = pair ? { x: cat.x + pair.tile.x, y: cat.y + pair.tile.y } : { x: cat.x, y: cat.y };
   const object = objectAt(state, Math.floor(cat.x), Math.floor(cat.y));
@@ -630,7 +631,7 @@ export interface PerchPlace {
   readonly area: PerchArea;
 }
 
-/** Місця за ключем: речі стоять на своїх місцях, тож поверхня того самого ключа щоразу та сама (щокадру не створювати). */
+/** Місця за ключем: поверхня того самого ключа щоразу та сама (щокадру не створювати). */
 const PERCH_PLACES = new Map<string, PerchPlace>();
 
 function perchPlaceOf(key: string, area: () => PerchArea): PerchPlace {
@@ -643,17 +644,34 @@ function perchPlaceOf(key: string, area: () => PerchArea): PerchPlace {
 }
 
 /**
+ * Місця на речах за слідом: сховище чи ящики, зсунуті з зайнятого місця (§8.7), — інший слід під тим самим ключем, а
+ * `placedObjectLook` дає для того самого місця той самий слід.
+ */
+const FOOTPRINT_PLACES = new WeakMap<IsoFootprint, PerchPlace>();
+
+function footprintPlace(key: string, f: IsoFootprint): PerchPlace {
+  let place = FOOTPRINT_PLACES.get(f);
+  if (!place) {
+    place = { key, area: { x0: f.x0, y0: f.y0, x1: f.x1, y1: f.y1, margin: PERCH.margin, step: PERCH.step } };
+    FOOTPRINT_PLACES.set(f, place);
+  }
+  return place;
+}
+
+/**
  * Де розсунути котів, що лежать на тій самій речі (`perchCrowds`, `PERCH`): на меблях — у межах сліду речі (`isoObjectLook`;
  * у підвіконня — лише дошка; на столі з комп'ютером — обабіч клавіатури, `deskPlace`); у будиночку — уздовж входу на грані +x
  * (очі в темряві); під меблями — уздовж краю, з-під якого визирають очі (`hidePeek`; під диваном — лінія `SOFA_HIDE`). Решта
- * місць — null: там кіт сам (барабан, переноска, лоток) чи його не розсувають (на підлозі — `catCrowds`, руки).
+ * місць — null: там кіт сам (барабан, переноска, лоток) чи його не розсувають (на підлозі — `catCrowds`, руки). `state` — де
+ * стоять речі гри (§8.7, «Що ставить гра»); без нього — на своїх місцях.
  */
-export function perchPlace(spot: CatSpot): PerchPlace | null {
+export function perchPlace(spot: CatSpot, state?: Pick<GameState, "home">): PerchPlace | null {
   const box = spot.box;
   if (spot.kind === "furniture" && box === DESK) return deskPlace(spot.at);
   if (spot.kind === "furniture" && box) {
     // Велика коробка (§4.1) — не річ квартири: слід свій.
-    return perchPlaceOf(box, () => ({ ...(box === BIG_BOX_ID ? BIG_BOX_FOOTPRINT : isoObjectLook(box).footprint), margin: PERCH.margin, step: PERCH.step }));
+    if (box === BIG_BOX_ID) return footprintPlace(box, state ? bigBoxFootprint(state) : BIG_BOX_FOOTPRINT);
+    return footprintPlace(box, (state ? placedObjectLook(state, box) : isoObjectLook(box)).footprint);
   }
   if (spot.kind === "house" && spot.item) {
     const { x, y } = spot.at;
@@ -663,8 +681,11 @@ export function perchPlace(spot: CatSpot): PerchPlace | null {
   if (box === "sofa") {
     return perchPlaceOf(`under:${box}:seat`, () => ({ x0: SOFA_HIDE.from, x1: SOFA_HIDE.to, y0: SOFA_HIDE.y, y1: SOFA_HIDE.y, margin: 0, step: PERCH.head }));
   }
-  const f = isoObjectLook(box).footprint;
-  if (spot.at.x === f.x1) return perchPlaceOf(`under:${box}:x`, () => ({ x0: f.x1, x1: f.x1, y0: f.y0, y1: f.y1, margin: PERCH.edge, step: PERCH.head }));
-  if (spot.at.y === f.y1) return perchPlaceOf(`under:${box}:y`, () => ({ x0: f.x0, x1: f.x1, y0: f.y1, y1: f.y1, margin: PERCH.edge, step: PERCH.head }));
+  const look = state ? placedObjectLook(state, box) : isoObjectLook(box);
+  const f = look.footprint;
+  // Під зсунутою річчю (§8.7) — свій край: ключ із зсувом, щоб не взяти край, запам'ятаний на своєму місці.
+  const at = look === isoObjectLook(box) ? "" : `@${f.x0},${f.y0}`;
+  if (spot.at.x === f.x1) return perchPlaceOf(`under:${box}:x${at}`, () => ({ x0: f.x1, x1: f.x1, y0: f.y0, y1: f.y1, margin: PERCH.edge, step: PERCH.head }));
+  if (spot.at.y === f.y1) return perchPlaceOf(`under:${box}:y${at}`, () => ({ x0: f.x0, x1: f.x1, y0: f.y1, y1: f.y1, margin: PERCH.edge, step: PERCH.head }));
   return null;
 }
