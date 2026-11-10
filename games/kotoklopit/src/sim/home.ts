@@ -383,9 +383,9 @@ export function objectAt(state: Pick<GameState, "home">, x: number, y: number): 
 }
 
 /**
- * Клітинку закриває внутрішня стіна перед нею (камера «три чверті»): безлад і речі туди не кладемо, щоб їх було видно. Зовнішня
- * передня стіна (останній ряд карти) — низький плінтус (`WALL_HEIGHT.front`, `art/STYLE.md`): ряд над нею видно цілком, туди
- * ставлять речі.
+ * Клітинку закриває внутрішня стіна перед нею (камера «три чверті»): безлад туди не кладемо й коти там не сідають, щоб їх було
+ * видно. Речі котячого кутка ставлять і сюди (§8.7): перед річчю стіна згасає (`wallsToFade`). Зовнішня передня стіна (останній
+ * ряд карти) — низький плінтус (`WALL_HEIGHT.front`, `art/STYLE.md`): ряд над нею видно цілком.
  */
 export function hiddenTile(x: number, y: number): boolean {
   return y + 1 < MAP.length - 1 && MAP[y + 1]?.[x] === "#";
@@ -423,6 +423,10 @@ const NO_PLACE: readonly Vec[] = [
   { x: 18, y: 2 },
   { x: 11, y: 8 },
   { x: 12, y: 8 },
+  // Під ближньою стіною спальні річ закрив би монітор комп'ютера у вітальні, а на кухні тут висувають стілець від стола.
+  { x: 5, y: 4 },
+  { x: 6, y: 4 },
+  { x: 14, y: 4 },
   // Ряд під плінтусом відкритий для речей, але тут їх закривають вхідні двері (9–11) і диван (12).
   { x: 9, y: 10 },
   { x: 10, y: 10 },
@@ -438,9 +442,9 @@ const NO_PLACE: readonly Vec[] = [
 
 const sameTile = (a: Vec, x: number, y: number): boolean => Math.floor(a.x) === x && Math.floor(a.y) === y;
 
-/** Сюди гравець може поставити річ: видна підлога кімнати без меблів. */
+/** Сюди гравець може поставити річ: підлога кімнати без меблів, зокрема під ближньою стіною (§8.7). */
 function placeable(x: number, y: number): boolean {
-  if (isWall(x, y) || hiddenTile(x, y) || roomAt({ x, y }) === null) return false;
+  if (isWall(x, y) || roomAt({ x, y }) === null) return false;
   return !OBJECTS.some((o) => covers(o, x, y)) && !NO_PLACE.some((p) => sameTile(p, x, y));
 }
 

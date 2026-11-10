@@ -7,7 +7,7 @@ import { newGame } from "../src/sim/game";
 import { CARRIER_TILE, hiddenTile, isWall, LAUNDRY_BASKET, MAP_HEIGHT, nearestFreePlace, OBJECTS, PLACES, ROBOT_DOCK, roomAt, slotById, SLOTS } from "../src/sim/home";
 import { WALL_HEIGHT, WALL_SEGMENTS } from "../src/view/art/manifest/lib/geometry";
 import type { GameState, HomeItem, Vec } from "../src/sim/types";
-import { boxCovers } from "../src/view/iso/geometry";
+import { boxCovers, wallsToFade } from "../src/view/iso/geometry";
 import { SEATS, seatAt } from "../src/view/iso/personseat";
 import { isoItemLook, isoObjectLook } from "../src/view/world/objects";
 
@@ -43,10 +43,9 @@ describe("клітинки для речей (§8.7)", () => {
     for (const slot of SLOTS) expect(placeTiles.has(tile(slot)), slot.id).toBe(true);
   });
 
-  it("немає стін, проходів, меблів, зокрема сховищ, що з'являються пізніше, і клітинок за внутрішньою стіною", () => {
+  it("немає стін, проходів і меблів, зокрема сховищ, що з'являються пізніше", () => {
     for (const place of PLACES) {
       expect(isWall(place.x, place.y), place.id).toBe(false);
-      expect(hiddenTile(place.x, place.y), place.id).toBe(false);
       expect(roomAt(center(place)), place.id).not.toBeNull();
       expect(OBJECTS.find((o) => place.x >= o.x && place.x < o.x + o.w && place.y >= o.y && place.y < o.y + o.h)?.id, place.id).toBeUndefined();
     }
@@ -76,6 +75,22 @@ describe("клітинки для речей (§8.7)", () => {
         const { x, y, w, h } = wall.rect;
         expect(boxCovers({ x0: x, y0: y, x1: x + w, y1: y + h }, WALL_HEIGHT.front, center(place), BOWL), `${place.id}: ${wall.id}`).toBe(false);
       }
+    }
+  });
+
+  // Гравці ставлять речі до ближньої стіни в кожній кімнаті, а не лише у вітальні з плінтусом: ряд перед внутрішньою стіною —
+  // для речей, і стіна перед річчю згасає.
+  it("ряд перед ближньою внутрішньою стіною — для речей у спальні, ванній і кухні, і стіна перед річчю згасає", () => {
+    const hidden = PLACES.filter((p) => hiddenTile(p.x, p.y));
+    expect([...new Set(hidden.map((p) => roomAt(center(p))))].sort()).toEqual(["bathroom", "bedroom", "kitchen"]);
+    const inner = WALL_SEGMENTS.filter((w) => w.kind === "inner");
+    const boxes = inner.map(({ rect: { x, y, w, h } }) => ({ x0: x, y0: y, x1: x + w, y1: y + h }));
+    for (const place of hidden) {
+      const state = game();
+      state.home.items = [{ id: 900, kind: "bowl", quality: "cheap", slot: place.id, food: 0, foodQuality: null, sterile: false }];
+      const out: boolean[] = [];
+      wallsToFade(state, boxes, WALL_HEIGHT.inner, out);
+      expect(out.some(Boolean), place.id).toBe(true);
     }
   });
 

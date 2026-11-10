@@ -2110,7 +2110,8 @@ function itemMood(state: GameState, cat: Cat, item: HomeItem): void {
  */
 export function peeSpot(state: GameState, box: LitterItem): Vec {
   const at = itemPoint(box);
-  const place = nearestFreePlace(state, at, (center) => clearPath(at, center));
+  // Калюжу має бути видно: під ближню стіну, куди ставлять речі (§8.7), вона не лягає.
+  const place = nearestFreePlace(state, at, (center) => clearPath(at, center) && !hiddenTile(Math.floor(center.x), Math.floor(center.y)));
   return place ? { x: place.x + 0.5, y: place.y + 0.5 } : visibleFloorNear(state, at);
 }
 
