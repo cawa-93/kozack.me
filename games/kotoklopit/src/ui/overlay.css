@@ -968,7 +968,8 @@
 }
 
 /* Іконки намальовані чорнилом — на темному їм потрібна світла підкладка; у легенді — колір частини смуги. */
-.ending-screen .glyph {
+.ending-screen .glyph,
+.credits-screen .glyph {
   padding: 3px;
   border-radius: 50%;
   background: var(--part, #f3e9dc);
