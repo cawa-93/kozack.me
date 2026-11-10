@@ -9,7 +9,6 @@ import type { StoryItem } from "./sim/story";
 import { visibility } from "./sim/knowledge";
 import { TRAIT_GROUPS, type TraitArea } from "./sim/traits";
 import { TRAIT_LIFE_LINES } from "./traitlife";
-import type { LifeTone } from "./traitlife/types";
 import type { PersonStateId } from "./view/personstates";
 import { formatClock } from "./sim/time";
 import { accidentBedtime, accidentHome, accidentOf } from "./sim/trips";
@@ -765,13 +764,6 @@ export function farewellText(entry: AlbumEntry, diseaseTitle: (id: string) => st
   };
 }
 
-/** Тон звороту риси (§9.7): від `happy` — щасливе життя, від `ordinary` — звичайне, нижче — важке. Рівні — `lifeLevel`. */
-export const LIFE_TONES = { happy: 7, ordinary: 4 } as const;
-
-export function lifeTone(level: number): LifeTone {
-  return level >= LIFE_TONES.happy ? "happy" : level >= LIFE_TONES.ordinary ? "ordinary" : "hard";
-}
-
 /** Доля кота в описі життя: помер, віддали (живе деінде — «жив у вас»), живий удома (титри, теперішній час). */
 export type LifeFate = "died" | "given" | "living";
 
@@ -823,12 +815,12 @@ export function characterTrait(state: GameState, traits: readonly Trait[]): Trai
   return traits.find((trait) => visibility(state, trait) === 3) ?? traits[0] ?? null;
 }
 
-/** Опис життя з характером (§9.7): зачин за долею й рівнем + зворот риси в тоні рівня; без риси — повний текст рівня. */
+/** Опис життя з характером (§9.7): зачин за долею й рівнем + зворот риси для того самого рівня; без риси — повний текст рівня. */
 export function lifeText(state: GameState, cat: Pick<Cat, "id" | "name" | "sex" | "traits">, mood: number, fate: LifeFate): string {
   const level = lifeLevel(mood);
   const trait = characterTrait(state, cat.traits);
   const group = trait && TRAIT_GROUPS.find((g) => g.id === trait.group);
-  const clause = trait && group ? TRAIT_LIFE_LINES[group.area][group.id]?.[trait.level > 0 ? "plus" : "minus"][lifeTone(level)] : undefined;
+  const clause = trait && group ? TRAIT_LIFE_LINES[group.area][group.id]?.[trait.level > 0 ? "plus" : "minus"][level] : undefined;
   const values = { кіт: cat.name };
   if (clause) return fill(fillTense(`${LIFE_OPENINGS[fate][level] ?? ""}${clause}`, fate === "living"), cat.sex, values);
   const full =

@@ -1,12 +1,12 @@
-// Звороти опису життя з характером (§9.7): за рисою кота, у тоні рівня життя.
+// Звороти опису життя з характером (§9.7): за рисою кота — свій на кожен рівень життя.
 
-/** Тон звороту — за рівнем життя (`LIFE_TONES`, `src/texts.ts`). */
-export type LifeTone = "happy" | "ordinary" | "hard";
+/** Зворот на кожен рівень життя, від «Агонії» (0) до «Легенди» (9), — як `LIFE_LEVELS` у `src/texts.ts`. */
+export type PerLevel = readonly [string, string, string, string, string, string, string, string, string, string];
 
 /**
- * Звороти розділу рис: група (`TRAIT_GROUPS`) → бік (`plus` — рівні +1 і +2, `minus` — −1 і −2) → тон. Зворот іде одразу
+ * Звороти розділу рис: група (`TRAIT_GROUPS`) → бік (`plus` — рівні +1 і +2, `minus` — −1 і −2) → рівень життя. Зворот іде одразу
  * після зачину рівня («{кіт} [прожив|прожила] легендарне життя»): починається розділовим знаком («, …», «: …», « — …» чи
  * «. Нове речення…»), закінчується крапкою, «!» чи «…». Форми — `[чоловіча|жіноча]` за статтю кота, час — `<минулий|теперішній>`
  * (помер чи віддали — минулий, живий — теперішній). Правила — `TEXTS.md`, «Опис життя з характером».
  */
-export type TraitLifeLines = Readonly<Record<string, { plus: Record<LifeTone, string>; minus: Record<LifeTone, string> }>>;
+export type TraitLifeLines = Readonly<Record<string, { plus: PerLevel; minus: PerLevel }>>;

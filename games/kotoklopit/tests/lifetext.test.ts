@@ -8,7 +8,7 @@ import { newGame } from "../src/sim/game";
 import { createRng } from "../src/sim/rng";
 import { TRAIT_GROUPS } from "../src/sim/traits";
 import type { AlbumEntry, Cat, GameState, Trait } from "../src/sim/types";
-import { characterTrait, farewellText, fill, fillTense, LIFE_LEVELS, LIFE_LEVELS_GIVEN, LIFE_OPENINGS, lifeText, lifeTone, livingCatCaption, textVariant } from "../src/texts";
+import { characterTrait, farewellText, fill, fillTense, LIFE_LEVELS, LIFE_LEVELS_GIVEN, LIFE_OPENINGS, lifeText, livingCatCaption, textVariant } from "../src/texts";
 import { TRAIT_LIFE_LINES } from "../src/traitlife";
 
 function setup(): { state: GameState; cat: Cat } {
@@ -20,10 +20,10 @@ function setup(): { state: GameState; cat: Cat } {
 const trait = (group: string, level: Trait["level"], known: boolean): Trait => ({ group, level, seen: 0, known });
 const [first, second, third] = TRAIT_GROUPS;
 
-/** Очікуваний опис: зачин долі й рівня + зворот групи, боку й тону. */
+/** Очікуваний опис: зачин долі й рівня + зворот групи й боку для того самого рівня. */
 function expected(cat: Pick<Cat, "name" | "sex">, t: Trait, mood: number, fate: "died" | "given" | "living"): string {
   const group = TRAIT_GROUPS.find((g) => g.id === t.group)!;
-  const clause = TRAIT_LIFE_LINES[group.area][group.id]?.[t.level > 0 ? "plus" : "minus"][lifeTone(lifeLevel(mood))] ?? "";
+  const clause = TRAIT_LIFE_LINES[group.area][group.id]?.[t.level > 0 ? "plus" : "minus"][lifeLevel(mood)] ?? "";
   return fill(fillTense(`${LIFE_OPENINGS[fate][lifeLevel(mood)]}${clause}`, fate === "living"), cat.sex, { кіт: cat.name });
 }
 
@@ -41,8 +41,13 @@ describe("опис життя з характером: риса (§9.7)", () => 
     expect(characterTrait(state, [])).toBeNull();
   });
 
-  it("тон за рівнем життя: щасливе 7–9, звичайне 4–6, важке 0–3", () => {
-    expect([9, 8, 7, 6, 5, 4, 3, 2, 1, 0].map(lifeTone)).toEqual(["happy", "happy", "happy", "ordinary", "ordinary", "ordinary", "hard", "hard", "hard", "hard"]);
+  it("на кожен рівень життя — свій зворот: сусідні рівні того самого характеру звучать по-різному", () => {
+    const { state, cat } = setup();
+    cat.traits = [trait(first!.id, 2, true)];
+    const texts = [5, 15, 25, 35, 45, 55, 65, 75, 85, 95].map((mood) => lifeText(state, cat, mood, "died"));
+    for (const [i, mood] of [5, 15, 25, 35, 45, 55, 65, 75, 85, 95].entries()) expect(texts[i]).toBe(expected(cat, cat.traits[0]!, mood, "died"));
+    const clauses = TRAIT_LIFE_LINES[first!.area][first!.id]!.plus;
+    expect(new Set(clauses).size).toBe(10);
   });
 
   it("зачин — на кожен рівень і кожну долю: помер, віддали, живий", () => {
