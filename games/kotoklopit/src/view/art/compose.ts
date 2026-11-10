@@ -694,14 +694,14 @@ function composeFigure(canvas: HTMLCanvasElement | OffscreenCanvas, parts: reado
  * Чи можна малювати фігуру: як `artFrameState` частин, а кадри тканини (`cloth`) — необов'язкові: яких немає, ті без візерунка,
  * але поки вони вантажаться, фігура чекає — інакше портрет блимнув би однотонним.
  */
-function figureState(frames: readonly FrameId[], cloth: readonly FrameId[]): "ready" | "loading" | "missing" {
+export function figureState(frames: readonly FrameId[], cloth: readonly FrameId[]): "ready" | "loading" | "missing" {
   const state = artFrameState(frames);
   if (state !== "ready" || cloth.length === 0) return state;
   return cloth.some((id) => artFrameState([id]) === "loading") ? "loading" : "ready";
 }
 
 /** Завантажити частини й тканину; true — частини є (тканина необов'язкова). */
-async function loadFigure(frames: readonly FrameId[], cloth: readonly FrameId[]): Promise<boolean> {
+export async function loadFigure(frames: readonly FrameId[], cloth: readonly FrameId[]): Promise<boolean> {
   const [ok] = await Promise.all([loadArtFrames(frames), ...cloth.map((id) => loadArtFrames([id]))]);
   return ok;
 }
@@ -713,7 +713,7 @@ const portraitCloth: ClothLookup = (id) => {
 };
 
 /** Візерунки частини портрета; рецепт без них — нічого, як і без механізму візерунків. */
-function partCloth(cloth: readonly FrameId[], source: FrameLayers, view: ArtView | null): ClothFrame | undefined {
+export function partCloth(cloth: readonly FrameId[], source: FrameLayers, view: ArtView | null): ClothFrame | undefined {
   if (cloth.length === 0) return undefined;
   const { size, pivot, points } = source.frame;
   return clothFrame({ k: source.w / size.w, pivot, points, view }, portraitCloth, createCtx);
@@ -766,7 +766,7 @@ const INK_ALPHA = 64;
 const INK_PAD = 0.06;
 
 /** Намальоване на полотні частини (пікселі полотна); null — порожнє. Читає пікселі — лише раз на кадр частини. */
-function inkOf(ctx: Canvas2D, w: number, h: number): FigureInk | null {
+export function inkOf(ctx: Canvas2D, w: number, h: number): FigureInk | null {
   const data = ctx.getImageData(0, 0, w, h).data;
   let minX = Infinity;
   let minY = Infinity;
@@ -907,7 +907,7 @@ function figureInk(placed: readonly { part: PortraitPart; source: FrameLayers }[
 }
 
 /** Перетворення полотна частини (одиниці арту від лівого верхнього кута) у простір фігури: pivot → (x, y), поворот, масштаб. */
-function partMatrix(part: PortraitPart, pivot: ArtPoint): { a: number; b: number; c: number; d: number; e: number; f: number } {
+export function partMatrix(part: PortraitPart, pivot: ArtPoint): { a: number; b: number; c: number; d: number; e: number; f: number } {
   const rad = ((part.rot ?? 0) * Math.PI) / 180;
   const cos = Math.cos(rad);
   const sin = Math.sin(rad);
