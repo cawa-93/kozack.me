@@ -169,14 +169,13 @@ export interface EndHandlers {
 }
 
 /**
- * Екран кінця гри (§4.2, §6.1): хто й скільки протримався, назва завершення й текст, на що пішов час,
- * коти. Лише те, що гравець і так бачив: без розбивок і порогів, що розкривали б механіки (§11.3а).
+ * Екран програшу (§4.2, §6.1): хто й скільки протримався, назва завершення й текст, на що пішов час, коти. Лише те, що гравець і
+ * так бачив: без розбивок і порогів, що розкривали б механіки (§11.3а). Пенсія — титри життя (`lifecredits.ts`).
  */
-export function endScreen(state: GameState, end: GameEnd, handlers: EndHandlers): { parts: HTMLElement[]; actions: CardAction[] } {
+export function endScreen(state: GameState, end: Exclude<GameEnd, "retirement">, handlers: EndHandlers): { parts: HTMLElement[]; actions: CardAction[] } {
   const { title, text } = endingText(state, end);
-  const retired = end === "retirement";
   const { name } = state.character;
-  const when = retired ? weeks(weekOf(state.day)) : `тиждень ${weekOf(state.day)}, ${WEEKDAY_NAMES[weekdayOf(state.day)] ?? ""}`;
+  const when = `тиждень ${weekOf(state.day)}, ${WEEKDAY_NAMES[weekdayOf(state.day)] ?? ""}`;
   const parts: HTMLElement[] = [element("p", "ending-who", `${name} · ${when}`), element("h2", "title-heading", title)];
   for (const paragraph of text.split("\n\n")) parts.push(element("p", "ending-text", paragraph));
   const time = timeBar(state);
@@ -185,14 +184,11 @@ export function endScreen(state: GameState, end: GameEnd, handlers: EndHandlers)
   if (cats) parts.push(cats);
   return {
     parts,
-    // Пенсія — успішний кінець: переграти нема чого, лишається нова гра (§6.1).
-    actions: retired
-      ? [{ label: "Нова гра", primary: true, onSelect: handlers.newGame }]
-      : [
-          { label: "Переграти день", primary: true, onSelect: handlers.replayDay },
-          { label: "Переграти тиждень", onSelect: handlers.replayWeek },
-          { label: "Нова гра", onSelect: handlers.newGame },
-        ],
+    actions: [
+      { label: "Переграти день", primary: true, onSelect: handlers.replayDay },
+      { label: "Переграти тиждень", onSelect: handlers.replayWeek },
+      { label: "Нова гра", onSelect: handlers.newGame },
+    ],
   };
 }
 
@@ -207,7 +203,7 @@ const TIME_PARTS = [
   { key: "bustle", glyph: "👣", bar: PALETTE.grey, legend: PALETTE.greyHi },
 ] as const;
 
-function timeBar(state: GameState): HTMLElement | null {
+export function timeBar(state: GameState): HTMLElement | null {
   const minutes = state.stats.minutes;
   const total = TIME_PARTS.reduce((sum, p) => sum + minutes[p.key], 0);
   if (total <= 0) return null;

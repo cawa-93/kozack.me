@@ -1,0 +1,201 @@
+/* Титри життя (§4.2): стрічка по центру на темному, як титри фільму. Окремо від екрана програшу: віньєтка, лінія часу через
+   увесь шлях, полароїди з фото-спогадами (трохи вицвілими), краї стрічки тануть. */
+
+.credits-screen {
+  --photo-tone: sepia(0.2) saturate(0.88) contrast(0.96);
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  color: var(--paper);
+  text-align: center;
+  background:
+    radial-gradient(ellipse 75% 70% at 50% 45%, transparent 40%, rgb(20 12 18 / 0.85) 100%),
+    radial-gradient(ellipse 60% 50% at 50% 40%, #3b2a35 0%, var(--ink) 75%);
+  /* Краї стрічки тануть у темряві: титри виринають знизу й зникають угорі. */
+  mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 88%, transparent 100%);
+  touch-action: none;
+  user-select: none;
+  cursor: default;
+  animation: credits-in 1.6s ease both;
+}
+
+/* Зупинилася чи її взяли коліщатком — звичайна прокрутка. */
+.credits-screen.free {
+  overflow-y: auto;
+  touch-action: pan-y;
+}
+
+.credits-track {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7vh;
+  /* Титул спершу — посередині екрана; «Нова гра» наприкінці — трохи вище низу. */
+  padding: 34vh max(16px, env(safe-area-inset-right)) 14vh max(16px, env(safe-area-inset-left));
+  will-change: transform;
+}
+
+.credits-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5vh;
+}
+
+.credits-name {
+  margin: 0;
+  font: 400 clamp(40px, 14vh, 104px) / 1 var(--hand);
+  letter-spacing: 0.14em;
+  padding-left: 0.14em;
+  text-transform: uppercase;
+}
+
+.credits-weeks {
+  margin: 0;
+  color: var(--grey);
+  font: 400 clamp(14px, 3.4vh, 18px) / 1.2 var(--hand);
+  letter-spacing: 0.32em;
+  padding-left: 0.32em;
+  text-transform: uppercase;
+}
+
+/* Лінія часу — тонка риска через увесь шлях; полароїди лягають поверх неї. */
+.credits-path {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8vh;
+  width: min(620px, 100%);
+  margin: 0;
+  padding: 4vh 0;
+  list-style: none;
+}
+
+.credits-path::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  background: linear-gradient(to bottom, transparent, var(--grey-lo) 6%, var(--grey-lo) 94%, transparent);
+}
+
+.credits-path-living::before {
+  display: none;
+}
+
+.credits-moment,
+.credits-line {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2vh;
+}
+
+/* Дата — на лінії часу, на темній підкладці, щоб риска не перекреслювала напис. */
+.credits-date {
+  margin: 0;
+  padding: 2px 12px;
+  background: var(--ink);
+  color: var(--grey-hi);
+  font: 600 clamp(11px, 2.6vh, 13px) / 1.4 system-ui, sans-serif;
+  letter-spacing: 0.22em;
+  padding-left: calc(12px + 0.22em);
+  text-transform: uppercase;
+}
+
+.credits-line {
+  gap: 0.6vh;
+}
+
+.credits-line-text {
+  padding: 0 12px;
+  background: var(--ink);
+  color: var(--grey-hi);
+  font: 400 clamp(14px, 3.2vh, 17px) / 1.35 var(--hand);
+}
+
+/* Полароїд: папір із ширшим нижнім полем під підпис від руки; лежить трохи криво, як розкладений руками. */
+.polaroid {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: clamp(7px, 1.8vh, 12px) clamp(7px, 1.8vh, 12px) 0;
+  background: var(--paper);
+  box-shadow:
+    0 2px 0 rgb(255 255 255 / 0.4) inset,
+    0 14px 28px rgb(10 5 9 / 0.55);
+  transform: translateX(var(--shift, 0)) rotate(var(--rot, 0deg));
+}
+
+.polaroid-shot {
+  display: flex;
+  line-height: 0;
+  background: radial-gradient(ellipse at 50% 35%, #efe4cb, #d9caa9);
+  box-shadow: inset 0 0 0 1px rgb(46 31 41 / 0.2);
+}
+
+.polaroid-photo {
+  filter: var(--photo-tone);
+}
+
+/* Підпис не розширює полароїд: ширину задає фото, а текст переноситься в її межах. */
+.polaroid-caption {
+  box-sizing: border-box;
+  width: 0;
+  min-width: 100%;
+  margin: 0;
+  padding: 0.7em 0.4em 0.85em;
+  color: var(--ink);
+  font: 400 clamp(15px, 3.6vh, 21px) / 1.15 var(--hand);
+}
+
+.credits-text {
+  max-width: 520px;
+  margin: 0;
+  padding: 0 4px;
+  color: var(--grey-hi);
+  font-size: clamp(13px, 3.2vh, 16px);
+  line-height: 1.45;
+}
+
+.credits-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.4vh;
+  max-width: 620px;
+}
+
+.credits-finale {
+  margin: 0;
+}
+
+.credits-summary-text {
+  margin: 0;
+  color: var(--paper);
+  font-size: clamp(14px, 3.6vh, 18px);
+  line-height: 1.45;
+}
+
+.credits-actions {
+  margin: 0;
+}
+
+@keyframes credits-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .credits-screen {
+    animation: none;
+  }
+}

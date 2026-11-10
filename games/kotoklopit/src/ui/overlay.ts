@@ -231,6 +231,19 @@ export class Overlay {
   }
 
   /**
+   * Титри життя (§4.2): стрічку збирає й рухає `lifeCredits`; тут вона лише стає карткою, що ставить гру на паузу й чиєю головною
+   * дією («Нова гра») натискають Enter і пробіл, коли стрічка зупинилася.
+   */
+  credits(screen: HTMLElement, actions: CardAction[]): void {
+    drawGlyphs(screen);
+    this.card = { title: "", body: [], actions };
+    this.root.classList.remove("dawn");
+    this.root.classList.add("cinematic");
+    this.root.replaceChildren(screen);
+    this.root.hidden = false;
+  }
+
+  /**
    * Картку притиснуто ліворуч (`.aside`): на місці праворуч від неї видно парковку пункту. Чи вона там уміщається, вирішує сцена
    * дороги (`RaceScene.parkingAside`), а не ширина екрана; день ставить це щокадру. Титулки, кінця гри й меню (`solid`) не
    * стосується.

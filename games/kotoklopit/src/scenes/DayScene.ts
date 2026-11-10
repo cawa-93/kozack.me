@@ -30,6 +30,7 @@ import type { SoundMode, Sounds } from "../audio/sfx/sounds";
 import type { Session } from "../session";
 import { randomName, nameRng } from "../ui/charname";
 import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, addressCard, startName, wardrobeCard, type EnteredName, type PhoneTab } from "../ui/cards";
+import { lifeCredits } from "../ui/lifecredits";
 import { catIntroCard } from "../ui/catintro";
 import { radioCard } from "../ui/radio";
 import { lookRng, randomLook } from "../ui/look";
@@ -1190,6 +1191,12 @@ export class DayScene extends Phaser.Scene {
     const end = this.state.end;
     if (end === null) return;
     this.sounds.moment("end");
+    // Пенсія — не програш: титри життя замість екрана кінця гри (§4.2).
+    if (end === "retirement") {
+      const { screen, actions } = lifeCredits(this.state, () => this.chooseNewGame());
+      this.overlay.credits(screen, actions);
+      return;
+    }
     const save = this.session.save;
     const { parts, actions } = endScreen(this.state, end, {
       replayDay: () => {
