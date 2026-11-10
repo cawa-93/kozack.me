@@ -136,7 +136,7 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
     const entry = state.album.find((e) => e.id === id);
     if (!entry) continue;
     const text = farewellText(entry, diseaseTitle, state);
-    events.push([fill("{кіт} [поїхав|поїхала] до нових господарів", entry.sex, { кіт: entry.name }), text.cause, `«${text.title}». ${text.life}`, ...(entry.traits.length > 0 ? [traitChips(entry.traits, entry.sex)] : [])]);
+    events.push([fill("{кіт} [поїхав|поїхала] до нових господарів", entry.sex, { кіт: entry.name }), text.cause, ...(entry.traits.length > 0 ? [traitChips(entry.traits, entry.sex)] : [])]);
   }
   for (const id of night?.lostCats ?? []) {
     const entry = state.album.find((e) => e.id === id);
@@ -144,7 +144,8 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
     // Хвороба, від якої кіт помер, — з іконкою, як у ветеринара (§11.4 «Іконка біля назви»).
     const text = farewellText(entry, diseaseLabel, state);
     // На прощанні відкривається весь характер кота (§9.7): риси з описом по дотику. «Прощавай, {кіт}» вимагало б кличного відмінка.
-    events.push([`Прощання: ${entry.name}`, text.cause, `«${text.title}». ${text.life}`, ...(entry.traits.length > 0 ? [traitChips(entry.traits, entry.sex)] : [])]);
+    // Опису прожитого життя на титулці немає (§9.7): він — в альбомі й у титрах життя.
+    events.push([`Прощання: ${entry.name}`, text.cause, ...(entry.traits.length > 0 ? [traitChips(entry.traits, entry.sex)] : [])]);
   }
   // Прийшов рахунок за комунальні (§6.4); нульового немає.
   const utilities = night?.utilities;
@@ -459,11 +460,16 @@ export function albumCause(entry: AlbumEntry, title: (id: string) => string = di
   return entry.cause.kind === "disease" ? title(entry.cause.disease).toLowerCase() : fill(CAUSE_TITLES[entry.cause.kind] ?? "", entry.sex);
 }
 
+/** Картка альбому пам'яті (§9.7): ім'я, вік і причина — заголовком, опис життя з характером — текстом (рівень уже в ньому). */
+export function albumNote(entry: AlbumEntry, state: GameState): { title: string; text: string } {
+  return { title: `${entry.name}, ${weeks(entry.ageWeeks)} — ${albumCause(entry, diseaseLabel)}`, text: farewellText(entry, diseaseLabel, state).life };
+}
+
 /** Альбом пам'яті (§9.7): ім'я, вік, усі риси, причина й опис життя. */
 function albumCards(state: GameState): (string | HTMLElement)[] {
   return [...state.album].reverse().map((entry) => {
-    const text = farewellText(entry, diseaseLabel, state);
-    const card = note(`${entry.name}, ${weeks(entry.ageWeeks)} — ${albumCause(entry, diseaseLabel)}`, `«${text.title}». ${text.life}`);
+    const { title, text } = albumNote(entry, state);
+    const card = note(title, text);
     if (entry.traits.length > 0) card.append(traitChips(entry.traits, entry.sex));
     return card;
   });

@@ -7,7 +7,9 @@ import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { NightReport } from "../src/sim/types";
-import { dayTitle } from "../src/ui/cards";
+import { albumNote, dayTitle } from "../src/ui/cards";
+import { removeCat } from "../src/sim/farewell";
+import { diseaseTitle, farewellText, fill } from "../src/texts";
 
 describe("титулка дня (§4)", () => {
   it("хто будив уночі — по рядку на кота, у роді кота", () => {
@@ -78,5 +80,43 @@ describe("титулка дня (§4)", () => {
     expect(lines("crunch")).toContain("Аврал");
     state.job.unemployed = true;
     expect(lines("crunch")).not.toContain("Аврал");
+  });
+
+  it("прощання на титулці — заголовок, причина й риси; рівня й опису життя тут немає — вони в альбомі й титрах (§9.7)", () => {
+    const { current: state } = newGame({ address: "he", difficulty: "normal", seed: 3 });
+    const lost = createCat(state, createRng(1), { source: "shelter", ageWeeks: 3, at: { x: 4.5, y: 8.5 } });
+    const given = createCat(state, createRng(2), { source: "shelter", ageWeeks: 3, at: { x: 4.5, y: 8.5 } });
+    for (const cat of [lost, given]) {
+      addCat(state, cat);
+      cat.moodHistory = [15];
+      // Риси на титулці — чипами DOM (у Node їх не збудувати); тут важливі лише рядки тексту.
+      cat.traits = [];
+    }
+    const lostEntry = removeCat(state, lost, { kind: "sorrow" }, state.day);
+    const givenEntry = removeCat(state, given, { kind: "given" }, state.day);
+    const night = { wakeUps: [], newCats: [], givenCats: [given.id], lostCats: [lost.id], utilities: null, ledger: null } as unknown as NightReport;
+    const blocks = dayTitle(state, night).flatMap((s) => s.blocks);
+    for (const [entry, heading] of [[lostEntry, `Прощання: ${lost.name}`], [givenEntry, fill("{кіт} [поїхав|поїхала] до нових господарів", given.sex, { кіт: given.name })]] as const) {
+      const block = blocks.find((b) => b[0] === heading);
+      expect(block, heading).toBeDefined();
+      const text = farewellText(entry, diseaseTitle, state);
+      const lines = (block ?? []).filter((l): l is string => typeof l === "string");
+      expect(lines).toEqual([heading, text.cause]);
+      for (const line of lines) {
+        expect(line).not.toContain(`«${text.title}»`);
+        expect(line).not.toContain(text.life);
+      }
+    }
+  });
+
+  it("альбом: під ім'ям, віком і причиною — опис життя без назви рівня в лапках: рівень уже в описі (§9.7)", () => {
+    const { current: state } = newGame({ address: "he", difficulty: "normal", seed: 3 });
+    const cat = createCat(state, createRng(1), { source: "shelter", ageWeeks: 3, at: { x: 4.5, y: 8.5 } });
+    addCat(state, cat);
+    cat.moodHistory = [15];
+    const entry = removeCat(state, cat, { kind: "sorrow" }, state.day);
+    const text = farewellText(entry, diseaseTitle, state);
+    expect(albumNote(entry, state).text).toBe(text.life);
+    expect(albumNote(entry, state).text).not.toContain(`«${text.title}»`);
   });
 });
