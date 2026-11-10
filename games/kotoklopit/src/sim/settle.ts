@@ -1,5 +1,6 @@
 // Речі, які ставить гра (§8.7, «Що ставить гра»): сховище, ящики біля входу, переноска, велика коробка й база нового робота стають
-// на своє місце, а зайняте — на найближчу вільну клітинку; уночі зсунуте вертається, якщо місце звільнилося.
+// на своє місце, а зайняте — на найближчу вільну клітинку; уночі ящики й коробка вертаються, якщо місце звільнилося. Сховища й
+// переноски гравець переставляє сам (`moving.ts`): куди їх можна поставити, каже `fitsThing`.
 
 import {
   BIG_BOX,
@@ -29,7 +30,10 @@ import {
   thingShift,
   type Place,
 } from "./home";
-import type { GameState, GameThing, Vec } from "./types";
+import type { CarryThing, GameState, GameThing, Vec } from "./types";
+
+/** Ящики й велика коробка: їх гравець не переносить — зсунуті вертаються вранці, а зниклі забувають зсув (§8.7). */
+const GAME_ONLY: ReadonlySet<GameThing> = new Set<GameThing>(["boxes", "big-box"]);
 
 /** Тверді для персонажа речі гри: не перекривати ними прохід і підступ до меблів. Переноска — ні. */
 const SOLID: ReadonlySet<GameThing> = new Set<GameThing>(["cat-cabinet", "litter-bag", "sterile-bin", "cat-kit", "boxes", "big-box"]);
@@ -76,9 +80,10 @@ function reachable(state: GameState): Set<string> {
   return seen;
 }
 
-/** Поставити річ гри на клітинку `tile` (null — на своє місце). */
-function put(state: GameState, thing: GameThing, tile: Vec | null): void {
-  if (tile !== null) {
+/** Поставити річ гри на клітинку `tile` (null чи своя клітинка — на своє місце). */
+export function put(state: GameState, thing: GameThing, tile: Vec | null): void {
+  const home = thingHome(thing);
+  if (tile !== null && (tile.x !== home.x || tile.y !== home.y)) {
     (state.home.displaced ??= {})[thing] = { x: tile.x, y: tile.y };
     return;
   }
@@ -107,21 +112,46 @@ function keepsWay(state: GameState, thing: GameThing, tile: Vec | null, before: 
   return !objectsOf(state).some((o) => o.interactive && o.id !== thing && distanceToRect(center, o) <= 0.5);
 }
 
-/** Найближча до свого місця вільна клітинка, яку видно, де річ гри нікому не заважає; null — такої немає. */
-function spotFor(state: GameState, thing: GameThing): Vec | null {
+/** Клітинка, де річ гри стоїть: зсунута чи своя. */
+function standing(state: GameState, thing: GameThing): Vec {
   const home = thingHome(thing);
-  const candidates = PLACES.filter((p) => !hiddenTile(p.x, p.y) && (p.x !== home.x || p.y !== home.y) && placeFree(state, p, thing)).sort(
-    (a, b) => Math.hypot(a.x - home.x, a.y - home.y) - Math.hypot(b.x - home.x, b.y - home.y),
+  const shift = thingShift(state, thing);
+  return { x: home.x + shift.x, y: home.y + shift.y };
+}
+
+/** Найближча до того, де річ гри стоїть, вільна клітинка, яку видно, де вона нікому не заважає; null — такої немає. */
+function spotFor(state: GameState, thing: GameThing): Vec | null {
+  const from = standing(state, thing);
+  const original = state.home.displaced?.[thing] ?? null;
+  const candidates = PLACES.filter((p) => !hiddenTile(p.x, p.y) && (p.x !== from.x || p.y !== from.y) && placeFree(state, p, thing)).sort(
+    (a, b) => Math.hypot(a.x - from.x, a.y - from.y) - Math.hypot(b.x - from.x, b.y - from.y),
   );
   if (!SOLID.has(thing)) return candidates[0] ?? null;
   const before = reachable(state);
   // Спершу — не впритул до меблів; ніде так не можна — бодай не перекривши проходу.
   for (const strict of [true, false]) {
     const found = candidates.find((p) => keepsWay(state, thing, p, before, strict));
-    put(state, thing, null);
+    put(state, thing, original);
     if (found) return { x: found.x, y: found.y };
   }
   return null;
+}
+
+/**
+ * Сховище з рук на клітинці `tile` нікому не заважає (§8.7, «Сховища й переноски»): не перекриває проходу, перед ним можна
+ * стати, а збоку від шафки — підлога для кота. Переноска не тверда — їй годиться будь-яка вільна клітинка.
+ */
+export function fitsThing(state: GameState, thing: CarryThing, tile: Vec): boolean {
+  if (!SOLID.has(thing)) return true;
+  const carried = state.home.thingCarried;
+  const original = state.home.displaced?.[thing] ?? null;
+  const before = reachable(state);
+  // Перевіряємо так, наче річ уже стоїть там: у руках її для квартири немає.
+  delete state.home.thingCarried;
+  const fits = keepsWay(state, thing, tile, before, false);
+  if (carried !== undefined) state.home.thingCarried = carried;
+  put(state, thing, original);
+  return fits;
 }
 
 /** Своє місце речі гри — клітинка для речей (усі такі); якщо ні — вважаємо вільним. */
@@ -131,19 +161,21 @@ function homePlace(thing: GameThing): Place | null {
 }
 
 /**
- * Щокроку: щойно поставлене гра ставить на вільне місце, а зникле забуває зсув. Своє місце «зайняте» лише тим, що туди ставить
- * гравець чи гра (річ котячого кутка, автогодівниця, база робота, пилосос, інша річ гри): іграшка чи безлад, що опинилися на речі,
- * яка вже стоїть, її не зсувають.
+ * Щокроку: щойно поставлене гра ставить на вільне місце; зниклі ящики й коробка забувають зсув, а переноски, яких не лишилося, —
+ * ні: нові з'являться там, де стояли. Місце «зайняте» лише тим, що туди ставить гравець чи гра (річ котячого кутка,
+ * автогодівниця, база робота, пилосос, інша річ гри): поки річ стоїть, туди нічого такого не поставити, тож зайнятим воно буває
+ * лише тоді, коли річ щойно з'явилася. Іграшка чи безлад на речі її не зсувають.
  */
 export function settleThings(state: GameState): void {
   for (const thing of GAME_THINGS) {
     if (!thingPresent(state, thing)) {
-      put(state, thing, null);
+      // У руках річ теж «немає», але своє місце вона пам'ятає.
+      if (GAME_ONLY.has(thing)) put(state, thing, null);
       continue;
     }
-    if (state.home.displaced?.[thing]) continue;
-    const home = homePlace(thing);
-    if (home === null || !occupied(state, home, thing)) continue;
+    const at = standing(state, thing);
+    const place = placeAt(at.x, at.y);
+    if (place === null || !occupied(state, place, thing)) continue;
     const spot = spotFor(state, thing);
     if (spot) put(state, thing, spot);
   }
@@ -182,11 +214,11 @@ function standsOn(state: GameState, thing: GameThing, tile: Vec): boolean {
   return home.x + shift.x === tile.x && home.y + shift.y === tile.y;
 }
 
-/** Уранці: зсунуте повертається на своє місце, якщо воно вільне й річ там нікому не заважатиме. */
+/** Уранці: зсунуті ящики й велика коробка повертаються на своє місце, якщо воно вільне й річ там нікому не заважатиме. */
 export function restoreThings(state: GameState): void {
   for (const thing of GAME_THINGS) {
     const current = state.home.displaced?.[thing];
-    if (!current) continue;
+    if (!current || !GAME_ONLY.has(thing)) continue;
     if (!thingPresent(state, thing)) {
       put(state, thing, null);
       continue;

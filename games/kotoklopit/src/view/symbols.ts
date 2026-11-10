@@ -138,9 +138,12 @@ export function carryIcon(state: GameState): IconName | null {
   const { held, activity } = state.character;
   if (held?.kind === "thing") return THING_ICONS[held.item.kind];
   if (held?.kind === "robot") return THING_ICONS.robot;
+  if (held?.kind === "gameThing") return gameThingIcon(held.thing);
   if (held !== null || activity !== null) return null;
   const thing = movableThing(state);
-  return thing === null ? null : THING_ICONS[thing === "robot" ? "robot" : thing.kind];
+  if (thing === null) return null;
+  if (thing === "robot") return THING_ICONS.robot;
+  return typeof thing === "string" ? gameThingIcon(thing) : THING_ICONS[thing.kind];
 }
 
 /**

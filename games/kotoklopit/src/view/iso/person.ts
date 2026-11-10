@@ -49,7 +49,7 @@ import { WORLD_LAYERS } from "../world/layers";
 import type { Hands, HandsLift, PersonPart, Point, WorldFrame } from "../world/part";
 import { isoDepth, type IsoPointHandle } from "./depth";
 import { ANCHOR_GAP } from "./geometry";
-import type { IsoFrame } from "./looks";
+import { carriedThingFrame, type IsoFrame } from "./looks";
 import {
   armsOverlay,
   cargoDepth,
@@ -295,7 +295,7 @@ export class IsoPersonView implements PersonPart {
     this.shadow.setPosition(feet.x, feet.y).setScale(shadow.x, shadow.y).setVisible(!this.hidden);
     const shot = this.oneShot;
     const shown = shownHeld(shot?.before ?? null, character.held, shot?.anim ?? null, shot ? this.clock - shot.start : 0);
-    this.updateCargo(shown, shot ? shot.anim : choice.anim, cleaningTool(state));
+    this.updateCargo(shown, shot ? shot.anim : choice.anim, cleaningTool(state), shown?.kind === "gameThing" ? carriedThingFrame(state, shown.thing) : null);
     this.lastHeld = character.held;
     this.updatePoints();
     const smelly = params.dirty && !this.hidden;
@@ -411,8 +411,8 @@ export class IsoPersonView implements PersonPart {
    * біля вуха (`anim` — `phone`) — у `held`; кота малює частина котів (у точці `hands`). Річ із ракурсами (пилосос — щітка на
    * підлозі попереду, §8.7) — кадром ракурсу персонажа (`heldView`): змінився ракурс — інший кадр.
    */
-  private updateCargo(item: Item | null, anim: PersonAnimId, tool: CleaningTool): void {
-    const want = this.hidden ? null : heldFrame(item, anim, tool);
+  private updateCargo(item: Item | null, anim: PersonAnimId, tool: CleaningTool, thing: IsoFrame | null): void {
+    const want = this.hidden ? null : heldFrame(item, anim, tool, thing);
     for (const socket of ["held", "rod"] as const) {
       const cargo = this.cargo[socket];
       const frame = want?.socket === socket ? want.frame : null;

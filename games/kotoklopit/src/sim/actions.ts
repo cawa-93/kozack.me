@@ -128,8 +128,8 @@ export function tap(state: GameState): TapResult {
     character.holdSpent = true;
     return null;
   }
-  // Річ котячого кутка й базу робота дія теж лише ставить (§8.7), як і кнопка перестановки.
-  if (held?.kind === "thing" || held?.kind === "robot") {
+  // Річ котячого кутка, базу робота, сховище й переноски дія теж лише ставить (§8.7), як і кнопка перестановки.
+  if (held?.kind === "thing" || held?.kind === "robot" || held?.kind === "gameThing") {
     putThing(state);
     return null;
   }

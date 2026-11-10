@@ -4,7 +4,7 @@
 import { highPlaceOf, inStandoff, isCarried } from "./catai";
 import { FACING_PRIORITY, MOVING, REACH } from "./config";
 import { fridgeSupply, isDish } from "./dish";
-import { CARRIER_SPOT, centerOf, distanceToRect, hasPurchases, isSolid, isWall, itemPoint, objectAt, objectsOf, slotById, withThing, type HomeObject } from "./home";
+import { CARRIER_SPOT, centerOf, thingPresent, distanceToRect, hasPurchases, isSolid, isWall, itemPoint, objectAt, objectsOf, slotById, withThing, type HomeObject } from "./home";
 import { isDirty } from "./resources";
 import type { Body, Cat, GameState, HomeItem, Mess, PlacedItem, Vec } from "./types";
 
@@ -141,7 +141,7 @@ function candidates(state: GameState): Target[] {
   const vacuum = state.home.vacuumAt;
   if (vacuum && !handsFull) targets.push({ type: "vacuum", id: VACUUM_TARGET, at: vacuum });
   // Переноску могли поставити поруч зі своїм місцем (§8.7, «Що ставить гра»).
-  if (state.home.carriers.length > 0) {
+  if (thingPresent(state, "carrier")) {
     const spot = withThing(state, "carrier", CARRIER_SPOT);
     targets.push({ type: "carrier", id: CARRIER_TARGET, at: { x: spot.x, y: spot.y - 0.4 } });
   }

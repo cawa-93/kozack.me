@@ -5,7 +5,7 @@
 // тому, як персонаж іде на екрані). Перевіряє `tests/isoperson.test.ts`.
 
 import type { GameEvent } from "../../sim/events";
-import type { CleaningTool, Item, PlacedItem } from "../../sim/types";
+import type { CarryThing, CleaningTool, Item, PlacedItem } from "../../sim/types";
 import { PERSON_CONTACT_MS, PERSON_ONE_SHOT_MS, PERSON_OWN_ARMS, type PersonAnimId } from "../anim/ids";
 import { heldThing } from "../anim/personanim";
 import type { ArtView } from "../art/types";
@@ -170,6 +170,16 @@ export const BROOM_HELD = { frame: { id: "item/broom", state: null } as IsoFrame
 const THING_HELD: Record<PlacedItem["kind"], number> = { bowl: 1, water: 1, litter: 0.62, house: 0.55, scratcher: 0.5 };
 /** Масштаб робота-пилососа в руках: диск ширший за миску, тож менше, як лоток. */
 const ROBOT_HELD = 0.6;
+/** Масштаб сховища й переносок у руках: що більша річ у квартирі, то менша в руках, щоб не закривала персонажа. */
+const GAME_THING_HELD: Record<CarryThing, number> = { "cat-cabinet": 0.4, "sterile-bin": 0.45, "litter-bag": 0.5, "cat-kit": 0.55, carrier: 0.5 };
+/** Кадр сховища й переносок у руках, коли стану немає (тести вигляду без гри): повні, зачинені, дешева переноска. */
+const GAME_THING_FRAME: Record<CarryThing, IsoFrame> = {
+  "cat-cabinet": { id: "env/cat-cabinet", state: "closed" },
+  "sterile-bin": { id: "env/sterile-bin", state: "full-4" },
+  "litter-bag": { id: "env/litter-bag", state: "full-4" },
+  "cat-kit": { id: "env/cat-kit", state: "full-4" },
+  carrier: { id: "item/carrier/cheap", state: "body" },
+};
 
 /** Кадри пилу з-під віника (`fx/sweep-dust`) і скільки триває кожен, мс. */
 const SWEEP_DUST = { frames: ["a", "b", "c"], ms: 170 } as const;
@@ -195,7 +205,7 @@ export interface HeldFrame {
  * миска з годівницею — кадром годівниці); з порожніми руками в анімації телефону (`anim` — `phone`) —
  * телефон біля вуха (`PHONE_HELD`). Кіт і порожні руки — null: кота малює частина котів (у точці `hands`).
  */
-export function heldFrame(item: Item | null, anim: PersonAnimId | null = null, tool: CleaningTool = "broom"): HeldFrame | null {
+export function heldFrame(item: Item | null, anim: PersonAnimId | null = null, tool: CleaningTool = "broom", thing: IsoFrame | null = null): HeldFrame | null {
   if (item === null) {
     if (anim === "phone") return { socket: "held", frame: PHONE_HELD.frame, scale: PHONE_HELD.scale, shift: PHONE_HELD.shift };
     return null;
@@ -218,6 +228,9 @@ export function heldFrame(item: Item | null, anim: PersonAnimId | null = null, t
     // Робот-пилосос із базою (§8.7): у руках видно сам робот, вимкнений, як на базі.
     case "robot":
       return { socket: "held", frame: { id: `item/robot/${item.quality}`, state: "charging" }, scale: ROBOT_HELD };
+    // Сховище чи переноски (§8.7, «Сховища й переноски»): кадр, як у квартирі (`carriedThingFrame`), — його дає той, хто знає стан.
+    case "gameThing":
+      return { socket: "held", frame: thing ?? GAME_THING_FRAME[item.thing], scale: GAME_THING_HELD[item.thing] };
     default:
       return null;
   }

@@ -9,7 +9,7 @@ import { addSupply, flySupply, settleFeeders, takeSupplies, topQuality, useSuppl
 import { emit } from "./events";
 import { hygieneFactorMod, powerOut, sheddingFactor } from "./modifiers";
 import { addMess, whereIs } from "./catai";
-import { CARRIER_TILE, hiddenTile, isFixedSolid, isSolid, isWall, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, ROBOT_DOCK, robotDockAt, robotDocked, roomAt, slotCenter, STASHES, withThing } from "./home";
+import { CARRIER_TILE, hiddenTile, isFixedSolid, isSolid, isWall, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, ROBOT_DOCK, robotDockAt, robotDocked, roomAt, slotCenter, STASHES, thingPresent, withThing } from "./home";
 import { restoreThings, settleThings } from "./settle";
 import { loudNoise, quietRobot } from "./noise";
 import { waterCapacity } from "./resources";
@@ -349,7 +349,7 @@ function vacuumFits(state: GameState, x: number, y: number): boolean {
   if (isSolid(state, x, y) || hiddenTile(x, y) || objectAt(state, x, y) !== null) return false;
   const home = state.home;
   const on = (p: Vec): boolean => Math.floor(p.x) === x && Math.floor(p.y) === y;
-  if (on(LAUNDRY_BASKET) || (home.carriers.length > 0 && on(withThing(state, "carrier", CARRIER_TILE))) || (robotDocked(state) && on(robotDockAt(state)))) return false;
+  if (on(LAUNDRY_BASKET) || (thingPresent(state, "carrier") && on(withThing(state, "carrier", CARRIER_TILE))) || (robotDocked(state) && on(robotDockAt(state)))) return false;
   return !home.items.some((item) => on(itemTile(item)));
 }
 

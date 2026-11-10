@@ -13,7 +13,7 @@ import { powerOut } from "../../sim/modifiers";
 import { fountainWorks, waterCapacity } from "../../sim/resources";
 import { boxesShown, STORAGES, storageStages, type FillStage } from "../../sim/storage";
 import { CAT_TRACES, hasTrace } from "../../sim/traces";
-import type { BowlItem, CatTrace, Dish, Feeder, GameState, HomeItem, LitterItem, Mess, PlacedItem, Quality, TrinketKind, Vec, WaterItem } from "../../sim/types";
+import type { BowlItem, CarryThing, CatTrace, Dish, Feeder, GameState, HomeItem, LitterItem, Mess, PlacedItem, Quality, TrinketKind, Vec, WaterItem } from "../../sim/types";
 import { isWorking } from "../../sim/work";
 import { cobwebState, type CobwebState } from "../art/manifest/a20-dust";
 import { wallKind } from "../art/manifest/lib/geometry";
@@ -350,6 +350,24 @@ export function showerFigure(state: GameState, time: number): { wash: IsoFrame; 
 /** Сховища-фігури (мішок наповнювача, бак стерильного корму): їхня форма — наповнення, тож стан `full-N` — у самій речі. */
 export function shapedState(state: GameState, object: (typeof SHAPED)[number]): string {
   return fullState(shapedStage(state, object) ?? 0);
+}
+
+/**
+ * Сховище чи переноски в руках і їхній напівпрозорий «привид» на підлозі (§8.7, «Сховища й переноски»): той самий кадр, що в
+ * квартирі, — шафка зачинена, аптечка й фігури за наповненням, переноска — верхня з купи, відчинена.
+ */
+export function carriedThingFrame(state: GameState, thing: CarryThing): IsoFrame {
+  switch (thing) {
+    case "cat-cabinet":
+      return frame("env/cat-cabinet", "closed");
+    case "cat-kit":
+      return kitLook(state).body;
+    case "litter-bag":
+    case "sterile-bin":
+      return frame(`env/${thing}`, shapedState(state, thing));
+    case "carrier":
+      return frame(`item/carrier/${state.home.carriers[0]?.quality ?? "cheap"}`, "body");
+  }
 }
 
 /** Сховища-меблі з накладками наповнення, накладки — у порядку їхніх запасів у `STORAGES`. */

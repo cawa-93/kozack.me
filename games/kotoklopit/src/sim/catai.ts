@@ -124,7 +124,7 @@ import { clearPath, robotAt, robotProgress, wearOut } from "./household";
 import { inView, observe, sees, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { active, catFatigueFactor, isCold, isHot, playFactor, thirstFactor, warmthBonus } from "./modifiers";
-import { WINDOWS, AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, catSpotNear, COOL_TILE, HIGH_PLACES, isPresent, WIRE_TILE, PAPER_TRAIL, placedObject, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, nearestFreePlace, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SLOTS, SURFACE_IDS, TRINKETS, trinketTile, withThing, type HomeObject } from "./home";
+import { thingPresent, WINDOWS, AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, catSpotNear, COOL_TILE, HIGH_PLACES, isPresent, WIRE_TILE, PAPER_TRAIL, placedObject, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, nearestFreePlace, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SLOTS, SURFACE_IDS, TRINKETS, trinketTile, withThing, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend, isNewcomer, isPal, noteStrife, relation } from "./relations";
 import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNest, isNewborn, motherNest, motherOf, nestOf, nestTarget, newbornSleep } from "./reproduction";
@@ -838,7 +838,7 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   // Відчинена переноска біля дверей — будиночок для «Пасажир першого класу» (§9.12, «Переноска»).
   // Поки переноска з котом у дорозі, у ній не поспиш (перевірка етапу 2026-10-26).
   const carrier = traitLevel(cat, "carrier");
-  if (carrier > 0 && state.home.carriers.length > 0 && (state.trip?.riders?.length ?? 0) === 0) options.push({ weight: CARRIER_HOME.sleepStep * carrier, value: { at: { ...withThing(state, "carrier", CARRIER_TILE) }, target: "carrier" } });
+  if (carrier > 0 && thingPresent(state, "carrier") && (state.trip?.riders?.length ?? 0) === 0) options.push({ weight: CARRIER_HOME.sleepStep * carrier, value: { at: { ...withThing(state, "carrier", CARRIER_TILE) }, target: "carrier" } });
   // Ящики біля входу з покупками — коробки для допитливих (§9.12, «Допитливість»).
   const curiosity = traitLevel(cat, "curiosity");
   if (curiosity > 0 && hasBoxes(state)) options.push({ weight: CURIOSITY.boxStep * curiosity, value: { at: objectTile(state, "boxes"), target: "boxes" } });

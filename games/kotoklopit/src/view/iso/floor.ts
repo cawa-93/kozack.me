@@ -14,21 +14,21 @@ import { carriedToy } from "../../sim/catai";
 import { CARRIER } from "../../sim/config";
 import { DUST_SPOTS, dustOf } from "../../sim/dust";
 import type { GameEvent } from "../../sim/events";
-import { CARRIER_SPOT, itemPoint, robotDockAt, robotDocked, slotCenter } from "../../sim/home";
+import { CARRIER_SPOT, itemPoint, robotDockAt, robotDocked, slotCenter, thingPresent } from "../../sim/home";
 import { cleaningTool, FUR_SPOTS, robotAt, tuftCat, tuftsOf } from "../../sim/household";
 import { thingSpot } from "../../sim/moving";
 import { CARRIER_TARGET, VACUUM_TARGET, type Target } from "../../sim/targets";
-import type { CleaningTool, GameState, HomeItem, TrinketKind, Vec } from "../../sim/types";
+import type { CarryThing, CleaningTool, GameState, HomeItem, TrinketKind, Vec } from "../../sim/types";
 import { addArt, setArt } from "../art/atlas";
 import type { PartContext } from "../world/context";
-import { isoItemLook, thingPoint, type IsoFootprint } from "../world/objects";
+import { isoItemLook, isoObjectLook, thingPoint, type IsoFootprint } from "../world/objects";
 import type { Point, WorldFrame, WorldPart } from "../world/part";
 import { ISO } from "../world/projection";
 import { isoDepth, type IsoDepth, type IsoPointHandle, type IsoPointOptions } from "./depth";
 import { PlaceMark } from "./placemark";
 import { BASKET_AT, floorAnchorAt, SOFA_PEEK, stashPoint } from "./geometry";
 import { IsoHighlight } from "./highlight";
-import { basketState, carrierLocked, carrierOccupied, carrierShakes, carrierSlot, dockFrame, dustFrame, feederFrame, fountainFrame, itemFrame, litterSmells, messFrame, placedFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
+import { basketState, carriedThingFrame, carrierLocked, carrierOccupied, carrierShakes, carrierSlot, dockFrame, dustFrame, feederFrame, fountainFrame, itemFrame, litterSmells, messFrame, placedFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
 import { PersonSwept } from "./swept";
 import { freshTuft, TUFT_APPEAR, tuftAppearLook, tuftRollFrom } from "./tuftappear";
 
@@ -44,6 +44,8 @@ const CARRIER_SHAKE = { ms: 28, px: 2.5 } as const;
 
 /** Наскільки видно річ на клітинці, куди вона стане з рук (§8.7). */
 const GHOST_ALPHA = 0.6;
+/** Пів ширини привида сховища, одиниці арту: сховище — на всю клітинку. */
+const GHOST_HALF = 56;
 
 /** Автогодівниця стоїть позаду своєї миски на тій самій клітинці: для порядку — на стільки клітинок далі. */
 const FEEDER_BEHIND = 0.3;
@@ -348,6 +350,8 @@ export class IsoFloorView implements WorldPart {
    * гра»). Кіт гризе — його переноска смикається.
    */
   private drawCarriers(state: GameState, time: number): void {
+    // Переноски в руках (§8.7, «Сховища й переноски») — у квартирі їх немає.
+    if (!thingPresent(state, "carrier")) return;
     const shown = state.home.carriers.slice(0, CARRIER.shown);
     const at = thingPoint(state, "carrier", CARRIER_SPOT);
     shown.forEach((carrier, index) => {
@@ -367,10 +371,11 @@ export class IsoFloorView implements WorldPart {
   /** Поки річ у руках, видно, де вона стане (§8.7): напівпрозора річ і контур клітинки. Поставити нікуди — нічого не видно. */
   private drawThingSpot(state: GameState): void {
     const held = state.character.held;
-    const place = held?.kind === "thing" || held?.kind === "robot" ? thingSpot(state) : null;
+    const place = held?.kind === "thing" || held?.kind === "robot" || held?.kind === "gameThing" ? thingSpot(state) : null;
     this.drawRobotGhost(state, held?.kind === "robot" ? place : null);
+    this.drawGameThingGhost(state, held?.kind === "gameThing" ? held.thing : null, place);
     if (held?.kind !== "thing" || place === null) {
-      if (held?.kind !== "robot" || place === null) this.placeMark.hide();
+      if ((held?.kind !== "robot" && held?.kind !== "gameThing") || place === null) this.placeMark.hide();
       return;
     }
     const { kind, quality } = held.item;
@@ -399,6 +404,16 @@ export class IsoFloorView implements WorldPart {
     const body = this.single("ghost:robot", { id: `item/robot/${robot}`, state: "charging" }, at, look.height, { half: look.half });
     dock.image.setAlpha(GHOST_ALPHA);
     body.image.setAlpha(GHOST_ALPHA);
+    this.placeMark.show(at);
+  }
+
+  /** Напівпрозоре сховище чи переноски там, де стануть (§8.7, «Сховища й переноски»); нікуди — їх не видно. */
+  private drawGameThingGhost(state: GameState, thing: CarryThing | null, place: Vec | null): void {
+    if (thing === null || place === null) return;
+    const at = { x: place.x + 0.5, y: place.y + 0.5 };
+    const size = thing === "carrier" ? isoItemLook("carrier") : { height: isoObjectLook(thing).tall, half: GHOST_HALF };
+    const ghost = this.single(`ghost:${thing}`, carriedThingFrame(state, thing), at, size.height, { half: size.half });
+    ghost.image.setAlpha(GHOST_ALPHA);
     this.placeMark.show(at);
   }
 

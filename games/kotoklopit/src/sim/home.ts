@@ -151,9 +151,10 @@ export function hasBoxes(state: Pick<GameState, "home">): boolean {
   return hasPurchases(state) || (state.home.parcels?.count ?? 0) > 0;
 }
 
-/** Річ є в квартирі: меблі — завжди, сховище — після першого отримання свого запасу (§6.4). */
+/** Річ є в квартирі: меблі — завжди, сховище — після першого отримання свого запасу (§6.4), поки його не несуть у руках (§8.7). */
 export function isPresent(state: Pick<GameState, "home">, object: HomeObject): boolean {
   if (object.kind === "boxes") return hasBoxes(state);
+  if (state.home.thingCarried === object.id) return false;
   return !object.requires || object.requires.some((p) => state.home.acquired.includes(p));
 }
 
@@ -428,7 +429,7 @@ export function thingHome(thing: GameThing): Vec {
 
 /** Річ гри зараз у квартирі. */
 export function thingPresent(state: Pick<GameState, "home" | "modifiers" | "today">, thing: GameThing): boolean {
-  if (thing === "carrier") return state.home.carriers.length > 0;
+  if (thing === "carrier") return state.home.carriers.length > 0 && state.home.thingCarried !== "carrier";
   if (thing === "big-box") return hasBigBox(state);
   return isPresent(state, objectById(thing));
 }
@@ -600,7 +601,8 @@ export function nearestFreePlace(state: Pick<GameState, "home" | "modifiers" | "
   for (const place of PLACES) {
     const center = { x: place.x + 0.5, y: place.y + 0.5 };
     const distance = Math.hypot(center.x - at.x, center.y - at.y);
-    if (distance < bestDistance && fits(center) && placeFree(state, place)) {
+    // Спершу дешеве: `fits` буває дорогим (перевірка проходу для сховища, `moving.ts`).
+    if (distance < bestDistance && placeFree(state, place) && fits(center)) {
       best = place;
       bestDistance = distance;
     }
