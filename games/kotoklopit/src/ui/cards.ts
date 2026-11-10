@@ -141,7 +141,7 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
     if (!entry) continue;
     // Хвороба, від якої кіт помер, — з іконкою, як у ветеринара (§11.4 «Іконка біля назви»).
     const text = farewellText(entry, diseaseLabel, state);
-    // «Прощавай, {кіт}» вимагало б кличного відмінка. Опису прожитого життя на титулці немає (§9.7): він — в альбомі й у титрах.
+    // «Прощавай, {кіт}» вимагало б кличного відмінка. Опису прожитого життя на титулці немає (§9.7): він — у титрах життя.
     events.push([`Прощання: ${entry.name}`, text.cause, ...farewellTraits(state, entry)]);
   }
   // Прийшов рахунок за комунальні (§6.4); нульового немає.
@@ -222,7 +222,7 @@ export function timeBar(state: GameState): HTMLElement | null {
   return box;
 }
 
-/** Коти, що жили з персонажем (§4.2): з альбому — з назвою рівня життя з прощання, живі — з іконкою дому. */
+/** Коти, що жили з персонажем (§4.2): ті, з ким попрощалися, — з назвою рівня життя, живі — з іконкою дому. */
 function catChips(state: GameState): HTMLElement | null {
   if (state.album.length === 0 && state.cats.length === 0) return null;
   const box = element("div", "ending-cats");
@@ -235,7 +235,7 @@ function catChips(state: GameState): HTMLElement | null {
   return box;
 }
 
-export type PhoneTab = "shop" | "home" | "cats" | "album" | "profile" | "game";
+export type PhoneTab = "shop" | "home" | "cats" | "profile" | "game";
 
 /** Річ без місця в «Моїх речах» (§8.7): техніка, автогодівниця над місцем миски, переноска чи замок на шафку. */
 export type DiscardThing = { appliance: Appliance } | { feeder: string } | { carrier: number } | { owned: "lock" };
@@ -262,12 +262,12 @@ export interface PhoneHandlers {
 }
 
 /** Вкладки телефона по порядку: за місцем вкладки `phone.css` фарбує її плитку, тож порядок і іконки — разом із ним. */
-const PHONE_TABS: Record<PhoneTab, string> = { shop: "🛒 Магазин", home: "🏠 Дім", cats: "🐱 Коти", album: "Альбом", profile: PROFILE_TEXTS.tab, game: GAME_TEXTS.tab };
+const PHONE_TABS: Record<PhoneTab, string> = { shop: "🛒 Магазин", home: "🏠 Дім", cats: "🐱 Коти", profile: PROFILE_TEXTS.tab, game: GAME_TEXTS.tab };
 
-/** Телефон персонажа (§6.4): магазин із доставкою, викинути річ, коти, альбом, гра. */
+/** Телефон персонажа (§6.4): магазин із доставкою, викинути річ, коти, профіль, гра. */
 export function phoneCard(state: GameState, wanted: PhoneTab, handlers: PhoneHandlers): Card {
-  // Коти й альбом з'являються, коли в них є що показати (§11.3а): до першого кота — лише порожні сторінки.
-  const tabs = (Object.keys(PHONE_TABS) as PhoneTab[]).filter((t) => (t !== "cats" || state.cats.length > 0) && (t !== "album" || state.album.length > 0));
+  // Коти з'являються, коли їх є що показати (§11.3а): до першого кота — лише порожня сторінка.
+  const tabs = (Object.keys(PHONE_TABS) as PhoneTab[]).filter((t) => t !== "cats" || state.cats.length > 0);
   const tab = tabs.includes(wanted) ? wanted : "shop";
   // Рядок стану з годинником гри — угорі екрана, над вкладками (`phone.css`), хоч у картці він першим у тілі, після вкладок.
   const body: (string | HTMLElement)[] = [phoneStatusBar(state.minute)];
@@ -278,7 +278,6 @@ export function phoneCard(state: GameState, wanted: PhoneTab, handlers: PhoneHan
     body.push(billCard(state, handlers.payUtilities), myThings(state, handlers));
   }
   if (tab === "cats") body.push(...catCards(state, handlers));
-  if (tab === "album") body.push(...albumCards(state));
   if (tab === "profile") body.push(...profileTab(state));
   if (tab === "game") body.push(...gameMenu(state, handlers));
   // Вкладки — компактний рядок угорі, закрити — хрестиком: на телефоні горизонтально лишається місце для вмісту. Вигляд
@@ -439,36 +438,10 @@ function giveAwayButton(onClick: () => void): HTMLButtonElement {
   return button;
 }
 
-/** Причина в альбомі (§9.7); віддані — «живе в нових руках» (§9.8), як і на титулці. */
-const CAUSE_TITLES: Record<string, string> = { old: "старість", sorrow: "туга", carrier: "[замкнений у|замкнена в] переносці", given: "у нових руках" };
-
-/**
- * Причина в першому рядку альбому: хвороба — сама назва з малої, як «старість» і «туга» (загальна ревізія 2026-10-29: було
- * «хвороба «Хвороба серця»»). `title` — назва хвороби: в альбомі — з іконкою (`diseaseLabel`, §11.4 «Іконка біля назви»).
- */
-export function albumCause(entry: AlbumEntry, title: (id: string) => string = diseaseTitle): string {
-  return entry.cause.kind === "disease" ? title(entry.cause.disease).toLowerCase() : fill(CAUSE_TITLES[entry.cause.kind] ?? "", entry.sex);
-}
-
-/** Картка альбому пам'яті (§9.7): ім'я, вік і причина — заголовком, опис життя з характером — текстом (рівень уже в ньому). */
-export function albumNote(entry: AlbumEntry, state: GameState): { title: string; text: string } {
-  return { title: `${entry.name}, ${weeks(entry.ageWeeks)} — ${albumCause(entry, diseaseLabel)}`, text: farewellText(entry, diseaseLabel, state).life };
-}
-
-/** Риси кота на прощанні й в альбомі — як у картці кота (§9.9): прощання рис не відкриває; нічого не відомо — нічого. */
+/** Риси кота на прощанні — як у картці кота (§9.9): прощання рис не відкриває; нічого не відомо — нічого. */
 function farewellTraits(state: GameState, entry: AlbumEntry): HTMLElement[] {
   const chips = knownTraitChips(state, entry);
   return chips.length > 0 ? [chipRow(chips)] : [];
-}
-
-/** Альбом пам'яті (§9.7): ім'я, вік, відомі риси, причина й опис життя. */
-function albumCards(state: GameState): (string | HTMLElement)[] {
-  return [...state.album].reverse().map((entry) => {
-    const { title, text } = albumNote(entry, state);
-    const card = note(title, text);
-    card.append(...farewellTraits(state, entry));
-    return card;
-  });
 }
 
 

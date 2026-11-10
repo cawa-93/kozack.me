@@ -7,7 +7,7 @@ import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { NightReport } from "../src/sim/types";
-import { albumNote, dayTitle } from "../src/ui/cards";
+import { dayTitle } from "../src/ui/cards";
 import { removeCat } from "../src/sim/farewell";
 import { diseaseTitle, farewellText, fill } from "../src/texts";
 
@@ -82,7 +82,7 @@ describe("титулка дня (§4)", () => {
     expect(lines("crunch")).not.toContain("Аврал");
   });
 
-  it("прощання на титулці — заголовок, причина й риси; рівня й опису життя тут немає — вони в альбомі й титрах (§9.7)", () => {
+  it("прощання на титулці — заголовок, причина й риси; рівня й опису життя тут немає — опис лише в титрах життя (§9.7)", () => {
     const { current: state } = newGame({ address: "he", difficulty: "normal", seed: 3 });
     const lost = createCat(state, createRng(1), { source: "shelter", ageWeeks: 3, at: { x: 4.5, y: 8.5 } });
     const given = createCat(state, createRng(2), { source: "shelter", ageWeeks: 3, at: { x: 4.5, y: 8.5 } });
@@ -107,16 +107,5 @@ describe("титулка дня (§4)", () => {
         expect(line).not.toContain(text.life);
       }
     }
-  });
-
-  it("альбом: під ім'ям, віком і причиною — опис життя без назви рівня в лапках: рівень уже в описі (§9.7)", () => {
-    const { current: state } = newGame({ address: "he", difficulty: "normal", seed: 3 });
-    const cat = createCat(state, createRng(1), { source: "shelter", ageWeeks: 3, at: { x: 4.5, y: 8.5 } });
-    addCat(state, cat);
-    cat.moodHistory = [15];
-    const entry = removeCat(state, cat, { kind: "sorrow" }, state.day);
-    const text = farewellText(entry, diseaseTitle, state);
-    expect(albumNote(entry, state).text).toBe(text.life);
-    expect(albumNote(entry, state).text).not.toContain(`«${text.title}»`);
   });
 });

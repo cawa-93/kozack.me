@@ -73,7 +73,7 @@ class FakeElement {
 
 const noop = (): void => undefined;
 const handlers: PhoneHandlers = { checkout: noop, payUtilities: noop, discard: noop, discardThing: noop, advertise: noop, cancelAd: noop, newGame: noop, exportSave: noop, importSave: noop, tab: noop, close: noop, effects: { volume: 1, set: noop }, difficulty: noop };
-const TABS: PhoneTab[] = ["shop", "home", "cats", "album", "profile", "game"];
+const TABS: PhoneTab[] = ["shop", "home", "cats", "profile", "game"];
 
 /** Гра з котом і записом в альбомі: у телефоні всі шість вкладок. */
 function fullPhone(): GameState {
@@ -231,14 +231,15 @@ describe("телефон — смартфон набік", () => {
     const hasGlyph = (label: string): boolean => glyphs.some((g) => label.includes(g));
     const labels = (state: GameState): string[] => (phoneCard(state, "shop", handlers).tabs ?? []).map((t) => t.label);
     const full = labels(fullPhone());
-    expect(full).toHaveLength(6);
-    expect(full.map(hasGlyph)).toEqual([true, true, true, false, false, false]);
+    expect(full).toHaveLength(5);
+    expect(full.map(hasGlyph)).toEqual([true, true, true, false, false]);
     expect(full.at(-2)).toContain("Профіль");
     expect(full.at(-1)).toContain("Гра");
-    expect((phoneCard(fullPhone(), "shop", handlers).tabs ?? []).map((t) => t.id)).toEqual(["shop", "home", "cats", "album", "profile", "game"]);
-    // Без котів і альбому — лише Магазин, Речі, Профіль і Гра.
+    // Альбому немає (§8.4): коти, з якими попрощалися, вкладки не дають, хоч у стані вони є (`fullPhone`).
+    expect((phoneCard(fullPhone(), "shop", handlers).tabs ?? []).map((t) => t.id)).toEqual(["shop", "home", "cats", "profile", "game"]);
+    // Без котів — лише Магазин, Речі, Профіль і Гра.
     const fresh = labels(newGame({ address: "she", difficulty: "normal", seed: 8 }).current);
-    expect(fresh).toEqual([full[0], full[1], full[4], full[5]]);
+    expect(fresh).toEqual([full[0], full[1], full[3], full[4]]);
   });
 });
 

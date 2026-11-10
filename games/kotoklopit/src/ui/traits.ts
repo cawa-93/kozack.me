@@ -63,14 +63,14 @@ export function traitNews(state: GameState, catId: number, group: string, stage:
   return hint === null ? null : { title: cat.name, text: hint };
 }
 
-/** Чипи відомих рис: назва й опис (альбом, прощання, притулок, розплідник). */
+/** Чипи відомих рис: назва й опис (притулок, розплідник). */
 export function traitChips(traits: readonly Pick<Trait, "group" | "level">[], sex: Sex): HTMLElement {
   return chipRow(traits.map((trait) => ({ label: fill(traitName(trait), sex), about: traitAbout(trait, sex) })));
 }
 
 /**
  * Риси, як їх знає гравець (§9.9): відомі — назвою й описом, помічені — «…?» з підказкою чи лише розділом, решти не видно.
- * Однаково в картці кота, на прощанні й в альбомі: прощання рис не відкриває.
+ * Однаково в картці кота й на прощанні: прощання рис не відкриває.
  */
 export function knownTraitChips(state: GameState, cat: Pick<Cat, "name" | "sex" | "traits">): TraitChip[] {
   const chips: TraitChip[] = [];

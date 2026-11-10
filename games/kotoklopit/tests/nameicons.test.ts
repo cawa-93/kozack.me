@@ -13,7 +13,7 @@ import { createRng } from "../src/sim/rng";
 import { GOODS, goodsKey, variants } from "../src/sim/shop";
 import type { AlbumEntry, Destination, DiseaseId, IllnessId, Product, ThingKind } from "../src/sim/types";
 import { diseaseTitle, farewellText, homeVetText, ILLNESS_TITLES, minutesText } from "../src/texts";
-import { albumCause, careCard, foundlingCard } from "../src/ui/cards";
+import { careCard, foundlingCard } from "../src/ui/cards";
 import { destinationLabel, diseaseLabel, iconMark, iconUrl, illnessLabel, named, productLabel, splitIcons, type IconPart } from "../src/ui/icons";
 import { goodsIcon, variantLabel, variantTitle } from "../src/ui/shop";
 import { DESTINATION_TITLES, PRODUCT_TITLES, VARIANT_TITLES } from "../src/ui/titles";
@@ -228,15 +228,11 @@ describe("іконка біля назви: ветеринар і лікар (§
     expect(icons).toEqual([DISEASE_ICONS.fleas, DISEASE_ICONS.heart]);
   });
 
-  it("альбом і прощання: хвороба, від якої кіт помер, — з тією самою іконкою, слова ті самі", () => {
+  it("прощання: хвороба, від якої кіт помер, — з тією самою іконкою, слова ті самі", () => {
     const entry = { id: 3, name: "Мурка", sex: "female", lifeMood: 60, traits: [], cause: { kind: "disease", disease: "heart" } } as unknown as AlbumEntry;
     const state = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
-    expect(iconOf(albumCause(entry, diseaseLabel))).toBe(DISEASE_ICONS.heart);
-    expect(plain(albumCause(entry, diseaseLabel))).toBe(albumCause(entry));
     expect(iconOf(farewellText(entry, diseaseLabel, state).cause)).toBe(DISEASE_ICONS.heart);
     expect(plain(farewellText(entry, diseaseLabel, state).cause)).toBe(farewellText(entry, diseaseTitle, state).cause);
-    // Старість — без іконки.
-    expect(albumCause({ ...entry, cause: { kind: "old" } }, diseaseLabel)).toBe("старість");
   });
 });
 
