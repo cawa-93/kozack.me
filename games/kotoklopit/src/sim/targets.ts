@@ -232,9 +232,15 @@ export function movableItem(state: GameState): PlacedItem | null {
   return best;
 }
 
-/** Ціль дії: найближча, і передусім та, на яку дивиться персонаж; з річчю в руках — лише те, з чим вона щось робить (§10). */
+/**
+ * Ціль дії: найближча, і передусім та, на яку дивиться персонаж; з річчю в руках — лише те, з чим вона щось робить (§10). Меблі,
+ * з якими річ нічого не робить, заступають і тоді: інакше дальній смітник чи душ ставали б ціллю лише завдяки відбору, і з рук
+ * випадково викидали б корм чи купали кота.
+ */
 export function targetOf(state: GameState): Target | null {
-  return nearest(state, (target) => fitsHeld(state, target));
+  if (state.character.held === null) return nearest(state, () => true);
+  const best = nearest(state, (target) => fitsHeld(state, target) || target.type === "object" || target.type === "carrier");
+  return best !== null && fitsHeld(state, best) ? best : null;
 }
 
 /**

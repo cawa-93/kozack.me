@@ -19,7 +19,7 @@ import { createRng } from "../src/sim/rng";
 import { STORAGES, storageIndicator } from "../src/sim/storage";
 import { targetOf } from "../src/sim/targets";
 import type { Product, Save } from "../src/sim/types";
-import { hours, recordEvents, walkTo } from "./helpers";
+import { hours, recordEvents, standAt, walkTo } from "./helpers";
 
 const ALL: Product[] = ["food", "hygiene", "catFood", "sterileFood", "litter", "pills", "drops", "humanMeds", "dressing", "treats", "collar", "shampoo", "detergent", "catnip", "momMeal"];
 
@@ -86,9 +86,13 @@ describe("сховища (§6.4)", () => {
     walkTo(save, "sterile-bin");
     interact(save);
     expect(save.current.character.held).toEqual({ kind: "catfood", quality: "cheap", sterile: true });
-    walkTo(save, "cat-cabinet");
+    // У шафку корм для стерилізованих не кладуть: з ним у руках вона не ціль (§10), а натискання біля неї каже «не сюди».
+    standAt(save, "cat-cabinet");
+    expect(targetOf(save.current)?.id).not.toBe("cat-cabinet");
+    const { events, stop } = recordEvents();
     interact(save);
-    // У шафку корм для стерилізованих не кладуть.
+    stop();
+    expect(events).toContainEqual(expect.objectContaining({ type: "refused", object: "cat-cabinet", reason: "not-here" }));
     expect(save.current.character.held).toEqual({ kind: "catfood", quality: "cheap", sterile: true });
     walkTo(save, "sterile-bin");
     interact(save);

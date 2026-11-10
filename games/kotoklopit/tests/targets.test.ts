@@ -72,6 +72,18 @@ describe("з річчю в руках — лише те, з чим вона що
     expect(save.current.character.held?.kind).toBe("catfood");
   });
 
+  it("меблі, з якими річ нічого не робить, заступають: з котом у руках біля пральної машини кота опускають, а не купають", () => {
+    const save = game();
+    const cat = catOn(save, itemOf(save, "water"));
+    standAt(save, "washer");
+    save.current.home.supplies.shampoo.cheap = 1;
+    save.current.character.held = { kind: "cat", cat: cat.id };
+    expect(targetOf(save.current)).toBeNull();
+    interact(save);
+    expect(save.current.character.held).toBeNull();
+    expect(save.current.character.activity).toBeNull();
+  });
+
   it("кота в протистоянні торкаються й зі стравою в руках", () => {
     const save = game();
     const water = itemOf(save, "water");

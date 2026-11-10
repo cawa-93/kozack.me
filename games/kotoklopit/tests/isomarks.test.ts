@@ -107,13 +107,13 @@ describe("підсвітка цілі (§8.2)", () => {
     if (!vacuum) throw new Error("у сценарії пилосос стоїть на підлозі");
     state.character.body = { ...state.character.body, x: vacuum.x, y: vacuum.y - 0.6, facing: { x: 0, y: 1 } };
     expect(highlightTarget(state, false)?.type).toBe("vacuum");
-    // Узяв пилосос, а перед ним — кіт, що прийшов подивитися: ціль є, але підсвітки немає.
+    // Узяв пилосос, а перед ним — кіт, що прийшов подивитися: з пилососом у руках цілі немає зовсім (§10).
     state.home.vacuumAt = null;
     state.character.held = { kind: "vacuum", minutes: 0 };
     const cat = state.cats[0]!;
     cat.x = vacuum.x;
     cat.y = vacuum.y - 0.1;
-    expect(targetOf(state)?.type).toBe("cat");
+    expect(targetOf(state)).toBeNull();
     expect(highlightTarget(state, false)).toBeNull();
   });
 
