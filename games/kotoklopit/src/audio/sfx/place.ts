@@ -1,7 +1,7 @@
 // Де звучить звук квартири (§11.4а): гучність від відстані до персонажа й зсув уліво-вправо, як на ізометричному екрані.
 // Чисті функції: перевіряє `tests/sfx-place.test.ts`.
 
-import { itemPoint, objectById } from "../../sim/home";
+import { itemPoint, placedObject } from "../../sim/home";
 import type { GameState } from "../../sim/types";
 import { SFX } from "../config";
 import type { SoundAt } from "./types";
@@ -29,7 +29,8 @@ export function soundPoint(state: GameState, at: SoundAt | undefined): Point | n
     return mess ?? null;
   }
   try {
-    const object = objectById(at);
+    // Там, де річ стоїть: сховища й ящики гра могла поставити не на своє місце (§8.7, «Що ставить гра»).
+    const object = placedObject(state, at);
     return { x: object.x + object.w / 2, y: object.y + object.h / 2 };
   } catch {
     return null;

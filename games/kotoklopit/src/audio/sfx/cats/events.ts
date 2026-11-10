@@ -2,7 +2,7 @@
 // кіт, чи персонажем, якого кіт вкусив, звучить, крім тих, де звук лише засмічує («Без звуку»); думки — ні (хіба позіх).
 
 import { isKitten } from "../../../sim/cat";
-import { CARRIER_SPOT } from "../../../sim/home";
+import { CARRIER_SPOT, withThing } from "../../../sim/home";
 import { handOn } from "../../../sim/petpair";
 import type { GameEvent } from "../../../sim/events";
 import type { Cat, GameState } from "../../../sim/types";
@@ -53,7 +53,9 @@ export function catEvent(event: GameEvent, state: GameState): readonly Cue[] {
     }
     case "carrier-cry": {
       const cat = catById(state, event.cat);
-      const cue: Cue = { sound: cat && isKitten(cat) ? "cry-kitten" : "cry", at: { x: CARRIER_SPOT.x, y: CARRIER_SPOT.y } };
+      // Переноску гра могла поставити не біля дверей (§8.7, «Що ставить гра»).
+      const at = withThing(state, "carrier", CARRIER_SPOT);
+      const cue: Cue = { sound: cat && isKitten(cat) ? "cry-kitten" : "cry", at: { x: at.x, y: at.y } };
       if (cat) cue.rate = voiceRate(cat);
       return [cue];
     }

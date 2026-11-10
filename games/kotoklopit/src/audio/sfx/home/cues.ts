@@ -3,7 +3,7 @@
 
 import type { GameEvent, ModifierEvent } from "../../../sim/events";
 import { cleaningTool } from "../../../sim/household";
-import { CARRIER_SPOT, itemPoint, robotDockAt } from "../../../sim/home";
+import { CARRIER_SPOT, itemPoint, robotDockAt, withThing } from "../../../sim/home";
 import type { GameState } from "../../../sim/types";
 import type { Cue, SoundAt } from "../types";
 import type { HomeSound } from "./sounds";
@@ -99,8 +99,11 @@ export function homeCues(event: GameEvent, state: GameState): readonly HomeCue[]
       return one("land", storageAt(event.product));
     case "doorbell":
       return STATIC.doorbell;
-    case "carrier-opened":
-      return STATIC.carrier;
+    case "carrier-opened": {
+      // Переноску гра могла поставити не біля дверей (§8.7, «Що ставить гра»).
+      const at = withThing(state, "carrier", CARRIER_SPOT);
+      return at === CARRIER_SPOT ? STATIC.carrier : one("carrier", at);
+    }
     case "cooked":
       return event.result === "ready" ? STATIC.ready : STATIC.burnt;
     case "laundry":
