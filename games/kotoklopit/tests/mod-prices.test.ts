@@ -2,7 +2,7 @@
 // стерилізації», «Кур'єри не встигають ↔ Безкоштовна доставка», «Ціни ростуть ↔ Чорна п'ятниця». Ціна на кнопці й у кошику —
 // та, що списується; час прибуття й ціна фіксуються в мить замовлення.
 
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
 import { DELIVERY, DELIVERY_HOURS, DOCTOR_TREAT, MINUTES_PER_HOUR, MODIFIERS, PRODUCTS, STERILIZATION, THINGS, TRIPS, VET } from "../src/sim/config";
@@ -19,83 +19,9 @@ import type { Cat, Destination, GameState } from "../src/sim/types";
 import { shopCatalog } from "../src/ui/shop";
 import { visitCard, type VisitHandlers } from "../src/ui/trips";
 import { scheduleOf } from "../src/view/schedule";
+import { fake, type FakeElement, useFakeDom } from "./fakedom";
 
-/** Найпростіший DOM без браузера: класи, текст, діти, вимкненість і натискання. */
-class FakeElement {
-  className = "";
-  disabled = false;
-  title = "";
-  hidden = false;
-  readonly style: Record<string, string> = {};
-  children: (FakeElement | string)[] = [];
-  private readonly listeners: (() => void)[] = [];
-  private text = "";
-  readonly classList = {
-    toggle: (name: string, force?: boolean): boolean => {
-      const set = new Set(this.className.split(" ").filter(Boolean));
-      const on = force ?? !set.has(name);
-      if (on) set.add(name);
-      else set.delete(name);
-      this.className = [...set].join(" ");
-      return on;
-    },
-    add: (name: string): void => void this.classList.toggle(name, true),
-    remove: (name: string): void => void this.classList.toggle(name, false),
-    contains: (name: string): boolean => this.className.split(" ").includes(name),
-  };
-
-  constructor(readonly tagName: string) {}
-
-  get textContent(): string {
-    return this.text + this.children.map((c) => (typeof c === "string" ? c : c.textContent)).join("");
-  }
-
-  set textContent(value: string) {
-    this.text = value;
-    this.children = [];
-  }
-
-  append(...nodes: (FakeElement | string)[]): void {
-    this.children.push(...nodes);
-  }
-
-  prepend(...nodes: (FakeElement | string)[]): void {
-    this.children.unshift(...nodes);
-  }
-
-  setAttribute(): void {}
-
-  addEventListener(type: string, listener: () => void): void {
-    if (type === "click") this.listeners.push(listener);
-  }
-
-  click(): void {
-    if (!this.disabled) for (const l of this.listeners) l();
-  }
-
-  findAll(className: string): FakeElement[] {
-    const own = this.children.filter((c): c is FakeElement => typeof c !== "string");
-    return own.flatMap((c) => [...(c.classList.contains(className) ? [c] : []), ...c.findAll(className)]);
-  }
-
-  find(className: string): FakeElement {
-    const found = this.findAll(className)[0];
-    if (!found) throw new Error(`немає .${className}`);
-    return found;
-  }
-
-  querySelector(selector: string): FakeElement | null {
-    return this.findAll(selector.replace(/^\./, ""))[0] ?? null;
-  }
-}
-
-const fake = (el: HTMLElement | undefined): FakeElement => el as unknown as FakeElement;
-
-beforeAll(() => {
-  vi.stubGlobal("document", { createElement: (tag: string) => new FakeElement(tag), createTreeWalker: () => ({ nextNode: () => null }) });
-  vi.stubGlobal("NodeFilter", { SHOW_TEXT: 4 });
-});
-afterAll(() => vi.unstubAllGlobals());
+useFakeDom();
 
 const noop = (): void => {};
 const handlers: VisitHandlers = { checkout: noop, exam: noop, nextCat: noop, treat: noop, treatSelf: noop, adopt: noop, sterilize: noop, buyKitten: noop, groom: noop, show: noop, home: noop };
