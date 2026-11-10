@@ -183,6 +183,11 @@ export const ICON_NAMES = [
   "fountain-auto",
   "robot-vacuum-smart",
   "lock-magnet",
+  // Сховища котячих запасів як речі, які переставляють (§8.7, «Переставити річ»): на кнопці перестановки й у руках.
+  "cat-cabinet",
+  "sterile-bin",
+  "litter-bag",
+  "cat-kit",
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];
