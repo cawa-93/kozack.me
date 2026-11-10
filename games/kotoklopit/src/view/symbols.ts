@@ -3,7 +3,7 @@
 
 import type { GameEvent, HissCause, Need, Refusal } from "../sim/events";
 import { movableItem } from "../sim/targets";
-import type { Cat, Destination, Dish, GameState, Item, Product, StatName, ThingKind } from "../sim/types";
+import type { Cat, Destination, Dish, GameState, Item, Product, Quality, StatName, ThingKind } from "../sim/types";
 import type { IconName, Mark } from "./iconnames";
 import type { PersonStateId } from "./personstates";
 import type { DiseaseId, IllnessId } from "../sim/types";
@@ -141,6 +141,12 @@ export function carryIcon(state: GameState): IconName | null {
   const item = movableItem(state);
   return item ? THING_ICONS[item.kind] : null;
 }
+
+/**
+ * Варіант запасу, що має свою іконку біля назви в магазині (§11.4 «Іконка біля назви»): пластир — пачка, а бинт — як сам запас
+ * «Пластир і бинт», рулон. Решта варіантів — іконка запасу (`PRODUCT_ICONS`).
+ */
+export const VARIANT_ICONS: Partial<Record<Product, Partial<Record<Quality, IconName>>>> = { dressing: { cheap: "plaster" } };
 
 /** Іконка речі в руках чи на місці (§11.4): та сама, що скрізь у грі. */
 export function itemIcon(item: Item): IconName {

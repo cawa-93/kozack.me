@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/plaster — товар «Звичайний пластир» (§6.5, §6.4): синя пачка, з прорізу вгорі віялом визирають два рожеві пластирі.
+size 64×64; pivot (32, 32) — центр; points немає. Без станів і шарів: один кадр у готових кольорах; контур — LINE (силует 6, низ 8,5, смужка на пачці 3,5), пластирі — LINE_SMALL (4,5), щоб рожеве не з'їв контур.
+Силует — пачка з віялом, а не пластир навскіс icon/bandage (травма) і не рулон icon/dressing (бинт): «немає пластиру» не читається травмою.
+-->
+<defs>
+<clipPath id="icon-plaster-box"><path d="M18 30Q32 29.4 46 30Q50 30 50 34Q50.6 43 50 51Q50 55 46 55Q32 55.8 18 55Q14 55 14 51Q13.4 43 14 34Q14 30 18 30Z"/></clipPath>
+</defs>
+<g id="p-strips">
+<path d="M47.64 17.05L39.64 39.05L28.36 34.95L36.36 12.95Q46.10 3.72 47.64 17.05Z" fill="#ecbcb2"/>
+<path d="M36.34 20.91L42.54 23.17M35.06 24.43L41.26 26.69" fill="none" stroke="#6b5263" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M39.64 39.05L47.64 17.05Q46.10 3.72 36.36 12.95L28.36 34.95" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M27.64 12.95L35.64 34.95L24.36 39.05L16.36 17.05Q17.90 3.72 27.64 12.95Z" fill="#ecbcb2"/>
+<path d="M21.46 23.17L27.66 20.91M22.74 26.69L28.94 24.43" fill="none" stroke="#6b5263" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M35.64 34.95L27.64 12.95Q17.90 3.72 16.36 17.05L24.36 39.05" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-box">
+<path d="M18 30Q32 29.4 46 30Q50 30 50 34Q50.6 43 50 51Q50 55 46 55Q32 55.8 18 55Q14 55 14 51Q13.4 43 14 34Q14 30 18 30Z" fill="#6c84a3"/>
+<path d="M14 34Q14 30 18 30Q32 29.4 46 30Q50 30 50 34Q32 32.6 14 34Z" fill="#94a8c0"/>
+<path d="M0 51Q32 53 64 51L64 64L0 64Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-plaster-box)"/>
+<path d="M14 39.4Q32 38.6 50 39.4L50 46.4Q32 45.6 14 46.4Z" fill="#f2e7d0" clip-path="url(#icon-plaster-box)"/>
+<path d="M14 39.4Q32 38.6 50 39.4M14 46.4Q32 45.6 50 46.4" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" clip-path="url(#icon-plaster-box)"/>
+<path d="M18 30Q32 29.4 46 30Q50 30 50 34Q50.6 43 50 51Q50 55 46 55Q32 55.8 18 55Q14 55 14 51Q13.4 43 14 34Q14 30 18 30Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18 55Q32 55.8 46 55" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

@@ -8,7 +8,7 @@ import { helps, remedyOf } from "../sim/remedies";
 import type { GameState, Quality } from "../sim/types";
 import { REMEDY_HINTS } from "../texts";
 import type { IconName } from "../view/iconnames";
-import { PRODUCT_ICONS, THING_ICONS } from "../view/symbols";
+import { PRODUCT_ICONS, THING_ICONS, VARIANT_ICONS } from "../view/symbols";
 import { drawGlyphs } from "./glyphs";
 import { iconMark, named } from "./icons";
 import { hintBubble } from "./hintbubble";
@@ -25,10 +25,12 @@ export function variantTitle(goods: Goods, quality: Quality): string {
 
 /**
  * Іконка товару біля його назви (§11.4 «Іконка біля назви», рішення автора 2026-11-02): запас — та сама, що над сховищем, у
- * думці персонажа й на кнопці телефона, коли запас скінчився (`PRODUCT_ICONS`), річ — іконка самої речі (`THING_ICONS`).
+ * думці персонажа й на кнопці телефона, коли запас скінчився (`PRODUCT_ICONS`), річ — іконка самої речі (`THING_ICONS`). З
+ * якістю — іконка варіанта, коли він має свою (`VARIANT_ICONS`: пластир).
  */
-export function goodsIcon(goods: Goods): IconName {
-  return "product" in goods ? PRODUCT_ICONS[goods.product] : THING_ICONS[goods.thing];
+export function goodsIcon(goods: Goods, quality?: Quality): IconName {
+  if (!("product" in goods)) return THING_ICONS[goods.thing];
+  return (quality && VARIANT_ICONS[goods.product]?.[quality]) || PRODUCT_ICONS[goods.product];
 }
 
 /**
@@ -54,7 +56,7 @@ function remedyHint(goods: Goods, quality: Quality): string | null {
 }
 
 /** Назва варіанта з іконкою товару перед нею — так, як її показує картка магазину, і в «Моїх речах» телефона (`icons.ts`). */
-export const variantLabel = (goods: Goods, quality: Quality): string => named(goodsIcon(goods), variantTitle(goods, quality));
+export const variantLabel = (goods: Goods, quality: Quality): string => named(goodsIcon(goods, quality), variantTitle(goods, quality));
 
 /** Чому товар не взяти — коротким підписом у рядку (§6.4). */
 const UNAVAILABLE: Record<Unavailable, string> = {
@@ -182,7 +184,7 @@ export function shopCatalog(state: GameState, mode: ShopMode, options: CatalogOp
         const item = element("div", "shop-item");
         // Товар з однією карткою: у двох колонках наступний товар — з нового рядка, щоб рядок лишався одним товаром (`overlay.css`).
         if (qualities.length === 1) item.classList.add("single");
-        const icon = element("span", "shop-icon", iconMark(goodsIcon(g)));
+        const icon = element("span", "shop-icon", iconMark(goodsIcon(g, quality)));
         const name = element("span", "shop-name");
         name.append(...nameParts(variantTitle(g, quality)));
         // Від чого товар (§6.4): малопомітна «і» біля назви, бабл — як у чипів рис кота.

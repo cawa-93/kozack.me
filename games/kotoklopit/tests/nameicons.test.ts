@@ -75,13 +75,24 @@ describe("іконка біля назви: позначка в тексті", (
 });
 
 describe("іконка біля назви: магазин (§6.4)", () => {
-  it("біля кожного варіанта запасу — іконка запасу (PRODUCT_ICONS), речі — іконка речі (THING_ICONS); назва — варіанта", () => {
+  it("пластир — пачка, бинт — рулон: різні іконки, і жодна — не травма (пластир навскіс)", () => {
+    const plaster = goodsIcon({ product: "dressing" }, "cheap");
+    const bandage = goodsIcon({ product: "dressing" }, "premium");
+    expect(plaster).not.toBe(bandage);
+    expect(bandage).toBe(PRODUCT_ICONS.dressing);
+    expect([plaster, bandage]).not.toContain(ILLNESS_ICONS.injury);
+    expect(ICON_NAMES).toContain(plaster);
+  });
+
+  it("біля кожного варіанта запасу — іконка запасу (PRODUCT_ICONS), лише пластир — свою; речі — іконка речі (THING_ICONS); назва — варіанта", () => {
     expect(GOODS.length).toBeGreaterThan(0);
     for (const goods of GOODS) {
       const icon = "product" in goods ? PRODUCT_ICONS[goods.product] : THING_ICONS[goods.thing];
       expect(goodsIcon(goods), goodsKey(goods)).toBe(icon);
       for (const q of variants(goods)) {
-        expect(iconOf(variantLabel(goods, q)), `${goodsKey(goods)} ${q}`).toBe(icon);
+        const own = goodsKey(goods) === "dressing" && q === "cheap" ? "plaster" : icon;
+        expect(goodsIcon(goods, q), `${goodsKey(goods)} ${q}`).toBe(own);
+        expect(iconOf(variantLabel(goods, q)), `${goodsKey(goods)} ${q}`).toBe(own);
         expect(plain(variantLabel(goods, q)), `${goodsKey(goods)} ${q}`).toBe(VARIANT_TITLES[goodsKey(goods)]?.[q]);
         expect(variantTitle(goods, q), `${goodsKey(goods)} ${q}`).toBe(VARIANT_TITLES[goodsKey(goods)]?.[q]);
       }

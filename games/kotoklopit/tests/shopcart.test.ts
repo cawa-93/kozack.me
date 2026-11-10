@@ -183,8 +183,8 @@ describe("кожен товар у своїй картці (§6.4; рішенн�
     shown.forEach(({ goods: g, quality: q }, i) => {
       const item = items[i];
       const what = `${goodsKey(g)} ${q}`;
-      // Іконка — та сама, що була біля назви товару (§11.4), окремим стовпцем.
-      expect(item?.find("shop-icon").textContent, what).toBe(iconMark(goodsIcon(g)));
+      // Іконка — та сама, що біля назви варіанта (§11.4: пластир — своя), окремим стовпцем.
+      expect(item?.find("shop-icon").textContent, what).toBe(iconMark(goodsIcon(g, q)));
       const name = item?.find("shop-name");
       const stock = name?.find("shop-stock").textContent ?? "";
       // Товар, що від чогось допомагає, — з «і» одразу після назви (§6.4, «Від чого товар»).
