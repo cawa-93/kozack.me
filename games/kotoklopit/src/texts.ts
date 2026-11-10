@@ -7,7 +7,7 @@ import type { TraitArea } from "./sim/traits";
 import type { PersonStateId } from "./view/personstates";
 import { formatClock } from "./sim/time";
 import { accidentBedtime, accidentHome, accidentOf } from "./sim/trips";
-import type { AccidentLoss, Address, AlbumEntry, FarewellCause, GameEnd, GameState, IllnessId, Ledger, Medicine, ParcelsPickup, Sex, Spending } from "./sim/types";
+import type { AccidentLoss, Address, AlbumEntry, FarewellCause, GameEnd, GameState, IllnessId, Ledger, Medicine, ParcelsPickup, Product, Quality, Sex, Spending } from "./sim/types";
 import { plural } from "./ui/titles";
 
 /**
@@ -803,6 +803,37 @@ export const VET_ADVICE: Partial<Record<string, string>> = {
   spine: "Хребет не виправити, але щоденна таблетка для котів полегшить життя.",
   breathing: "Таблетка для котів — щодня, а в спеку й поготів.",
   gingivitis: "Запалення ясен само не мине — потрібне чищення зубів у клініці.",
+};
+
+/** Від чого товар — бабл над «і» в картці магазину (§6.4; `TEXTS.md`, «Від чого товар»). */
+export const REMEDY_HINTS: Partial<Record<Product, Partial<Record<Quality, string>>>> = {
+  pills: {
+    cheap: "Від застуди (курсом) і глистів, а хворобу серця, суглобів, хребта й дихання тримають під контролем — щодня. Діють не завжди.",
+    premium: "Від застуди (курсом) і глистів, а хворобу серця, суглобів, хребта й дихання тримають під контролем — щодня.",
+  },
+  drops: {
+    cheap: "Від бліх і кон'юнктивіту. Діють не завжди.",
+    premium: "Від бліх і кон'юнктивіту.",
+  },
+  shampoo: {
+    cheap: "Безшерстого кота купають регулярно — від дерматиту. Хвороб не лікує.",
+    premium: "Купання ним лікує дерматит і виводить бліх. Безшерстого кота купають регулярно — від дерматиту.",
+  },
+  catFood: {
+    premium: "Кілька годувань поспіль лише ним — дієта, що лікує розлад шлунка.",
+  },
+  sterileFood: {
+    cheap: "Стерилізованому коту — лише такий корм: від сечокам'яної хвороби.",
+    premium: "Стерилізованому коту — від сечокам'яної хвороби, а кілька годувань поспіль — ще й дієта, що лікує розлад шлунка.",
+  },
+  humanMeds: {
+    cheap: "Від застуди й травми: доза на день. Від виснаження не допоможуть. Діють не завжди.",
+    premium: "Від застуди й травми: доза на день. Від виснаження не допоможуть.",
+  },
+  dressing: {
+    cheap: "Повертає трохи здоров'я після укусів і подряпин. Травму не лікує — для неї бинт.",
+    premium: "Знімає травму й повертає здоров'я після укусів і подряпин.",
+  },
 };
 
 /** Назви хвороб котів (`DISEASES.md`). */

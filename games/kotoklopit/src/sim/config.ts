@@ -977,6 +977,8 @@ export const DUST = { everyMinutes: 36 * 60 } as const;
 export const TREATS = { mood: { cheap: 3, premium: 5 } as Record<Quality, number>, love: 2, hurtMinutes: 60, refund: 0.5, perDay: 2, stomach: 0.2 } as const;
 /** Купання (§8.7): «Боїться води» ×(1 + `fearStep`), «Жахається води» ×(1 + 2 × `fearStep`). */
 export const BATH = { catchSanity: -3, bathSanity: -3, minutes: 10, fearStep: 0.5, hairlessDays: 7, dermatitis: 0.3, hideMinutes: 30 } as const;
+/** Що лікує купання вдома за якістю шампуню (§8.7). */
+export const BATH_CURES: Record<Quality, readonly DiseaseId[]> = { cheap: [], premium: ["dermatitis", "fleas"] };
 /** Купання за «Любов'ю до води» (§8.7), за рівнем; `scratch` — шанс `CLAW`. */
 export const BATH_FEEL: Record<-2 | -1 | 0 | 1 | 2, { mood: number; love: number; scratch: number }> = {
   2: { mood: 5, love: 1, scratch: 0 },
@@ -1197,7 +1199,11 @@ export const ILLNESS_EFFECTS = {
   medsWork: 0.7,
 } as const;
 /** Пластир і бинт (§6.5): здоров'я одразу; бинт ще й знімає травму. */
-export const DRESSING = { health: { cheap: 5, premium: 10 } as Record<Quality, number> } as const;
+export const DRESSING = {
+  health: { cheap: 5, premium: 10 } as Record<Quality, number>,
+  /** Які хвороби персонажа знімає перев'язка: бинт — травму. */
+  cures: { cheap: [], premium: ["injury"] } as Record<Quality, readonly IllnessId[]>,
+} as const;
 /** Лікар (§6.5): `health` — після лікування. */
 export const DOCTOR_TREAT = { cheap: 45, premium: 120, cheapWorks: 0.7, health: 10 } as const;
 /** Смерть кота (§9.2, §9.5): `zeroHealth` — за нульового здоров'я ввечері; решта — понад межу віку. */

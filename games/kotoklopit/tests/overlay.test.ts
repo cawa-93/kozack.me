@@ -217,7 +217,9 @@ describe("картка на місці: тло й положення (§8.5 «Н
   it("CSS: назва рядка — рукописна, а підпис під нею й опис риси (бабл над рисою скрізь) — звичайним шрифтом", () => {
     expect(rule(".shop-name")).toContain("var(--hand)");
     expect(rule(".shop-stock")).toContain("system-ui");
-    expect(rule(".trait-about")).toContain("system-ui");
+    // Бабл над рисою й над «і» товару — одне правило (`hintbubble.ts`).
+    expect(css).toContain(".trait-about,\n.hint-bubble {");
+    expect(rule(".hint-bubble")).toContain("system-ui");
   });
 
   it("кнопки дій праворуч — лише за actionsEnd (картка пункту), решта карток — як були", () => {

@@ -4,11 +4,14 @@
 // місці: у магазині, а ліки — у ветеринара й лікаря (§8.5).
 
 import { canCheckout, cartDelivery, cartTotal, catalog, coming, discount, fitCart, goodsKey, goodsTotal, room, unavailable, unitPrice, variants, type CartLine, type Goods, type ShopMode, type Unavailable } from "../sim/shop";
+import { helps, remedyOf } from "../sim/remedies";
 import type { GameState, Quality } from "../sim/types";
+import { REMEDY_HINTS } from "../texts";
 import type { IconName } from "../view/iconnames";
 import { PRODUCT_ICONS, THING_ICONS } from "../view/symbols";
 import { drawGlyphs } from "./glyphs";
 import { iconMark, named } from "./icons";
+import { hintBubble } from "./hintbubble";
 import { element } from "./overlay";
 import { PRODUCT_TITLES, SHOP_SECTION_TITLES, STORE_SECTION_TITLES, VARIANT_TITLES } from "./titles";
 
@@ -39,6 +42,15 @@ function nameParts(title: string): (string | HTMLElement)[] {
     .split(/(\S*-\S*)/u)
     .filter((part) => part !== "")
     .map((part) => (part.includes("-") ? element("span", "nowrap", part) : part));
+}
+
+/** Назва кнопки «і» для читача екрана (§6.4, «Від чого товар»). */
+const REMEDY_LABEL = "Від чого допомагає";
+
+/** Від чого допомагає варіант (§6.4): текст бабла над «і»; товар, що ні від чого не допомагає, — null. */
+function remedyHint(goods: Goods, quality: Quality): string | null {
+  if (!("product" in goods) || !helps(remedyOf(goods.product, quality))) return null;
+  return REMEDY_HINTS[goods.product]?.[quality] ?? null;
 }
 
 /** Назва варіанта з іконкою товару перед нею — так, як її показує картка магазину, і в «Моїх речах» телефона (`icons.ts`). */
@@ -173,6 +185,16 @@ export function shopCatalog(state: GameState, mode: ShopMode, options: CatalogOp
         const icon = element("span", "shop-icon", iconMark(goodsIcon(g)));
         const name = element("span", "shop-name");
         name.append(...nameParts(variantTitle(g, quality)));
+        // Від чого товар (§6.4): малопомітна «і» біля назви, бабл — як у чипів рис кота.
+        const hint = remedyHint(g, quality);
+        const hints = hint === null ? null : hintBubble(item, "hint-bubble");
+        if (hints && hint !== null) {
+          const info = element("button", "shop-info", "i");
+          info.type = "button";
+          info.setAttribute("aria-label", REMEDY_LABEL);
+          hints.attach(info, hint);
+          name.append(" ", info);
+        }
         // Підпис оновлюється з кошиком: миска в кошику знімає «немає миски без годівниці» (§9.12).
         const stock = element("span", "shop-stock");
         name.append(stock);
@@ -189,6 +211,7 @@ export function shopCatalog(state: GameState, mode: ShopMode, options: CatalogOp
         const count = element("span", "shop-count", "0");
         const plus = element("button", "button step", "+");
         item.append(icon, name, cost, minus, count, plus);
+        if (hints) item.append(hints.bubble);
         minus.addEventListener("click", () => {
           line.count = Math.max(0, line.count - 1);
           // Забрали миску — автогодівниця, якій вона давала місце, теж виходить з кошика (§9.12).

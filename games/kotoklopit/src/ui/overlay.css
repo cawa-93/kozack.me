@@ -104,7 +104,9 @@
   letter-spacing: 0.08em;
 }
 
-.trait-about {
+/* Бабл над чипом риси й над «і» товару (`hintbubble.ts`). */
+.trait-about,
+.hint-bubble {
   position: absolute;
   z-index: 3;
   box-sizing: border-box;
@@ -123,7 +125,8 @@
   pointer-events: none;
 }
 
-.trait-about::after {
+.trait-about::after,
+.hint-bubble::after {
   content: "";
   position: absolute;
   bottom: -7px;
@@ -136,7 +139,19 @@
   rotate: 45deg;
 }
 
-.trait-about[hidden] {
+/* Згори бракує місця (верх списку, що прокручується) — бабл під кнопкою, хвостиком угору. */
+.hint-bubble.below {
+  translate: 0 10px;
+}
+
+.hint-bubble.below::after {
+  top: -7px;
+  bottom: auto;
+  rotate: 225deg;
+}
+
+.trait-about[hidden],
+.hint-bubble[hidden] {
   display: none;
 }
 
@@ -1051,6 +1066,7 @@
    кнопок «−» і «+» (40 px) з тонкими полями: на екрані якомога більше карток (рішення автора 2026-11-03, «Кожен товар у своїй
    картці»); довга назва з підписом роблять вищою лише свою картку. */
 .shop-item {
+  position: relative;
   display: grid;
   grid-template-columns: 30px minmax(0, 1fr) auto 40px 2.2ch 40px;
   align-items: center;
@@ -1081,6 +1097,29 @@
 .shop-item .shop-stock {
   font-size: 13px;
   line-height: 1.25;
+}
+
+/* «і» біля назви товару (§6.4, «Від чого товар»): дрібна й бліда, щоб не тягнула уваги; наведення чи натискання — бабл. */
+.shop-info {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  border: 1.5px solid var(--ink-soft);
+  border-radius: 50%;
+  background: none;
+  color: var(--ink-soft);
+  font: italic 700 11px/1 Georgia, serif;
+  vertical-align: 2px;
+  opacity: 0.55;
+  cursor: pointer;
+}
+
+.shop-info:hover,
+.shop-info.active {
+  opacity: 1;
 }
 
 /* Бірка знижки й ціна: в одній колонці — поруч, бірка перед ціною (як у прикладі автора: «… −29% 11 ₴»). */

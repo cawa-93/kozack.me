@@ -22,12 +22,16 @@ export function dressingFor(state: GameState): Quality | null {
   return supply.premium > 0 ? "premium" : null;
 }
 
-/** Пластир чи бинт: здоров'я одразу, бинт ще й знімає травму. */
+/** Пластир чи бинт: здоров'я одразу, бинт ще й знімає травму (`DRESSING.cures`). */
 export function applyDressing(state: GameState, quality: Quality): boolean {
   if (useSupply(state, "dressing", quality) === null) return false;
   changeStat(state, "health", DRESSING.health[quality]);
-  const cured = quality === "premium" && isIll(state, "injury");
-  if (cured) curePerson(state, "injury");
+  let cured = false;
+  for (const illness of DRESSING.cures[quality]) {
+    if (!isIll(state, illness)) continue;
+    curePerson(state, illness);
+    cured = true;
+  }
   emit(state, { type: "person-dressing", quality, cured });
   return true;
 }

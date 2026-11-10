@@ -2,7 +2,7 @@
 
 import { changeLove, changeMood, forgive, grudgeAt, offend, traitLevel } from "./cat";
 import { unpleasantTask } from "./character";
-import { BATH, BATH_FEEL, BEGGING, MINUTES_PER_HOUR, NURTURING, REVENGE, TREATS, WATER_PLAY, WEIGHT } from "./config";
+import { BATH, BATH_CURES, BATH_FEEL, BEGGING, MINUTES_PER_HOUR, NURTURING, REVENGE, TREATS, WATER_PLAY, WEIGHT } from "./config";
 import { catnipReaction, claw, envy, hideSpot, snatchTreat, startAct } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { cureDisease, maybeFallIll } from "./diseases";
@@ -131,11 +131,7 @@ export function bathe(state: GameState, rng: Rng): boolean {
   const scratched = feel.scratch > 0 && rng.chance(feel.scratch);
   if (scratched) claw(state, cat, "bath");
   cat.bathedDay = state.day;
-  // Дорогий шампунь лікує дерматит і виводить бліх (§8.7).
-  if (quality === "premium") {
-    cureDisease(state, cat, "dermatitis", rng);
-    cureDisease(state, cat, "fleas", rng);
-  }
+  for (const disease of BATH_CURES[quality]) cureDisease(state, cat, disease, rng);
   emit(state, { type: "bathed", cat: cat.id });
   if (water <= -2) {
     // Вирвався з рук і тікає ховатися.
