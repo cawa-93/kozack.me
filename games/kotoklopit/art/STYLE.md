@@ -627,7 +627,7 @@ size 40×44; pivot (20, 35) — суглоб з головою; основа (y 
 
 ### Галерея й знімки
 
-- **Галерея** — `gallery.html` і `src/dev/gallery/*`, лише в режимі розробки й на прев'ю. Вкладки: `slice` «Зріз» (еталонний зріз), `frames` «Кадри» (усі кадри, фільтр за категорією й файлом маніфесту, напр. `file=a21-light`), `rigs` «Скелети» (анімації з повзунком часу), `coats` «Шерсть і вигляд». Адреса: `?tab=<id>&bg=<light|dark|floor>&zoom=<k|phone>&t=<мс>&span=<мс>&speed=<k>&panel=<1|0>`. Нова вкладка — файл `src/dev/gallery/tabs/<id>.ts` з `TAB`.
+- **Галерея** — `gallery.html` і `src/dev/gallery/*`, лише в режимі розробки й на прев'ю. Вкладки: `slice` «Зріз» (еталонний зріз), `frames` «Кадри» (усі кадри, фільтр за категорією й файлом маніфесту, напр. `file=a21-light`), `rigs` «Скелети» (анімації з повзунком часу), `coats` «Шерсть і вигляд», `patterns` «Візерунки», `photos` «Фото титрів» (усі пози фото титрів життя, §4.2 `GAME_DESIGN.md`; розділ — `photos=cats|litters|people|things`, розмір фото — `photo=<px>`). Адреса: `?tab=<id>&bg=<light|dark|floor>&zoom=<k|phone>&t=<мс>&span=<мс>&speed=<k>&panel=<1|0>`. Нова вкладка — файл `src/dev/gallery/tabs/<id>.ts` з `TAB`.
 - **Знімки** — `npm run shots -w games/kotoklopit -- …` (`scripts/shots.ts`: свій Vite на вільному порту, Edge, програмний WebGL, детерміновано):
   - сценарії — `--out <тека> [--scenario a,b] [--size 844x390,1280x720] [--ms <мс>] [--dpr 1]`; `--gpu` — відеокарта; `--cache-key <назва>` — свій кеш Vite, коли в тій самій копії гри паралельно знімає ще хтось;
   - галерея — `--page gallery [--tab frames,rigs] [--bg light,dark,floor] [--zoom 1,phone]`;
