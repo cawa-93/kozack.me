@@ -11,7 +11,14 @@
       "money": 300
     },
     "job": { "position": 0, "reputation": 20, "unemployed": true, "searchHours": 6 },
-    "stats": { "minutes": { "work": 20000, "cats": 6000, "self": 14000, "bustle": 12000 } }
+    "stats": { "minutes": { "work": 20000, "cats": 6000, "self": 14000, "bustle": 12000 } },
+    "story": [
+      { "kind": "career", "day": 9, "minute": 680, "change": "promoted", "position": 1 },
+      { "kind": "career", "day": 24, "minute": 940, "change": "promoted", "position": 2 },
+      { "kind": "career", "day": 61, "minute": 730, "change": "demoted", "position": 1 },
+      { "kind": "career", "day": 75, "minute": 630, "change": "demoted", "position": 0 },
+      { "kind": "career", "day": 88, "minute": 660, "change": "fired", "position": 0 }
+    ]
   },
   "cats": [
     { "ageWeeks": 5, "sex": "male", "name": "Ґудзик", "arrivedDay": 110, "mood": 58, "moodHistory": [62, 55, 60, 48, 57, 63, 52, 59, 54, 61] }

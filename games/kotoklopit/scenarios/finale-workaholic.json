@@ -11,7 +11,29 @@
       "money": 40000
     },
     "job": { "position": 18, "reputation": 70 },
-    "stats": { "minutes": { "work": 62000, "cats": 3500, "self": 9000, "bustle": 6500 } }
+    "stats": { "minutes": { "work": 62000, "cats": 3500, "self": 9000, "bustle": 6500 } },
+    "story": [
+      { "kind": "career", "day": 5, "minute": 1290, "change": "promoted", "position": 1 },
+      { "kind": "career", "day": 9, "minute": 700, "change": "promoted", "position": 2 },
+      { "kind": "career", "day": 12, "minute": 1350, "change": "promoted", "position": 3 },
+      { "kind": "career", "day": 16, "minute": 820, "change": "promoted", "position": 4 },
+      { "kind": "career", "day": 19, "minute": 1230, "change": "promoted", "position": 5 },
+      { "kind": "career", "day": 23, "minute": 660, "change": "promoted", "position": 6 },
+      { "kind": "career", "day": 27, "minute": 1400, "change": "promoted", "position": 7 },
+      { "kind": "career", "day": 30, "minute": 900, "change": "promoted", "position": 8 },
+      { "kind": "career", "day": 34, "minute": 1310, "change": "promoted", "position": 9 },
+      { "kind": "career", "day": 38, "minute": 750, "change": "promoted", "position": 10 },
+      { "kind": "thing", "day": 40, "minute": 1260, "thing": "robot", "quality": "premium" },
+      { "kind": "career", "day": 42, "minute": 1180, "change": "promoted", "position": 11 },
+      { "kind": "career", "day": 47, "minute": 1440, "change": "promoted", "position": 12 },
+      { "kind": "career", "day": 52, "minute": 690, "change": "promoted", "position": 13 },
+      { "kind": "career", "day": 57, "minute": 1270, "change": "promoted", "position": 14 },
+      { "kind": "thing", "day": 60, "minute": 1330, "thing": "feeder", "quality": "premium" },
+      { "kind": "career", "day": 63, "minute": 980, "change": "promoted", "position": 15 },
+      { "kind": "career", "day": 70, "minute": 1210, "change": "promoted", "position": 16 },
+      { "kind": "career", "day": 78, "minute": 840, "change": "promoted", "position": 17 },
+      { "kind": "career", "day": 88, "minute": 1380, "change": "promoted", "position": 18 }
+    ]
   },
   "cats": [
     { "ageWeeks": 6, "sex": "female", "name": "Зірка", "arrivedDay": 100, "mood": 60, "moodHistory": [64, 58, 61, 55, 66, 59, 62, 57, 60, 63] },

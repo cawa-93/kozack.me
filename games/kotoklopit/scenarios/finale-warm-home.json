@@ -11,7 +11,22 @@
       "money": 9000
     },
     "job": { "position": 12, "reputation": 50 },
-    "stats": { "minutes": { "work": 30000, "cats": 18000, "self": 15000, "bustle": 8000 } }
+    "stats": { "minutes": { "work": 30000, "cats": 18000, "self": 15000, "bustle": 8000 } },
+    "story": [
+      { "kind": "career", "day": 7, "minute": 720, "change": "promoted", "position": 1 },
+      { "kind": "career", "day": 16, "minute": 880, "change": "promoted", "position": 2 },
+      { "kind": "career", "day": 25, "minute": 650, "change": "promoted", "position": 3 },
+      { "kind": "career", "day": 34, "minute": 970, "change": "promoted", "position": 4 },
+      { "kind": "career", "day": 43, "minute": 700, "change": "promoted", "position": 5 },
+      { "kind": "career", "day": 52, "minute": 830, "change": "promoted", "position": 6 },
+      { "kind": "career", "day": 62, "minute": 620, "change": "promoted", "position": 7 },
+      { "kind": "career", "day": 72, "minute": 910, "change": "promoted", "position": 8 },
+      { "kind": "career", "day": 82, "minute": 760, "change": "promoted", "position": 9 },
+      { "kind": "career", "day": 93, "minute": 1000, "change": "promoted", "position": 10 },
+      { "kind": "career", "day": 104, "minute": 690, "change": "promoted", "position": 11 },
+      { "kind": "thing", "day": 106, "minute": 1140, "thing": "fountain", "quality": "premium" },
+      { "kind": "career", "day": 118, "minute": 850, "change": "promoted", "position": 12 }
+    ]
   },
   "cats": [
     { "ageWeeks": 6, "sex": "female", "name": "Пампушка", "arrivedDay": 105, "mood": 91, "moodHistory": [87, 90, 92, 89, 93, 91, 88, 94, 90, 92] }

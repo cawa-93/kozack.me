@@ -11,7 +11,25 @@
       "money": 7000
     },
     "job": { "position": 13, "reputation": 45 },
-    "stats": { "minutes": { "work": 33000, "cats": 14000, "self": 13000, "bustle": 10000 } }
+    "stats": { "minutes": { "work": 33000, "cats": 14000, "self": 13000, "bustle": 10000 } },
+    "story": [
+      { "kind": "career", "day": 8, "minute": 700, "change": "promoted", "position": 1 },
+      { "kind": "career", "day": 15, "minute": 820, "change": "promoted", "position": 2 },
+      { "kind": "career", "day": 22, "minute": 640, "change": "promoted", "position": 3 },
+      { "kind": "career", "day": 29, "minute": 910, "change": "promoted", "position": 4 },
+      { "kind": "career", "day": 37, "minute": 760, "change": "promoted", "position": 5 },
+      { "kind": "career", "day": 45, "minute": 1010, "change": "promoted", "position": 6 },
+      { "kind": "thing", "day": 50, "minute": 1080, "thing": "feeder", "quality": "cheap" },
+      { "kind": "career", "day": 53, "minute": 690, "change": "promoted", "position": 7 },
+      { "kind": "career", "day": 61, "minute": 870, "change": "promoted", "position": 8 },
+      { "kind": "career", "day": 70, "minute": 610, "change": "promoted", "position": 9 },
+      { "kind": "career", "day": 79, "minute": 950, "change": "promoted", "position": 10 },
+      { "kind": "career", "day": 88, "minute": 720, "change": "promoted", "position": 11 },
+      { "kind": "career", "day": 96, "minute": 1000, "change": "demoted", "position": 10 },
+      { "kind": "career", "day": 104, "minute": 780, "change": "promoted", "position": 11 },
+      { "kind": "career", "day": 113, "minute": 840, "change": "promoted", "position": 12 },
+      { "kind": "career", "day": 124, "minute": 660, "change": "promoted", "position": 13 }
+    ]
   },
   "cats": [
     { "ageWeeks": 5, "sex": "female", "name": "Ромашка", "arrivedDay": 105, "mood": 74, "moodHistory": [70, 76, 72, 78, 74, 71, 77] },

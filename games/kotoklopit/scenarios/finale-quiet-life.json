@@ -11,6 +11,14 @@
       "money": 4000
     },
     "job": { "position": 5, "reputation": 40 },
-    "stats": { "minutes": { "work": 28000, "cats": 0, "self": 20000, "bustle": 7000 } }
+    "stats": { "minutes": { "work": 28000, "cats": 0, "self": 20000, "bustle": 7000 } },
+    "story": [
+      { "kind": "career", "day": 12, "minute": 790, "change": "promoted", "position": 1 },
+      { "kind": "career", "day": 34, "minute": 660, "change": "promoted", "position": 2 },
+      { "kind": "career", "day": 57, "minute": 930, "change": "promoted", "position": 3 },
+      { "kind": "thing", "day": 70, "minute": 1120, "thing": "robot", "quality": "cheap" },
+      { "kind": "career", "day": 83, "minute": 710, "change": "promoted", "position": 4 },
+      { "kind": "career", "day": 110, "minute": 860, "change": "promoted", "position": 5 }
+    ]
   }
 }
