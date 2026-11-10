@@ -14,7 +14,7 @@ import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, CatAct, Destination, Dish, Item, Product, Save, StatName, ThingKind } from "../src/sim/types";
 import type { IconName, Mark } from "../src/view/iconnames";
-import { catAsk, DESTINATION_ICONS, DISEASE_ICONS, eventBubbles, HOME_FIXTURE_ICONS, ILLNESS_ICONS, itemIcon, MOOD_ICONS, PERSON_STATE_ICONS, PRODUCT_ICONS, refusalBubble, STAT_ICONS, UTILITIES_ICON, STATE_ICONS, stoveIcon, THING_ICONS, VARIANT_ICONS } from "../src/view/symbols";
+import { catAsk, DESTINATION_ICONS, DISEASE_ICONS, eventBubbles, HOME_FIXTURE_ICONS, ILLNESS_ICONS, itemIcon, MOOD_ICONS, PERSON_STATE_ICONS, PRODUCT_ICONS, refusalBubble, STAT_ICONS, UTILITIES_ICON, STATE_ICONS, stoveIcon, STORAGE_ICONS, THING_ICONS, VARIANT_ICONS } from "../src/view/symbols";
 import { catThought, personThought } from "../src/view/thoughts";
 import { EVENTS, REFUSALS } from "./bubblecases";
 import { withCatCorner } from "./helpers";
@@ -164,6 +164,8 @@ function collectCases(): Map<string, Shown[]> {
   }
   // Речі магазину (§11.4 «Іконка біля назви», рішення автора 2026-11-02): іконка біля назви речі — як `THING_ICONS`.
   for (const thing of THING_LIST) add(`thing:${thing}`, { icon: THING_ICONS[thing] });
+  // Сховища котячих запасів як речі, які переставляють (§8.7): на кнопці перестановки й у руках — не те саме, що запас у них.
+  for (const [thing, icon] of Object.entries(STORAGE_ICONS)) add(`storage:${thing}`, { icon });
   // Бабли стану над речами, котами й персонажем.
   for (const [name, value] of Object.entries(STATE_ICONS)) {
     if (typeof value === "string") add(`state:${name}`, { icon: value });
