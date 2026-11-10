@@ -100,6 +100,7 @@ describe("плита (§8.7)", () => {
 
   it("зняту до готовності порцію кладуть назад — вона готується далі; через холодильник — знову сира", () => {
     const save = game();
+    const onStove = (): string | undefined => save.current.home.stove.item?.kind;
     standAt(save, "fridge");
     interact(save);
     standAt(save, "stove");
@@ -114,7 +115,7 @@ describe("плита (§8.7)", () => {
     standAt(save, "stove");
     interact(save);
     advance(save, COOK_MINUTES / 2 + 0.01);
-    expect(save.current.home.stove.item?.kind).toBe("meal");
+    expect(onStove()).toBe("meal");
 
     // Та сама половина готування, але порцію поклали в холодильник: з нього вона — свіжа.
     save.current.home.stove.item = null;
@@ -130,7 +131,7 @@ describe("плита (§8.7)", () => {
     standAt(save, "stove");
     interact(save);
     advance(save, COOK_MINUTES / 2 + 0.01);
-    expect(save.current.home.stove.item?.kind).toBe("raw");
+    expect(onStove()).toBe("raw");
   });
 
   it("на зайняту плиту нічого не покласти", () => {
