@@ -5,7 +5,7 @@
  * разів швидше, поки тримають; `maxStepMs` — найдовший крок кадру: після вкладки у фоні стрічка не перестрибує; `startMs` — пауза
  * на титулі перед рушанням.
  */
-export const ROLL = { speed: 0.11, fast: 6, maxStepMs: 100, startMs: 2200 } as const;
+export const ROLL = { speed: 0.13, fast: 6, maxStepMs: 100, startMs: 2200 } as const;
 
 /** Наступний зсув стрічки, px. */
 export function rollOffset(offset: number, dtMs: number, viewport: number, end: number, holding: boolean): number {
