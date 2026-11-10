@@ -39,8 +39,8 @@ const GAME_ONLY: ReadonlySet<GameThing> = new Set<GameThing>(["boxes", "big-box"
 const SOLID: ReadonlySet<GameThing> = new Set<GameThing>(["cat-cabinet", "litter-bag", "sterile-bin", "cat-kit", "boxes", "big-box"]);
 
 /**
- * Де стоїть персонаж, користуючись річчю, — клітинка відносно неї (як `use` у `view/world/objects.ts`; збіг перевіряє
- * `tests/gamethings.test.ts`). Велика коробка — лише для котів.
+ * Де стоїть персонаж, користуючись річчю, — клітинка відносно неї (як `use` у `view/world/objects.ts`). Велика коробка — лише для
+ * котів.
  */
 const FRONT: Partial<Record<GameThing, Vec>> = {
   "cat-cabinet": { x: 0, y: 1 },
@@ -49,6 +49,11 @@ const FRONT: Partial<Record<GameThing, Vec>> = {
   "sterile-bin": { x: -1, y: 0 },
   boxes: { x: 0, y: 1 },
 };
+
+/** Боки, з яких персонаж підходить до речі (§8.7, «Сховища й переноски»): спершу перед нею, потім збоку, нарешті ззаду. */
+const SIDES: Partial<Record<GameThing, readonly Vec[]>> = Object.fromEntries(
+  Object.entries(FRONT).map(([thing, f]) => [thing, [f, { x: f.y, y: f.x }, { x: -f.y, y: -f.x }, { x: -f.x, y: -f.y }]]),
+);
 
 /**
  * Звідки кіт лапає шафку чи дере ящики й велику коробку (`CABINET_PAW`, `BOX_SCRATCH`, `BIG_BOX_SCRATCH`) — клітинка відносно
@@ -103,8 +108,13 @@ function keepsWay(state: GameState, thing: GameThing, tile: Vec | null, before: 
   const at = tile ?? thingHome(thing);
   const after = reachable(state);
   for (const t of before) if (t !== key(at.x, at.y) && !after.has(t)) return false;
-  const front = FRONT[thing];
-  if (front && !after.has(key(at.x + front.x, at.y + front.y))) return false;
+  // До самої речі й до кожної іншої, біля якої стає персонаж, можна підійти бодай з одного боку.
+  for (const other of GAME_THINGS) {
+    const sides = SIDES[other];
+    if (!sides || (other !== thing && !thingPresent(state, other))) continue;
+    const t = other === thing ? at : standing(state, other);
+    if (!sides.some((d) => after.has(key(t.x + d.x, t.y + d.y)))) return false;
+  }
   const side = SIDE[thing];
   if (side && (isWall(at.x + side.x, at.y + side.y) || isSolid(state, at.x + side.x, at.y + side.y))) return false;
   if (!strict) return true;
@@ -112,8 +122,19 @@ function keepsWay(state: GameState, thing: GameThing, tile: Vec | null, before: 
   return !objectsOf(state).some((o) => o.interactive && o.id !== thing && distanceToRect(center, o) <= 0.5);
 }
 
+/**
+ * Звідки персонаж користується річчю гри (§8.7): бік від її клітинки — перед нею, а коли там стіна чи щось тверде, то збоку чи
+ * ззаду; null — у речі немає місця персонажа (переноска, велика коробка).
+ */
+export function useSide(state: Pick<GameState, "home" | "modifiers" | "today">, thing: GameThing): Vec | null {
+  const sides = SIDES[thing];
+  if (!sides) return null;
+  const at = standing(state, thing);
+  return sides.find((d) => !isWall(at.x + d.x, at.y + d.y) && !blocksPerson(state, at.x + d.x, at.y + d.y)) ?? sides[0] ?? null;
+}
+
 /** Клітинка, де річ гри стоїть: зсунута чи своя. */
-function standing(state: GameState, thing: GameThing): Vec {
+function standing(state: Pick<GameState, "home">, thing: GameThing): Vec {
   const home = thingHome(thing);
   const shift = thingShift(state, thing);
   return { x: home.x + shift.x, y: home.y + shift.y };

@@ -3,12 +3,12 @@
 // підсвітки. Перевіряє `tests/isoworld.test.ts`.
 
 import { carriedToy } from "../../sim/catai";
-import { HIGH_PLACES, objectAt, slotById, TRINKETS, type Rect } from "../../sim/home";
-import type { Cat, GameState, GameThing, TrinketKind, Vec } from "../../sim/types";
+import { CARRIER_SPOT, HIGH_PLACES, objectAt, placedObject, robotDockAt, robotDocked, slotById, thingPresent, TRINKETS, type Rect } from "../../sim/home";
+import type { CarryThing, Cat, GameState, GameThing, TrinketKind, Vec } from "../../sim/types";
 import { artEntry } from "../art/manifest";
 import type { ArtId } from "../art/types";
 import type { IsoBox } from "../world/isoorder";
-import { isoCatPerch, isoItemLook, isoObjectLook } from "../world/objects";
+import { isoCatPerch, isoItemLook, isoObjectLook, thingPoint } from "../world/objects";
 import type { Point } from "../world/part";
 import { ISO, ISO_TILE } from "../world/projection";
 import { shapedStage, stoveArtState } from "./looks";
@@ -139,6 +139,17 @@ export function boxCovers(box: IsoBox, h: number, p: Vec, figure: Figure, lift =
 /** Точка підлоги й фігура речі котячого кутка для `wallsToFade` — щоразу ті самі (без щокадрових об'єктів на кожну річ). */
 const SPOT: Vec = { x: 0, y: 0 };
 const ITEM: { height: number; half: number } = { height: 0, half: 0 };
+/** Сховища й переноски, що стоять і під ближньою стіною (§8.7). */
+const CARRY_THINGS: readonly CarryThing[] = ["cat-cabinet", "sterile-bin", "litter-bag", "cat-kit", "carrier"];
+/** Пів ширини сховища на екрані, одиниці арту: на всю клітинку. */
+const STORAGE_HALF = 56;
+/** Середина речі квартири — точка підлоги для `markWalls` (щоразу та сама, без нового об'єкта щокадру). */
+const OBJECT_CENTER: Vec = { x: 0, y: 0 };
+function objectCenter(r: Rect): Vec {
+  OBJECT_CENTER.x = r.x + r.w / 2;
+  OBJECT_CENTER.y = r.y + r.h / 2;
+  return OBJECT_CENTER;
+}
 
 /** Види дрібничок (`TRINKETS`): скинуті лежать у `home.trinkets` за видом. */
 const TRINKET_KINDS: readonly TrinketKind[] = [...new Set(TRINKETS.map((t) => t.kind))];
@@ -199,6 +210,27 @@ export function wallsToFade(state: GameState, walls: readonly IsoBox[], h: numbe
     ITEM.height = look.height;
     ITEM.half = look.half * ITEM_CORE;
     markWalls(walls, h, home.vacuumAt, ITEM, out);
+  }
+  // Сховища, переноски й база робота стоять і під ближньою стіною (§8.7, «Сховища й переноски»): стіна перед ними теж згасає.
+  for (const thing of CARRY_THINGS) {
+    if (!thingPresent(state, thing)) continue;
+    const at = thing === "carrier" ? thingPoint(state, "carrier", CARRIER_SPOT) : objectCenter(placedObject(state, thing));
+    if (thing === "carrier") {
+      const look = isoItemLook("carrier");
+      ITEM.height = look.height;
+      ITEM.half = look.half * ITEM_CORE;
+    } else {
+      ITEM.height = isoObjectLook(thing).tall;
+      ITEM.half = STORAGE_HALF * ITEM_CORE;
+    }
+    markWalls(walls, h, at, ITEM, out);
+  }
+  const robot = home.appliances.robot;
+  if (robot && robotDocked(state)) {
+    const look = isoItemLook("robot", robot);
+    ITEM.height = look.height;
+    ITEM.half = look.half * ITEM_CORE;
+    markWalls(walls, h, robotDockAt(state), ITEM, out);
   }
   const fallen = home.trinkets;
   if (fallen) {

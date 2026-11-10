@@ -665,7 +665,7 @@ function footprintPlace(key: string, f: IsoFootprint): PerchPlace {
  * місць — null: там кіт сам (барабан, переноска, лоток) чи його не розсувають (на підлозі — `catCrowds`, руки). `state` — де
  * стоять речі гри (§8.7, «Що ставить гра»); без нього — на своїх місцях.
  */
-export function perchPlace(spot: CatSpot, state?: Pick<GameState, "home">): PerchPlace | null {
+export function perchPlace(spot: CatSpot, state?: Pick<GameState, "home" | "modifiers" | "today">): PerchPlace | null {
   const box = spot.box;
   if (spot.kind === "furniture" && box === DESK) return deskPlace(spot.at);
   if (spot.kind === "furniture" && box) {

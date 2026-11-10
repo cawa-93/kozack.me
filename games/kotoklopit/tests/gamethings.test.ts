@@ -156,11 +156,10 @@ describe("що ставить гра: сховища (§8.7, «Що ставит
         for (const o of OBJECTS.filter((o) => o.interactive && o.id !== id && isPresent(state, o))) {
           expect(distanceToRect(center(tile), placedObject(state, o.id)), `${id} біля ${o.id}`).toBeGreaterThan(0.5);
         }
-        // Перед ним можна стати: місце персонажа — разом зі сховищем, на прохідній клітинці, куди він дійде.
+        // До нього можна підійти: місце персонажа — на сусідній прохідній клітинці, куди він дійде.
         const use = placedObjectLook(state, id).use;
-        const own = isoObjectLook(id).use;
-        expect(use && own && { x: use.at.x - own.at.x, y: use.at.y - own.at.y }, id).toEqual({ x: tile.x - home.x, y: tile.y - home.y });
         const stand = use ? tileOf(use.at) : null;
+        expect(stand !== null && Math.abs(stand.x - tile.x) + Math.abs(stand.y - tile.y), id).toBe(1);
         expect(stand !== null && !blocksPerson(state, stand.x, stand.y) && after.has(`${stand.x},${stand.y}`), id).toBe(true);
       }
     });

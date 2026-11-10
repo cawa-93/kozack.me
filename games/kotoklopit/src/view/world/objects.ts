@@ -8,6 +8,7 @@
 // `tests/isoworld.test.ts`).
 
 import { OBJECTS, objectShift, withThing } from "../../sim/home";
+import { useSide } from "../../sim/settle";
 import type { FillStage } from "../../sim/storage";
 import type { GameState, GameThing, HomeItem, Quality, Vec } from "../../sim/types";
 
@@ -144,29 +145,52 @@ export function isoObjectLook(id: string): IsoObjectLook {
   return look;
 }
 
-/** Зсунутий вигляд речі за id: клітинка, куди її зсунуто, і сам вигляд (щоб не створювати нового щокадру). */
-const PLACED_LOOKS = new Map<string, { x: number; y: number; look: IsoObjectLook }>();
+/** Зсунутий вигляд речі за id: зсув, бік, звідки нею користуються, і сам вигляд (щоб не створювати нового щокадру). */
+const PLACED_LOOKS = new Map<string, { dx: number; dy: number; side: Vec | null; look: IsoObjectLook }>();
+
+const GAME_THING_IDS: ReadonlySet<string> = new Set<GameThing>(["cat-cabinet", "litter-bag", "sterile-bin", "cat-kit", "boxes"]);
 
 /**
- * Вигляд речі квартири `id` там, де вона стоїть зараз (§8.7, «Що ставить гра»): сховище чи ящики, зсунуті з зайнятого місця,
- * несуть із собою слід і місце персонажа; на своєму місці й у меблів — сам `isoObjectLook`.
+ * Вигляд речі квартири `id` там, де вона стоїть зараз (§8.7, «Що ставить гра», «Сховища й переноски»): сховище чи ящики не на
+ * своєму місці несуть із собою слід і місце персонажа, а коли перед ними стіна чи щось тверде, персонаж стає збоку чи ззаду
+ * (`useSide`); на своєму місці з вільним лицем і в меблів — сам `isoObjectLook`.
  */
-export function placedObjectLook(state: Pick<GameState, "home">, id: string): IsoObjectLook {
+export function placedObjectLook(state: Pick<GameState, "home" | "modifiers" | "today">, id: string): IsoObjectLook {
   const own = isoObjectLook(id);
-  const to = (state.home.displaced as Partial<Record<string, Vec>> | undefined)?.[id];
-  if (!to) return own;
-  const cached = PLACED_LOOKS.get(id);
-  if (cached && cached.x === to.x && cached.y === to.y) return cached.look;
+  if (!GAME_THING_IDS.has(id)) return own;
   const shift = objectShift(state, id);
-  const look = shift.x === 0 && shift.y === 0 ? own : shiftedLook(own, shift);
-  PLACED_LOOKS.set(id, { x: to.x, y: to.y, look });
+  const side = own.use ? useSide(state, id as GameThing) : null;
+  const front = side === null || own.use === null || sameSide(own, side);
+  if (shift.x === 0 && shift.y === 0 && front) return own;
+  const cached = PLACED_LOOKS.get(id);
+  if (cached && cached.dx === shift.x && cached.dy === shift.y && cached.side === (front ? null : side)) return cached.look;
+  const look = shiftedLook(own, shift, front ? null : side);
+  PLACED_LOOKS.set(id, { dx: shift.x, dy: shift.y, side: front ? null : side, look });
   return look;
 }
 
-function shiftedLook(own: IsoObjectLook, d: Vec): IsoObjectLook {
+/** Своє місце персонажа (`use`) — з того самого боку речі, що й `side`. */
+function sameSide(own: IsoObjectLook, side: Vec): boolean {
+  const use = own.use;
+  if (!use) return true;
   const f = own.footprint;
-  const use = own.use && { ...own.use, at: { x: own.use.at.x + d.x, y: own.use.at.y + d.y } };
-  return { ...own, footprint: { x0: f.x0 + d.x, y0: f.y0 + d.y, x1: f.x1 + d.x, y1: f.y1 + d.y }, use };
+  const dx = use.at.x - (f.x0 + f.x1) / 2;
+  const dy = use.at.y - (f.y0 + f.y1) / 2;
+  return Math.abs(dx) >= Math.abs(dy) ? Math.sign(dx) === side.x && side.y === 0 : Math.sign(dy) === side.y && side.x === 0;
+}
+
+/** Вигляд, зсунутий на `d`; `side` — бік, з якого персонаж стає замість свого (на тій самій відстані від середини речі). */
+function shiftedLook(own: IsoObjectLook, d: Vec, side: Vec | null): IsoObjectLook {
+  const f = own.footprint;
+  const footprint = { x0: f.x0 + d.x, y0: f.y0 + d.y, x1: f.x1 + d.x, y1: f.y1 + d.y };
+  let use = own.use && { ...own.use, at: { x: own.use.at.x + d.x, y: own.use.at.y + d.y } };
+  if (own.use && side) {
+    const cx = (f.x0 + f.x1) / 2;
+    const cy = (f.y0 + f.y1) / 2;
+    const reach = Math.hypot(own.use.at.x - cx, own.use.at.y - cy);
+    use = { ...own.use, at: { x: cx + d.x + side.x * reach, y: cy + d.y + side.y * reach }, facing: { x: -side.x, y: -side.y } };
+  }
+  return { ...own, footprint, use };
 }
 
 /** Точки `p`, прив'язані до речі гри, — зі зсувом, за точкою й річчю: клітинка, куди річ зсунуто, і сама точка. */

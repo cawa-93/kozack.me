@@ -5,7 +5,7 @@ import { idleAct } from "./cat";
 import { MOVING } from "./config";
 import { feederAt } from "./economy";
 import { emit } from "./events";
-import { distanceToRect, hiddenTile, itemPoint, nearestFreePlace, robotDockAt, robotDocked, slotById, thingHome, thingPresent, thingShift, type Place } from "./home";
+import { distanceToRect, itemPoint, nearestFreePlace, robotDockAt, robotDocked, slotById, thingHome, thingPresent, thingShift, type Place } from "./home";
 import { clearPath, robotProgress } from "./household";
 import { fitsThing, put } from "./settle";
 import { itemTargetId, movableItem } from "./targets";
@@ -38,13 +38,12 @@ export function thingSpot(state: GameState): Place | null {
 }
 
 /**
- * Базу робота, сховище й переноски ставлять лише туди, де їх видно: перед ними внутрішня стіна не згасає (§8.7). Тверде сховище —
- * ще й не собі під ноги й так, щоб нікому не заважало (`fitsThing`).
+ * Сховище й переноски ставлять, як речі, і під ближню стіну: вона перед ними згасає (§8.7). Тверде сховище — не собі під ноги й так,
+ * щоб нікому не заважало (`fitsThing`).
  */
 function fits(state: GameState, thing: CarryThing | null, center: Vec): boolean {
-  const { held, body } = state.character;
+  const { body } = state.character;
   const tile = { x: Math.floor(center.x), y: Math.floor(center.y) };
-  if ((held?.kind === "robot" || thing !== null) && hiddenTile(tile.x, tile.y)) return false;
   if (thing === null) return true;
   if (thing !== "carrier" && tile.x === Math.floor(body.x) && tile.y === Math.floor(body.y)) return false;
   return fitsThing(state, thing, tile);
@@ -100,7 +99,7 @@ export function dropThing(state: GameState): void {
   const { held, body } = state.character;
   if (held?.kind === "thing") setDown(state, held, nearestFreePlace(state, body) ?? slotById(held.item.slot));
   if (held?.kind === "robot") {
-    const place = nearestFreePlace(state, body, (center) => !hiddenTile(Math.floor(center.x), Math.floor(center.y)));
+    const place = nearestFreePlace(state, body);
     const old = robotDockAt(state);
     setRobotDown(state, place ?? { id: "robot-dock", x: Math.floor(old.x), y: Math.floor(old.y) });
   }

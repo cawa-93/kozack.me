@@ -22,6 +22,7 @@ import {
   objectsOf,
   PLACES,
   placedObject,
+  robotDockAt,
   SPAWN,
   thingHome,
   thingPresent,
@@ -31,6 +32,8 @@ import { moveThing } from "../src/sim/moving";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { targetOf } from "../src/sim/targets";
+import { WALL_HEIGHT, WALL_SEGMENTS } from "../src/view/art/manifest/lib/geometry";
+import { wallsToFade } from "../src/view/iso/geometry";
 import type { CarryThing, GameState, Product, Save, Vec } from "../src/sim/types";
 import { carryIcon, STORAGE_ICONS, THING_ICONS } from "../src/view/symbols";
 import { placedObjectLook } from "../src/view/world/objects";
@@ -87,6 +90,9 @@ function lift(state: GameState, thing: CarryThing): void {
   }
   throw new Error(`Біля ${thing} ніде стати`);
 }
+
+/** Внутрішні стіни, що можуть закривати речі під собою (`wallsToFade`). */
+const INNER = WALL_SEGMENTS.filter((w) => w.kind === "inner").map(({ rect: { x, y, w, h } }) => ({ x0: x, y0: y, x1: x + w, y1: y + h }));
 
 /** Куди переставляємо: вітальня під лівим вікном, обличчям праворуч. */
 const LEFT_OF_LIVING: Vec = { x: 3.5, y: 9.5 };
@@ -165,16 +171,51 @@ describe("перестановка сховищ (§8.7, «Сховища й пе
     expect(tileNow(save.current, "cat-cabinet")).toEqual(tile);
   });
 
-  it("сховище не стає так, що перед ним стіна, збоку від шафки — стіна, чи персонажу під ноги", () => {
-    // Під передньою стіною вітальні: перед річчю (y + 1) стіна.
-    const front = game();
-    addSupply(front.current, "catFood", "cheap", 1);
-    lift(front.current, "cat-cabinet");
-    stand(front.current, { x: 5.5, y: 9.5 }, { x: 0, y: 1 });
-    moveThing(front.current);
-    const a = tileNow(front.current, "cat-cabinet");
-    expect(isWall(a.x, a.y + 1) || isSolid(front.current, a.x, a.y + 1), `${a.x},${a.y}`).toBe(false);
+  it("сховище ставлять і під ближню стіну: у вітальні під плінтусом і в спальні під внутрішньою стіною — стіна згасає, а персонаж стає збоку", () => {
+    for (const [id, product] of [["litter-bag", "litter"], ["cat-kit", "pills"], ["cat-cabinet", "catFood"]] as const) {
+      for (const [at, facing, tile] of [
+        [{ x: 5.5, y: 9.5 }, { x: 0, y: 1 }, { x: 5, y: 10 }],
+        [{ x: 2.5, y: 3.4 }, { x: 0, y: 1 }, { x: 2, y: 4 }],
+      ] as const) {
+        const save = game();
+        const state = save.current;
+        addSupply(state, product, "cheap", 1);
+        lift(state, id);
+        stand(state, at, facing);
+        moveThing(state);
+        expect(state.character.held, id).toBeNull();
+        expect(tileNow(state, id), `${id} → ${tile.x},${tile.y}`).toEqual(tile);
+        // Місце персонажа — на сусідній прохідній клітинці, куди він дійде, обличчям до сховища.
+        const use = placedObjectLook(state, id).use;
+        expect(use, id).not.toBeNull();
+        if (!use) continue;
+        const stand2 = tileOf(use.at);
+        expect(Math.abs(stand2.x - tile.x) + Math.abs(stand2.y - tile.y), `${id} ${tile.x},${tile.y}`).toBe(1);
+        expect(reachable(state).has(`${stand2.x},${stand2.y}`), `${id} ${tile.x},${tile.y}`).toBe(true);
+        expect(use.facing.x * (tile.x + 0.5 - use.at.x) + use.facing.y * (tile.y + 0.5 - use.at.y), id).toBeGreaterThan(0);
+        // Внутрішня стіна перед сховищем згасає (персонаж відійшов, щоб не він її гасив).
+        stand(state, { x: 9.5, y: 8.5 });
+        const out: boolean[] = [];
+        wallsToFade(state, INNER, WALL_HEIGHT.inner, out);
+        expect(out.some(Boolean), `${id} ${tile.x},${tile.y}`).toBe(hiddenTile(tile.x, tile.y));
+      }
+    }
+  });
 
+  it("сховище не стає туди, звідки до сусіднього сховища вже не підійти", () => {
+    const save = game();
+    const state = save.current;
+    for (const product of ["catFood", "sterileFood", "pills", "litter"] as const) addSupply(state, product, "cheap", 1);
+    // Шафка на своєму місці (18, 3): праворуч стіна, ліворуч і ззаду — бак і аптечка; лишається лише клітинка перед нею.
+    state.home.displaced = { "sterile-bin": { x: 17, y: 3 }, "cat-kit": { x: 18, y: 2 } };
+    lift(state, "litter-bag");
+    stand(state, { x: 17.5, y: 4.5 });
+    moveThing(state);
+    expect(state.character.held).toBeNull();
+    expect(tileNow(state, "litter-bag")).not.toEqual({ x: 18, y: 4 });
+  });
+
+  it("сховище не стає так, що збоку від шафки — стіна, чи персонажу під ноги", () => {
     // Біля лівої стіни вітальні: ліворуч від шафки, звідки кіт її лапає, — стіна.
     const side = game();
     addSupply(side.current, "catFood", "cheap", 1);
@@ -267,6 +308,34 @@ describe("перестановка переносок (§8.7, «Сховища �
     expect(Math.hypot(tile.x + 0.5 - LEFT_OF_LIVING.x, tile.y + 0.5 - LEFT_OF_LIVING.y)).toBeLessThan(2);
     // Ціль переноски — там, де вона стоїть.
     expect(tileOf(withThing(state, "carrier", CARRIER_SPOT))).toEqual(tile);
+  });
+
+  it("переноски й базу робота ставлять і під ближню внутрішню стіну — стіна перед ними згасає", () => {
+    const save = withCarriers(1);
+    const state = save.current;
+    state.home.appliances.robot = "cheap";
+    lift(state, "carrier");
+    stand(state, { x: 2.5, y: 3.4 }, { x: 0, y: 1 });
+    moveThing(state);
+    expect(tileNow(state, "carrier")).toEqual({ x: 2, y: 4 });
+    stand(state, { x: 9.5, y: 8.5 });
+    const out: boolean[] = [];
+    wallsToFade(state, INNER, WALL_HEIGHT.inner, out);
+    expect(out.some(Boolean)).toBe(true);
+
+    const robot = withCarriers(0).current;
+    robot.home.appliances.robot = "cheap";
+    robot.minute = hours(9);
+    const dock = robotDockAt(robot);
+    stand(robot, { x: dock.x - 0.8, y: dock.y });
+    moveThing(robot);
+    expect(robot.character.held?.kind).toBe("robot");
+    stand(robot, { x: 2.5, y: 3.4 }, { x: 0, y: 1 });
+    moveThing(robot);
+    expect(tileOf(robotDockAt(robot))).toEqual({ x: 2, y: 4 });
+    stand(robot, { x: 9.5, y: 8.5 });
+    wallsToFade(robot, INNER, WALL_HEIGHT.inner, out);
+    expect(out.some(Boolean)).toBe(true);
   });
 
   it("кіт спить у переносці — не взяти, відмова", () => {
