@@ -1,15 +1,15 @@
 // Побут (§8.7): шерсть і пилосос, прання, техніка (автогодівниця, фонтанчик, робот-пилосос), поломки.
 
-import { asleep, traitLevel } from "./cat";
+import { asleep, idleAct, traitLevel } from "./cat";
 import { changeStat, unpleasantTask } from "./character";
 import { BOWL_CAPACITY, FOUNTAIN, HOUSEHOLD, MESS_ANNOYANCE, MINUTES_PER_HOUR, NOISE, ROBOT, SHEDDING, TOOL_REACH, VACUUM } from "./config";
 import { DUST_SPOTS, dustOf, floorDust, removeDust, tickDust } from "./dust";
 import { inView, observe } from "./knowledge";
-import { addSupply, flySupply, settleFeeders, takeSupplies, topQuality, useSupply } from "./economy";
+import { addSupply, feederAt, flySupply, settleFeeders, takeSupplies, topQuality, useSupply } from "./economy";
 import { emit } from "./events";
 import { hygieneFactorMod, powerOut, sheddingFactor } from "./modifiers";
 import { addMess, whereIs } from "./catai";
-import { CARRIER_TILE, hiddenTile, isFixedSolid, isSolid, isWall, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, ROBOT_DOCK, robotDockAt, robotDocked, roomAt, slotCenter, STASHES } from "./home";
+import { CARRIER_TILE, hiddenTile, isFixedSolid, isSolid, isWall, itemPoint, itemTile, LAUNDRY_BASKET, nearestFreePlace, objectAt, objectById, ROBOT_DOCK, robotDockAt, robotDocked, roomAt, slotCenter, STASHES } from "./home";
 import { loudNoise, quietRobot } from "./noise";
 import { waterCapacity } from "./resources";
 import type { Rng } from "./rng";
@@ -463,8 +463,41 @@ export function fillFountainTank(state: GameState): boolean {
 }
 
 /** Хвилини побуту вдень і вночі: шерсть і жмути, пил, прання, техніка за розкладом. */
+/**
+ * Сховище щойно з'явилося (§6.4) там, де стояла річ, база робота чи пилосос або лежала іграшка (§8.7): вони переїжджають на
+ * найближчу вільну клітинку. Хто йшов до речі, шукає інше: інакше прийшов би на старе місце.
+ */
+function vacateStorages(state: GameState): void {
+  const { home } = state;
+  const storageAt = (p: Vec): boolean => objectAt(state, Math.floor(p.x), Math.floor(p.y))?.requires !== undefined;
+  for (const item of home.items) {
+    const at = itemPoint(item);
+    if (!storageAt(at)) continue;
+    const place = nearestFreePlace(state, at);
+    if (!place) continue;
+    if (item.kind === "toy") {
+      item.x = place.x + 0.5;
+      item.y = place.y + 0.5;
+    } else {
+      const feeder = feederAt(state, item.slot);
+      item.slot = place.id;
+      if (feeder) feeder.slot = place.id;
+    }
+    for (const cat of state.cats) if (cat.act.target === `item:${item.id}`) cat.act = idleAct();
+  }
+  if (robotDocked(state) && storageAt(robotDockAt(state))) {
+    const place = nearestFreePlace(state, robotDockAt(state), (c) => !hiddenTile(Math.floor(c.x), Math.floor(c.y)));
+    if (place) home.robotDock = { x: place.x + 0.5, y: place.y + 0.5 };
+  }
+  if (home.vacuumAt && storageAt(home.vacuumAt)) {
+    const place = nearestFreePlace(state, home.vacuumAt);
+    if (place) home.vacuumAt = { x: place.x + 0.5, y: place.y + 0.5 };
+  }
+}
+
 export function tickHousehold(state: GameState, from: number, minutes: number): void {
   const home = state.home;
+  vacateStorages(state);
   const hours = minutes / 60;
   for (const cat of state.cats) if (cat.away === null) home.fur = Math.min(FUR_MAX, home.fur + furPerHour(state, cat) * hours);
   shedTuft(state);

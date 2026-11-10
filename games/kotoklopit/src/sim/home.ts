@@ -439,9 +439,7 @@ const NO_PLACE: readonly Vec[] = [
   { x: 18, y: 2 },
   { x: 11, y: 8 },
   { x: 12, y: 8 },
-  // Під ближньою стіною спальні річ закрив би монітор комп'ютера у вітальні, а на кухні тут висувають стілець від стола.
-  { x: 5, y: 4 },
-  { x: 6, y: 4 },
+  // На кухні під ближньою стіною тут висувають стілець від стола.
   { x: 14, y: 4 },
   // Ряд під плінтусом відкритий для речей, але тут їх закривають вхідні двері (9–11) і диван (12).
   { x: 9, y: 10 },
@@ -458,10 +456,13 @@ const NO_PLACE: readonly Vec[] = [
 
 const sameTile = (a: Vec, x: number, y: number): boolean => Math.floor(a.x) === x && Math.floor(a.y) === y;
 
-/** Сюди гравець може поставити річ: підлога кімнати без меблів, зокрема під ближньою стіною (§8.7). */
+/**
+ * Сюди гравець може поставити річ: підлога кімнати без меблів, зокрема під ближньою стіною й під підвіконням (§8.7). Місце
+ * сховища, якого ще немає, — теж: зайняте воно лише тоді, коли сховище є (`placeFree`).
+ */
 function placeable(x: number, y: number): boolean {
   if (isWall(x, y) || roomAt({ x, y }) === null) return false;
-  return !OBJECTS.some((o) => covers(o, x, y)) && !NO_PLACE.some((p) => sameTile(p, x, y));
+  return !OBJECTS.some((o) => covers(o, x, y) && o.kind !== "windowsill" && o.requires === undefined) && !NO_PLACE.some((p) => sameTile(p, x, y));
 }
 
 /**
@@ -487,6 +488,7 @@ function placeFree(state: Pick<GameState, "home">, place: Place): boolean {
   const { items, feeders, messes, vacuumAt } = state.home;
   const here = (p: Vec): boolean => sameTile(p, place.x, place.y);
   if (robotDocked(state) && here(robotDockAt(state))) return false;
+  if (OPTIONAL.some((o) => covers(o, place.x, place.y) && isPresent(state, o))) return false;
   if (slotTaken(state, place.id) || feeders?.some((f) => f.slot === place.id) === true) return false;
   if (items.some((i) => i.kind === "toy" && i.hidden === undefined && here(i))) return false;
   return !messes.some(here) && !(vacuumAt && here(vacuumAt));
