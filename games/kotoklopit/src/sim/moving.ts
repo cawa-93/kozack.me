@@ -5,7 +5,7 @@ import { idleAct } from "./cat";
 import { MOVING } from "./config";
 import { feederAt } from "./economy";
 import { emit } from "./events";
-import { distanceToRect, itemPoint, nearestFreePlace, robotDockAt, robotDocked, slotById, thingHome, thingPresent, thingShift, type Place } from "./home";
+import { bodyTouches, distanceToRect, itemPoint, nearestFreePlace, robotDockAt, robotDocked, slotById, thingHome, thingPresent, thingShift, type Place } from "./home";
 import { clearPath, robotProgress } from "./household";
 import { fitsThing, put } from "./settle";
 import { itemTargetId, movableItem } from "./targets";
@@ -45,7 +45,7 @@ function fits(state: GameState, thing: CarryThing | null, center: Vec): boolean 
   const { body } = state.character;
   const tile = { x: Math.floor(center.x), y: Math.floor(center.y) };
   if (thing === null) return true;
-  if (thing !== "carrier" && tile.x === Math.floor(body.x) && tile.y === Math.floor(body.y)) return false;
+  if (thing !== "carrier" && bodyTouches(body, tile.x, tile.y)) return false;
   return fitsThing(state, thing, tile);
 }
 

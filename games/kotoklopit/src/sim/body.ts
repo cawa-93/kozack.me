@@ -28,7 +28,7 @@ import { emit } from "./events";
 import { moveFactor } from "./modifiers";
 import { canDashWhenIll, illnessSpeed, isIll, maybeInjure } from "./illness";
 import { observe } from "./knowledge";
-import { blocksPerson, SPAWN } from "./home";
+import { blocksPerson, BODY_GAP, isFixedSolid, SPAWN } from "./home";
 import { hearSteps, loudNoise } from "./noise";
 import { stateRng } from "./rng";
 import { isDrowsy } from "./sleep";
@@ -37,7 +37,7 @@ import type { Body, Cat, GameState, Vec } from "./types";
 
 /** Найбільший крок перевірки зіткнень, щоб не проскочити крізь стіну. */
 const SUBSTEP_TILES = 0.1;
-const GAP = 1e-6;
+const GAP = BODY_GAP;
 
 export function newBody(): Body {
   return { x: SPAWN.x, y: SPAWN.y, facing: { x: 0, y: 1 }, dash: 0, dashCooldown: 0, glitch: 0, glitchAngle: 0, stun: 0 };
@@ -234,22 +234,40 @@ function rollGlitch(state: GameState, minutes: number): void {
   emit(state, { type: "glitch", chance, angle: degrees });
 }
 
-function overlapsSolid(state: GameState, x: number, y: number): boolean {
+/** Тіло в точці (x, y) зачіпає тверду клітинку; `inside` — клітинки, з яких персонаж саме виходить: вони не тримають. */
+function overlapsSolid(state: GameState, x: number, y: number, inside: ReadonlySet<string> | null = null): boolean {
   const r = BODY_RADIUS;
   for (let ty = Math.floor(y - r); ty <= Math.floor(y + r - GAP); ty++) {
     for (let tx = Math.floor(x - r); tx <= Math.floor(x + r - GAP); tx++) {
-      if (blocksPerson(state, tx, ty)) return true;
+      if (blocksPerson(state, tx, ty) && !inside?.has(`${tx},${ty}`)) return true;
     }
   }
   return false;
 }
 
+/**
+ * Тверді клітинки, у яких персонаж уже стоїть (річ гри з'явилася під ним, стара гра, §8.7), крім стін і меблів: щоб він міг із
+ * них вийти. Зазвичай таких немає — null.
+ */
+function stuckIn(state: GameState, body: Body): ReadonlySet<string> | null {
+  if (!overlapsSolid(state, body.x, body.y)) return null;
+  const r = BODY_RADIUS;
+  const tiles = new Set<string>();
+  for (let ty = Math.floor(body.y - r); ty <= Math.floor(body.y + r - GAP); ty++) {
+    for (let tx = Math.floor(body.x - r); tx <= Math.floor(body.x + r - GAP); tx++) {
+      if (blocksPerson(state, tx, ty) && !isFixedSolid(tx, ty)) tiles.add(`${tx},${ty}`);
+    }
+  }
+  return tiles;
+}
+
 // Рух по осях окремо: персонаж ковзає вздовж стіни, а не застрягає.
 function slide(state: GameState, body: Body, dx: number, dy: number): void {
+  const inside = stuckIn(state, body);
   const steps = Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / SUBSTEP_TILES);
   for (let i = 0; i < steps; i++) {
-    body.x = moveAxis(body.x, dx / steps, (x) => overlapsSolid(state, x, body.y));
-    body.y = moveAxis(body.y, dy / steps, (y) => overlapsSolid(state, body.x, y));
+    body.x = moveAxis(body.x, dx / steps, (x) => overlapsSolid(state, x, body.y, inside));
+    body.y = moveAxis(body.y, dy / steps, (y) => overlapsSolid(state, body.x, y, inside));
   }
 }
 

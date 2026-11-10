@@ -1,6 +1,7 @@
 // Квартира прототипу (§8.4): стіни, кімнати й речі на сітці клітинок підлоги, а також
 // місця для речей котячого кутка (§9.12). Розкладка не змінюється під час гри, тож вона не входить у стан гри.
 
+import { BODY_RADIUS } from "./config";
 import type { GameThing, GameState, HomeItem, Product, TrinketKind, Vec } from "./types";
 
 export type RoomId = "bedroom" | "bathroom" | "kitchen" | "living";
@@ -499,6 +500,18 @@ export function catSpotNear(state: Pick<GameState, "home" | "modifiers" | "today
  */
 export function hiddenTile(x: number, y: number): boolean {
   return y + 1 < MAP.length - 1 && MAP[y + 1]?.[x] === "#";
+}
+
+/** Запас на межі клітинки, щоб тіло, що впирається в межу, не зачіпало сусідню (зіткнення `body.ts`). */
+export const BODY_GAP = 1e-6;
+
+/**
+ * Тіло персонажа в точці `p` зачіпає клітинку (x, y): у зіткненнях воно — квадрат зі стороною 2 × `BODY_RADIUS` (`body.ts`), тож
+ * стоячи біля краю клітинки, займає й сусідню. Туди тверду річ не ставлять (§8.7): персонаж застряг би в ній.
+ */
+export function bodyTouches(p: Vec, x: number, y: number): boolean {
+  const r = BODY_RADIUS;
+  return x >= Math.floor(p.x - r) && x <= Math.floor(p.x + r - BODY_GAP) && y >= Math.floor(p.y - r) && y <= Math.floor(p.y + r - BODY_GAP);
 }
 
 /** Стіна чи межа карти: крізь неї не пройде навіть кіт. */

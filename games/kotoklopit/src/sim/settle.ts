@@ -6,6 +6,7 @@ import {
   BIG_BOX,
   BIG_BOX_SCRATCH,
   blocksPerson,
+  bodyTouches,
   BOX_SCRATCH,
   CABINET_PAW,
   distanceToRect,
@@ -133,6 +134,11 @@ export function useSide(state: Pick<GameState, "home" | "modifiers" | "today">, 
   return sides.find((d) => !isWall(at.x + d.x, at.y + d.y) && !blocksPerson(state, at.x + d.x, at.y + d.y)) ?? sides[0] ?? null;
 }
 
+/** Тверда річ гри на клітинці зачепила б персонажа (§8.7): він застряг би в ній. У поїздці його вдома немає. */
+function touchesPerson(state: GameState, thing: GameThing, tile: Vec): boolean {
+  return SOLID.has(thing) && state.trip === null && bodyTouches(state.character.body, tile.x, tile.y);
+}
+
 /** Клітинка, де річ гри стоїть: зсунута чи своя. */
 function standing(state: Pick<GameState, "home">, thing: GameThing): Vec {
   const home = thingHome(thing);
@@ -144,7 +150,7 @@ function standing(state: Pick<GameState, "home">, thing: GameThing): Vec {
 function spotFor(state: GameState, thing: GameThing): Vec | null {
   const from = standing(state, thing);
   const original = state.home.displaced?.[thing] ?? null;
-  const candidates = PLACES.filter((p) => !hiddenTile(p.x, p.y) && (p.x !== from.x || p.y !== from.y) && placeFree(state, p, thing)).sort(
+  const candidates = PLACES.filter((p) => !hiddenTile(p.x, p.y) && (p.x !== from.x || p.y !== from.y) && placeFree(state, p, thing) && !touchesPerson(state, thing, p)).sort(
     (a, b) => Math.hypot(a.x - from.x, a.y - from.y) - Math.hypot(b.x - from.x, b.y - from.y),
   );
   if (!SOLID.has(thing)) return candidates[0] ?? null;
@@ -196,7 +202,8 @@ export function settleThings(state: GameState): void {
     }
     const at = standing(state, thing);
     const place = placeAt(at.x, at.y);
-    if (place === null || !occupied(state, place, thing)) continue;
+    // Персонаж на клітинці теж заважає: річ, що з'явилася під ним, стає поруч (і стара гра, де він уже в ній, звільняється).
+    if (place === null || (!occupied(state, place, thing) && !touchesPerson(state, thing, at))) continue;
     const spot = spotFor(state, thing);
     if (spot) put(state, thing, spot);
   }
@@ -246,6 +253,7 @@ export function restoreThings(state: GameState): void {
     }
     const home = homePlace(thing);
     if (home !== null && !placeFree(state, home, thing)) continue;
+    if (touchesPerson(state, thing, thingHome(thing))) continue;
     if (SOLID.has(thing)) {
       const before = reachable(state);
       if (!keepsWay(state, thing, null, before, false)) {
