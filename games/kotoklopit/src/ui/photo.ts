@@ -57,8 +57,8 @@ function paint(canvas: HTMLCanvasElement, layout: PhotoLayout, frames: readonly 
   let maxY = -Infinity;
   for (const [i, piece] of layout.pieces.entries()) {
     const source = sources[i]!;
-    const ink = inkFor(`${frames[i]}|${piece.recipe.key}`, source, piece);
-    if (!ink) continue;
+    // Лише напівпрозоре (тінь під ногами) — межами полотна кадру: інакше тінь обрізало б дно фото.
+    const ink = inkFor(`${frames[i]}|${piece.recipe.key}`, source, piece) ?? { minX: 0, minY: 0, maxX: source.w, maxY: source.h };
     const m = partMatrix(piece.part, source.frame.pivot);
     const fx = source.frame.size.w / source.w;
     const fy = source.frame.size.h / source.h;

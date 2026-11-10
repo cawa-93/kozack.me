@@ -167,6 +167,20 @@ describe("пози кота — частини скелета з гри", () => 
     expect(eyes(catPhotoParts(story(cat(state, 11, 0), 0), "nursing"))).toBe("closed");
   });
 
+  it("тінь під котом і персонажем, як у грі: найнижче, під ногами; у кошеняти — менша", () => {
+    const s = game();
+    const one = cat(s, 17);
+    for (const pose of CAT_POSES) expect(catPhotoParts(story(one), pose)[0]?.id, pose).toBe("fx/shadow/cat");
+    const shadow = (age: number): number => catPhotoParts(story(one, age), "calm")[0]?.scaleX ?? 0;
+    expect(shadow(0)).toBeLessThan(shadow(30));
+    for (const pose of PERSON_POSES) {
+      const ids = personPhotoParts(s.character.look, pose).map((p) => p.id);
+      const at = ids.indexOf("fx/shadow/person");
+      expect(at, pose).toBeGreaterThanOrEqual(0);
+      expect(ids.findIndex((id) => id.startsWith("person/")), pose).toBeGreaterThan(at);
+    }
+  });
+
   it("кошеня — мале, як у грі: той самий кіт у віці приїзду менший, ніж дорослим", () => {
     const state = game();
     const one = cat(state, 12, 30);
@@ -217,18 +231,27 @@ describe("пози персонажа й речі", () => {
     expect(back).toBeGreaterThan(Math.max(...person));
   });
 
+  it("понуро — очі опущені, з телефоном — розплющені", () => {
+    const look = state().character.look;
+    expect(personPhotoParts(look, "gloomy").find((p) => p.id === "person/eyes")?.state).toBe("half");
+    expect(personPhotoParts(look, "phone").find((p) => p.id === "person/eyes")?.state).toBe("open");
+  });
+
   it("з телефоном — телефон у руці", () => {
     expect(personPhotoParts(state().character.look, "phone").some((p) => p.id === "mess/trinket/phone")).toBe(true);
   });
 
-  it("річ — її кадр з атласу кожного виду й якості", () => {
-    for (const thing of ["robot", "fountain", "feeder"] as const) {
-      for (const quality of ["cheap", "premium"] as const) {
-        const parts = thingPhotoParts(thing, quality);
-        expect(parts.map((p) => p.id)).toEqual([`item/${thing}/${quality}`]);
-        expect(missing(parts)).toEqual([]);
-      }
+  it("річ — її кадр з атласу кожного виду й якості; фонтанчик — на мисці з водою, годівниця — з мискою перед нею, як у квартирі", () => {
+    const ids = (thing: "robot" | "fountain" | "feeder", quality: "cheap" | "premium"): string[] => thingPhotoParts(thing, quality).map((p) => p.id);
+    for (const quality of ["cheap", "premium"] as const) {
+      expect(ids("robot", quality)).toEqual([`item/robot/${quality}`]);
+      expect(ids("fountain", quality)).toEqual([`item/water/${quality}`, `item/fountain/${quality}`]);
+      expect(ids("feeder", quality)).toEqual([`item/feeder/${quality}`, `item/bowl/${quality}`]);
+      for (const thing of ["robot", "fountain", "feeder"] as const) expect(missing(thingPhotoParts(thing, quality))).toEqual([]);
     }
+    // Фонтанчик працює — вода в мисці є; годівниця повна, у мисці — корм.
+    expect(thingPhotoParts("fountain", "cheap").map((p) => p.state)).toEqual(["full", "on"]);
+    expect(thingPhotoParts("feeder", "premium")[1]?.state).not.toBe("empty");
   });
 });
 
