@@ -2,10 +2,16 @@
 // на своє місце, а зайняте — на найближчу вільну клітинку; уночі зсунуте вертається, якщо місце звільнилося.
 
 import {
+  BIG_BOX,
+  BIG_BOX_SCRATCH,
   blocksPerson,
+  BOX_SCRATCH,
+  CABINET_PAW,
   distanceToRect,
   GAME_THINGS,
   hiddenTile,
+  isSolid,
+  isWall,
   itemPoint,
   MAP_HEIGHT,
   MAP_WIDTH,
@@ -38,6 +44,16 @@ const FRONT: Partial<Record<GameThing, Vec>> = {
   "cat-kit": { x: 0, y: 1 },
   "sterile-bin": { x: -1, y: 0 },
   boxes: { x: 0, y: 1 },
+};
+
+/**
+ * Звідки кіт лапає шафку чи дере ящики й велику коробку (`CABINET_PAW`, `BOX_SCRATCH`, `BIG_BOX_SCRATCH`) — клітинка відносно
+ * речі: там має бути прохідна підлога, інакше кіт туди не дійде.
+ */
+const SIDE: Partial<Record<GameThing, Vec>> = {
+  "cat-cabinet": { x: CABINET_PAW.x - thingHome("cat-cabinet").x, y: CABINET_PAW.y - thingHome("cat-cabinet").y },
+  boxes: { x: BOX_SCRATCH.x - thingHome("boxes").x, y: BOX_SCRATCH.y - thingHome("boxes").y },
+  "big-box": { x: BIG_BOX_SCRATCH.x - BIG_BOX.x, y: BIG_BOX_SCRATCH.y - BIG_BOX.y },
 };
 
 const key = (x: number, y: number): string => `${x},${y}`;
@@ -84,6 +100,8 @@ function keepsWay(state: GameState, thing: GameThing, tile: Vec | null, before: 
   for (const t of before) if (t !== key(at.x, at.y) && !after.has(t)) return false;
   const front = FRONT[thing];
   if (front && !after.has(key(at.x + front.x, at.y + front.y))) return false;
+  const side = SIDE[thing];
+  if (side && (isWall(at.x + side.x, at.y + side.y) || isSolid(state, at.x + side.x, at.y + side.y))) return false;
   if (!strict) return true;
   const center = { x: at.x + 0.5, y: at.y + 0.5 };
   return !objectsOf(state).some((o) => o.interactive && o.id !== thing && distanceToRect(center, o) <= 0.5);
@@ -175,11 +193,29 @@ export function restoreThings(state: GameState): void {
     }
     const home = homePlace(thing);
     if (home !== null && !placeFree(state, home, thing)) continue;
-    if (!SOLID.has(thing)) {
-      put(state, thing, null);
-      continue;
+    if (SOLID.has(thing)) {
+      const before = reachable(state);
+      if (!keepsWay(state, thing, null, before, false)) {
+        put(state, thing, current);
+        continue;
+      }
+    } else put(state, thing, null);
+    carryCats(state, current, thingHome(thing));
+  }
+}
+
+/** Хто спить у речі чи сидить на ній (клітинка `from`), переїжджає разом із нею на `to` — і туди, куди йшов на ній. */
+function carryCats(state: GameState, from: Vec, to: Vec): void {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const on = (p: Vec): boolean => Math.floor(p.x) === from.x && Math.floor(p.y) === from.y;
+  for (const cat of state.cats) {
+    if (cat.away !== null) continue;
+    if (on(cat)) {
+      cat.x += dx;
+      cat.y += dy;
     }
-    const before = reachable(state);
-    if (!keepsWay(state, thing, null, before, false)) put(state, thing, current);
+    const goal = cat.act.goal;
+    if (goal && on(goal)) cat.act.goal = { x: goal.x + dx, y: goal.y + dy };
   }
 }

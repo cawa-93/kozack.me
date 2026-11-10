@@ -10,6 +10,7 @@ import { addSupply } from "../src/sim/economy";
 import { advance, goToSleep, newGame } from "../src/sim/game";
 import {
   blocksPerson,
+  BIG_BOX_SCRATCH,
   CARRIER_SPOT,
   catSpotNear,
   COOL_TILE,
@@ -269,6 +270,52 @@ describe("що ставить гра: ящики, переноска, велик
     expect(isPlace(dock)).toBe(true);
     expect(hiddenTile(dock.x, dock.y)).toBe(false);
     expect(bowl.slot).toBe(placeAt(home));
+  });
+});
+
+describe("речі гри поруч зі своїм місцем і коти (§8.7, «Що ставить гра»)", () => {
+  /** Зайняти річчю гравця всі клітинки ближче за `radius` до `home`, крім `except`. */
+  function crowd(state: GameState, home: Vec, radius: number, except: Vec): void {
+    for (const p of PLACES) {
+      const near = Math.hypot(p.x - home.x, p.y - home.y) < radius;
+      if (near && (p.x !== except.x || p.y !== except.y)) bowlAt(state, p);
+    }
+  }
+
+  it("звідки кіт дере велику коробку, — прохідна підлога: коробка не стає так, що збоку диван чи стіна", () => {
+    const save = game();
+    const state = save.current;
+    const home = thingHome("big-box");
+    // Лишаємо вільною лише клітинку біля дивана: праворуч від неї — диван.
+    crowd(state, home, 2.3, { x: 12, y: 10 });
+    state.modifiers.day = "big-box";
+    advance(save, 1);
+    const tile = tileNow(state, "big-box");
+    expect(tile).not.toEqual(home);
+    const side = tileOf(withThing(state, "big-box", BIG_BOX_SCRATCH));
+    expect(isSolid(state, side.x, side.y), `${side.x},${side.y}`).toBe(false);
+  });
+
+  it("кіт, що спить у ящиках чи переносці, уранці переїжджає разом із ними на їхнє місце", () => {
+    for (const thing of ["boxes", "carrier"] as const) {
+      const save = game();
+      const state = save.current;
+      const home = thingHome(thing);
+      const bowl = bowlAt(state, home);
+      if (thing === "boxes") state.home.boxes = { catFood: { cheap: 1, premium: 0 } };
+      else state.home.carriers.push({ quality: "cheap", wear: 0 });
+      advance(save, 1);
+      const moved = tileNow(state, thing);
+      expect(moved, thing).not.toEqual(home);
+      const cat = createCat(state, createRng(4), { source: "shelter", ageWeeks: 10, at: { x: moved.x + 0.4, y: moved.y + 0.6 } });
+      cat.arrivedDay = -10;
+      cat.act = { kind: "sleep", target: thing, goal: null, minutes: 600, elapsed: 0 };
+      addCat(state, cat);
+      state.home.items = state.home.items.filter((i) => i !== bowl);
+      restoreThings(state);
+      expect(tileNow(state, thing), thing).toEqual(home);
+      expect({ x: cat.x, y: cat.y }, thing).toEqual({ x: expect.closeTo(home.x + 0.4), y: expect.closeTo(home.y + 0.6) });
+    }
   });
 });
 
