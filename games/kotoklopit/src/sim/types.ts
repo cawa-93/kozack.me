@@ -1134,6 +1134,8 @@ export interface AlbumEntry {
   arrivedDay: number;
   /** Ніч, коли кота не стало: день, що закінчився. */
   day: number;
+  /** Батьки, як у кота (`Cat.parents`): з ними кошеня з альбому стоїть у титрах поруч із мамою (§4.2). Немає — старе збереження. */
+  parents?: Cat["parents"];
 }
 
 export type NightStep =

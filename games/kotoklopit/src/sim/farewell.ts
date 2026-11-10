@@ -50,6 +50,7 @@ export function removeCat(state: GameState, cat: Cat, cause: FarewellCause, day:
     days: cat.moodHistory.length,
     arrivedDay: cat.arrivedDay,
     day,
+    parents: { ...cat.parents },
   };
   state.album.push(entry);
   emit(state, { type: "cat-gone", entry });

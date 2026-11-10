@@ -32,6 +32,7 @@ import {
 } from "./config";
 import { emit, type PatienceLevel } from "./events";
 import { patienceDecayFactor, payFactor, powerOut, reputationFactor, searchFactor, toOffice, workdayOverride, workSanityFactor } from "./modifiers";
+import { remember, type CareerChange } from "./story";
 import { weekdayOf } from "./time";
 import type { GameState, Job } from "./types";
 
@@ -122,20 +123,26 @@ export function changeReputation(state: GameState, delta: number): void {
   if (job.reputation >= REPUTATION_MAX && job.position < POSITIONS.length - 1) {
     job.position += 1;
     job.reputation = START_REPUTATION;
-    emit(state, { type: "career", change: "promoted", position: job.position });
+    careerChange(state, "promoted", job.position);
   } else if (job.reputation <= 0) {
     if (job.position > 0) {
       job.position -= 1;
       job.reputation = START_REPUTATION;
-      emit(state, { type: "career", change: "demoted", position: job.position });
+      careerChange(state, "demoted", job.position);
     } else {
       stopWork(state);
       job.unemployed = true;
       job.searchHours = 0;
       job.reputation = START_REPUTATION;
-      emit(state, { type: "career", change: "fired", position: 0 });
+      careerChange(state, "fired", 0);
     }
   }
+}
+
+/** Зміна посади: картка посеред дня (§8.6) і запис для титрів життя (§4.2). */
+function careerChange(state: GameState, change: CareerChange, position: number): void {
+  emit(state, { type: "career", change, position });
+  remember(state, { kind: "career", day: state.day, change, position });
 }
 
 /** Сісти за комп'ютер: персонаж працює, доки сам не встане (§8.4). */
@@ -194,7 +201,7 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
       job.position = 0;
       job.reputation = START_REPUTATION;
       job.patience = PATIENCE_MAX;
-      emit(state, { type: "career", change: "hired", position: 0 });
+      careerChange(state, "hired", 0);
     }
   } else if (activity?.kind === "work") {
     // Робота оплачується й поза робочим часом: увечері, у вихідні й на лікарняному — так само, як у робочий час (§8.6, §6.5;

@@ -22,6 +22,7 @@ import {
 import { emit, endGame } from "./events";
 import { nearestFreePlace, SLOTS, slotTaken, SURFACE_IDS, VACUUM_HOME } from "./home";
 import { deliveryFree, deliveryHoursFactor, priceFactor, weekPriceFactor } from "./modifiers";
+import { remember } from "./story";
 import { absoluteMinute } from "./time";
 import { tidyBoxTraces } from "./traces";
 import type { Appliance, BowlItem, Delivery, Feeder, GameState, Home, HomeItem, Product, Quality, Spending, ThingKind, UtilitiesReport } from "./types";
@@ -402,6 +403,7 @@ function placeFeeder(state: GameState, quality: Quality): void {
   const slot = bowlsWithoutFeeder(state)[0]?.slot ?? spareSlot(state, "bowl");
   if (slot === undefined) return;
   (state.home.feeders ??= []).push({ slot, quality, food: 0, foodQuality: null, sterile: false });
+  remember(state, { kind: "thing", day: state.day, thing: "feeder", quality });
 }
 
 /** Замовити річ для котів окремим замовленням (§6.4); null, якщо немає місця чи грошей. */
@@ -426,6 +428,8 @@ export function place(state: GameState, thing: ThingKind, quality: Quality): Hom
     state.home.appliances[thing] = quality;
     // Бак новий: вода з поламаного чи викинутого не переходить (§8.7).
     if (thing === "fountain") state.home.fountainTank = 0;
+    // Ручний пилосос — не подія титрів (§4.2).
+    if (thing !== "vacuum") remember(state, { kind: "thing", day: state.day, thing, quality });
     return null;
   }
   if (thing === "feeder") {
