@@ -1,0 +1,23 @@
+{
+  "name": "Фінал: трудоголік",
+  "description": "Неділя останнього тижня, 21:00, персонаж («він») біля ліжка. Вершина кар'єри, коти страждали: двоє вдома, один в альбомі (серце). Ляжте спати — фінал «Трудоголік»: на смузі часу майже сама робота.",
+  "game": { "address": "he", "difficulty": "normal", "seed": 11, "name": "Тарас" },
+  "state": {
+    "day": 139,
+    "minute": 1260,
+    "modifiers": { "day": null, "week": null },
+    "character": {
+      "stats": { "health": 60, "satiety": 55, "hygiene": 60, "sanity": 45 },
+      "money": 40000
+    },
+    "job": { "position": 18, "reputation": 70 },
+    "stats": { "minutes": { "work": 62000, "cats": 3500, "self": 9000, "bustle": 6500 } }
+  },
+  "cats": [
+    { "ageWeeks": 34, "sex": "female", "name": "Зірка", "arrivedDay": 30, "mood": 60, "moodHistory": [64, 58, 61, 55, 66, 59, 62, 57, 60, 63] },
+    { "ageWeeks": 20, "sex": "male", "name": "Шкет", "arrivedDay": 70, "mood": 55, "moodHistory": [60, 52, 57, 49, 58, 54, 56] }
+  ],
+  "album": [
+    { "ageWeeks": 38, "sex": "male", "name": "Барон", "arrivedDay": 0, "moodHistory": [58, 52, 49, 55, 47, 50, 53, 46], "cause": { "kind": "disease", "disease": "heart" }, "day": 90 }
+  ]
+}

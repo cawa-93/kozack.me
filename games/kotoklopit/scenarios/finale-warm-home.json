@@ -1,0 +1,20 @@
+{
+  "name": "Фінал: тепла оселя",
+  "description": "Неділя останнього тижня, 21:00, персонаж («він») біля ліжка. Середня посада, один щасливий кіт, альбом порожній. Ляжте спати — фінал «Тепла оселя».",
+  "game": { "address": "he", "difficulty": "normal", "seed": 8, "name": "Остап" },
+  "state": {
+    "day": 139,
+    "minute": 1260,
+    "modifiers": { "day": null, "week": null },
+    "character": {
+      "stats": { "health": 80, "satiety": 70, "hygiene": 65, "sanity": 75 },
+      "money": 9000
+    },
+    "job": { "position": 12, "reputation": 50 },
+    "stats": { "minutes": { "work": 30000, "cats": 18000, "self": 15000, "bustle": 8000 } }
+  },
+  "cats": [
+    { "ageWeeks": 24, "sex": "female", "name": "Пампушка", "arrivedDay": 40, "mood": 91, "moodHistory": [87, 90, 92, 89, 93, 91, 88, 94, 90, 92] }
+  ],
+  "knowAll": true
+}

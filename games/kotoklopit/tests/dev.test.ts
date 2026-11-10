@@ -11,7 +11,7 @@ import { dispatch } from "../src/sim/economy";
 import { TRIPS } from "../src/sim/config";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import { fill, TRAIT_AREAS, TRAIT_HINTS } from "../src/texts";
+import { endingText, fill, TRAIT_AREAS, TRAIT_HINTS } from "../src/texts";
 import { catFacts } from "../src/ui/cards";
 import { hours, recordEvents } from "./helpers";
 
@@ -124,6 +124,32 @@ describe("сценарії (§11.5)", () => {
     expect(save.dayStart).toEqual(save.current);
     // Коти альбому не змінюють живих котів сценарію.
     expect(cats).toEqual(applyScenario(base).current.cats);
+  });
+
+  it.each([
+    ["finale-perfect-balance", "Ідеальний баланс"],
+    ["finale-warm-home", "Тепла оселя"],
+    ["finale-quiet-life", "Тихе життя"],
+    ["finale-burnout", "Вигорання"],
+    ["finale-workaholic", "Трудоголік"],
+  ])("«%s»: персонаж лягає спати в останню неділю — пенсія, фінал «%s» (§4.2)", (id, title) => {
+    const scenario = FILE_SCENARIOS[id];
+    if (!scenario) throw new Error(`немає сценарію ${id}`);
+    const save = applyScenario(scenario);
+    expect(interact(save)).toBeNull();
+    expect(save.current.end).toBe("retirement");
+    expect(endingText(save.current, "retirement").title).toBe(title);
+  });
+
+  it("фінали показують котів з альбому й живих, а «Тихе життя» — без жодного кота (§4.2)", () => {
+    const counts = (id: string): [number, number] => {
+      const scenario = FILE_SCENARIOS[id];
+      if (!scenario) throw new Error(`немає сценарію ${id}`);
+      const { album, cats } = applyScenario(scenario).current;
+      return [album.length, cats.length];
+    };
+    expect(counts("finale-perfect-balance").every((n) => n > 0)).toBe(true);
+    expect(counts("finale-quiet-life")).toEqual([0, 0]);
   });
 
   it("id сценарію — латиницею з назви", () => {

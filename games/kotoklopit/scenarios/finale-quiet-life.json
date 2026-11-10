@@ -1,0 +1,16 @@
+{
+  "name": "Фінал: тихе життя без котів",
+  "description": "Неділя останнього тижня, 21:00, персонаж біля ліжка. Низька посада, котів не було ні вдома, ні в альбомі: на екрані фіналу немає котів. Ляжте спати — фінал «Тихе життя».",
+  "game": { "address": "she", "difficulty": "normal", "seed": 9, "name": "Леся" },
+  "state": {
+    "day": 139,
+    "minute": 1260,
+    "modifiers": { "day": null, "week": null },
+    "character": {
+      "stats": { "health": 75, "satiety": 70, "hygiene": 70, "sanity": 55 },
+      "money": 4000
+    },
+    "job": { "position": 5, "reputation": 40 },
+    "stats": { "minutes": { "work": 28000, "cats": 0, "self": 20000, "bustle": 7000 } }
+  }
+}
