@@ -143,6 +143,8 @@ describe("маніфест: правила записів", () => {
       "a23-person-tops": ["person/arm", "person/torso", "person/top-", "person/hood"],
       "a24-person-legs": ["person/leg", "person/hem", "person/skirt", "person/shoe", "person/shaft"],
       "a25-cloth": ["cloth/"],
+      // Іконки другого варіанта товарів у магазині (§11.4 «Іконка біля назви»).
+      "a26-variant-icons": ["icon/"],
     };
     const names = Object.keys(files).map((f) => f.replace(/^.*\//, "").replace(/\.ts$/, ""));
     // Файли гардеробу дозволено наперед: їх заводять треки.

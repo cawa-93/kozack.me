@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/robot-vacuum-smart — розумний робот-пилосос (дорогий варіант речі «Робот-пилосос», §8.7): той самий плаский диск спереду-згори з кришкою в обідку, дугою бампера, великим зеленим вогником і трьома рисками руху позаду, але весь темний, а ззаду на кришці замість високої вузької темної башточки — ширша й нижча кругла башточка лідара, світла, з темним віконцем по колу. Іконки варіантів (a26-variant-icons.ts), art/STYLE.md (іконки).
+size 64×64; pivot (32, 32) — центр; points: —. Без станів і шарів: один кадр у готових кольорах; контур — LINE (силует 6, низ 8,5, внутрішні 3,5).
+Від icon/robot-vacuum (дешевого) — кольором (темний диск dark / darkHi замість сірого) і формою й кольором башточки (світла широка «шайба» лідара замість високого темного циліндра), як темний розумний item/robot/premium зі світлим металевим диском на кришці.
+-->
+<defs>
+<clipPath id="icon-robot-vacuum-smart-body"><path d="M17.2 34.6A19.6 11 0 0 1 56.4 34.6L56.4 43.2A19.6 11 0 0 1 17.2 43.2Z"/></clipPath>
+</defs>
+<g id="p-motion">
+<path d="M6.6 32.4Q9 32.2 11.2 32.6" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M6.6 40.2Q9 40 11 40.4" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7.4 47.6Q9.4 47.4 11 47.8" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-body">
+<path d="M17.2 34.6A19.6 11 0 0 1 56.4 34.6L56.4 43.2A19.6 11 0 0 1 17.2 43.2Z" fill="#4b4146"/>
+<path d="M17.2 34.6A19.6 11 0 0 0 56.4 34.6L56.4 43.2A19.6 11 0 0 1 17.2 43.2Z" fill="#4b4146"/>
+<path d="M18.2 37.6A19.200000000000003 11 0 0 0 55.4 37.6L54.8 44.8A18.6 11 0 0 1 18.8 44.8Z" fill="#6d6266"/>
+<path d="M0 50.6Q16 51.6 32 50.6Q48 49.6 64 50.6L64 64L0 64Z" fill="#3f2541" fill-opacity="0.16" clip-path="url(#icon-robot-vacuum-smart-body)"/>
+<path d="M17.2 34.6A19.6 11 0 1 0 56.4 34.6A19.6 11 0 1 0 17.2 34.6Z" fill="#6d6266"/>
+<path d="M25.8 33.6A11 6 0 1 0 47.8 33.6A11 6 0 1 0 25.8 33.6Z" fill="#4b4146"/>
+<path d="M25.8 33.6A11 6 0 1 0 47.8 33.6A11 6 0 1 0 25.8 33.6Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17.2 34.6A19.6 11 0 0 0 56.4 34.6" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17.2 34.6A19.6 11 0 0 1 56.4 34.6L56.4 43.2A19.6 11 0 0 1 17.2 43.2Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M21.2 49.4Q36.8 55.8 52.4 49.4" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-turret">
+<path d="M29.6 22.8A7.2 3 0 0 1 44 22.8L44 29.6A7.2 3 0 0 1 29.6 29.6Z" fill="#a69f9b"/>
+<path d="M29.6 24.8A7.2 3 0 0 0 44 24.8L44 27.4A7.2 3 0 0 1 29.6 27.4Z" fill="#4b4146"/>
+<path d="M29.6 22.8A7.2 3 0 1 0 44 22.8A7.2 3 0 1 0 29.6 22.8Z" fill="#cdc6be"/>
+<path d="M29.6 22.8A7.2 3 0 1 0 44 22.8A7.2 3 0 1 0 29.6 22.8Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M29.6 22.8A7.2 3 0 0 1 44 22.8L44 29.6A7.2 3 0 0 1 29.6 29.6Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-led">
+<path d="M33.1 36A3.7 3.7 0 1 0 40.5 36A3.7 3.7 0 1 0 33.1 36Z" fill="#a2b584"/>
+<path d="M34.4 34.9A1.3 1.3 0 1 0 37 34.9A1.3 1.3 0 1 0 34.4 34.9Z" fill="#f2e7d0"/>
+<path d="M33.1 36A3.7 3.7 0 1 0 40.5 36A3.7 3.7 0 1 0 33.1 36Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

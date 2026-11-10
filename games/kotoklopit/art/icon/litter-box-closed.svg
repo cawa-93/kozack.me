@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/litter-box-closed — закритий лоток (дорогий варіант): те саме корито з товстим бортиком і той самий світлий совок навскіс, що icon/litter-box, але над бортиком замість гірки — округла бірюзова кришка-купол з арковим входом праворуч; у темному вході видно світлий наповнювач. Іконки варіантів товарів (GAME_DESIGN §11.4 «Іконка біля назви»), art/STYLE.md (іконки).
+size 64×64; pivot (32, 32) — центр; points: —. Без станів і шарів: один кадр у готових кольорах.
+Біля назви дорогого варіанта «Лоток» у магазині (VARIANT_ICONS, symbols.ts). Купол бірюзовий, як дашок item/litter/premium, вхід теж праворуч. Совок спирається на купол там, де в базовій стирчить із гірки: з ним лоток упізнається, а купол із входом не читається будиночком (cat-house).
+-->
+<defs>
+<clipPath id="icon-litter-box-closed-clip1"><path d="M16.5 26.5C16.5 26.5 27.1 20.3 27.1 20.3C27.1 20.3 31.4 28 31.4 28C31.4 28 20.9 34.2 20.9 34.2C20.9 34.2 16.5 26.5 16.5 26.5Z"/></clipPath>
+<clipPath id="icon-litter-box-closed-clip2"><path d="M10.3 37.6C10.3 37.6 53.7 37.6 53.7 37.6C53.7 37.6 52.2 52.7 52.2 52.7C52.2 52.7 11.8 52.7 11.8 52.7C11.8 52.7 10.3 37.6 10.3 37.6Z"/></clipPath>
+<clipPath id="icon-litter-box-closed-dome"><path d="M9.4 36.4C9.4 17.6 19.2 8.6 32 8.6C44.8 8.6 54.6 17.6 54.6 36.4Z"/></clipPath>
+<clipPath id="icon-litter-box-closed-door"><path d="M34.6 36.4L34.6 26.4C34.6 22.4 37.6 19.6 41.2 19.6C44.8 19.6 47.8 22.4 47.8 26.4L47.8 36.4Z"/></clipPath>
+</defs>
+<g id="p-dome">
+<path d="M9.4 36.4C9.4 17.6 19.2 8.6 32 8.6C44.8 8.6 54.6 17.6 54.6 36.4Z" fill="#5f9089"/>
+<path d="M0 29.4Q32 26.4 64 29.4L64 64L0 64Z" fill="#3f2541" fill-opacity="0.16" clip-path="url(#icon-litter-box-closed-dome)"/>
+<path d="M34.6 36.4L34.6 26.4C34.6 22.4 37.6 19.6 41.2 19.6C44.8 19.6 47.8 22.4 47.8 26.4L47.8 36.4Z" fill="#4b4146"/>
+<path d="M34.6 36.4L34.6 26.4C34.6 22.4 37.6 19.6 41.2 19.6C44.8 19.6 47.8 22.4 47.8 26.4L47.8 36.4Z" fill="#3f2541" fill-opacity="0.5"/>
+<path d="M31.6 37.4Q32.4 29 36.4 28.4Q38.2 25.6 41.4 26.6Q44 25 46.4 27.6Q49.6 28 50.8 37.4Z" fill="#f2e9d4" clip-path="url(#icon-litter-box-closed-door)"/>
+<path d="M31.6 37.4Q32.4 29 36.4 28.4Q38.2 25.6 41.4 26.6Q44 25 46.4 27.6Q49.6 28 50.8 37.4" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#icon-litter-box-closed-door)"/>
+<path d="M34.6 36.4L34.6 26.4C34.6 22.4 37.6 19.6 41.2 19.6C44.8 19.6 47.8 22.4 47.8 26.4L47.8 36.4" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M9.4 36.4C9.4 17.6 19.2 8.6 32 8.6C44.8 8.6 54.6 17.6 54.6 36.4Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-scoop">
+<path d="M19.4 25.9C19.4 25.9 9.5 12.9 9.5 12.9C9.5 12.9 14.6 8.9 14.6 8.9C14.6 8.9 25 22.5 25 22.5C25 22.5 19.4 25.9 19.4 25.9Z" fill="#d4a54c"/>
+<path d="M19.4 25.9C19.4 25.9 9.5 12.9 9.5 12.9C9.5 12.9 14.6 8.9 14.6 8.9C14.6 8.9 25 22.5 25 22.5C25 22.5 19.4 25.9 19.4 25.9Z" fill="none" stroke="#2e1f29" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M16.5 26.5C16.5 26.5 27.1 20.3 27.1 20.3C27.1 20.3 31.4 28 31.4 28C31.4 28 20.9 34.2 20.9 34.2C20.9 34.2 16.5 26.5 16.5 26.5Z" fill="#e8c47d"/>
+<path d="M11.2 31C11.2 31 20.4 28.9 24.5 28.2C28.5 27.5 35.8 27.3 35.8 27.3C35.8 27.3 35.8 39.5 35.8 39.5C35.8 39.5 11.2 39.5 11.2 39.5C11.2 39.5 11.2 31 11.2 31Z" fill="#3f2541" fill-opacity="0.16" clip-path="url(#icon-litter-box-closed-clip1)"/>
+<path d="M20.1 28.4Q22.9 26.1 25.8 24.6" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M22.2 31.8Q25 29.5 27.8 28" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M16.5 26.5C16.5 26.5 27.1 20.3 27.1 20.3C27.1 20.3 31.4 28 31.4 28C31.4 28 20.9 34.2 20.9 34.2C20.9 34.2 16.5 26.5 16.5 26.5Z" fill="none" stroke="#2e1f29" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/>
+</g><g id="p-box">
+<path d="M10.3 37.6C10.3 37.6 53.7 37.6 53.7 37.6C53.7 37.6 52.2 52.7 52.2 52.7C52.2 52.7 11.8 52.7 11.8 52.7C11.8 52.7 10.3 37.6 10.3 37.6Z" fill="#a97d96"/>
+<path d="M1.8 48C1.8 48 21.9 47.4 32 47.4C42.1 47.4 62.2 48 62.2 48C62.2 48 62.2 58.4 62.2 58.4C62.2 58.4 1.8 58.4 1.8 58.4C1.8 58.4 1.8 48 1.8 48Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-litter-box-closed-clip2)"/>
+<path d="M10.3 37.6C10.3 37.6 53.7 37.6 53.7 37.6C53.7 37.6 52.2 52.7 52.2 52.7C52.2 52.7 11.8 52.7 11.8 52.7C11.8 52.7 10.3 37.6 10.3 37.6Z" fill="none" stroke="#2e1f29" stroke-width="4.7" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M13.1 52.7L50.9 52.7" fill="none" stroke="#2e1f29" stroke-width="6.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g><g id="p-rim">
+<path d="M6.7 36.9C6.7 35.7 7.8 33.3 7.8 33.3C7.8 33.3 56.2 33.3 56.2 33.3C56.2 33.3 57.3 35.7 57.3 36.9C57.3 38.1 56.2 40.5 56.2 40.5C56.2 40.5 7.8 40.5 7.8 40.5C7.8 40.5 6.7 38.1 6.7 36.9Z" fill="#a97d96"/>
+<path d="M6.7 36.9C6.7 35.7 7.8 33.3 7.8 33.3C7.8 33.3 56.2 33.3 56.2 33.3C56.2 33.3 57.3 35.7 57.3 36.9C57.3 38.1 56.2 40.5 56.2 40.5C56.2 40.5 7.8 40.5 7.8 40.5C7.8 40.5 6.7 38.1 6.7 36.9Z" fill="none" stroke="#2e1f29" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g></svg>

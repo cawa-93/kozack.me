@@ -14,8 +14,7 @@ import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, CatAct, Destination, Dish, Item, Product, Save, StatName, ThingKind } from "../src/sim/types";
 import type { IconName, Mark } from "../src/view/iconnames";
-import { goodsIcon } from "../src/ui/shop";
-import { catAsk, DESTINATION_ICONS, DISEASE_ICONS, eventBubbles, HOME_FIXTURE_ICONS, ILLNESS_ICONS, itemIcon, MOOD_ICONS, PERSON_STATE_ICONS, PRODUCT_ICONS, refusalBubble, STAT_ICONS, UTILITIES_ICON, STATE_ICONS, stoveIcon, THING_ICONS } from "../src/view/symbols";
+import { catAsk, DESTINATION_ICONS, DISEASE_ICONS, eventBubbles, HOME_FIXTURE_ICONS, ILLNESS_ICONS, itemIcon, MOOD_ICONS, PERSON_STATE_ICONS, PRODUCT_ICONS, refusalBubble, STAT_ICONS, UTILITIES_ICON, STATE_ICONS, stoveIcon, THING_ICONS, VARIANT_ICONS } from "../src/view/symbols";
 import { catThought, personThought } from "../src/view/thoughts";
 import { EVENTS, REFUSALS } from "./bubblecases";
 import { withCatCorner } from "./helpers";
@@ -103,9 +102,10 @@ function collectCases(): Map<string, Shown[]> {
     add(`storage:${product}`, { icon: PRODUCT_ICONS[product], count: 5 });
     add(`hint:${product}`, { icon: PRODUCT_ICONS[product] });
   }
-  // Пластир і бинт у картці магазину — кожен своєю іконкою (§11.4 «Іконка біля назви»).
-  add("variant:dressing:cheap", { icon: goodsIcon({ product: "dressing" }, "cheap") });
-  add("variant:dressing:premium", { icon: goodsIcon({ product: "dressing" }, "premium") });
+  // Варіант товару зі своєю іконкою в картці магазину (§11.4 «Іконка біля назви»): другий варіант — іконка самого товару.
+  for (const [key, byQuality] of Object.entries(VARIANT_ICONS)) {
+    for (const [quality, icon] of Object.entries(byQuality ?? {})) if (icon) add(`variant:${key}:${quality}`, { icon });
+  }
   // Несплачений рахунок за комунальні: квитанція на панелі й рахунок у «Домі» телефона — один випадок.
   add("utilities:unpaid", { icon: UTILITIES_ICON });
   // Показники персонажа: панель і думка, коли показник низький.
@@ -210,7 +210,6 @@ const ALSO: Partial<Record<Product, { why: string; ids: string[] }>> = {
   momMeal: { why: "мамин судочок — та сама річ на плиті, на столі й у холодильнику", ids: ["stove:mom", "table:mom"] },
   catnip: { why: "котяча м'ята: кіт блаженствує саме від неї", ids: ["event:catnip:reaction=roll"] },
   treats: { why: "ласощі: «Зелений від заздрощів» хрумтить саме ними", ids: ["event:treat-snatched"] },
-  dressing: { why: "стерильний бинт у картці магазину — сам запас «Пластир і бинт», рулон", ids: ["variant:dressing:premium"] },
 };
 for (const [product, extra] of Object.entries(ALSO)) {
   const group = SAME[`запас:${product}`];

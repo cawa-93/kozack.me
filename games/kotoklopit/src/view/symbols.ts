@@ -144,10 +144,36 @@ export function carryIcon(state: GameState): IconName | null {
 }
 
 /**
- * Варіант запасу, що має свою іконку біля назви в магазині (§11.4 «Іконка біля назви»): пластир — пачка, а бинт — як сам запас
- * «Пластир і бинт», рулон. Решта варіантів — іконка запасу (`PRODUCT_ICONS`).
+ * Варіант товару зі своєю іконкою біля назви в магазині (§11.4 «Іконка біля назви»; ключ — `goodsKey`): та сама річ, трохи інша
+ * колір чи форма (`a26-variant-icons.ts`); другий варіант — іконка самого запасу чи речі. Пластир — пачка, бинт — рулон запасу.
+ * Пластикова миска — своя, бо іконка речі `food-bowl` — керамічна.
  */
-export const VARIANT_ICONS: Partial<Record<Product, Partial<Record<Quality, IconName>>>> = { dressing: { cheap: "plaster" } };
+export const VARIANT_ICONS: Partial<Record<string, Partial<Record<Quality, IconName>>>> = {
+  food: { premium: "food-premium" },
+  hygiene: { premium: "soap-premium" },
+  catFood: { premium: "kibble-premium" },
+  sterileFood: { premium: "kibble-sterile-premium" },
+  litter: { premium: "litter-premium" },
+  pills: { premium: "pills-premium" },
+  drops: { premium: "drops-premium" },
+  humanMeds: { premium: "human-meds-premium" },
+  dressing: { cheap: "plaster" },
+  treats: { premium: "treats-premium" },
+  shampoo: { premium: "shampoo-premium" },
+  detergent: { premium: "detergent-premium" },
+  catnip: { premium: "catnip-premium" },
+  "thing:bowl": { cheap: "food-bowl-plastic" },
+  "thing:water": { premium: "water-bowl-ceramic" },
+  "thing:litter": { premium: "litter-box-closed" },
+  "thing:toy": { premium: "toy-bell" },
+  "thing:house": { premium: "cat-house-felt" },
+  "thing:scratcher": { premium: "scratcher-bed" },
+  "thing:carrier": { premium: "carrier-premium" },
+  "thing:feeder": { premium: "kibble-pour-smart" },
+  "thing:fountain": { premium: "fountain-auto" },
+  "thing:robot": { premium: "robot-vacuum-smart" },
+  "thing:lock": { premium: "lock-magnet" },
+};
 
 /** Іконка речі в руках чи на місці (§11.4): та сама, що скрізь у грі. */
 export function itemIcon(item: Item): IconName {

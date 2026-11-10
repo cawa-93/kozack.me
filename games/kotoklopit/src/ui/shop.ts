@@ -29,8 +29,8 @@ export function variantTitle(goods: Goods, quality: Quality): string {
  * якістю — іконка варіанта, коли він має свою (`VARIANT_ICONS`: пластир).
  */
 export function goodsIcon(goods: Goods, quality?: Quality): IconName {
-  if (!("product" in goods)) return THING_ICONS[goods.thing];
-  return (quality && VARIANT_ICONS[goods.product]?.[quality]) || PRODUCT_ICONS[goods.product];
+  const own = quality ? VARIANT_ICONS[goodsKey(goods)]?.[quality] : undefined;
+  return own ?? ("product" in goods ? PRODUCT_ICONS[goods.product] : THING_ICONS[goods.thing]);
 }
 
 /**

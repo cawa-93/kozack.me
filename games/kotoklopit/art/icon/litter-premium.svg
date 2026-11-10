@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/litter-premium — силікагелевий наповнювач (дорогий варіант запасу наповнювача, §11.4 «Іконка біля назви»): той самий мішок із зав'язаною горловиною, крихітним лотком на смузі й купкою біля мішка, що icon/litter, але смуга бузкова, а наповнювач — блакитно-білі кристали. Картка товару в магазині.
+size 64×64; pivot (32, 32) — центр; points: —. Без станів і шарів: один кадр у готових кольорах; контур — LINE (силует 6, низ 8,5, внутрішні 3,5).
+Від icon/litter відрізняють колір смуги (plum замість teal), гірка в лотку на смузі — кристали glassHi з гострими верхівками замість круглої сірої, і купка біля мішка того самого силуету — glassHi з кутастими кристалами blueHi й paper замість сірих круглих гранул (силікагель у грі — світлі кристали з блакитними цятками, item/litter, стан premium). Мішок, горловина й лоток — ті самі.
+-->
+<defs>
+<clipPath id="icon-litter-premium-body"><path d="M8.55 54.6Q6.53 45 8.69 37.4Q10.71 30 16.61 26Q19.2 24.2 19.2 21L29 21Q29 24.2 31.59 26Q37.49 30 39.51 37.4Q41.67 45 39.65 54.6Q24.1 55.8 8.55 54.6Z"/></clipPath>
+<clipPath id="icon-litter-premium-heap"><path d="M34 54.8Q33.2 49.8 37 47Q38.6 41.8 43.8 42Q47.4 38.2 51.6 41Q55.8 42.2 55.8 47Q57 51 55.8 54.8Q45 55.6 34 54.8Z"/></clipPath>
+</defs>
+<g id="p-tuft">
+<path d="M19.35 21Q16.18 16.4 15.03 10.4Q18.05 12.4 20.07 10.4Q22.23 7.6 24.39 10Q26.69 7.4 28.56 10.4Q30.87 12.6 33.46 10.2Q32.16 16.4 28.85 21Z" fill="#c9a872"/>
+<path d="M22.23 19.4Q22.5 15.68 21.22 12.4Q20.95 16.12 22.23 19.4Z" fill="#a5844f"/>
+<path d="M26.26 19.4Q27.54 16.22 27.27 12.6Q25.99 15.78 26.26 19.4Z" fill="#a5844f"/>
+<path d="M19.35 21Q16.18 16.4 15.03 10.4Q18.05 12.4 20.07 10.4Q22.23 7.6 24.39 10Q26.69 7.4 28.56 10.4Q30.87 12.6 33.46 10.2Q32.16 16.4 28.85 21Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-sack">
+<path d="M8.55 54.6Q6.53 45 8.69 37.4Q10.71 30 16.61 26Q19.2 24.2 19.2 21L29 21Q29 24.2 31.59 26Q37.49 30 39.51 37.4Q41.67 45 39.65 54.6Q24.1 55.8 8.55 54.6Z" fill="#c9a872"/>
+<path d="M8.69 37.4Q10.71 30 16.61 26Q19.2 24.2 19.2 21L29 21Q29 24.2 31.59 26Q37.49 30 39.51 37.4Q24.1 32.8 8.69 37.4Z" fill="#ddc391"/>
+<path d="M16.04 30.2Q14.42 33.52 13.73 37.4Q15.87 34.41 16.04 30.2Z" fill="#a5844f"/>
+<path d="M32.16 30.2Q32.33 34.41 34.47 37.4Q33.78 33.52 32.16 30.2Z" fill="#a5844f"/>
+<path d="M3.94 37.4Q14.02 35.2 24.1 36.4Q34.18 37.6 44.26 35.6L44.26 52.2Q34.18 54 24.1 52.8Q14.02 51.6 3.94 53.8Z" fill="#8b5d78" clip-path="url(#icon-litter-premium-body)"/>
+<path d="M14.2 44.6L15.8 41.6L18.2 42.4L20.4 39.6L22.8 41.6L25.4 39.2L27.6 41.8L30.6 40.4L32.8 44.6Z" fill="#d4e3dc"/>
+<path d="M14.2 44.6L15.8 41.6L18.2 42.4L20.4 39.6L22.8 41.6L25.4 39.2L27.6 41.8L30.6 40.4L32.8 44.6Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M12.6 44.2Q23.5 43.6 34.4 44.2L33.4 49.8Q23.5 50.6 13.6 49.8Z" fill="#f2e7d0"/>
+<path d="M12.6 44.2Q23.5 43.6 34.4 44.2L33.4 49.8Q23.5 50.6 13.6 49.8Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M3.94 49.6Q14.02 47.8 24.1 50.6Q34.18 52.8 44.26 49.6L44.26 60L3.94 60Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-litter-premium-body)"/>
+<path d="M7.25 37.6Q14.02 35.6 24.1 36.8Q34.18 38 40.95 36.2" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8.55 54.6Q6.53 45 8.69 37.4Q10.71 30 16.61 26Q19.2 24.2 19.2 21L29 21Q29 24.2 31.59 26Q37.49 30 39.51 37.4Q41.67 45 39.65 54.6Q24.1 55.8 8.55 54.6Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M12.15 55Q24.1 55.8 36.05 55" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-tie">
+<path d="M17.76 20Q24.1 22.4 30.44 20" fill="none" stroke="#2e1f29" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17.76 20Q24.1 22.4 30.44 20" fill="none" stroke="#b98b60" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-heap">
+<path d="M34 54.8Q33.2 49.8 37 47Q38.6 41.8 43.8 42Q47.4 38.2 51.6 41Q55.8 42.2 55.8 47Q57 51 55.8 54.8Q45 55.6 34 54.8Z" fill="#d4e3dc"/>
+<path d="M40.68 46.36L43.28 49.74L41.85 53.99L37.48 52.64L36.38 48.28Z" fill="#94a8c0"/>
+<path d="M53.85 45.45L55.23 49.73L52.21 52.88L48.66 50.4L48.98 45.87Z" fill="#94a8c0"/>
+<path d="M45.22 49.33L49.14 50.83L48.07 54.79L44.27 55.75L42.61 52.15Z" fill="#94a8c0"/>
+<path d="M0 51.5Q16 52.5 32 51.5Q48 50.5 64 51.5L64 64L0 64Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-litter-premium-heap)"/>
+<path d="M45.8 42.34L48.54 44.91L47.68 48.39L44.01 48.26L43.12 44.93Z" fill="#f2e7d0"/>
+<path d="M45.8 42.34L48.54 44.91L47.68 48.39L44.01 48.26L43.12 44.93Z" fill="none" stroke="#6b5263" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M41.96 42.57L43.38 45.28L41.83 48.11L38.91 46.61L38.68 43.39Z" fill="#f2e7d0"/>
+<path d="M41.96 42.57L43.38 45.28L41.83 48.11L38.91 46.61L38.68 43.39Z" fill="none" stroke="#6b5263" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M49.84 41.17L52.79 42.25L53.24 45.44L50.09 46.28L47.95 43.9Z" fill="#f2e7d0"/>
+<path d="M49.84 41.17L52.79 42.25L53.24 45.44L50.09 46.28L47.95 43.9Z" fill="none" stroke="#6b5263" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M34 54.8Q33.2 49.8 37 47Q38.6 41.8 43.8 42Q47.4 38.2 51.6 41Q55.8 42.2 55.8 47Q57 51 55.8 54.8Q45 55.6 34 54.8Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M36.4 54.8Q45 55.6 53.6 54.8" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/scratcher-bed — кігтеточка з лежанкою (дорогий варіант речі «Кігтеточка», §8.7): той самий сизалевий стовпчик із чотирма темними витками, килимок унизу й червоний помпон на шворці, але нагорі — широка дерев'яна полиця майже на ширину килимка, а на ній пухка сливова подушка; килимок теж сливовий. Іконки варіантів (a26-variant-icons.ts), art/STYLE.md (іконки).
+size 64×64; pivot (32, 32) — центр; points: —. Без станів і шарів: один кадр у готових кольорах; контур — LINE (силует 6, низ 8,5, внутрішні 3,5). Полиця, подушка й килимок — облямівка 5,2 під фарбою, як полиця й килимок у icon/scratcher.
+Від icon/scratcher (дешевої) — формою верху (широка полиця з подушкою замість вузької сірої полички) і сливовим кольором подушки й килимка, як дерев'яна полиця з подушкою-пуфом і сливова повсть на підставці в item/scratcher/premium.
+-->
+<defs>
+<clipPath id="icon-scratcher-bed-post"><path d="M20.4 19Q19.6 34 20.4 49.4L42.6 49.4Q43.4 34 42.6 19Z"/></clipPath>
+<clipPath id="icon-scratcher-bed-cushion"><path d="M15.4 19.2Q11 19.2 11 15Q11 9.8 16.6 9Q32 7.6 47.4 9Q53 9.8 53 15Q53 19.2 48.6 19.2Q32 20.2 15.4 19.2Z"/></clipPath>
+<clipPath id="icon-scratcher-bed-ball"><path d="M44.2 37A6 6 0 1 0 56.2 37A6 6 0 1 0 44.2 37Z"/></clipPath>
+</defs>
+<g id="p-mat">
+<path d="M11 48.4Q32 47.9 53 48.4Q56.4 48.4 56.4 51.8Q56.9 51.8 56.4 51.8Q56.4 55.2 53 55.2Q32 55.7 11 55.2Q7.6 55.2 7.6 51.8Q7.1 51.8 7.6 51.8Q7.6 48.4 11 48.4Z" fill="none" stroke="#2e1f29" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11 48.4Q32 47.9 53 48.4Q56.4 48.4 56.4 51.8Q56.9 51.8 56.4 51.8Q56.4 55.2 53 55.2Q32 55.7 11 55.2Q7.6 55.2 7.6 51.8Q7.1 51.8 7.6 51.8Q7.6 48.4 11 48.4Z" fill="#a97d96"/>
+<path d="M13.4 52.6Q32 52.4 50.6 52.6Q52 52.6 52 54Q52.2 54 52 54Q52 55.4 50.6 55.4Q32 55.6 13.4 55.4Q12 55.4 12 54Q11.8 54 12 54Q12 52.6 13.4 52.6Z" fill="#8b5d78"/>
+<path d="M11 54.8Q32 55.6 53 54.8" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-post">
+<path d="M20.4 19Q19.6 34 20.4 49.4L42.6 49.4Q43.4 34 42.6 19Z" fill="#c9a872"/>
+<path d="M20.4 19L27 19L27 50L20.4 50Z" fill="#ddc391" clip-path="url(#icon-scratcher-bed-post)"/>
+<path d="M17 31.8Q31.4 29.2 46 25.6" fill="none" stroke="#2e1f29" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#icon-scratcher-bed-post)"/>
+<path d="M17 39Q31.4 36.4 46 32.8" fill="none" stroke="#2e1f29" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#icon-scratcher-bed-post)"/>
+<path d="M17 46.2Q31.4 43.6 46 40" fill="none" stroke="#2e1f29" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#icon-scratcher-bed-post)"/>
+<path d="M36 10L50 10L50 54L36 54Z" fill="#3f2541" fill-opacity="0.16" clip-path="url(#icon-scratcher-bed-post)"/>
+<path d="M20.4 19Q19.6 34 20.4 49.4L42.6 49.4Q43.4 34 42.6 19Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-shelf">
+<path d="M11.8 17Q32 16.5 52.2 17Q55.6 17 55.6 20.2Q55.6 23.4 52.2 23.4Q32 23.9 11.8 23.4Q8.4 23.4 8.4 20.2Q8.4 17 11.8 17Z" fill="none" stroke="#2e1f29" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11.8 17Q32 16.5 52.2 17Q55.6 17 55.6 20.2Q55.6 23.4 52.2 23.4Q32 23.9 11.8 23.4Q8.4 23.4 8.4 20.2Q8.4 17 11.8 17Z" fill="#9a6a47"/>
+</g>
+<g id="p-cushion">
+<path d="M15.4 19.2Q11 19.2 11 15Q11 9.8 16.6 9Q32 7.6 47.4 9Q53 9.8 53 15Q53 19.2 48.6 19.2Q32 20.2 15.4 19.2Z" fill="none" stroke="#2e1f29" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M15.4 19.2Q11 19.2 11 15Q11 9.8 16.6 9Q32 7.6 47.4 9Q53 9.8 53 15Q53 19.2 48.6 19.2Q32 20.2 15.4 19.2Z" fill="#8b5d78"/>
+<path d="M15 9.6Q32 8.2 49 9.6Q51.4 10.6 51 12.6Q32 11.2 13 12.6Q12.6 10.6 15 9.6Z" fill="#a97d96" clip-path="url(#icon-scratcher-bed-cushion)"/>
+<path d="M0 16Q16 17 32 16Q48 15 64 16L64 24L0 24Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-scratcher-bed-cushion)"/>
+</g>
+<g id="p-pom">
+<path d="M50.6 24.2Q51.6 27.6 50.4 31.2" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M44.2 37A6 6 0 1 0 56.2 37A6 6 0 1 0 44.2 37Z" fill="#c4524b"/>
+<path d="M46.3 35.2A2.3 2.3 0 1 0 50.9 35.2A2.3 2.3 0 1 0 46.3 35.2Z" fill="#dc7c69"/>
+<path d="M0 38.8Q16 39.3 32 38.8Q48 38.3 64 38.8L64 64L0 64Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-scratcher-bed-ball)"/>
+<path d="M44.2 37A6 6 0 1 0 56.2 37A6 6 0 1 0 44.2 37Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

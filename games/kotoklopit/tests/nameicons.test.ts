@@ -19,7 +19,7 @@ import { goodsIcon, variantLabel, variantTitle } from "../src/ui/shop";
 import { DESTINATION_TITLES, PRODUCT_TITLES, VARIANT_TITLES } from "../src/ui/titles";
 import { destinationCard, visitCard, type VisitHandlers } from "../src/ui/trips";
 import { ICON_NAMES, type IconName } from "../src/view/iconnames";
-import { DESTINATION_ICONS, DISEASE_ICONS, eventBubbles, ILLNESS_ICONS, PRODUCT_ICONS, refusalBubble, THING_ICONS } from "../src/view/symbols";
+import { DESTINATION_ICONS, DISEASE_ICONS, eventBubbles, ILLNESS_ICONS, PRODUCT_ICONS, refusalBubble, THING_ICONS, VARIANT_ICONS } from "../src/view/symbols";
 
 /** Перша іконка в тексті з позначками. */
 const iconOf = (text: string): IconName | undefined => splitIcons(text).find((p): p is Exclude<IconPart, string> => typeof p !== "string")?.icon;
@@ -75,6 +75,20 @@ describe("іконка біля назви: позначка в тексті", (
 });
 
 describe("іконка біля назви: магазин (§6.4)", () => {
+  it("два варіанти одного товару — дві різні іконки, обидві намальовані, а одна з них — іконка самого запасу чи речі", () => {
+    for (const goods of GOODS) {
+      const qualities = variants(goods);
+      if (qualities.length < 2) continue;
+      const icons = qualities.map((q) => goodsIcon(goods, q));
+      expect(new Set(icons).size, goodsKey(goods)).toBe(icons.length);
+      expect(icons, goodsKey(goods)).toContain(goodsIcon(goods));
+      for (const icon of icons) {
+        expect(ICON_NAMES, `${goodsKey(goods)}: ${icon}`).toContain(icon);
+        expect(iconUrl(icon), `${goodsKey(goods)}: ${icon}`).not.toBeNull();
+      }
+    }
+  });
+
   it("пластир — пачка, бинт — рулон: різні іконки, і жодна — не травма (пластир навскіс)", () => {
     const plaster = goodsIcon({ product: "dressing" }, "cheap");
     const bandage = goodsIcon({ product: "dressing" }, "premium");
@@ -90,7 +104,7 @@ describe("іконка біля назви: магазин (§6.4)", () => {
       const icon = "product" in goods ? PRODUCT_ICONS[goods.product] : THING_ICONS[goods.thing];
       expect(goodsIcon(goods), goodsKey(goods)).toBe(icon);
       for (const q of variants(goods)) {
-        const own = goodsKey(goods) === "dressing" && q === "cheap" ? "plaster" : icon;
+        const own = VARIANT_ICONS[goodsKey(goods)]?.[q] ?? icon;
         expect(goodsIcon(goods, q), `${goodsKey(goods)} ${q}`).toBe(own);
         expect(iconOf(variantLabel(goods, q)), `${goodsKey(goods)} ${q}`).toBe(own);
         expect(plain(variantLabel(goods, q)), `${goodsKey(goods)} ${q}`).toBe(VARIANT_TITLES[goodsKey(goods)]?.[q]);
@@ -149,8 +163,9 @@ describe("іконка біля назви: догляд біля аптечки
       collar: { cheap: 1, premium: 0 },
     });
     const labels = careCard(save.current, cat, () => {}, () => {}).actions.map((a) => a.label);
-    const shop = (product: Product): IconName => goodsIcon({ product });
-    expect(labels.map(iconOf)).toEqual([shop("pills"), shop("drops"), shop("treats"), shop("treats"), shop("catnip"), shop("catnip"), shop("collar")]);
+    // Ліки — загальною назвою, тож і іконкою запасу; ласощі й м'ята — назвою варіанта, тож і його іконкою (§11.4).
+    const shop = (product: Product, quality?: "cheap" | "premium"): IconName => goodsIcon({ product }, quality);
+    expect(labels.map(iconOf)).toEqual([shop("pills"), shop("drops"), shop("treats", "premium"), shop("treats", "cheap"), shop("catnip", "premium"), shop("catnip", "cheap"), shop("collar")]);
     // Без «для котів» (картка й так про кота; рецензія 2026-11-03): ліки — загальною назвою (обидва варіанти разом), нашийник —
     // назвою з каталогу.
     expect(labels.map(plain)).toEqual(["Таблетки ×2", "Краплі ×1", "Делікатеси ×1", "Смаколики ×3", "Мататабі ×2", "Сушена котяча м'ята ×1", `${VARIANT_TITLES["collar"]?.cheap} ×1`]);

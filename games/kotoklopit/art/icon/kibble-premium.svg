@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/kibble-premium — корм «Гурман» (дорогий варіант запасу корму, §11.4 «Іконка біля назви»): та сама синя миска з купкою, що icon/kibble, але три гранули червонясті, а дві замінено на світлі помаранчеві шматочки-кубики. Картка товару в магазині.
+size 64×64; pivot (32, 32) — центр; points: —. Без станів і шарів: один кадр у готових кольорах; контур — LINE (силует 6, низ 8,5, внутрішні 3,5).
+Від icon/kibble відрізняють колір гранул (red замість kibbleHi — червонястий «Гурман», як совок item/scoop у стані premium) і два шматочки orangeHi іншої форми (скруглені кубики замість гранул: угорі праворуч і внизу ліворуч). Миска, розміри й місця купки — ті самі.
+-->
+<defs>
+<clipPath id="icon-kibble-premium-c1"><path d="M36.26 14.47L40.76 13.52Q43.1 13.02 43.6 15.36L44.39 19.08Q44.89 21.43 42.54 21.93L38.04 22.88Q35.7 23.38 35.2 21.04L34.41 17.32Q33.91 14.97 36.26 14.47Z"/></clipPath>
+<clipPath id="icon-kibble-premium-c4"><path d="M19.01 26.17L23.47 27.28Q25.8 27.86 25.22 30.19L24.3 33.88Q23.72 36.21 21.39 35.63L16.93 34.52Q14.6 33.94 15.18 31.61L16.1 27.92Q16.68 25.59 19.01 26.17Z"/></clipPath>
+</defs>
+<g id="p-kibble">
+<path d="M36.26 14.47L40.76 13.52Q43.1 13.02 43.6 15.36L44.39 19.08Q44.89 21.43 42.54 21.93L38.04 22.88Q35.7 23.38 35.2 21.04L34.41 17.32Q33.91 14.97 36.26 14.47Z" fill="#eaa967"/>
+<path d="M30 19.4Q39 18.6 48 17.4L48 30L30 30Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-kibble-premium-c1)"/>
+<path d="M36.26 14.47L40.76 13.52Q43.1 13.02 43.6 15.36L44.39 19.08Q44.89 21.43 42.54 21.93L38.04 22.88Q35.7 23.38 35.2 21.04L34.41 17.32Q33.91 14.97 36.26 14.47Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M29.9 16.7Q31 19.2 30.3 21.7Q30.6 25.3 27.3 24Q23.9 23.5 21.1 21.4Q17.8 20 20.9 18.2Q23.2 15.8 26.5 15Q29.6 13.2 29.9 16.7Z" fill="#c4524b"/>
+<path d="M20.3 20.5Q26 21.1 31.7 20.5L30.1 24.6Q26 26.1 21.9 24.6Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M29.9 16.7Q31 19.2 30.3 21.7Q30.6 25.3 27.3 24Q23.9 23.5 21.1 21.4Q17.8 20 20.9 18.2Q23.2 15.8 26.5 15Q29.6 13.2 29.9 16.7Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M35.2 25.3Q37 27.7 37 30.7Q38.2 34.2 34.6 33.4Q30.7 33.5 27.2 31.8Q23.7 31 26.4 28.6Q28.3 25.7 31.4 24.2Q34.1 21.8 35.2 25.3Z" fill="#c4524b"/>
+<path d="M26 30Q32 30.7 38 30L36.3 34.3Q32 35.9 27.7 34.3Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M35.2 25.3Q37 27.7 37 30.7Q38.2 34.2 34.6 33.4Q30.7 33.5 27.2 31.8Q23.7 31 26.4 28.6Q28.3 25.7 31.4 24.2Q34.1 21.8 35.2 25.3Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M19.01 26.17L23.47 27.28Q25.8 27.86 25.22 30.19L24.3 33.88Q23.72 36.21 21.39 35.63L16.93 34.52Q14.6 33.94 15.18 31.61L16.1 27.92Q16.68 25.59 19.01 26.17Z" fill="#eaa967"/>
+<path d="M10 32.4Q19 33.2 28 32.4L28 40L10 40Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-kibble-premium-c4)"/>
+<path d="M19.01 26.17L23.47 27.28Q25.8 27.86 25.22 30.19L24.3 33.88Q23.72 36.21 21.39 35.63L16.93 34.52Q14.6 33.94 15.18 31.61L16.1 27.92Q16.68 25.59 19.01 26.17Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M48.2 28.6Q49 31.1 48 33.6Q47.9 37.2 44.7 35.5Q41.4 34.8 39 32.5Q35.8 30.8 39.1 29.3Q41.7 27.1 45 26.5Q48.3 25 48.2 28.6Z" fill="#c4524b"/>
+<path d="M38.3 32Q44 32.6 49.7 32L48.1 36.1Q44 37.6 39.9 36.1Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M48.2 28.6Q49 31.1 48 33.6Q47.9 37.2 44.7 35.5Q41.4 34.8 39 32.5Q35.8 30.8 39.1 29.3Q41.7 27.1 45 26.5Q48.3 25 48.2 28.6Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-bowl">
+<path d="M7 37C8 47 13 54 17 55L47 55C51 54 56 47 57 37Z" fill="#6c84a3"/>
+<path d="M11 49Q32 52 53 49C50 54 49 55 47 55L17 55C15 55 14 54 11 49Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M7 37Q32 52 57 37L56 41.5Q32 56 8 41.5Z" fill="#94a8c0"/>
+<path d="M8 41.5Q32 56 56 41.5" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7 37C8 47 13 54 17 55L47 55C51 54 56 47 57 37Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17 55L47 55" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>
