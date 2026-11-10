@@ -76,7 +76,7 @@ describe("«Засідки» (§9.12, рішення автора 2026-10-25)", 
   it("кіт іде в одне з місць засідки й чекає там до 10 хвилин", () => {
     const save = game();
     const cat = withCat(save, { ambush: 1 });
-    startAmbush(cat, createRng(3));
+    startAmbush(save.current, cat, createRng(3));
     expect(cat.act.kind).toBe("ambush");
     expect(AMBUSH_SPOTS.some((s) => s.x === cat.act.goal?.x && s.y === cat.act.goal?.y)).toBe(true);
     expect(cat.act.minutes).toBe(AMBUSH.minutes);

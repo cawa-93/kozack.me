@@ -1,7 +1,7 @@
 // Квартира прототипу (§8.4): стіни, кімнати й речі на сітці клітинок підлоги, а також
 // місця для речей котячого кутка (§9.12). Розкладка не змінюється під час гри, тож вона не входить у стан гри.
 
-import type { GameState, HomeItem, Product, TrinketKind, Vec } from "./types";
+import type { GameThing, GameState, HomeItem, Product, TrinketKind, Vec } from "./types";
 
 export type RoomId = "bedroom" | "bathroom" | "kitchen" | "living";
 
@@ -157,9 +157,10 @@ export function isPresent(state: Pick<GameState, "home">, object: HomeObject): b
   return !object.requires || object.requires.some((p) => state.home.acquired.includes(p));
 }
 
-/** Речі, які зараз є в квартирі. */
+/** Речі, які зараз є в квартирі, — там, де стоять (сховища й ящики могли зсунути, §8.7). */
 export function objectsOf(state: Pick<GameState, "home">): HomeObject[] {
-  return OBJECTS.filter((o) => isPresent(state, o));
+  const present = OBJECTS.filter((o) => isPresent(state, o));
+  return state.home.displaced ? present.map((o) => placedObject(state, o.id)) : present;
 }
 
 /** Поверхні, на які можна покласти річ: стіл і робочі поверхні кухні. */
@@ -384,19 +385,98 @@ const covers = (o: Rect, x: number, y: number): boolean => x >= o.x && x < o.x +
 
 /** Клітинка непрохідна; усе за межами карти — теж. */
 export function isSolid(state: Pick<GameState, "home" | "modifiers" | "today">, x: number, y: number): boolean {
-  return (SOLID[y]?.[x] ?? true) || OPTIONAL.some((o) => covers(o, x, y) && isPresent(state, o)) || (x === BIG_BOX.x && y === BIG_BOX.y && hasBigBox(state));
+  if (SOLID[y]?.[x] ?? true) return true;
+  if (OPTIONAL.some((o) => covers(placedObject(state, o.id), x, y) && isPresent(state, o))) return true;
+  if (!hasBigBox(state)) return false;
+  const box = withThing(state, "big-box", BIG_BOX);
+  return x === box.x && y === box.y;
 }
 
 const BOXES = OBJECTS.find((o) => o.kind === "boxes");
 
 /** Крізь клітинку не пройде персонаж (§6.4): вона тверда — чи там купа ящиків біля входу, на яку вилазять лише коти. */
 export function blocksPerson(state: Pick<GameState, "home" | "modifiers" | "today">, x: number, y: number): boolean {
-  return isSolid(state, x, y) || (BOXES !== undefined && covers(BOXES, x, y) && hasBoxes(state));
+  return isSolid(state, x, y) || (BOXES !== undefined && covers(placedObject(state, BOXES.id), x, y) && hasBoxes(state));
 }
 
 /** Річ квартири на клітинці, якщо вона там є: на меблях коти сплять і ховаються. */
 export function objectAt(state: Pick<GameState, "home">, x: number, y: number): HomeObject | null {
-  return OBJECTS.find((o) => covers(o, x, y) && isPresent(state, o)) ?? null;
+  if (!state.home.displaced) return OBJECTS.find((o) => covers(o, x, y) && isPresent(state, o)) ?? null;
+  for (const o of OBJECTS) {
+    const placed = placedObject(state, o.id);
+    if (covers(placed, x, y) && isPresent(state, o)) return placed;
+  }
+  return null;
+}
+
+// --- Речі, які ставить гра (§8.7, «Що ставить гра») ---------------------------------------------------------------------
+
+/** Речі гри; сховища й ящики — речі квартири (`OBJECTS`) з тим самим id. */
+export const GAME_THINGS: readonly GameThing[] = ["cat-cabinet", "litter-bag", "sterile-bin", "cat-kit", "boxes", "carrier", "big-box"];
+
+const OBJECT_THINGS: ReadonlySet<string> = new Set<GameThing>(["cat-cabinet", "litter-bag", "sterile-bin", "cat-kit", "boxes"]);
+const isObjectThing = (id: string): id is GameThing => OBJECT_THINGS.has(id);
+const ZERO: Vec = { x: 0, y: 0 };
+
+/** Своє місце речі гри: клітинка, де вона стоїть, коли їй ніщо не заважає. */
+export function thingHome(thing: GameThing): Vec {
+  if (thing === "carrier") return CARRIER_TILE;
+  if (thing === "big-box") return BIG_BOX;
+  const o = objectById(thing);
+  return { x: o.x, y: o.y };
+}
+
+/** Річ гри зараз у квартирі. */
+export function thingPresent(state: Pick<GameState, "home" | "modifiers" | "today">, thing: GameThing): boolean {
+  if (thing === "carrier") return state.home.carriers.length > 0;
+  if (thing === "big-box") return hasBigBox(state);
+  return isPresent(state, objectById(thing));
+}
+
+/** Зсув речі гри від свого місця, клітинки; на своєму місці — нуль (той самий об'єкт, щоб не створювати нового щокадру). */
+export function thingShift(state: Pick<GameState, "home">, thing: GameThing): Vec {
+  const at = state.home.displaced?.[thing];
+  if (!at) return ZERO;
+  const home = thingHome(thing);
+  return { x: at.x - home.x, y: at.y - home.y };
+}
+
+/** Точка, прив'язана до речі гри (де кіт її дере, де лежить переноска), — разом із її зсувом. */
+export function withThing(state: Pick<GameState, "home">, thing: GameThing, p: Vec): Vec {
+  const shift = thingShift(state, thing);
+  return shift.x === 0 && shift.y === 0 ? p : { x: p.x + shift.x, y: p.y + shift.y };
+}
+
+/** Зсув речі квартири `id` від її місця в `OBJECTS` (§8.7): у сховищ і ящиків — як у речі гри, у меблів — нуль. */
+export function objectShift(state: Pick<GameState, "home">, id: string): Vec {
+  return isObjectThing(id) ? thingShift(state, id) : ZERO;
+}
+
+/** Зсунуті речі квартири за id і клітинкою: щоб не створювати копію щоразу. */
+const PLACED = new Map<string, HomeObject>();
+
+/** Річ квартири `id` там, де вона стоїть зараз (сховища й ящики могли зсунути, §8.7). */
+export function placedObject(state: Pick<GameState, "home">, id: string): HomeObject {
+  const base = objectById(id);
+  const shift = objectShift(state, id);
+  if (shift === ZERO) return base;
+  const key = `${id}:${base.x + shift.x},${base.y + shift.y}`;
+  let placed = PLACED.get(key);
+  if (!placed) {
+    placed = { ...base, x: base.x + shift.x, y: base.y + shift.y };
+    PLACED.set(key, placed);
+  }
+  return placed;
+}
+
+/**
+ * Куди йде кіт, що хотів на клітинку точки `p` (засідка, прохолодна плитка, схованка, дряпання ящиків чи коробки, §8.7): сама
+ * `p`, якщо там немає речі котячого кутка, автогодівниці, бази робота чи речі гри; інакше — та сама точка на найближчій вільній
+ * клітинці для речей, яку видно.
+ */
+export function catSpotNear(state: Pick<GameState, "home" | "modifiers" | "today">, p: Vec): Vec {
+  void state;
+  return p;
 }
 
 /**

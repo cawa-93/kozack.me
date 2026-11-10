@@ -53,7 +53,8 @@ function boxShare(trials: number, pick: (seed: number) => string | null): number
 }
 
 describe("«Велика коробка»: де й коли (§4.1)", () => {
-  it("коробка стоїть лише цього дня: персонажу заступає дорогу, а місць речей і шляхів котів не займає", () => {
+  // Поки коробки немає, на її місце ставлять речі, а зайняте — вона стає поруч (§8.7, «Що ставить гра», `tests/gamethings.test.ts`).
+  it("коробка стоїть лише цього дня: персонажу заступає дорогу, а шляхів котів не займає", () => {
     expect(hasBigBox(game(null).current)).toBe(false);
     expect(isSolid(game(null).current, BIG_BOX.x, BIG_BOX.y)).toBe(false);
     const state = game().current;
@@ -63,7 +64,7 @@ describe("«Велика коробка»: де й коли (§4.1)", () => {
       expect(roomAt(tile)).toBe("living");
       expect(hiddenTile(tile.x, tile.y)).toBe(false);
       expect(isFixedSolid(tile.x, tile.y)).toBe(false);
-      expect(PLACES.some((p) => p.x === tile.x && p.y === tile.y)).toBe(false);
+      expect(PLACES.some((p) => p.x === tile.x && p.y === tile.y)).toBe(true);
     }
     expect(isSolid(state, BIG_BOX_SCRATCH.x, BIG_BOX_SCRATCH.y)).toBe(false);
   });

@@ -1,11 +1,11 @@
-// Місце сховища, якого ще немає (§8.7, «Переставити річ»): поки сховища немає, його клітинка — для речей; щойно воно з'являється,
-// річ, база робота, пилосос чи іграшка з цієї клітинки переїжджають на найближчу вільну.
+// Місце сховища, якого ще немає (§8.7, «Переставити річ», «Що ставить гра»): поки сховища немає, його клітинка — для речей; щойно
+// воно з'являється, річ, база робота й пилосос лишаються, де стояли, а сховище стає поруч.
 
 import { describe, expect, it } from "vitest";
 
 import { addSupply } from "../src/sim/economy";
 import { advance, newGame } from "../src/sim/game";
-import { nearestFreePlace, objectById, robotDockAt } from "../src/sim/home";
+import { nearestFreePlace, objectById, placedObject, robotDockAt } from "../src/sim/home";
 import type { BowlItem, Feeder, Save } from "../src/sim/types";
 import { withCatCorner } from "./helpers";
 
@@ -29,7 +29,7 @@ describe("місце сховища, якого ще немає (§8.7)", () => 
     expect(place && onBin(place)).toBe(false);
   });
 
-  it("бак з'явився — миска з годівницею, база робота й пилосос із його клітинки переїжджають на найближчі вільні", () => {
+  it("бак з'явився — миска з годівницею, база робота й пилосос на його клітинці лишаються, а бак стає поруч", () => {
     const save = game();
     const state = save.current;
     const bowl: BowlItem = { id: state.nextId++, kind: "bowl", quality: "cheap", slot: `floor-${BIN.x}-${BIN.y}`, food: 1, foodQuality: "cheap", sterile: false };
@@ -38,18 +38,20 @@ describe("місце сховища, якого ще немає (§8.7)", () => 
     state.home.feeders = [feeder];
     addSupply(state, "sterileFood", "cheap", 1);
     advance(save, 1);
-    expect(bowl.slot).not.toBe(`floor-${BIN.x}-${BIN.y}`);
+    expect(bowl.slot).toBe(`floor-${BIN.x}-${BIN.y}`);
     expect(feeder.slot).toBe(bowl.slot);
-    expect(state.home.items.filter((i) => "slot" in i && i.slot === bowl.slot)).toHaveLength(1);
+    expect(onBin(placedObject(state, "sterile-bin"))).toBe(false);
 
-    // База робота й пилосос — так само (бак уже стоїть: ставимо їх у кут, наче з давніх часів, і бак «з'являється» знову).
-    state.home.acquired = state.home.acquired.filter((p) => p !== "sterileFood");
-    state.home.appliances.robot = "cheap";
-    state.home.robotDock = { ...binCenter };
-    state.home.vacuumAt = { ...binCenter };
-    state.home.acquired.push("sterileFood");
-    advance(save, 1);
-    expect(onBin(robotDockAt(state))).toBe(false);
-    expect(state.home.vacuumAt && onBin(state.home.vacuumAt)).toBe(false);
+    // База робота й пилосос — так само (бака ще немає: ставимо їх у кут, і бак з'являється).
+    const other = game();
+    const s = other.current;
+    s.home.appliances.robot = "cheap";
+    s.home.robotDock = { ...binCenter };
+    s.home.vacuumAt = { ...binCenter };
+    addSupply(s, "sterileFood", "cheap", 1);
+    advance(other, 1);
+    expect(onBin(robotDockAt(s))).toBe(true);
+    expect(s.home.vacuumAt && onBin(s.home.vacuumAt)).toBe(true);
+    expect(onBin(placedObject(s, "sterile-bin"))).toBe(false);
   });
 });

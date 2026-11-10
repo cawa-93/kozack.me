@@ -9,7 +9,7 @@
 
 import { OBJECTS } from "../../sim/home";
 import type { FillStage } from "../../sim/storage";
-import type { HomeItem, Quality, Vec } from "../../sim/types";
+import type { GameState, HomeItem, Quality, Vec } from "../../sim/types";
 
 // --- Ізометрія (крок 16) ------------------------------------------------------------------------
 
@@ -142,6 +142,15 @@ export function isoObjectLook(id: string): IsoObjectLook {
   const look = ISO_LOOKS.get(id);
   if (!look) throw new Error(`Немає речі «${id}»`);
   return look;
+}
+
+/**
+ * Вигляд речі квартири `id` там, де вона стоїть зараз (§8.7, «Що ставить гра»): сховище чи ящики, зсунуті з зайнятого місця,
+ * несуть із собою слід і місце персонажа.
+ */
+export function placedObjectLook(state: Pick<GameState, "home">, id: string): IsoObjectLook {
+  void state;
+  return isoObjectLook(id);
 }
 
 /** Де кіт на речі чи під нею: точка підлоги під лапами (клітинки) і висота над нею, одиниці арту. */

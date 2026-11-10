@@ -1335,7 +1335,7 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng, context: CatContext): 
   if (roll > 0) options.push({ weight: roll, value: active(() => start(cat, "unroll", { ...ROLL_TILE }, HUNTING.pawMinutes, "roll")) });
   // Засідка на персонажа (§9.12, «Засідки»): лише коли є на кого чатувати.
   const ambush = ambushWeight(cat);
-  if (ambush > 0 && context.present) options.push({ weight: ambush, value: active(() => startAmbush(cat, rng)) });
+  if (ambush > 0 && context.present) options.push({ weight: ambush, value: active(() => startAmbush(state, cat, rng)) });
   (weightedPick(rng, options) ?? (() => start(cat, "idle", null, CAT_ACT_MINUTES.idle)))();
 }
 
@@ -1652,7 +1652,8 @@ export function ambushWeight(cat: Cat): number {
  * Кіт сідає в засідку (§9.12, «Засідки»): за диваном, біля ліжка чи в проході — в одне з двох найближчих до нього місць — і
  * чекає до 10 хвилин.
  */
-export function startAmbush(cat: Cat, rng: Rng): void {
+export function startAmbush(state: GameState, cat: Cat, rng: Rng): void {
+  void state;
   const spots = [...AMBUSH_SPOTS].sort((a, b) => distance(a, cat) - distance(b, cat));
   const spot = spots[rng.int(0, Math.min(1, spots.length - 1))] ?? spots[0] ?? tileOf(cat);
   start(cat, "ambush", { ...spot }, AMBUSH.minutes);

@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { freeSlots, place, utilitiesDue } from "../src/sim/economy";
 import { newGame } from "../src/sim/game";
-import { CARRIER_TILE, hiddenTile, isWall, LAUNDRY_BASKET, MAP_HEIGHT, nearestFreePlace, OBJECTS, PLACES, roomAt, slotById, SLOTS } from "../src/sim/home";
+import { hiddenTile, isWall, LAUNDRY_BASKET, MAP_HEIGHT, MAP_WIDTH, nearestFreePlace, OBJECTS, PLACES, roomAt, slotById, SLOTS, WIRE_TILE } from "../src/sim/home";
 import { WALL_HEIGHT, WALL_SEGMENTS } from "../src/view/art/manifest/lib/geometry";
 import type { GameState, HomeItem, Vec } from "../src/sim/types";
 import { boxCovers, wallsToFade } from "../src/view/iso/geometry";
@@ -15,6 +15,33 @@ import { isoItemLook, isoObjectLook } from "../src/view/world/objects";
 const BOWL = isoItemLook("bowl");
 
 const tile = (p: Vec): string => `${Math.floor(p.x)},${Math.floor(p.y)}`;
+
+/** Меблі, що стоять завжди: без сховищ і ящиків, які з'являються й можуть стати деінде (§8.7). */
+const PERMANENT = OBJECTS.filter((o) => o.requires === undefined && o.kind !== "boxes");
+/** Пів ширини плитки ізометрії, одиниці арту. */
+const HALF_TILE = 64;
+
+/**
+ * Яку частку миски з центром у точці `p` видно з-за меблів: сітка точок по її силуету на екрані (уздовж горизонталі — зсув
+ * уздовж x − y, тож глибина та сама; угору — висота), кожна — чи її закриває якась річ.
+ */
+function visibleShare(p: Vec): number {
+  const N = 12;
+  let seen = 0;
+  for (let i = 0; i <= N; i++) {
+    for (let j = 0; j <= N; j++) {
+      const s = (((i / N) * 2 - 1) * BOWL.half) / HALF_TILE / 2;
+      const at = { x: p.x + s, y: p.y - s };
+      const lift = (j / N) * BOWL.height;
+      const covered = PERMANENT.some((o) => {
+        const look = isoObjectLook(o.id);
+        return boxCovers(look.footprint, look.tall, at, { half: 0.5, height: 0.5 }, lift);
+      });
+      if (!covered) seen++;
+    }
+  }
+  return seen / (N + 1) ** 2;
+}
 const center = (p: Vec): Vec => ({ x: p.x + 0.5, y: p.y + 0.5 });
 const placeTiles = new Set(PLACES.map(tile));
 
@@ -43,36 +70,67 @@ describe("клітинки для речей (§8.7)", () => {
     for (const slot of SLOTS) expect(placeTiles.has(tile(slot)), slot.id).toBe(true);
   });
 
-  it("немає стін, проходів і меблів; під підвіконням і на місці сховища, якого ще немає, — можна", () => {
+  it("немає стін, проходів і меблів; під підвіконням і на місці сховища чи ящиків, яких ще немає, — можна", () => {
     for (const place of PLACES) {
       expect(isWall(place.x, place.y), place.id).toBe(false);
       expect(roomAt(center(place)), place.id).not.toBeNull();
       const object = OBJECTS.find((o) => place.x >= o.x && place.x < o.x + o.w && place.y >= o.y && place.y < o.y + o.h);
-      expect(object === undefined || object.kind === "windowsill" || object.requires !== undefined, `${place.id}: ${object?.id}`).toBe(true);
+      expect(object === undefined || object.kind === "windowsill" || object.kind === "boxes" || object.requires !== undefined, `${place.id}: ${object?.id}`).toBe(true);
     }
     // Під вікнами вітальні й спальні, у кутку вітальні на місці бака корму для стерилізованих, місця аптечки й мішка наповнювача;
     // праворуч від входу до спальні під ближньою стіною (першу з двох клітинок частково закриває монітор — автор це допускає).
     for (const id of ["floor-1-8", "floor-4-1", "floor-18-6", "floor-13-6", "floor-5-6", "floor-5-4", "floor-6-4"]) expect(placeTiles.has(id.replace("floor-", "").replace("-", ",")), id).toBe(true);
   });
 
-  // База робота — де стоїть зараз (її переставляють, §8.7): на неї речі не стають (`tests/robotdock.test.ts`).
-  it("немає кошика, переноски й стільців, засунутих чи висунутих", () => {
+  // Речі гри (переноска, ящики, сховища, велика коробка, база робота) займають клітинку, лише поки стоять на ній
+  // (`tests/gamethings.test.ts`).
+  it("немає кошика, дроту й стільців, засунутих чи висунутих", () => {
     const seats = SEATS.flatMap((seat) => [seatAt(seat, "tucked"), seatAt(seat, "pulled")].map((p) => ({ x: p.x, y: p.y })));
-    for (const p of [LAUNDRY_BASKET, CARRIER_TILE, ...seats]) expect(placeTiles.has(tile(p)), tile(p)).toBe(false);
+    for (const p of [LAUNDRY_BASKET, WIRE_TILE, ...seats]) expect(placeTiles.has(tile(p)), tile(p)).toBe(false);
   });
 
-  // Місця магазину — сталий розклад, і сховища поруч можуть заступати річ скраю: тут лише решта клітинок.
-  // Сховище не закриває річ на власній клітинці: поки його немає, закривати нічому, а щойно є — клітинка вже не вільна. Річ під
-  // ближньою стіною спальні праворуч від входу й на місці мішка наповнювача ліворуч від стола частково закриває стіл із
-  // монітором — автор це допускає.
-  const ALLOWED_COVER = new Set(["floor-5-4:computer", "floor-6-4:computer", "floor-5-6:computer"]);
-  it("річ на клітинці поза місцями магазину не закрита меблями", () => {
-    for (const place of PLACES.filter((p) => !SLOTS.some((s) => s.id === p.id))) {
-      for (const o of OBJECTS) {
-        const own = o.requires !== undefined && place.x >= o.x && place.x < o.x + o.w && place.y >= o.y && place.y < o.y + o.h;
-        if (own || ALLOWED_COVER.has(`${place.id}:${o.id}`)) continue;
-        const look = isoObjectLook(o.id);
-        expect(boxCovers(look.footprint, look.tall, center(place), BOWL), `${place.id}: ${o.id}`).toBe(false);
+  // Гравець бачить порожню клітинку — може поставити туди річ (§8.7): і за диваном, шафою, столом чи комп'ютером, якщо її хоч
+  // частково видно, і там, куди гра потім ставить свої речі чи де кіт щось робить сам.
+  it("клітинки, які видно порожніми, — для речей", () => {
+    const open = {
+      "переноска": [8, 9],
+      "велика коробка й звідки її дерти": [11, 8, 12, 8],
+      "ящики біля входу": [12, 9],
+      "за диваном": [13, 9, 14, 9, 15, 9],
+      "біля дверей": [9, 10, 10, 10, 11, 10, 12, 10],
+      "за шафою": [5, 1],
+      "за кухонним столом, з краю": [14, 2],
+      "перед смітником": [18, 2],
+      "за комп'ютером у спальні": [4, 4],
+      "прохолодна плитка": [9, 2],
+      "засідка біля ліжка": [1, 3],
+    };
+    for (const [what, xy] of Object.entries(open)) {
+      for (let i = 0; i < xy.length; i += 2) expect(placeTiles.has(`${xy[i]},${xy[i + 1]}`), `${what}: ${xy[i]},${xy[i + 1]}`).toBe(true);
+    }
+    // Цілком за кухонним столом річ не видно.
+    expect(placeTiles.has("13,2")).toBe(false);
+  });
+
+  // Меблі можуть закривати річ частково (за диваном видно верх миски, за монітором — край), але не цілком. Речі гри
+  // (сховища, ящики) зсуваються з зайнятого місця, тож тут — лише меблі, що стоять завжди.
+  it("річ на будь-якій клітинці меблі не закривають цілком", () => {
+    for (const place of PLACES) expect(visibleShare(center(place)), place.id).toBeGreaterThan(0);
+  });
+
+  // І навпаки: клітинку кімнати, де миску видно хоч на третину, гравець бачить порожньою — туди можна поставити річ, якщо там
+  // немає меблів, кошика, дроту чи стільця.
+  it("кожна клітинка кімнати, яку видно, — для речей, крім меблів, кошика, дроту й стільців", () => {
+    const seats = new Set(SEATS.flatMap((seat) => [seatAt(seat, "tucked"), seatAt(seat, "pulled")].map(tile)));
+    // Висунутий стілець за комп'ютером стоїть на межі двох клітинок (x = 7,0): займає обидві.
+    seats.add("6,7");
+    const taken = new Set([tile(LAUNDRY_BASKET), tile(WIRE_TILE), ...seats]);
+    for (let y = 0; y < MAP_HEIGHT; y++) {
+      for (let x = 0; x < MAP_WIDTH; x++) {
+        if (isWall(x, y) || roomAt({ x: x + 0.5, y: y + 0.5 }) === null || taken.has(`${x},${y}`)) continue;
+        if (PERMANENT.some((o) => x >= o.x && x < o.x + o.w && y >= o.y && y < o.y + o.h && o.kind !== "windowsill")) continue;
+        if (visibleShare({ x: x + 0.5, y: y + 0.5 }) < 1 / 3) continue;
+        expect(placeTiles.has(`${x},${y}`), `${x},${y}`).toBe(true);
       }
     }
   });
