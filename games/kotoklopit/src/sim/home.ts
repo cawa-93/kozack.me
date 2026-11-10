@@ -475,8 +475,20 @@ export function placedObject(state: Pick<GameState, "home">, id: string): HomeOb
  * клітинці для речей, яку видно.
  */
 export function catSpotNear(state: Pick<GameState, "home" | "modifiers" | "today">, p: Vec): Vec {
-  void state;
-  return p;
+  const x = Math.floor(p.x);
+  const y = Math.floor(p.y);
+  const own = PLACE_AT.get(`${x},${y}`);
+  if (own === undefined || !thingsOn(state, own)) return p;
+  let best: Place | null = null;
+  let bestDistance = Infinity;
+  for (const place of PLACES) {
+    const distance = Math.hypot(place.x - x, place.y - y);
+    if (distance < bestDistance && !hiddenTile(place.x, place.y) && !isSolid(state, place.x, place.y) && !thingsOn(state, place)) {
+      best = place;
+      bestDistance = distance;
+    }
+  }
+  return best ? { x: best.x + (p.x - x), y: best.y + (p.y - y) } : p;
 }
 
 /**
@@ -505,34 +517,10 @@ export function centerOf(r: Rect): Vec {
 }
 
 /**
- * Вільна підлога, куди річ усе одно не ставлять (§8.7): кошик, переноска й стілець за комп'ютером (база робота — де стоїть, `placeFree`); позаду меблів і
- * ящиків її не видно (`tests/places.test.ts`); на решті клітинок кіт щось робить сам і стояв би на речі.
+ * Підлога кімнати, куди річ усе одно не ставлять (§8.7): там уже щось видно — кошик білизни, дріт комп'ютера, стільці, висунуті
+ * від стола (за комп'ютером — на межі двох клітинок), — чи річ цілком закрив би кухонний стіл (`tests/places.test.ts`).
  */
-const NO_PLACE: readonly Vec[] = [
-  LAUNDRY_BASKET,
-  CARRIER_TILE,
-  { x: 6, y: 7 },
-  { x: 7, y: 7 },
-  { x: 4, y: 4 },
-  { x: 5, y: 1 },
-  { x: 14, y: 2 },
-  { x: 18, y: 2 },
-  { x: 11, y: 8 },
-  { x: 12, y: 8 },
-  // На кухні під ближньою стіною тут висувають стілець від стола.
-  { x: 14, y: 4 },
-  // Ряд під плінтусом відкритий для речей, але тут їх закривають вхідні двері (9–11) і диван (12).
-  { x: 9, y: 10 },
-  { x: 10, y: 10 },
-  { x: 11, y: 10 },
-  { x: 12, y: 10 },
-  ...AMBUSH_SPOTS,
-  BOX_SCRATCH,
-  COOL_TILE,
-  STASHES.fridge.tile,
-  STASHES.sofa.tile,
-  WIRE_TILE,
-];
+const NO_PLACE: readonly Vec[] = [LAUNDRY_BASKET, WIRE_TILE, { x: 6, y: 7 }, { x: 7, y: 7 }, { x: 14, y: 4 }, { x: 13, y: 2 }];
 
 const sameTile = (a: Vec, x: number, y: number): boolean => Math.floor(a.x) === x && Math.floor(a.y) === y;
 
@@ -542,7 +530,8 @@ const sameTile = (a: Vec, x: number, y: number): boolean => Math.floor(a.x) === 
  */
 function placeable(x: number, y: number): boolean {
   if (isWall(x, y) || roomAt({ x, y }) === null) return false;
-  return !OBJECTS.some((o) => covers(o, x, y) && o.kind !== "windowsill" && o.requires === undefined) && !NO_PLACE.some((p) => sameTile(p, x, y));
+  const furniture = (o: HomeObject): boolean => o.kind !== "windowsill" && o.kind !== "boxes" && o.requires === undefined;
+  return !OBJECTS.some((o) => covers(o, x, y) && furniture(o)) && !NO_PLACE.some((p) => sameTile(p, x, y));
 }
 
 /**
@@ -557,25 +546,44 @@ export const PLACES: readonly Place[] = [
 ];
 
 const PLACE_BY_ID = new Map(PLACES.map((p) => [p.id, p]));
+const PLACE_AT = new Map(PLACES.map((p) => [`${p.x},${p.y}`, p]));
 
 /** На місці стоїть річ котячого кутка. */
 export function slotTaken(state: Pick<GameState, "home">, id: string): boolean {
   return state.home.items.some((i) => "slot" in i && i.slot === id);
 }
 
-/** На клітинку можна поставити річ (§8.7): немає речі, автогодівниці, бази робота й того, що річ закрила б собою. */
-function placeFree(state: Pick<GameState, "home">, place: Place): boolean {
-  const { items, feeders, messes, vacuumAt } = state.home;
+/** На клітинці стоїть річ котячого кутка, автогодівниця, база робота, пилосос чи річ гри (§8.7): кіт туди не стає. */
+function thingsOn(state: Pick<GameState, "home" | "modifiers" | "today">, place: Place): boolean {
+  const { feeders, vacuumAt } = state.home;
   const here = (p: Vec): boolean => sameTile(p, place.x, place.y);
-  if (robotDocked(state) && here(robotDockAt(state))) return false;
-  if (OPTIONAL.some((o) => covers(o, place.x, place.y) && isPresent(state, o))) return false;
-  if (slotTaken(state, place.id) || feeders?.some((f) => f.slot === place.id) === true) return false;
+  if (robotDocked(state) && here(robotDockAt(state))) return true;
+  if (thingAt(state, place.x, place.y) !== null) return true;
+  return slotTaken(state, place.id) || feeders?.some((f) => f.slot === place.id) === true || (vacuumAt !== null && here(vacuumAt));
+}
+
+/** Річ гри, що стоїть на клітинці зараз (§8.7, «Що ставить гра»); null — жодної. */
+export function thingAt(state: Pick<GameState, "home" | "modifiers" | "today">, x: number, y: number): GameThing | null {
+  for (const thing of GAME_THINGS) {
+    if (!thingPresent(state, thing)) continue;
+    const home = thingHome(thing);
+    const shift = thingShift(state, thing);
+    if (home.x + shift.x === x && home.y + shift.y === y) return thing;
+  }
+  return null;
+}
+
+/** На клітинку можна поставити річ (§8.7): немає речі, автогодівниці, бази робота, речі гри й того, що річ закрила б собою. */
+export function placeFree(state: Pick<GameState, "home" | "modifiers" | "today">, place: Place): boolean {
+  const { items, messes } = state.home;
+  const here = (p: Vec): boolean => sameTile(p, place.x, place.y);
+  if (thingsOn(state, place)) return false;
   if (items.some((i) => i.kind === "toy" && i.hidden === undefined && here(i))) return false;
-  return !messes.some(here) && !(vacuumAt && here(vacuumAt));
+  return !messes.some(here);
 }
 
 /** Вільна клітинка, чий центр найближчий до `at`; `fits` — серед яких центрів шукати. */
-export function nearestFreePlace(state: Pick<GameState, "home">, at: Vec, fits: (center: Vec) => boolean = () => true): Place | null {
+export function nearestFreePlace(state: Pick<GameState, "home" | "modifiers" | "today">, at: Vec, fits: (center: Vec) => boolean = () => true): Place | null {
   let best: Place | null = null;
   let bestDistance = Infinity;
   for (const place of PLACES) {
