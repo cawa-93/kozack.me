@@ -10,16 +10,23 @@ import { plural } from "./titles";
 
 export type CreditsBlock =
   | { kind: "title"; name: string; weeks: string }
+  /** Заголовок тижня шляху: дня стрічка не показує (§4.2). */
+  | { kind: "week"; label: string }
   | { kind: "polaroid"; caption: StoryCaption; photo: Photo }
   | { kind: "line"; caption: StoryCaption }
   | { kind: "summary"; title: string; text: string }
   | { kind: "living"; caption: { title: string; text: string }; photo: Photo };
 
-/** Титул, шлях, підсумок, живі коти; «Нова гра» — після всього, її додає стрічка. */
+/** Титул, шлях за тижнями, підсумок, живі коти; «Нова гра» — після всього, її додає стрічка. */
 export function creditsPlan(state: GameState): CreditsBlock[] {
   const weeks = weekOf(state.day);
   const plan: CreditsBlock[] = [{ kind: "title", name: state.character.name, weeks: `${weeks} ${plural(weeks, "тиждень", "тижні", "тижнів")}` }];
+  let week = 0;
   for (const item of lifeStory(state)) {
+    if (weekOf(item.day) !== week) {
+      week = weekOf(item.day);
+      plan.push({ kind: "week", label: `Тиждень ${week}` });
+    }
     const caption = storyCaption(item, state);
     const photo = storyPhoto(item, state);
     plan.push(photo ? { kind: "polaroid", caption, photo } : { kind: "line", caption });

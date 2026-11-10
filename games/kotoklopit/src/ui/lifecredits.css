@@ -98,20 +98,21 @@
   gap: 2vh;
 }
 
-/* Дата — на лінії часу, на темній підкладці, щоб риска не перекреслювала напис. */
-.credits-date {
-  margin: 0;
-  padding: 2px 12px;
+/* Заголовок тижня — на лінії часу, на темній підкладці, щоб риска не перекреслювала напис. */
+.credits-week {
+  position: relative;
+  margin-top: 4vh;
+  padding: 0.5vh 16px;
   background: var(--ink);
-  color: var(--grey-hi);
-  font: 600 clamp(11px, 2.6vh, 13px) / 1.4 system-ui, sans-serif;
-  letter-spacing: 0.22em;
-  padding-left: calc(12px + 0.22em);
+  color: var(--paper);
+  font: 400 clamp(18px, 5vh, 28px) / 1.2 var(--hand);
+  letter-spacing: 0.24em;
+  padding-left: calc(16px + 0.24em);
   text-transform: uppercase;
 }
 
-.credits-line {
-  gap: 0.6vh;
+.credits-week:first-child {
+  margin-top: 0;
 }
 
 .credits-line-text {

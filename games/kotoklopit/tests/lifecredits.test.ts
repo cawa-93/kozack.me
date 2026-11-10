@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { lifeStory } from "../src/sim/story";
+import { weekOf } from "../src/sim/time";
 import { endingText } from "../src/texts";
 import { creditsPlan } from "../src/ui/creditsplan";
 import { polaroidTilt, ROLL, rollEnd, rollOffset } from "../src/ui/rollmath";
@@ -16,20 +17,25 @@ function finale(id: string) {
 }
 
 describe("титри життя: порядок (§4.2)", () => {
-  it("титул з ім'ям і тижнями → шлях → підсумок → живі коти", () => {
+  it("титул з ім'ям і тижнями → шлях за тижнями → підсумок → живі коти", () => {
     const state = finale("finale-perfect-balance");
     const plan = creditsPlan(state);
-    const kinds = plan.map((b) => b.kind);
-    const story = lifeStory(state);
-    expect(kinds[0]).toBe("title");
+    const summary = plan.findIndex((b) => b.kind === "summary");
     expect(plan[0]).toMatchObject({ kind: "title", name: "Соломія", weeks: "20 тижнів" });
-    // Шлях — кожна подія стрічки по черзі: з фото — полароїд, без — рядок.
-    const path = plan.slice(1, 1 + story.length);
-    expect(path.map((b) => b.kind)).toEqual(story.map((item) => (storyPhoto(item, state) ? "polaroid" : "line")));
-    expect(kinds[1 + story.length]).toBe("summary");
-    expect(plan[1 + story.length]).toMatchObject(endingText(state, "retirement"));
+    // Шлях — кожна подія стрічки по черзі (з фото — полароїд, без — рядок), а перед першою подією тижня — його заголовок.
+    const expected: string[] = [];
+    let week = 0;
+    for (const item of lifeStory(state)) {
+      if (weekOf(item.day) !== week) {
+        week = weekOf(item.day);
+        expected.push(`Тиждень ${week}`);
+      }
+      expected.push(storyPhoto(item, state) ? "polaroid" : "line");
+    }
+    expect(plan.slice(1, summary).map((b) => (b.kind === "week" ? b.label : b.kind))).toEqual(expected);
+    expect(plan[summary]).toMatchObject(endingText(state, "retirement"));
     // Живі коти — після підсумку, кожен своїм полароїдом, у порядку котів дому.
-    const living = plan.slice(2 + story.length);
+    const living = plan.slice(summary + 1);
     expect(living.map((b) => b.kind)).toEqual(state.cats.map(() => "living"));
     expect(living.map((b) => (b.kind === "living" ? b.caption.title : ""))).toEqual(state.cats.map((c) => c.name));
   });

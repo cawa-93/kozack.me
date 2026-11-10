@@ -79,15 +79,17 @@ function block(item: CreditsBlock, index: number, photos: PhotoQueue, state: Gam
       box.append(element("h1", "credits-name", item.name), element("p", "credits-weeks", item.weeks));
       return box;
     }
+    case "week":
+      return element("li", "credits-week", item.label);
     case "polaroid": {
       const box = element("li", "credits-moment");
-      box.append(element("p", "credits-date", item.caption.date), polaroid(item.photo, item.caption.title, index, photos));
+      box.append(polaroid(item.photo, item.caption.title, index, photos));
       if (item.caption.text) box.append(element("p", "credits-text", item.caption.text));
       return box;
     }
     case "line": {
       const box = element("li", "credits-line");
-      box.append(element("span", "credits-date", item.caption.date), element("span", "credits-line-text", item.caption.title));
+      box.append(element("span", "credits-line-text", item.caption.title));
       return box;
     }
     case "summary": {
@@ -129,7 +131,7 @@ export function lifeCredits(state: GameState, newGame: () => void): { screen: HT
   for (const item of creditsPlan(state)) {
     const node = block(item, index, photos, state);
     if (item.kind === "polaroid" || item.kind === "living") index += 1;
-    if (item.kind === "polaroid" || item.kind === "line") path.append(node);
+    if (item.kind === "polaroid" || item.kind === "line" || item.kind === "week") path.append(node);
     else if (item.kind === "living") living.append(node);
     else track.append(node);
     // Шлях стоїть одразу після титулу, живі коти — після підсумку.
