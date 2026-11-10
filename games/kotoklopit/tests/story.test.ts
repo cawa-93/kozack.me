@@ -586,6 +586,8 @@ describe("підписи стрічки (§4.2, `TEXTS.md`, «Титри жит�
       const text = farewellText(entry, diseaseTitle, state);
       expect(c.text).toContain(text.cause);
       expect(c.text).toContain(text.life);
+      // Рівень уже сказав зачин опису («прожила легендарне життя»), тож назва рівня в лапках лише повторювала б його.
+      expect(c.text).not.toContain(`«${text.title}»`);
     }
   });
 

@@ -1590,7 +1590,7 @@ export function storyCaption(item: StoryItem, state: GameState): StoryCaption {
       const { entry } = item;
       const farewell = farewellText(entry, diseaseTitle, state);
       const title = entry.cause.kind === "given" ? STORY_TEXTS.farewell.given : STORY_TEXTS.farewell.title;
-      return { title: fill(title, entry.sex, { кіт: entry.name }), text: `${farewell.cause} «${farewell.title}». ${farewell.life}` };
+      return { title: fill(title, entry.sex, { кіт: entry.name }), text: `${farewell.cause} ${farewell.life}` };
     }
   }
 }
