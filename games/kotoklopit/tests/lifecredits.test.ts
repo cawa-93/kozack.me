@@ -9,6 +9,8 @@ import { endingText } from "../src/texts";
 import { creditsPlan } from "../src/ui/creditsplan";
 import { polaroidTilt, ROLL, rollEnd, rollOffset } from "../src/ui/rollmath";
 import { storyPhoto } from "../src/view/photo";
+import { CAREER_ICONS, storyIcon } from "../src/view/symbols";
+import type { StoryItem } from "../src/sim/story";
 
 function finale(id: string) {
   const scenario = FILE_SCENARIOS[id];
@@ -43,6 +45,22 @@ describe("титри життя: порядок (§4.2)", () => {
   it("без котів удома після підсумку нічого: стрічка закінчується підсумком", () => {
     const plan = creditsPlan(finale("finale-quiet-life"));
     expect(plan.at(-1)?.kind).toBe("summary");
+  });
+});
+
+describe("титри життя: іконки на лінії часу (§4.2, §11.4)", () => {
+  const career = (change: string, milestone = false): StoryItem => ({ kind: "career", day: 3, change, position: 2, milestone }) as unknown as StoryItem;
+
+  it("рядок кар'єри — з іконкою: підвищення — зірка, пониження — своя", () => {
+    expect(storyIcon(career("promoted"))).toBe(CAREER_ICONS.promoted);
+    expect(storyIcon(career("demoted"))).toBe(CAREER_ICONS.demoted);
+    expect(CAREER_ICONS.promoted).toBe("promotion");
+    expect(CAREER_ICONS.promoted).not.toBe(CAREER_ICONS.demoted);
+  });
+
+  it("полароїди й решта подій — без іконки на лінії", () => {
+    expect(storyIcon(career("fired", true))).toBeNull();
+    expect(storyIcon({ kind: "start", day: 0 } as unknown as StoryItem)).toBeNull();
   });
 });
 

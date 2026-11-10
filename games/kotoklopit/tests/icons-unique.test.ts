@@ -14,7 +14,7 @@ import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, CatAct, Destination, Dish, Item, Product, Save, StatName, ThingKind } from "../src/sim/types";
 import type { IconName, Mark } from "../src/view/iconnames";
-import { catAsk, DESTINATION_ICONS, DISEASE_ICONS, eventBubbles, HOME_FIXTURE_ICONS, ILLNESS_ICONS, itemIcon, MOOD_ICONS, PERSON_STATE_ICONS, PRODUCT_ICONS, refusalBubble, STAT_ICONS, UTILITIES_ICON, STATE_ICONS, stoveIcon, STORAGE_ICONS, THING_ICONS, VARIANT_ICONS } from "../src/view/symbols";
+import { CAREER_ICONS, catAsk, DESTINATION_ICONS, DISEASE_ICONS, eventBubbles, HOME_FIXTURE_ICONS, ILLNESS_ICONS, itemIcon, MOOD_ICONS, PERSON_STATE_ICONS, PRODUCT_ICONS, refusalBubble, STAT_ICONS, UTILITIES_ICON, STATE_ICONS, stoveIcon, STORAGE_ICONS, THING_ICONS, VARIANT_ICONS } from "../src/view/symbols";
 import { catThought, personThought } from "../src/view/thoughts";
 import { EVENTS, REFUSALS } from "./bubblecases";
 import { withCatCorner } from "./helpers";
@@ -108,6 +108,8 @@ function collectCases(): Map<string, Shown[]> {
   }
   // Несплачений рахунок за комунальні: квитанція на панелі й рахунок у «Домі» телефона — один випадок.
   add("utilities:unpaid", { icon: UTILITIES_ICON });
+  // Кар'єра на лінії титрів життя (§4.2): підвищення й пониження.
+  for (const [change, icon] of Object.entries(CAREER_ICONS)) add(`career:${change}`, { icon });
   // Показники персонажа: панель і думка, коли показник низький.
   const { save, cat } = setup();
   for (const stat of STATS) {

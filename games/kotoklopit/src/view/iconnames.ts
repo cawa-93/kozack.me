@@ -8,6 +8,8 @@ import type { ArtId } from "./art/types";
 export const ICON_NAMES = [
   "mood-up",
   "mood-down",
+  "promotion",
+  "demotion",
   "alert",
   "cross",
   "camera",

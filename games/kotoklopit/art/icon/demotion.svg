@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/demotion — пониження в титрах життя (§4.2): сіра зірка, що падає, — перекинута навскіс, нижче центру, над нею три риски падіння вліво-вгору. Пара до promotion (гірчична зірка рівно): інший колір і силует, а не дрібниці.
+size 64×64; pivot (32, 32) — центр; points — немає. Без станів і шарів: один кадр у готових кольорах.
+-->
+<defs>
+<clipPath id="icon-demotion-star"><path d="M44.5 16.0 L45.7 29.9 L57.2 37.8 L44.3 43.2 L40.3 56.6 L31.2 46.0 L17.2 46.4 L24.5 34.4 L19.8 21.2 L33.4 24.4Z"/></clipPath>
+</defs>
+<g id="p-star">
+<path d="M44.5 16.0 L45.7 29.9 L57.2 37.8 L44.3 43.2 L40.3 56.6 L31.2 46.0 L17.2 46.4 L24.5 34.4 L19.8 21.2 L33.4 24.4Z" fill="#a69f9b"/>
+<path d="M0 43.2L16 41.2L32 40.2L48 41.2L64 43.2L64 64L0 64Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-demotion-star)"/>
+</g>
+<g id="p-ink">
+<path d="M44.5 16.0 L45.7 29.9 L57.2 37.8 L44.3 43.2 L40.3 56.6 L31.2 46.0 L17.2 46.4 L24.5 34.4 L19.8 21.2 L33.4 24.4Z" fill="none" stroke="#2e1f29" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M40.3 56.6 L31.2 46.0 L17.2 46.4" fill="none" stroke="#2e1f29" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-fall">
+<path d="M17 6.5L13.5 15" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round"/>
+<path d="M27.5 6.2L24.5 13.5" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round"/>
+<path d="M8.5 13.5L6 19.5" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round"/>
+</g>
+</svg>

@@ -2,6 +2,7 @@
 // перевірити, що кожна відмова має свою іконку.
 
 import type { GameEvent, HissCause, Need, Refusal } from "../sim/events";
+import type { CareerChange, StoryItem } from "../sim/story";
 import { movableThing } from "../sim/moving";
 import type { CarryThing, Cat, Destination, Dish, GameState, Item, Product, Quality, StatName, ThingKind } from "../sim/types";
 import type { IconName, Mark } from "./iconnames";
@@ -80,6 +81,15 @@ export const STAT_ICONS: Record<StatName, IconName> = {
 
 /** Несплачений рахунок за комунальні (§6.4): червона квитанція на панелі й заголовок рахунку у вкладці «Дім». */
 export const UTILITIES_ICON: IconName = "utilities";
+
+/** Кар'єра на лінії титрів життя (§4.2): рядок підвищення чи пониження — з іконкою, вагомою точкою на лінії часу. */
+export const CAREER_ICONS = { promoted: "promotion", demoted: "demotion" } as const satisfies Partial<Record<CareerChange, IconName>>;
+
+/** Іконка події на лінії титрів життя; null — без іконки (полароїд, інші події). */
+export function storyIcon(item: StoryItem): IconName | null {
+  if (item.kind !== "career" || item.milestone) return null;
+  return item.change === "promoted" || item.change === "demoted" ? CAREER_ICONS[item.change] : null;
+}
 
 /** Сердечка настрою кота (§9.12): не бабли, а зміна настрою — зелене вгору, червоне розбите вниз. */
 export const MOOD_ICONS = { up: "mood-up", down: "mood-down" } as const satisfies Record<string, IconName>;

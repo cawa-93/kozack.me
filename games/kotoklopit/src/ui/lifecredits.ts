@@ -7,6 +7,7 @@ import { timeBar } from "./cards";
 import { creditsPlan, type CreditsBlock } from "./creditsplan";
 import "./lifecredits.css";
 import { element, type CardAction } from "./overlay";
+import { iconImage } from "./icons";
 import { drawPhoto } from "./photo";
 import { polaroidTilt, ROLL, rollEnd, rollOffset } from "./rollmath";
 import type { Photo } from "../view/photo";
@@ -89,6 +90,11 @@ function block(item: CreditsBlock, index: number, photos: PhotoQueue, state: Gam
     }
     case "line": {
       const box = element("li", "credits-line");
+      const icon = item.icon && iconImage(item.icon);
+      if (icon) {
+        icon.className = "credits-line-icon";
+        box.append(icon);
+      }
       box.append(element("span", "credits-line-text", item.caption.title));
       return box;
     }

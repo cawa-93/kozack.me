@@ -115,6 +115,16 @@
   margin-top: 0;
 }
 
+/* Іконка рядка — вагома точка на самій лінії часу: на паперовому кружку, як гліфи на темному. */
+.credits-line-icon {
+  width: clamp(40px, 10vh, 56px);
+  height: clamp(40px, 10vh, 56px);
+  padding: 5px;
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: 0 0 0 6px var(--ink);
+}
+
 .credits-line-text {
   padding: 0 12px;
   background: var(--ink);

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/promotion — підвищення в титрах життя (§4.2): велика гірчична п'ятикутна зірка, трохи нахилена, — вагома точка на лінії часу. Не іскорки mood-up (чотирикутні й дрібні) і не пониження demotion (сіра зірка, що падає).
+size 64×64; pivot (32, 32) — центр; points — немає. Без станів і шарів: один кадр у готових кольорах.
+-->
+<defs>
+<clipPath id="icon-promotion-star"><path d="M30.2 8.3 L39.3 22.6 L56.1 24.5 L45.3 37.5 L48.7 54.1 L33.0 47.9 L18.2 56.2 L19.3 39.3 L6.8 27.9 L23.2 23.7Z"/></clipPath>
+</defs>
+<g id="p-star">
+<path d="M30.2 8.3 L39.3 22.6 L56.1 24.5 L45.3 37.5 L48.7 54.1 L33.0 47.9 L18.2 56.2 L19.3 39.3 L6.8 27.9 L23.2 23.7Z" fill="#d4a54c"/>
+<path d="M0 40.0L16 38.0L32 37.0L48 38.0L64 40.0L64 64L0 64Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-promotion-star)"/>
+</g>
+<g id="p-ink">
+<path d="M30.2 8.3 L39.3 22.6 L56.1 24.5 L45.3 37.5 L48.7 54.1 L33.0 47.9 L18.2 56.2 L19.3 39.3 L6.8 27.9 L23.2 23.7Z" fill="none" stroke="#2e1f29" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M48.7 54.1 L33.0 47.9 L18.2 56.2" fill="none" stroke="#2e1f29" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>
