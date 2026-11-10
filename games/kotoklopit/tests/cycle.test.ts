@@ -6,9 +6,10 @@ import { createCat } from "../src/sim/cat";
 import { CAREER_AXIS, POSITIONS } from "../src/sim/config";
 import { removeCat } from "../src/sim/farewell";
 import { careerAxis, catsAxis, catsMood } from "../src/sim/finale";
-import { advance, deserialize, interact, newGame, SAVE_VERSION, serialize } from "../src/sim/game";
+import { advance, deserialize, interact, newGame, serialize } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
+import { RELEASED_SAVE_VERSION } from "../src/sim/saves";
 import { hours, standAt } from "./helpers";
 
 describe("статистика (§4.2)", () => {
@@ -115,8 +116,8 @@ describe("збереження й персонаж (§4.2, §5.1)", () => {
     expect(copy.current.character.look).toEqual(look);
   });
 
-  it("стара версія збереження не завантажується", () => {
+  it("збереження з розробки, старше за випуск, не завантажується (§4.2)", () => {
     const save = newGame({ address: "he", difficulty: "hard", seed: 9 });
-    expect(() => deserialize(serialize({ ...save, version: SAVE_VERSION - 1 }))).toThrow();
+    expect(() => deserialize(serialize({ ...save, version: RELEASED_SAVE_VERSION - 1 }))).toThrow();
   });
 });

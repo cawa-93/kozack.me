@@ -20,9 +20,9 @@ import type { Address, Chronotype, Difficulty, GameState, Look, NightReport, Sav
 import { isWorking, newJob, tickWork } from "./work";
 import { momAtNight, tickModifiers } from "./modifiers";
 import { parcelsAtMorning } from "./parcels";
+import { migrate, SAVE_VERSION } from "./saves";
 
-// Нова версія — щойно стан отримав поле, без якого старе збереження ламає гру (міграцій немає, §12.2).
-export const SAVE_VERSION = 2;
+export { SAVE_VERSION } from "./saves";
 
 const EPSILON = 1e-6;
 
@@ -357,11 +357,9 @@ export function serialize(save: Save): string {
   return JSON.stringify(save);
 }
 
+/** Збереження з браузера чи файлу: старішу випущену версію спершу мігруємо (§4.2). */
 export function deserialize(json: string): Save {
-  const data: unknown = JSON.parse(json);
-  const version = typeof data === "object" && data !== null && "version" in data ? data.version : undefined;
-  if (version !== SAVE_VERSION) throw new Error(`Непідтримувана версія збереження: ${String(version)}`);
-  return data as Save;
+  return migrate(JSON.parse(json));
 }
 
 function clone<T>(value: T): T {
