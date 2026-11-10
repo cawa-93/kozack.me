@@ -171,6 +171,13 @@
   font: 400 clamp(15px, 3.6vh, 21px) / 1.15 var(--hand);
 }
 
+/* Текст — на темній підкладці з м'яким краєм, як заголовок тижня: лінія часу не перекреслює рядки. */
+.credits-text,
+.credits-finale-text {
+  background: var(--ink);
+  box-shadow: 0 0 14px 10px var(--ink);
+}
+
 .credits-text {
   max-width: 520px;
   margin: 0;
