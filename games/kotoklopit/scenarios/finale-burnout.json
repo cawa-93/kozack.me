@@ -14,9 +14,9 @@
     "stats": { "minutes": { "work": 20000, "cats": 6000, "self": 14000, "bustle": 12000 } }
   },
   "cats": [
-    { "ageWeeks": 26, "sex": "male", "name": "Ґудзик", "arrivedDay": 50, "mood": 58, "moodHistory": [62, 55, 60, 48, 57, 63, 52, 59, 54, 61] }
+    { "ageWeeks": 5, "sex": "male", "name": "Ґудзик", "arrivedDay": 110, "mood": 58, "moodHistory": [62, 55, 60, 48, 57, 63, 52, 59, 54, 61] }
   ],
   "album": [
-    { "ageWeeks": 18, "sex": "female", "name": "Хмаринка", "arrivedDay": 20, "moodHistory": [55, 48, 42, 50, 38, 45, 40], "cause": { "kind": "sorrow" }, "day": 100 }
+    { "ageWeeks": 3, "sex": "female", "name": "Хмаринка", "arrivedDay": 60, "moodHistory": [55, 48, 42, 50, 38, 45, 40], "cause": { "kind": "sorrow" }, "day": 80 }
   ]
 }

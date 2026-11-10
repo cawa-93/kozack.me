@@ -1,0 +1,51 @@
+{
+  "name": "Фінал: 30 котів",
+  "description": "Неділя останнього тижня, 21:00, персонаж біля ліжка. 22 коти в альбомі й 8 удома, імена — як дає гра: чи вміщається довгий список котів на екрані фіналу, особливо на телефоні. Низька посада, щасливі коти — ляжте спати: фінал «Котяча душа».",
+  "game": { "address": "he", "difficulty": "easy", "seed": 13, "name": "Богдан" },
+  "state": {
+    "day": 139,
+    "minute": 1260,
+    "modifiers": { "day": null, "week": null },
+    "character": {
+      "stats": { "health": 75, "satiety": 70, "hygiene": 55, "sanity": 70 },
+      "money": 2500
+    },
+    "job": { "position": 4, "reputation": 35 },
+    "stats": { "minutes": { "work": 26000, "cats": 34000, "self": 11000, "bustle": 14000 } }
+  },
+  "cats": [
+    { "ageWeeks": 6, "arrivedDay": 116, "mood": 94, "moodHistory": [92, 95, 94, 95] },
+    { "ageWeeks": 1, "arrivedDay": 133, "mood": 97, "moodHistory": [95, 98, 97, 98] },
+    { "ageWeeks": 5, "arrivedDay": 120, "mood": 87, "moodHistory": [85, 88, 87, 88] },
+    { "ageWeeks": 5, "arrivedDay": 121, "mood": 94, "moodHistory": [92, 95, 94, 95] },
+    { "ageWeeks": 6, "arrivedDay": 116, "mood": 90, "moodHistory": [88, 91, 90, 91] },
+    { "ageWeeks": 4, "arrivedDay": 123, "mood": 89, "moodHistory": [87, 90, 89, 90] },
+    { "ageWeeks": 3, "arrivedDay": 129, "mood": 89, "moodHistory": [87, 90, 89, 90] },
+    { "ageWeeks": 6, "arrivedDay": 118, "mood": 97, "moodHistory": [95, 98, 97, 98] }
+  ],
+  "album": [
+    { "ageWeeks": 8, "arrivedDay": 0, "moodHistory": [91, 93, 92], "cause": { "kind": "old" }, "day": 8 },
+    { "ageWeeks": 6, "arrivedDay": 0, "moodHistory": [71, 73, 72], "cause": { "kind": "old" }, "day": 13 },
+    { "ageWeeks": 7, "arrivedDay": 0, "moodHistory": [71, 73, 72], "cause": { "kind": "old" }, "day": 18 },
+    { "ageWeeks": 6, "arrivedDay": 2, "moodHistory": [89, 91, 90], "cause": { "kind": "old" }, "day": 23 },
+    { "ageWeeks": 9, "arrivedDay": 0, "moodHistory": [85, 87, 86], "cause": { "kind": "old" }, "day": 28 },
+    { "ageWeeks": 7, "arrivedDay": 9, "moodHistory": [91, 93, 92], "cause": { "kind": "old" }, "day": 33 },
+    { "ageWeeks": 9, "arrivedDay": 7, "moodHistory": [94, 96, 95], "cause": { "kind": "old" }, "day": 38 },
+    { "ageWeeks": 7, "arrivedDay": 19, "moodHistory": [95, 97, 96], "cause": { "kind": "old" }, "day": 43 },
+    { "ageWeeks": 6, "arrivedDay": 27, "moodHistory": [95, 97, 96], "cause": { "kind": "old" }, "day": 48 },
+    { "ageWeeks": 9, "arrivedDay": 22, "moodHistory": [92, 94, 93], "cause": { "kind": "old" }, "day": 53 },
+    { "ageWeeks": 8, "arrivedDay": 30, "moodHistory": [91, 93, 92], "cause": { "kind": "old" }, "day": 58 },
+    { "ageWeeks": 6, "arrivedDay": 42, "moodHistory": [77, 79, 78], "cause": { "kind": "old" }, "day": 63 },
+    { "ageWeeks": 6, "arrivedDay": 47, "moodHistory": [85, 87, 86], "cause": { "kind": "old" }, "day": 68 },
+    { "ageWeeks": 8, "arrivedDay": 45, "moodHistory": [90, 92, 91], "cause": { "kind": "old" }, "day": 73 },
+    { "ageWeeks": 5, "arrivedDay": 61, "moodHistory": [85, 87, 86], "cause": { "kind": "given" }, "day": 78 },
+    { "ageWeeks": 3, "arrivedDay": 73, "moodHistory": [93, 95, 94], "cause": { "kind": "given" }, "day": 83 },
+    { "ageWeeks": 1, "arrivedDay": 85, "moodHistory": [77, 79, 78], "cause": { "kind": "given" }, "day": 88 },
+    { "ageWeeks": 4, "arrivedDay": 79, "moodHistory": [71, 73, 72], "cause": { "kind": "given" }, "day": 93 },
+    { "ageWeeks": 2, "arrivedDay": 91, "moodHistory": [89, 91, 90], "cause": { "kind": "given" }, "day": 98 },
+    { "ageWeeks": 3, "arrivedDay": 93, "moodHistory": [89, 91, 90], "cause": { "kind": "disease", "disease": "heart" }, "day": 103 },
+    { "ageWeeks": 5, "arrivedDay": 91, "moodHistory": [96, 98, 97], "cause": { "kind": "disease", "disease": "breathing" }, "day": 108 },
+    { "ageWeeks": 2, "arrivedDay": 106, "moodHistory": [61, 63, 62], "cause": { "kind": "sorrow" }, "day": 113 }
+  ],
+  "knowAll": true
+}

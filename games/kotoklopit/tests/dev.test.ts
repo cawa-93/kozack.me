@@ -8,7 +8,8 @@ import { NO_RACE_INPUT, newRace } from "../src/sim/race";
 import { weekdayOf, weekOf } from "../src/sim/time";
 import { createCat, idleAct } from "../src/sim/cat";
 import { dispatch } from "../src/sim/economy";
-import { TRIPS } from "../src/sim/config";
+import { CAT_AGE_LIMIT, TRIPS } from "../src/sim/config";
+import { lifeLevel } from "../src/sim/farewell";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { endingText, fill, TRAIT_AREAS, TRAIT_HINTS } from "../src/texts";
@@ -132,6 +133,8 @@ describe("сценарії (§11.5)", () => {
     ["finale-quiet-life", "Тихе життя"],
     ["finale-burnout", "Вигорання"],
     ["finale-workaholic", "Трудоголік"],
+    ["finale-cat-levels", "Байдужість"],
+    ["finale-many-cats", "Котяча душа"],
   ])("«%s»: персонаж лягає спати в останню неділю — пенсія, фінал «%s» (§4.2)", (id, title) => {
     const scenario = FILE_SCENARIOS[id];
     if (!scenario) throw new Error(`немає сценарію ${id}`);
@@ -150,6 +153,23 @@ describe("сценарії (§11.5)", () => {
     };
     expect(counts("finale-perfect-balance").every((n) => n > 0)).toBe(true);
     expect(counts("finale-quiet-life")).toEqual([0, 0]);
+    expect(counts("finale-many-cats").reduce((a, b) => a + b)).toBe(30);
+  });
+
+  it("«Фінал: усі рівні життя котів»: в альбомі — по коту на кожен рівень, від «Агонії» до «Легенди», і всі причини прощання (§9.7)", () => {
+    const scenario = FILE_SCENARIOS["finale-cat-levels"];
+    if (!scenario) throw new Error("немає сценарію");
+    const { album, cats } = applyScenario(scenario).current;
+    expect(album.map((e) => lifeLevel(e.lifeMood))).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(new Set(album.map((e) => e.cause.kind))).toEqual(new Set(["old", "disease", "sorrow", "given", "carrier"]));
+    expect(cats.length).toBeGreaterThan(0);
+  });
+
+  it("коти фіналів — у межах віку, з якими вони справді доживають до кінця гри (§9.2)", () => {
+    for (const [id, scenario] of Object.entries(FILE_SCENARIOS)) {
+      if (!id.startsWith("finale-")) continue;
+      for (const spec of [...(scenario.cats ?? []), ...(scenario.album ?? [])]) expect(spec.ageWeeks, `${id}: ${spec.name ?? "кіт"}`).toBeLessThanOrEqual(CAT_AGE_LIMIT + 4);
+    }
   });
 
   it("id сценарію — латиницею з назви", () => {

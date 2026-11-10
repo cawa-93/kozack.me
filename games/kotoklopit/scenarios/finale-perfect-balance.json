@@ -14,12 +14,12 @@
     "stats": { "minutes": { "work": 42000, "cats": 21000, "self": 16000, "bustle": 9000 } }
   },
   "cats": [
-    { "ageWeeks": 30, "sex": "female", "name": "Ряска", "arrivedDay": 60, "mood": 92, "moodHistory": [88, 91, 93, 90, 95, 92, 89, 94, 96, 91, 90, 93, 92, 94] },
-    { "ageWeeks": 12, "sex": "male", "name": "Бублик", "arrivedDay": 105, "mood": 90, "moodHistory": [86, 89, 91, 90, 93, 88, 92, 90, 91, 94] }
+    { "ageWeeks": 7, "sex": "female", "name": "Ряска", "arrivedDay": 100, "mood": 92, "moodHistory": [88, 91, 93, 90, 95, 92, 89, 94, 96, 91, 90, 93, 92, 94] },
+    { "ageWeeks": 3, "sex": "male", "name": "Бублик", "arrivedDay": 120, "mood": 90, "moodHistory": [86, 89, 91, 90, 93, 88, 92, 90, 91, 94] }
   ],
   "album": [
-    { "ageWeeks": 40, "sex": "female", "name": "Мурка", "arrivedDay": 0, "moodHistory": [90, 92, 88, 94, 91, 93, 95, 90, 89, 92], "cause": { "kind": "old" }, "day": 80 },
-    { "ageWeeks": 16, "sex": "male", "name": "Сірко", "source": "foundling", "arrivedDay": 85, "moodHistory": [84, 87, 86, 88, 85, 89, 87], "cause": { "kind": "given" }, "day": 110 }
+    { "ageWeeks": 8, "sex": "female", "name": "Мурка", "arrivedDay": 0, "moodHistory": [90, 92, 88, 94, 91, 93, 95, 90, 89, 92], "cause": { "kind": "old" }, "day": 55 },
+    { "ageWeeks": 4, "sex": "male", "name": "Сірко", "source": "foundling", "arrivedDay": 70, "moodHistory": [84, 87, 86, 88, 85, 89, 87], "cause": { "kind": "given" }, "day": 95 }
   ],
   "knowAll": true
 }

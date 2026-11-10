@@ -14,7 +14,7 @@
     "stats": { "minutes": { "work": 30000, "cats": 18000, "self": 15000, "bustle": 8000 } }
   },
   "cats": [
-    { "ageWeeks": 24, "sex": "female", "name": "Пампушка", "arrivedDay": 40, "mood": 91, "moodHistory": [87, 90, 92, 89, 93, 91, 88, 94, 90, 92] }
+    { "ageWeeks": 6, "sex": "female", "name": "Пампушка", "arrivedDay": 105, "mood": 91, "moodHistory": [87, 90, 92, 89, 93, 91, 88, 94, 90, 92] }
   ],
   "knowAll": true
 }
