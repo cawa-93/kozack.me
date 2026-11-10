@@ -98,6 +98,41 @@ describe("плита (§8.7)", () => {
     expect(save.current.character.held).toBeNull();
   });
 
+  it("зняту до готовності порцію кладуть назад — вона готується далі; через холодильник — знову сира", () => {
+    const save = game();
+    standAt(save, "fridge");
+    interact(save);
+    standAt(save, "stove");
+    interact(save);
+    advance(save, COOK_MINUTES / 2);
+    interact(save);
+    expect(save.current.character.held).toMatchObject({ kind: "raw" });
+    standAt(save, "table");
+    interact(save);
+    advance(save, COOK_MINUTES);
+    interact(save);
+    standAt(save, "stove");
+    interact(save);
+    advance(save, COOK_MINUTES / 2 + 0.01);
+    expect(save.current.home.stove.item?.kind).toBe("meal");
+
+    // Та сама половина готування, але порцію поклали в холодильник: з нього вона — свіжа.
+    save.current.home.stove.item = null;
+    standAt(save, "fridge");
+    interact(save);
+    standAt(save, "stove");
+    interact(save);
+    advance(save, COOK_MINUTES / 2);
+    interact(save);
+    standAt(save, "fridge");
+    interact(save);
+    interact(save);
+    standAt(save, "stove");
+    interact(save);
+    advance(save, COOK_MINUTES / 2 + 0.01);
+    expect(save.current.home.stove.item?.kind).toBe("raw");
+  });
+
   it("на зайняту плиту нічого не покласти", () => {
     const save = game();
     save.current.home.stove.item = { kind: "raw", quality: "cheap" };

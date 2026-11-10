@@ -247,18 +247,21 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       if (held !== null) {
         if (!isDish(held)) return refuse(state, target.id, { reason: "not-here", item: held });
         if (stove.item !== null) return refuse(state, target.id, "occupied");
-        stove.item = held;
-        // Готова страва, яку повернули на плиту, знову може підгоріти.
-        stove.minutes = held.kind === "raw" ? 0 : COOK_MINUTES;
+        // Поки порція на плиті, скільки вона готувалася, лічить плита (§8.7).
+        const { cooked, ...dish } = held;
+        stove.item = dish;
+        // Знята до готовності порція готується далі; готова страва, яку повернули на плиту, знову може підгоріти.
+        stove.minutes = held.kind === "raw" ? (cooked ?? 0) : COOK_MINUTES;
         character.held = null;
         emit(state, { type: "put", object: target.id, item: held });
         return null;
       }
       if (stove.item === null) return refuse(state, target.id, { reason: "need", need: "raw" });
       const item = stove.item;
+      const cooked = item.kind === "raw" && stove.minutes > 0 ? { cooked: stove.minutes } : {};
       stove.item = null;
       stove.minutes = 0;
-      return take(state, target, item);
+      return take(state, target, { ...item, ...cooked });
     }
     case "table":
     case "counter": {
