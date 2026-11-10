@@ -76,7 +76,7 @@ const tweak = (bones: Readonly<Record<string, number>>): Loose => ({
 const CAT_STILLS: Readonly<Record<CatPhotoPose, CatStill>> = {
   curious: { base: "sit", overlay: tweak({ head: 16, tail: 95 }), at: 0, view: "front", face: face("round", "closed", "up") },
   wary: { base: "crouch", overlay: null, at: 0, view: "front", face: face("round", "closed", "flat") },
-  nursing: { base: "loaf", overlay: null, at: 0, view: "front", face: face("half", "closed", "up") },
+  nursing: { base: "loaf", overlay: null, at: 0, view: "front", face: face("arc", "closed", "up") },
   content: { base: "sit", overlay: CAT_ANIMS.content as Loose, at: 800, view: "front", face: face("arc", "closed", "up") },
   calm: { base: "sit", overlay: null, at: 0, view: "front", face: face("open", "closed", "up") },
   sulk: { base: "sulk", overlay: null, at: 0, view: "back", face: face("half", "closed", "side") },
