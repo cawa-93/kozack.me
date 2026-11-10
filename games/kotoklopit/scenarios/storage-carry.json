@@ -1,0 +1,17 @@
+{
+  "name": "Шафка в руках",
+  "description": "Середа першого тижня, 10:00. Персонажка несе шафку з кормом (§8.7, «Сховища й переноски»): на кухні її немає, на підлозі видно, де вона стане. Натисніть кнопку перестановки (F) — шафка стане там; кіт лапатиме її з того місця, де вона стоїть. Поруч — переноска: її теж можна взяти, бо в ній ніхто не спить.",
+  "game": { "address": "she", "difficulty": "normal", "seed": 5 },
+  "state": {
+    "day": 2,
+    "minute": 600,
+    "modifiers": { "day": null },
+    "character": { "body": { "x": 4.2, "y": 9.5, "facing": { "x": 1, "y": 0 } }, "held": { "kind": "gameThing", "thing": "cat-cabinet" } },
+    "home": {
+      "acquired": ["catFood"],
+      "supplies": { "catFood": { "cheap": 30, "premium": 0 } },
+      "carriers": [{ "quality": "premium", "wear": 0 }],
+      "thingCarried": "cat-cabinet"
+    }
+  }
+}
