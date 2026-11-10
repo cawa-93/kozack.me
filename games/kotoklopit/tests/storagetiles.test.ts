@@ -42,16 +42,20 @@ describe("місце сховища, якого ще немає (§8.7)", () => 
     expect(feeder.slot).toBe(bowl.slot);
     expect(onBin(placedObject(state, "sterile-bin"))).toBe(false);
 
-    // База робота й пилосос — так само (бака ще немає: ставимо їх у кут, і бак з'являється).
-    const other = game();
-    const s = other.current;
-    s.home.appliances.robot = "cheap";
-    s.home.robotDock = { ...binCenter };
-    s.home.vacuumAt = { ...binCenter };
-    addSupply(s, "sterileFood", "cheap", 1);
-    advance(other, 1);
-    expect(onBin(robotDockAt(s))).toBe(true);
-    expect(s.home.vacuumAt && onBin(s.home.vacuumAt)).toBe(true);
-    expect(onBin(placedObject(s, "sterile-bin"))).toBe(false);
+    // База робота й пилосос — так само (бака ще немає: ставимо в кут одне з них, і бак з'являється). Разом на одній клітинці
+    // вони не бувають: пилосос не ставлять на базу, а базу — на пилосос.
+    for (const put of ["robot", "vacuum"] as const) {
+      const other = game();
+      const s = other.current;
+      if (put === "robot") {
+        s.home.appliances.robot = "cheap";
+        s.home.robotDock = { ...binCenter };
+      } else s.home.vacuumAt = { ...binCenter };
+      addSupply(s, "sterileFood", "cheap", 1);
+      advance(other, 1);
+      if (put === "robot") expect(onBin(robotDockAt(s))).toBe(true);
+      else expect(s.home.vacuumAt && onBin(s.home.vacuumAt)).toBe(true);
+      expect(onBin(placedObject(s, "sterile-bin")), put).toBe(false);
+    }
   });
 });

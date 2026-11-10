@@ -478,12 +478,12 @@ export function catSpotNear(state: Pick<GameState, "home" | "modifiers" | "today
   const x = Math.floor(p.x);
   const y = Math.floor(p.y);
   const own = PLACE_AT.get(`${x},${y}`);
-  if (own === undefined || !thingsOn(state, own)) return p;
+  if (own === undefined || !occupied(state, own)) return p;
   let best: Place | null = null;
   let bestDistance = Infinity;
   for (const place of PLACES) {
     const distance = Math.hypot(place.x - x, place.y - y);
-    if (distance < bestDistance && !hiddenTile(place.x, place.y) && !isSolid(state, place.x, place.y) && !thingsOn(state, place)) {
+    if (distance < bestDistance && !hiddenTile(place.x, place.y) && !isSolid(state, place.x, place.y) && !occupied(state, place)) {
       best = place;
       bestDistance = distance;
     }
@@ -548,24 +548,32 @@ export const PLACES: readonly Place[] = [
 const PLACE_BY_ID = new Map(PLACES.map((p) => [p.id, p]));
 const PLACE_AT = new Map(PLACES.map((p) => [`${p.x},${p.y}`, p]));
 
+/** Клітинка для речей у (x, y); null — туди речей не ставлять. */
+export function placeAt(x: number, y: number): Place | null {
+  return PLACE_AT.get(`${x},${y}`) ?? null;
+}
+
 /** На місці стоїть річ котячого кутка. */
 export function slotTaken(state: Pick<GameState, "home">, id: string): boolean {
   return state.home.items.some((i) => "slot" in i && i.slot === id);
 }
 
-/** На клітинці стоїть річ котячого кутка, автогодівниця, база робота, пилосос чи річ гри (§8.7): кіт туди не стає. */
-function thingsOn(state: Pick<GameState, "home" | "modifiers" | "today">, place: Place): boolean {
+/**
+ * На клітинці стоїть річ котячого кутка, автогодівниця, база робота, пилосос чи річ гри (§8.7): кіт туди не стає, а річ гри не
+ * з'являється. `except` — крім цієї речі гри чи бази робота (`"robot"`).
+ */
+export function occupied(state: Pick<GameState, "home" | "modifiers" | "today">, place: Place, except?: GameThing | "robot"): boolean {
   const { feeders, vacuumAt } = state.home;
   const here = (p: Vec): boolean => sameTile(p, place.x, place.y);
-  if (robotDocked(state) && here(robotDockAt(state))) return true;
-  if (thingAt(state, place.x, place.y) !== null) return true;
+  if (except !== "robot" && robotDocked(state) && here(robotDockAt(state))) return true;
+  if (thingAt(state, place.x, place.y, except) !== null) return true;
   return slotTaken(state, place.id) || feeders?.some((f) => f.slot === place.id) === true || (vacuumAt !== null && here(vacuumAt));
 }
 
-/** Річ гри, що стоїть на клітинці зараз (§8.7, «Що ставить гра»); null — жодної. */
-export function thingAt(state: Pick<GameState, "home" | "modifiers" | "today">, x: number, y: number): GameThing | null {
+/** Річ гри, що стоїть на клітинці зараз (§8.7, «Що ставить гра»), крім `except`; null — жодної. */
+export function thingAt(state: Pick<GameState, "home" | "modifiers" | "today">, x: number, y: number, except?: GameThing | "robot"): GameThing | null {
   for (const thing of GAME_THINGS) {
-    if (!thingPresent(state, thing)) continue;
+    if (thing === except || !thingPresent(state, thing)) continue;
     const home = thingHome(thing);
     const shift = thingShift(state, thing);
     if (home.x + shift.x === x && home.y + shift.y === y) return thing;
@@ -573,11 +581,14 @@ export function thingAt(state: Pick<GameState, "home" | "modifiers" | "today">, 
   return null;
 }
 
-/** На клітинку можна поставити річ (§8.7): немає речі, автогодівниці, бази робота, речі гри й того, що річ закрила б собою. */
-export function placeFree(state: Pick<GameState, "home" | "modifiers" | "today">, place: Place): boolean {
+/**
+ * На клітинку можна поставити річ (§8.7): немає речі, автогодівниці, бази робота, речі гри й того, що річ закрила б собою.
+ * `except` — крім цієї речі гри чи бази робота (сама собі не заважає).
+ */
+export function placeFree(state: Pick<GameState, "home" | "modifiers" | "today">, place: Place, except?: GameThing | "robot"): boolean {
   const { items, messes } = state.home;
   const here = (p: Vec): boolean => sameTile(p, place.x, place.y);
-  if (thingsOn(state, place)) return false;
+  if (occupied(state, place, except)) return false;
   if (items.some((i) => i.kind === "toy" && i.hidden === undefined && here(i))) return false;
   return !messes.some(here);
 }

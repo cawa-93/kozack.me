@@ -38,6 +38,7 @@ import { createRng } from "../src/sim/rng";
 import { restoreThings } from "../src/sim/settle";
 import { addCat } from "../src/sim/night";
 import type { BowlItem, Cat, GameState, GameThing, Product, Save, Vec } from "../src/sim/types";
+import { hours } from "./helpers";
 import { isoObjectLook, placedObjectLook } from "../src/view/world/objects";
 
 function game(): Save {
@@ -191,6 +192,7 @@ describe("що ставить гра: сховища (§8.7, «Що ставит
     expect(tileNow(state, "cat-cabinet")).toEqual(moved);
 
     state.home.items = state.home.items.filter((i) => i !== bowl);
+    state.minute = hours(23);
     goToSleep(save);
     expect(save.current.home.displaced?.["cat-cabinet"]).toBeUndefined();
     expect(tileNow(save.current, "cat-cabinet")).toEqual(home);
