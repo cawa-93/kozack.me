@@ -628,9 +628,14 @@ export function composePortrait(canvas: HTMLCanvasElement | OffscreenCanvas, loo
   return composeFigure(canvas, opts.parts ?? portraitHead(look), personRecipe(look, opts.stained ? { stained: true } : {}), opts);
 }
 
+/** Кадр атласу, яким малюється частина портрета: без ракурсу — `front`. */
+export function portraitFrame(part: PortraitPart): FrameId {
+  return frameId(part.id, part.state ?? null, part.view === undefined ? "front" : part.view);
+}
+
 /** Намалювати частини фігури тим самим рецептом, що в грі, вписавши в полотно; решта — як у `composePortrait`. */
 function composeFigure(canvas: HTMLCanvasElement | OffscreenCanvas, parts: readonly PortraitPart[], recipe: TintRecipe, opts: PortraitOptions = {}): boolean {
-  const frames: FrameId[] = parts.map((p) => frameId(p.id, p.state ?? null, p.view === undefined ? "front" : p.view));
+  const frames: FrameId[] = parts.map(portraitFrame);
   const cloth = clothIds(recipe);
   const state = figureState(frames, cloth);
   if (state === "missing") return false;

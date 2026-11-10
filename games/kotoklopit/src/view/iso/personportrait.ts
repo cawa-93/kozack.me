@@ -8,7 +8,7 @@ import type { Look } from "../../sim/types";
 import type { PortraitPart } from "../art/compose";
 import { artEntry } from "../art/manifest";
 import { PERSON_FAR_SLOTS, PERSON_FIT, PERSON_RIG, personProportions, personSkin } from "../rig/defs/person";
-import { Rig } from "../rig/rigcore";
+import { Rig, slotFrame } from "../rig/rigcore";
 
 const FAR: ReadonlySet<string> = new Set<string>(PERSON_FAR_SLOTS);
 
@@ -30,10 +30,13 @@ export function personPortraitParts(look: Look): PortraitPart[] {
     if (item.kind !== "slot") continue;
     const pose = rig.slots[item.index];
     if (!pose || !pose.visible || pose.art === null) continue;
+    // Кадр — як у грі (`slotFrame`): стан і ракурс лише там, де запис їх має, а без стану — перший стан запису. Спідниця має
+    // стани пози, а без цього портрет питав кадр без стану, якого в атласі немає, і лишався порожнім.
+    const frame = slotFrame(pose.art, artEntry(pose.art), pose.state, "front");
     parts.push({
       id: pose.art,
-      state: pose.state,
-      view: "front",
+      state: frame.state,
+      view: frame.view,
       x: pose.x,
       y: pose.y,
       rot: pose.rot,

@@ -5,12 +5,26 @@ import { describe, expect, it } from "vitest";
 
 import { DEFAULT_LOOK } from "../src/sim/game";
 import type { Look } from "../src/sim/types";
-import { artEntry } from "../src/view/art/manifest";
+import { portraitFrame } from "../src/view/art/compose";
+import { artEntries, artEntry } from "../src/view/art/manifest";
+import { framesOf } from "../src/view/art/types";
+import { lookRng, randomLook } from "../src/ui/look";
 import { personPortraitParts } from "../src/view/iso/personportrait";
 import { PERSON_FAR_SLOTS, PERSON_FIT, PERSON_RIG, personProportions, personSkin } from "../src/view/rig/defs/person";
 import { Rig } from "../src/view/rig/rigcore";
 
 describe("personPortraitParts: фігура для портрета", () => {
+  // Редактор нової гри стартує з випадкової зовнішності (§5.1): кадр, якого немає в атласі, лишав портрет порожнім — так було зі
+  // спідницями, що мають стани пози (`stand`, `sit`, `squat`), а портрет питав кадр без стану.
+  it("кожна частина портрета будь-якої випадкової зовнішності — кадр, що є в атласі", () => {
+    const frames = new Set(artEntries().flatMap((entry) => framesOf(entry).map((ref) => ref.frame)));
+    const missing = new Set<string>();
+    for (let seed = 0; seed < 3000; seed++) {
+      for (const part of personPortraitParts(randomLook(lookRng(seed)))) if (!frames.has(portraitFrame(part))) missing.add(portraitFrame(part));
+    }
+    expect([...missing]).toEqual([]);
+  });
+
   it("частини — у порядку малювання ракурсу `front`, на місцях вихідної пози скелета гри", () => {
     const look: Look = { ...DEFAULT_LOOK };
     const parts = personPortraitParts(look);
