@@ -1,39 +1,41 @@
 // Знімки рис розділу «Сміливість і стрес» на фото титрів (§4.2; `TRAIT_GROUPS`, `TRAITS.md`).
+//
+// Хворий плаче (поза рівня), і сліпі глядачі шукають причину сльози в сцені: на хворих фото «добрих» боків поруч немає речі, якої
+// можна боятися, — рису каже дія (дрімає, дається оглянути) чи бабл гри.
 
-import type { TraitPhotoShots, TraitProp } from "./types";
+import type { TraitBubble, TraitPhotoShots, TraitProp } from "./types";
 
 /** Робот під котом: верх кришки (`top`) — на висоті кореня кота, тож кіт сидить на ньому. */
-const ROBOT: TraitProp = { art: "item/robot/cheap", state: "cleaning", x: 0, y: 10, scale: 1.2 };
+const ROBOT: TraitProp = { art: "item/robot/cheap", state: "cleaning", x: 0, y: 12, scale: 1.4, withCat: true };
 const VACUUM = (x: number, y: number, scale = 0.7): TraitProp => ({ art: "env/vacuum", state: null, x, y, scale });
-const RIDE: TraitProp[] = [VACUUM(-58, -16, 0.6), ROBOT];
+const RIDE: TraitProp[] = [VACUUM(-66, -16, 0.6), ROBOT];
 /**
  * Кіт у великій коробці, як у квартирі (`bigboxlook.ts`): коробка — під котом на висоті, де він сидить у ній (`perch` 48 × масштаб),
  * передні стінки — поверх нього; пилосос — по той бік.
  */
-const BOX_SCALE = 0.6;
+const BOX_SCALE = 1;
 /** `lift` — на скільки кіт вищий за дно (коробка нижча на фото): буханець і спину без нього майже не видно з-за борту. */
 const box = (lift = 0): TraitProp[] => [
-  VACUUM(-84, -12 + lift, 0.55),
-  { art: "env/boxes", state: "pile-1", x: 0, y: 48 * BOX_SCALE + lift, scale: BOX_SCALE },
-  { art: "env/boxes/front", state: "pile-1", x: 0, y: 48 * BOX_SCALE + lift, scale: BOX_SCALE, front: true },
+  VACUUM(-96, -12 + lift, 0.6),
+  { art: "env/boxes", state: "pile-1", x: 0, y: 48 * BOX_SCALE + lift, scale: BOX_SCALE, withCat: true },
+  { art: "env/boxes/front", state: "pile-1", x: 0, y: 48 * BOX_SCALE + lift, scale: BOX_SCALE, withCat: true, front: true },
 ];
 const BOX = box();
 /** Гучномовець ліворуч, хвилі звуку — просто на кота. */
 const LOUD: TraitProp = { art: "icon/loud", state: null, x: -58, y: -16, scale: 0.55 };
+/** «zz» над котом, що дрімає: над тим, що сидить, і над буханцем. */
 const DOZE: TraitProp = { art: "icon/zz", state: null, x: 32, y: -68, scale: 0.32 };
-const FUR: TraitProp[] = [
-  { art: "mess/fur", state: null, x: 40, y: 12, front: true, scale: 0.8 },
-  { art: "mess/fur-tuft", state: null, x: -58, y: 4, front: true, flip: true },
-];
-/** Переноска позаду ліворуч, кіт лежить у відчинених дверцятах: передні стінки (`grate`) ховають його зад. */
-const carrierIn = (x: number, y = -6, scale = 0.8): TraitProp[] => [
-  { art: "item/carrier/premium", state: "body", x, y, scale },
-  { art: "item/carrier/premium", state: "grate", x, y, scale, front: true },
-];
+const DOZE_LOW: TraitProp = { ...DOZE, x: 34, y: -50 };
+/** Жмутик вилизаної шерсті поруч — один і малий: купа жмутів читалась линянням. */
+const FUR: TraitProp = { art: "mess/fur", state: null, x: 40, y: 12, front: true, scale: 0.6 };
+/** Нервове вилизування — думка гри (подія `nervous`). */
+const NERVOUS: TraitBubble = { kind: "think", icon: "lick" };
+/** Переноска позаду ліворуч, кіт лежить у відчинених дверцятах: морда — перед ними, зад — в отворі. */
+const carrierIn = (x = -26, y = -6, scale = 0.95): TraitProp[] => [{ art: "item/carrier/premium", state: "body", x, y, scale, withCat: true }];
 /** Ціла відчинена переноска праворуч, навпроти кота. */
-const CARRIER_FOE: TraitProp = { art: "item/carrier/premium", state: "body", x: 74, y: -12, scale: 0.75 };
-/** Уламки тієї самої вишневої переноски: дверцята з ґратками й ручку видно. */
-const WRECK: TraitProp = { art: "mess/carrier/premium", state: null, x: 54, y: 8 };
+const CARRIER_FOE: TraitProp = { art: "item/carrier/premium", state: "body", x: 78, y: -12, scale: 0.8 };
+/** Уламки тієї самої вишневої переноски, великі й поруч: дверцята з ґратками й ручку видно. */
+const WRECK: TraitProp = { art: "mess/carrier/premium", state: null, x: 46, y: 10, scale: 1.2 };
 /** Стетоскоп і градусник — огляд, а не ліки (ліки — хвороба, а не вдача). */
 const EXAM: TraitProp[] = [
   { art: "icon/doctor-office", state: null, x: 62, y: -6, scale: 0.45 },
@@ -41,21 +43,23 @@ const EXAM: TraitProp[] = [
 ];
 /** Слід кігтів поверх стетоскопа: ветеринарові дісталося. */
 const CLAWS: TraitProp = { art: "icon/claws", state: null, x: 84, y: -30, scale: 0.4, front: true };
+const ANGRY: TraitBubble = { kind: "say", icon: "angry" };
 const BELL = (x: number, y: number): TraitProp => ({ art: "icon/bell", state: null, x, y, scale: 0.42 });
-const DOOR: TraitProp[] = [{ art: "env/door", state: "closed", x: -36, y: -24, scale: 0.42 }, BELL(-50, -96)];
+const DOOR: TraitProp[] = [{ art: "env/door", state: "closed", x: -50, y: -26, scale: 0.6 }, BELL(-70, -126)];
 /** Двері з дзвінком далеко ліворуч, ближче — будиночок поверх кота: кіт за ним ховається від дверей. */
 const HIDE: TraitProp[] = [
-  { art: "env/door", state: "closed", x: -112, y: -36, scale: 0.4 },
-  BELL(-126, -106),
-  { art: "item/house/cheap", state: null, x: -50, y: 14, scale: 0.5, front: true },
+  { art: "env/door", state: "closed", x: -112, y: -40, scale: 0.5 },
+  BELL(-130, -124),
+  { art: "item/house/cheap", state: null, x: -14, y: 18, scale: 0.7, withCat: true, front: true },
 ];
+/** Стіл зі стравою позаду праворуч: кіт сидить коло нього, а не на ньому. */
 const TABLE: TraitProp[] = [
-  { art: "env/table", state: null, x: 60, y: -10, scale: 0.55 },
-  { art: "item/dish/meal", state: "premium", x: 56, y: -40, scale: 0.8 },
+  { art: "env/table", state: null, x: 66, y: -12, scale: 0.75 },
+  { art: "item/dish/meal", state: "premium", x: 61, y: -53, scale: 0.9 },
 ];
-/** Зірочка над головою — «молодець». */
-const STAR = (x: number, y: number): TraitProp => ({ art: "icon/promotion", state: null, x, y, scale: 0.34 });
-const STOVE: TraitProp = { art: "env/stove", state: "off", x: 0, y: 34, scale: 0.55 };
+/** «Згадав ні» — думка гри (подія `cat-remembered`): стіл, перекреслений. */
+const REMEMBERED: TraitBubble = { kind: "think", icon: "table", mark: "no" };
+const STOVE: TraitProp = { art: "env/stove", state: "off", x: 0, y: 46, scale: 0.75, withCat: true };
 
 export const SHOTS: TraitPhotoShots = {
   bravery: {
@@ -67,10 +71,17 @@ export const SHOTS: TraitPhotoShots = {
       calm: {
         idea: "Спокійно сидить упритул до пилососа й дивиться на нього — прийшов подивитися, що це там гуде, а не втік.",
         still: { bones: { head: -14 } },
-        props: [VACUUM(46, -6)],
+        props: [VACUUM(50, -6)],
       },
-      sulk: { idea: "Ображено сидить спиною, але верхи на роботі-пилососі, поруч із великим пилососом: гуркіт його не лякає, хоч радості в житті й мало.", props: RIDE },
-      ill: { idea: "Хворий лежить буханцем просто на роботі-пилососі, поруч гуде великий пилосос: болить, але не страшно.", props: RIDE },
+      sulk: {
+        idea: "Насуплено сидить верхи на роботі-пилососі поруч із великим пилососом: радості мало, а машини його не лякають.",
+        props: RIDE,
+      },
+      ill: {
+        idea: "Хворий спокійно лежить буханцем на роботі-пилососі, вуха вгору: болить, а машина під ним — звичне ліжко.",
+        still: { ears: "up" },
+        props: [ROBOT],
+      },
     },
     minus: {
       content: {
@@ -82,11 +93,11 @@ export const SHOTS: TraitPhotoShots = {
         still: { ears: "flat" },
         props: BOX,
       },
-      sulk: { idea: "Ображено сидить спиною в коробці, притиснувши вуха, — сховався від пилососа, що стоїть поруч.", still: { ears: "flat" }, props: box(8) },
+      sulk: { idea: "Насуплено визирає з коробки, притиснувши вуха, — сховався від пилососа, що стоїть поруч.", still: { ears: "flat" }, props: BOX },
       ill: {
         idea: "Хворий, з притиснутими вухами, забився в коробку подалі від пилососа.",
         still: { ears: "flat" },
-        props: box(16),
+        props: box(6),
       },
     },
   },
@@ -102,22 +113,38 @@ export const SHOTS: TraitPhotoShots = {
         still: { base: "loaf", eyes: "half" },
         props: [LOUD, DOZE],
       },
-      sulk: { idea: "Ображено сидить спиною під гуркіт гучномовця: негаразди його не ламають, хоч і не тішать.", props: [LOUD] },
-      ill: { idea: "Хворий тихо лежить буханцем під гуркіт гучномовця — перечікує біду, як негоду.", props: [LOUD] },
+      sulk: {
+        idea: "Насуплено сидить мордою до гучномовця, що гримить, і вух не притискає, не тікає: негаразди його не ламають, хоч і не тішать.",
+        still: { flip: true, ears: "side" },
+        props: [LOUD],
+      },
+      ill: { idea: "Хворий дрімає буханцем під гуркіт гучномовця (над ним «zz») — перечікує біду, як негоду.", props: [LOUD, DOZE_LOW] },
     },
     minus: {
       content: {
-        idea: "Мружиться, нервово вилизуючи лапу, з вухами «літачком», а довкола — вилизані жмути шерсті: хвилюється через усе, хоч і щасливий.",
+        idea: "Мружиться, вилизуючи лапу, з вухами «літачком», а над ним думка гри «нервово вилизується»: хвилюється через усе, хоч і щасливий.",
         still: { base: "groom", at: 600, ears: "back" },
-        props: FUR,
+        props: [FUR],
+        bubbles: [NERVOUS],
       },
       calm: {
-        idea: "Прищуливши вуха, зосереджено вилизує лапу серед жмутів власної шерсті — так заспокоюється після кожної дрібниці.",
+        idea: "Прищуливши вуха, зосереджено вилизує лапу, а над ним думка «нервово вилизується» — так заспокоюється після кожної дрібниці.",
         still: { base: "groom", at: 600, eyes: "half", ears: "back" },
-        props: FUR,
+        props: [FUR],
+        bubbles: [NERVOUS],
       },
-      sulk: { idea: "Сидить спиною, притиснувши вуха, серед вилизаних з нервів жмутів шерсті.", still: { ears: "flat" }, props: FUR },
-      ill: { idea: "Хворий буханцем, вуха притиснуті, довкола — жмути шерсті, вилизаної з нервів.", still: { ears: "flat" }, props: FUR },
+      sulk: {
+        idea: "Насуплено сидить, притиснувши вуха, біля вилизаного жмутика шерсті, а над ним думка «нервово вилизується».",
+        still: { ears: "flat" },
+        props: [FUR],
+        bubbles: [NERVOUS],
+      },
+      ill: {
+        idea: "Хворий буханцем, вуха притиснуті, а над ним думка «нервово вилизується»: і хворіє, і нервує.",
+        still: { ears: "flat" },
+        props: [FUR],
+        bubbles: [NERVOUS],
+      },
     },
   },
   carrier: {
@@ -125,14 +152,22 @@ export const SHOTS: TraitPhotoShots = {
       content: {
         idea: "Блаженно мружиться, вмостившись буханцем у дверцятах переноски, як у власному будиночку.",
         still: { base: "loaf", eyes: "arc" },
-        props: carrierIn(-20),
+        props: carrierIn(),
       },
-      calm: { idea: "Спокійно лежить буханцем у дверцятах переноски — це його місце.", still: { base: "loaf" }, props: carrierIn(-26) },
+      calm: {
+        idea: "Дрімає буханцем у дверцятах переноски (над ним «zz») — це його місце для сну.",
+        still: { base: "loaf", eyes: "half" },
+        props: [...carrierIn(), DOZE_LOW],
+      },
       sulk: {
-        idea: "Ображено сидить спиною до світу перед відчиненою переноскою — збирається сховатися в неї: там його ніхто не чіпає.",
-        props: [{ art: "item/carrier/premium", state: "body", x: -46, y: -24, scale: 0.8 }],
+        idea: "Насуплено лежить буханцем у дверцятах переноски: сховався від світу туди, де його ніхто не чіпає.",
+        still: { base: "loaf", bones: { head: 12 } },
+        props: carrierIn(),
       },
-      ill: { idea: "Хворий лежить буханцем у дверцятах переноски: відлежується в єдиному місці, що належить тільки йому.", props: carrierIn(-20) },
+      ill: {
+        idea: "Хворий дрімає буханцем у дверцятах переноски (над ним «zz»): відлежується в єдиному місці, що належить тільки йому.",
+        props: [...carrierIn(), DOZE_LOW],
+      },
     },
     minus: {
       content: { idea: "Задоволено мружиться над уламками переноски: відвоював право їздити хіба що на руках.", props: [WRECK] },
@@ -141,10 +176,10 @@ export const SHOTS: TraitPhotoShots = {
         still: { eyes: "half", ears: "flat" },
         props: [CARRIER_FOE],
       },
-      sulk: { idea: "Ображено сидить спиною біля уламків переноски, притиснувши вуха: поїздки — зрада, і він її не пробачає.", still: { ears: "flat" }, props: [WRECK] },
+      sulk: { idea: "Насуплено сидить над уламками переноски, притиснувши вуха: поїздки — зрада, і він її не пробачає.", still: { ears: "flat" }, props: [WRECK] },
       ill: {
-        idea: "Хворий лежить буханцем, а все одно притиснув вуха й шипить на відчинену переноску.",
-        still: { mouth: "hiss", ears: "flat" },
+        idea: "Хворий лежить буханцем, а все одно притиснув вуха й не зводить очей з відчиненої переноски: туди — тільки силоміць.",
+        still: { ears: "flat" },
         props: [CARRIER_FOE],
       },
     },
@@ -153,8 +188,11 @@ export const SHOTS: TraitPhotoShots = {
     plus: {
       content: { idea: "Мружиться й муркоче біля стетоскопа й градусника: огляд для нього — як процедура в салоні.", props: EXAM },
       calm: { idea: "Спокійно сидить біля стетоскопа й градусника й не відсахується: терпить огляд.", props: EXAM },
-      sulk: { idea: "Ображено сидить спиною, але не тікає від стетоскопа й градусника — стійко витримує огляд за оглядом.", props: EXAM },
-      ill: { idea: "Хворий лежить буханцем біля стетоскопа й градусника й сумирно дає себе оглянути.", props: EXAM },
+      sulk: { idea: "Насуплено сидить біля стетоскопа й градусника, але не тікає — стійко витримує огляд за оглядом.", props: EXAM },
+      ill: {
+        idea: "Хворий сумирно лежить буханцем, а стетоскоп уже притулено йому до грудей: огляд іде просто зараз, і він не пручається.",
+        props: [{ ...EXAM[0]!, x: 40, y: -10, scale: 0.36, front: true }, { ...EXAM[1]!, x: 66, y: 14 }],
+      },
     },
     minus: {
       content: {
@@ -167,38 +205,52 @@ export const SHOTS: TraitPhotoShots = {
         still: { eyes: "half", ears: "flat" },
         props: [...EXAM, { ...CLAWS, x: 60 }],
       },
-      sulk: { idea: "Сидить спиною до стетоскопа й градусника, притиснувши вуха, — ображено мовчить після огляду.", still: { ears: "flat", flip: true }, props: EXAM },
-      ill: { idea: "Хворий буханцем, а все одно шипить на стетоскоп і градусник, притиснувши вуха.", still: { mouth: "hiss", ears: "flat" }, props: EXAM },
+      sulk: { idea: "Насуплено відвернувся від стетоскопа й градусника, притиснувши вуха, — ображено мовчить після огляду.", still: { ears: "flat", flip: true }, props: EXAM },
+      ill: {
+        idea: "Хворий буханцем, а все одно притиснув вуха й шипить (бабл злості) на стетоскоп і градусник.",
+        still: { ears: "flat" },
+        props: EXAM,
+        bubbles: [ANGRY],
+      },
     },
   },
   guests: {
     plus: {
       content: { idea: "Мружиться й нявкає біля вхідних дверей, у які дзвонять: кожен гість — свято.", still: { mouth: "meow" }, props: DOOR },
-      calm: { idea: "Сидить біля вхідних дверей, у які дзвонять, і чекає, хто ж прийшов.", props: DOOR },
-      sulk: { idea: "Ображено сидить спиною під самими вхідними дверима, у які дзвонять, і чекає гостей — удома погомоніти нема з ким.", props: DOOR },
-      ill: { idea: "Хворий лежить буханцем під вхідними дверима, у які дзвонять, — сподівається, що прийшли до нього.", props: DOOR },
+      calm: { idea: "Сидить мордою до вхідних дверей, у які дзвонять, і чекає, хто ж прийшов.", still: { flip: true }, props: DOOR },
+      sulk: {
+        idea: "Насуплено сидить мордою до вхідних дверей, у які дзвонять, і чекає гостей — удома погомоніти нема з ким.",
+        still: { flip: true },
+        props: DOOR,
+      },
+      ill: {
+        idea: "Хворий лежить буханцем мордою до вхідних дверей, у які дзвонять, і нашорошив вуха — сподівається, що прийшли до нього.",
+        still: { flip: true, ears: "up" },
+        props: DOOR,
+      },
     },
     minus: {
       content: { idea: "Задоволено мружиться, сховавшись за будиночком від дзвінка в двері: щастя — коли вдома лише свої.", still: { base: "crouch", eyes: "arc" }, props: HIDE },
       calm: { idea: "Притиснувши вуха, зіщулився за будиночком: у двері дзвонять, і він не вилізе, поки гості не підуть.", still: { base: "crouch", ears: "flat" }, props: HIDE },
-      sulk: { idea: "Ображено сидить спиною, сховавшись за будиночком від дзвінка в двері.", still: { ears: "flat" }, props: HIDE },
-      ill: { idea: "Хворий тремтить за будиночком, притиснувши вуха, і шипить на дзвінок у двері.", still: { base: "crouch", eyes: "sick", ears: "flat", mouth: "hiss" }, props: HIDE },
+      sulk: { idea: "Насуплено сидить за будиночком, притиснувши вуха, — сховався від дзвінка в двері.", still: { ears: "flat" }, props: HIDE },
+      ill: { idea: "Хворий тремтить за будиночком, притиснувши вуха: у двері дзвонять, а він ховається.", still: { base: "crouch", eyes: "sick", ears: "flat" }, props: HIDE },
     },
   },
   obedience: {
     plus: {
-      content: { idea: "Мружиться від похвали — над головою зірочка «молодець», — сидячи біля столу зі стравою: на стіл не лізе.", props: [...TABLE, STAR(-4, -84)] },
-      calm: { idea: "Чемно сидить біля столу й дивиться на страву на ньому — пам'ятає «ні», і над головою за це зірочка.", still: { bones: { head: -16 } }, props: [...TABLE, STAR(-4, -84)] },
-      sulk: {
-        idea: "Сидить спиною й дивиться на стіл зі стравою, але не стрибає — згадав «ні»; над головою зірочка «молодець».",
-        props: [{ ...TABLE[0]!, x: 24, y: -40 }, { ...TABLE[1]!, x: 20, y: -70 }, STAR(4, -68)],
+      content: {
+        idea: "Мружиться, сидячи біля столу зі стравою, а над ним думка гри «згадав ні» (перекреслений стіл): на стіл не лізе.",
+        props: TABLE,
+        bubbles: [REMEMBERED],
       },
-      ill: { idea: "Хворий лежить буханцем під столом зі стравою, але й не думає на нього стрибнути; над ним зірочка «молодець».", props: [...TABLE, STAR(-6, -58)] },
+      calm: { idea: "Чемно сидить біля столу зі стравою, а над ним думка «згадав ні»: пам'ятає заборону й не стрибає.", props: TABLE, bubbles: [REMEMBERED] },
+      sulk: { idea: "Насуплено сидить біля столу зі стравою, а над ним думка «згадав ні»: шкода, але не можна.", props: TABLE, bubbles: [REMEMBERED] },
+      ill: { idea: "Хворий лежить буханцем біля столу зі стравою, а над ним думка «згадав ні»: і не думає туди стрибати.", props: TABLE, bubbles: [REMEMBERED] },
     },
     minus: {
       content: { idea: "Задоволено мружиться, сидячи просто на плиті: усі заборони давно капітулювали.", props: [STOVE] },
       calm: { idea: "Спокійно сидить на кухонній плиті, куди йому сто разів казали «ні».", props: [STOVE] },
-      sulk: { idea: "Ображено сидить спиною на плиті: його знімали — а він знову тут.", props: [STOVE] },
+      sulk: { idea: "Насуплено сидить на плиті: його знімали — а він знову тут.", props: [STOVE] },
       ill: { idea: "Хворий лежить буханцем на кухонній плиті, куди йому не можна.", props: [STOVE] },
     },
   },
