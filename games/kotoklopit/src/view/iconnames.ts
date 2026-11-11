@@ -85,6 +85,7 @@ export const ICON_NAMES = [
   "sad",
   "loud",
   "lick",
+  "lick-nervous",
   "cough",
   "fur",
   "mug",
@@ -190,6 +191,8 @@ export const ICON_NAMES = [
   "sterile-bin",
   "litter-bag",
   "cat-kit",
+  // Лише на фото титрів (§4.2, знімок риси «Засідки»): у грі цієї думки немає — засідку показує запаморочення персонажа.
+  "pounce-leg",
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];

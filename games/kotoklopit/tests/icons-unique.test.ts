@@ -13,7 +13,7 @@ import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, CatAct, Destination, Dish, Item, Product, Save, StatName, ThingKind } from "../src/sim/types";
-import type { IconName, Mark } from "../src/view/iconnames";
+import { ICON_NAMES, type IconName, type Mark } from "../src/view/iconnames";
 import { CAREER_ICONS, catAsk, DESTINATION_ICONS, DISEASE_ICONS, eventBubbles, HOME_FIXTURE_ICONS, ILLNESS_ICONS, itemIcon, MOOD_ICONS, PERSON_STATE_ICONS, PRODUCT_ICONS, refusalBubble, STAT_ICONS, UTILITIES_ICON, STATE_ICONS, stoveIcon, STORAGE_ICONS, THING_ICONS, VARIANT_ICONS } from "../src/view/symbols";
 import { catThought, personThought } from "../src/view/thoughts";
 import { EVENTS, REFUSALS } from "./bubblecases";
@@ -382,6 +382,23 @@ describe("унікальна іконка на унікальний кейс (§
     expect(icon("event:weather-felt:feel=cold")).toBe("chilly");
     expect(icon("state:coldShower")).not.toBe(icon("state:shower"));
     expect(icon("state:coldShower")).not.toBe(icon("event:weather-felt:feel=cold"));
+  });
+
+  it("нервове вилизування — своя іконка, а не язик, яким кіт відмовляється від вилизування (§9.12)", () => {
+    const shown = (id: string): Shown | undefined => cases.get(id)?.[0];
+    expect(shown("event:nervous")?.icon).toBe("lick-nervous");
+    expect(shown("event:nervous")?.mark).toBeUndefined();
+    expect(shown("event:groom-refused")?.icon).toBe("lick");
+    expect(shown("event:groom-refused")?.mark).toBe("no");
+    expect(meaningOf("event:nervous")).toBe("event:nervous");
+    expect(meaningOf("event:groom-refused")).toBe("event:groom-refused");
+  });
+
+  it("«кидок на ногу» — іконка лише для фото титрів (§4.2): у грі її не показує жоден випадок, засідка — запаморочення", () => {
+    expect(ICON_NAMES).toContain("pounce-leg");
+    const withIcon = [...cases].filter(([, list]) => list.some((s) => s.icon === "pounce-leg")).map(([id]) => id);
+    expect(withIcon).toEqual([]);
+    expect(cases.get("event:ambushed")?.[0]?.icon).toBe("dizzy");
   });
 
   it("переляк кота — не «!» терпіння, спрага — не крапля душу й не перекреслена крапля порожньої миски", () => {

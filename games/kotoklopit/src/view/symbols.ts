@@ -530,8 +530,9 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
       // «Злиться на вікно» злиться на птахів за склом — його злість.
       return [{ kind: "think", at: cat(event.cat), icon: "bird", mark: "no" }];
     case "nervous":
-      // Нервовий кіт вилизується після неприємного (§9.12): його тривога.
-      return [{ kind: "think", at: cat(event.cat), icon: "lick" }];
+      // Нервовий кіт вилизується після неприємного (§9.12): його тривога. Своя іконка, а не язик без позначки: той самий малюнок
+      // із ✗ — «не терпить вилизування» (`groom-refused`), а це інший випадок (§11.4).
+      return [{ kind: "think", at: cat(event.cat), icon: "lick-nervous" }];
     case "doorbell":
       return [{ kind: "say", at: "door", icon: "bell" }];
     case "tap-opened":
