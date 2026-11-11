@@ -1,6 +1,6 @@
 // Знімки рис розділу «Гра й розваги» на фото титрів (§4.2; `TRAIT_GROUPS`, `TRAITS.md`).
 
-import type { TraitPhotoShots, TraitProp } from "./types";
+import type { TraitBubble, TraitPerson, TraitPhotoShots, TraitProp } from "./types";
 
 /** Вудочка на підлозі: pivot — під серединою палички. */
 const TOY: TraitProp = { art: "item/toy/cheap", state: "floor", x: 34, y: 12, front: true, scale: 0.55 };
@@ -10,9 +10,17 @@ const CATNIP: TraitProp = { art: "item/catnip", state: null, x: 40, y: 6, scale:
 /** Вікно з підвіконням у стіні праворуч позаду кота: за склом пташка на гілці (`bird`) чи порожнє небо (`empty`). */
 const WINDOW: TraitProp = { art: "env/window-bird", state: "bird", x: 50, y: -16, scale: 0.62 };
 /** Вудочка в зубах: pivot — де кіт її тримає. */
-const TOY_TEETH: TraitProp = { art: "item/toy/cheap", state: "teeth", x: 24, y: -30, front: true, scale: 0.55 };
+const TOY_TEETH: TraitProp = { art: "item/toy/cheap", state: "teeth", x: 0, y: 0, socket: "teeth", scale: 0.55 };
 /** Вудочка спереду, пір'ям на виду, а кіт відвернувся від неї (`flip`). */
 const TOY_SNUBBED: TraitProp = { ...TOY, x: 40, y: 12 };
+/** Думка гри «хочу гратися». */
+const WANTS_PLAY: TraitBubble = { kind: "think", icon: "toy" };
+/** Думка «гратися ✗». */
+const NO_PLAY: TraitBubble = { kind: "think", icon: "toy", mark: "no" };
+/** Ваші ноги перед котом: до них він і приніс вудочку. */
+const LEGS: TraitPerson = { pose: "stand", x: 52, y: -12 };
+/** Бабл гри «шипить біля вікна» (`HISS_ICONS.window`). */
+const HISS_WINDOW: TraitBubble = { kind: "say", icon: "hiss-window" };
 
 export const SHOTS: TraitPhotoShots = {
   playful: {
@@ -27,32 +35,35 @@ export const SHOTS: TraitPhotoShots = {
         props: [TOY_TEETH],
       },
       sulk: {
-        idea: "Насуплений кіт сидить, а з рота звисає вудочка: приніс її до ніг і довго чекав — дарма.",
-        props: [{ ...TOY_TEETH, x: 22, y: -30 }],
+        idea: "Насуплений кіт сидить перед вашими ногами, вудочка лежить на підлозі між ним і ногами, думка «гратися»: приніс її до ніг і довго чекав — дарма.",
+        props: [{ ...TOY, x: 36, y: 14 }],
+        person: LEGS,
+        bubbles: [{ ...WANTS_PLAY, dx: -26 }],
       },
       ill: {
-        idea: "Хворий кіт лежить буханцем і тримає в зубах вудочку: навіть у найгірші дні пробує гратися.",
-        props: [{ ...TOY_TEETH, x: 24, y: -16 }],
+        idea: "Хворий кіт із градусником лежить буханцем, вудочка — перед лапами, думка «гратися»: навіть у найгірші дні хоче гратися.",
+        props: [{ ...TOY, x: 40, y: 14 }],
+        bubbles: [WANTS_PLAY],
       },
     },
     minus: {
       content: {
-        idea: "Кіт задоволено мружиться на буханці, відвернувшись від вудочки, і думає «не хочу гратися»: тепло й тиша милші за якусь там гру.",
+        idea: "Кіт задоволено мружиться на буханці, відвернувшись від вудочки за спиною, і думає «гратися ✗»: тепло й тиша милші за якусь там гру.",
         still: { base: "loaf", flip: true },
         props: [TOY_SNUBBED],
-        bubbles: [{ kind: "think", icon: "bored" }],
+        bubbles: [NO_PLAY],
       },
       calm: {
-        idea: "Кіт лежить буханцем, відвернувшись від вудочки, хвіст сіпається, думка «не хочу гратися»: пограється хвилинку — і геть.",
+        idea: "Кіт лежить буханцем, відвернувшись від вудочки за спиною, хвіст сіпається, думка «гратися ✗»: пограється хвилинку — і геть.",
         still: { base: "decline", flip: true },
         props: [TOY_SNUBBED],
-        bubbles: [{ kind: "think", icon: "bored" }],
+        bubbles: [NO_PLAY],
       },
       sulk: {
-        idea: "Насуплений кіт сидить, відвернувшись від вудочки, думка «не хочу гратися»: гратися — рідко й неохоче.",
+        idea: "Насуплений кіт сидить, відвернувшись від вудочки за спиною, думка «гратися ✗»: гратися — рідко й неохоче.",
         still: { flip: true },
         props: [TOY_SNUBBED],
-        bubbles: [{ kind: "think", icon: "bored" }],
+        bubbles: [NO_PLAY],
       },
       ill: {
         idea: "Хворий кіт лежить буханцем, відвернувшись від вудочки, хвіст сіпається: на гру не лишилося ні сил, ні охоти.",
@@ -85,8 +96,9 @@ export const SHOTS: TraitPhotoShots = {
     },
     minus: {
       content: {
-        idea: "Кіт задоволено сидить, гілочка м'яти лежить позаду, а він думає «м'ята ✗»: до м'яти байдужий, радощів і так вистачає.",
-        props: [{ ...CATNIP, x: -40, y: 0, front: false }],
+        idea: "Кіт задоволено сидить, відвернувшись від цілої гілочки м'яти за спиною, і думає «м'ята ✗»: до м'яти байдужий, радощів і так вистачає.",
+        still: { flip: true },
+        props: [{ ...CATNIP, x: 66, y: 4 }],
         bubbles: [{ kind: "think", icon: "catnip", mark: "no" }],
       },
       calm: {
@@ -141,22 +153,22 @@ export const SHOTS: TraitPhotoShots = {
         props: [WINDOW],
       },
       calm: {
-        idea: "Кіт сидить обличчям до вікна з пташкою й думає «пташка ✗»: птахи за склом — привід посердитися.",
-        still: { bones: { head: -10 } },
+        idea: "Кіт сидить під вікном із пташкою, хвіст б'є, і шипить на вікно (бабл гри): птахи за склом — привід посердитися.",
+        still: { overlay: "warn", at: 300 },
         props: [WINDOW],
-        bubbles: [{ kind: "think", icon: "bird", mark: "no" }],
+        bubbles: [HISS_WINDOW],
       },
       sulk: {
-        idea: "Насуплений кіт біля вікна з пташкою притиснув вуха, хвіст б'є, думка «пташка ✗»: злиться на вікно.",
-        still: { overlay: "warn", ears: "back" },
+        idea: "Насуплений кіт біля вікна з пташкою притиснув вуха, хвіст б'є, і шипить на вікно (бабл гри): злиться на вікно.",
+        still: { overlay: "warn", at: 300, ears: "back" },
         props: [WINDOW],
-        bubbles: [{ kind: "think", icon: "bird", mark: "no" }],
+        bubbles: [HISS_WINDOW],
       },
       ill: {
-        idea: "Хворий кіт лежить під порожнім вікном, вуха назад, думка «пташка ✗»: навіть хворий злиться на птахів за склом.",
+        idea: "Хворий кіт із градусником лежить під вікном із пташкою, вуха назад, і шипить на вікно (бабл гри): навіть хворий злиться на птахів за склом.",
         still: { ears: "back" },
-        props: [{ ...WINDOW, state: "empty" }],
-        bubbles: [{ kind: "think", icon: "bird", mark: "no" }],
+        props: [WINDOW],
+        bubbles: [HISS_WINDOW],
       },
     },
   },
