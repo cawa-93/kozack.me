@@ -5,6 +5,7 @@
 // (через кому), `side=plus|minus`, інший кіт — `cat=<номер у CATS>`. Полотно знімка має `data-shot="<група>.<бік>.<поза>"`
 // (`shots.ts --canvases`).
 
+import { MIXED } from "../../../sim/breeds";
 import { createCat } from "../../../sim/cat";
 import { DEFAULT_LOOK, newGame } from "../../../sim/game";
 import { createRng } from "../../../sim/rng";
@@ -78,6 +79,9 @@ function catOf(state: GameState, seed: number, sample: CatSample, sex: Cat["sex"
   cat.shape = { ...cat.shape, muzzle: "normal", ears: "normal", tail: "long", build: "normal", legs: "normal", coat: null, ...sample.shape };
   cat.diseases = [];
   cat.collar = false;
+  // Зразки — звичайного розміру: риса чи порода «Розмір» зробили б кота меншим за речі знімків.
+  cat.traits = [];
+  cat.breed = [MIXED, MIXED];
   return cat;
 }
 

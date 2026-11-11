@@ -72,9 +72,10 @@ const tweak = (bones: Readonly<Record<string, number>>): Loose => ({
 
 /**
  * Пози кота (§4.2) — підібрані за знімками галереї (вкладка «Фото титрів»), щоб у ≈ 200 px не плутались: цікаво — голова набік і
- * хвіст угору; задоволено — мружиться дужками, як під рукою; спокійно — просто сидить; ображено — спиною, як «Образливий» у грі;
- * хворий — буханцем, голова похилена. Годує — буханцем, а не на боці (`sprawl`): на боці мама з хвостом широка, і кошенята віком 0
- * в полароїді — крихти.
+ * хвіст угору; задоволено — мружиться дужками, як під рукою; спокійно — просто сидить; ображено — насуплено, голова й хвіст
+ * опущені (спиною сліпі глядачі бачили спокійного кота, а річ поруч — «нюхає»); хворий — буханцем, голова похилена, очі хворі
+ * (без сльози хворого читали як сумного чи сонного). Годує — буханцем, а не на боці (`sprawl`): на боці мама з хвостом широка, і
+ * кошенята віком 0 в полароїді — крихти.
  */
 const CAT_STILLS: Readonly<Record<CatPhotoPose, CatStill>> = {
   curious: { base: "sit", overlay: tweak({ head: 16, tail: 95 }), at: 0, view: "front", face: face("round", "closed", "up") },
@@ -82,7 +83,7 @@ const CAT_STILLS: Readonly<Record<CatPhotoPose, CatStill>> = {
   nursing: { base: "loaf", overlay: null, at: 0, view: "front", face: face("arc", "closed", "up") },
   content: { base: "sit", overlay: CAT_ANIMS.content as Loose, at: 800, view: "front", face: face("arc", "closed", "up") },
   calm: { base: "sit", overlay: null, at: 0, view: "front", face: face("open", "closed", "up") },
-  sulk: { base: "sulk", overlay: null, at: 0, view: "back", face: face("half", "closed", "side") },
+  sulk: { base: "sit", overlay: tweak({ head: 12, tail: -30 }), at: 0, view: "front", face: face("half", "closed", "flat") },
   ill: { base: "loaf", overlay: tweak({ neck: 10, head: 14 }), at: 0, view: "front", face: face("sick", "closed", "side") },
 };
 

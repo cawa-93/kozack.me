@@ -198,14 +198,18 @@ describe("пози кота — частини скелета з гри", () => 
     expect(seen.size).toBe(CAT_POSES.length);
   });
 
-  it("вираз: задоволений мружиться дужками, хворий — хворі очі, спокійний — розплющені; ображений сидить спиною", () => {
+  it("вираз: задоволений мружиться дужками, хворий — хворі очі, спокійний — розплющені; ображений — мордою до камери, насуплений", () => {
     const state = game();
     const one = story(cat(state, 10));
     expect(eyes(catPhotoParts(one, "content"))).toBe("arc");
     expect(eyes(catPhotoParts(one, "ill"))).toBe("sick");
     expect(eyes(catPhotoParts(one, "calm"))).toBe("open");
     expect(eyes(catPhotoParts(one, "curious"))).toBe("round");
-    expect(catPhotoParts(one, "sulk").every((p) => p.view === "back" || p.view === null)).toBe(true);
+    // Спиною ображеного читали як спокійного, а річ поруч — як «нюхає» (сліпа перевірка знімків рис): морду видно, очі
+    // напівзаплющені.
+    const sulk = catPhotoParts(one, "sulk");
+    expect(sulk.some((p) => p.view === "back")).toBe(false);
+    expect(eyes(sulk)).toBe("half");
     // Новонароджене кошеня при мамі спить: очі заплющені.
     expect(eyes(catPhotoParts(story(cat(state, 11, 0), 0), "nursing"))).toBe("closed");
   });
