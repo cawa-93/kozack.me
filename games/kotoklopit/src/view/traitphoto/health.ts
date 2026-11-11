@@ -1,6 +1,5 @@
 // Знімки рис розділу «Здоров'я й тіло» на фото титрів (§4.2; `TRAIT_GROUPS`, `TRAITS.md`).
 
-import { COAT_ICONS } from "../photocoat";
 import type { TraitBubble, TraitPhotoShots, TraitProp } from "./types";
 
 /** Іконка як річ на фото: pivot у центрі, тож на підлозі y — мінус половина висоти. */
@@ -45,11 +44,8 @@ const TWO_LICKED_BOWLS: readonly TraitProp[] = [
 ];
 /** Ваги для кота: кіт стоїть на платформі. */
 const SCALES: TraitProp = { art: "item/scales", state: null, x: 0, y: 8, withCat: true };
-/**
- * Думка «ожиріння ✗» (іконка хвороби в лікаря — товстий кіт на вагах). Кіт в іконці рудий, тож бабл — лише коли іконку
- * перефарбовують шерстю героя (`COAT_ICONS`): інакше біля сірого героя це «інший, рудий кіт».
- */
-const NOT_FAT: readonly TraitBubble[] = COAT_ICONS.has("obese") ? [{ kind: "think", icon: "obese", mark: "no" }] : [];
+/** Думка «ожиріння ✗» (іконка хвороби в лікаря — товстий кіт на вагах). */
+const NOT_FAT: readonly TraitBubble[] = [{ kind: "think", icon: "obese", mark: "no" }];
 
 /** Підвіконня з батареєю: кіт на дошці (`seat`). */
 const RADIATOR: TraitProp = { art: "env/sill-living", state: null, x: 13, y: 45, scale: 0.55 };
