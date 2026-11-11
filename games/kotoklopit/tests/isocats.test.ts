@@ -226,7 +226,7 @@ describe("розмір кота (`catSize`)", () => {
       expect(s.scale * (1 + (root - 1) * s.kitten)).toBeCloseTo(size, 6);
     });
     const adult = catSize({ ageWeeks: 3, traits: [], breed: ["mixed", "mixed"] });
-    expect(adult).toEqual({ kitten: 0, scale: 1, relative: 1 });
+    expect(adult).toEqual({ kitten: 0, scale: 1, relative: 1, breed: 1 });
     // Кошеня підростає: розмір росте, кошенячі пропорції слабшають.
     const sizes = [0, 1, 2].map((week) => catSize({ ageWeeks: week, traits: [], breed: ["mixed", "mixed"] }));
     for (let i = 1; i < sizes.length; i++) {
