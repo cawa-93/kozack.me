@@ -1,92 +1,67 @@
 // Знімки рис розділу «Увага й ласка» на фото титрів (§4.2; `TRAIT_GROUPS`, `TRAITS.md`).
 //
-// Людини на фото немає: камера — це ви, тож «до вас» — обличчям у камеру, «від вас» — спиною. Ваші місця — речі квартири:
-// крісло за комп'ютером — коліна, кухонний стілець — ноги, вхідні двері — повернення, кошик з білизною — ваш запах. Чого кіт
-// хоче чи що каже — баблом над ним, як у грі (§11.4): вголос — те, що каже, думка — те, чого хоче мовчки.
+// Ви на фото — частинами персонажа (`TraitShot.person`): ноги, коліна в кріслі, рука, що гладить; камера — теж ви, тож «до вас» —
+// обличчям у камеру, «від вас» — спиною. Чого кіт хоче чи що каже — баблом над ним, як у грі (§11.4): вголос — те, що каже, думка
+// — те, чого хоче мовчки; серце над котом — його почуття до вас (на замку — недовіра, з пластирем — образа, що загоїлась).
 
-import type { TraitPhotoShots, TraitProp } from "./types";
+import type { IconName, Mark } from "../iconnames";
+import type { TraitBubble, TraitPerson, TraitPhotoShots, TraitProp } from "./types";
 
-/** Крісло за комп'ютером; `x`, `y` — від кореня кота. Щоб кіт сидів на сидінні, — (0, 28): сидіння на 28 вище за pivot. */
-const deskChair = (x: number, y: number): TraitProp[] => [
-  { art: "env/chair-desk", state: "seat", x, y, scale: 0.8 },
-  { art: "env/chair-desk", state: "backrest", x, y, scale: 0.8 },
+const say = (icon: IconName, mark?: Mark): TraitBubble => ({ kind: "say", icon, ...(mark ? { mark } : {}) });
+const think = (icon: IconName, mark?: Mark): TraitBubble => ({ kind: "think", icon, ...(mark ? { mark } : {}) });
+
+const icon = (name: IconName, x: number, y: number, s = 0.3, front = false): TraitProp => ({ art: `icon/${name}`, state: null, x, y, scale: s, ...(front ? { front } : {}) });
+
+/** Серце на замку: довіру ще треба заслужити. */
+const lockedHeart = (x: number, y: number): TraitProp[] => [icon("heart", x, y, 0.34), icon("lock", x + 8, y + 12, 0.26)];
+/** Розбите серце з пластирем на тріщині (як ❤️‍🩹): образа загоїлась. */
+const healedHeart = (x: number, y: number, s = 0.5): TraitProp[] => [
+  icon("mood-down", x, y, s),
+  { art: "icon/bandage", state: null, x: x + 1, y, rot: -35, scale: s * 0.7 },
 ];
-const ON_CHAIR = deskChair(0, 28);
-const BY_CHAIR = deskChair(58, -14);
 
-const kitchenChair = (x: number, y: number): TraitProp[] => [
-  { art: "env/chair-kitchen", state: "seat", x, y, scale: 0.6 },
-  { art: "env/chair-kitchen", state: "backrest", x, y, scale: 0.6 },
-];
-/** Кіт притулився боком до передньої ніжки. */
-const LEG_CLOSE = kitchenChair(34, -10);
-const LEG_FAR = kitchenChair(96, -10);
+/** Ваші ноги поруч із котом: кіт притулився щокою до гомілки. */
+const LEGS_CLOSE: TraitPerson = { pose: "stand", x: 40, y: -12 };
+/** Ваші ноги на чемній відстані від кота. */
+const LEGS_FAR: TraitPerson = { pose: "stand", x: 86, y: -14 };
+/** Ви сидите в кріслі, кіт — на колінах: корінь кота — на стегнах. */
+const LAP: TraitPerson = { pose: "lap", x: -4, y: 35 };
+/** Кіт зістрибує з колін: летить між колінами й підлогою, тінь — на підлозі під ним. */
+const LAP_LEAP: TraitPerson = { pose: "lap", x: -43, y: 25 };
+const LEAP_SHADOW: TraitProp = { art: "fx/shadow/cat", state: null, x: 5, y: 25, withCat: true };
+/** Рука гладить кота, що лежить на боці. */
+const HAND: TraitPerson = { pose: "pet", x: -50, y: 16, front: true };
+/** Рука позаду піднятих лап кота, що лежить на спині: лапи вчепилися в неї. */
+const HAND_BELLY: TraitPerson = { pose: "pet", x: -38, y: -4 };
+/** Рамка для низьких поз (на боці, на спині): кіт більший. */
+const LOW: { w: number; h: number } = { w: 76, h: 60 };
 
-/** Стіл із комп'ютером: корінь кота на клавіатурі — pivot на (6,4; 50,8) × масштаб нижче й правіше; на лівому краї стільниці — (64; 66,8). */
-const DESK_SCALE = 0.44;
+/** Стіл із комп'ютером: корінь кота на клавіатурі — pivot на (6,4; 50,8) × масштаб нижче й правіше. */
+const DESK_SCALE = 0.7;
 const desk = (x: number, y: number, state: "on" | "off" = "on"): TraitProp[] => [{ art: "env/computer", state, x: x * DESK_SCALE, y: y * DESK_SCALE, scale: DESK_SCALE }];
 const ON_KEYBOARD = desk(6.4, 50.8);
-const ON_DESK_EDGE = desk(64, 66.8);
 const BY_DESK = desk(80, -72);
 
-const FRONT_DOOR: TraitProp[] = [{ art: "env/door", state: "closed", x: 10, y: -30, scale: 0.38 }];
+const FRONT_DOOR: TraitProp[] = [{ art: "env/door", state: "closed", x: 20, y: -44, scale: 0.6 }];
 
 /** Відчинені двері між кімнатами: поріг, прочинене полотно й правий стояк поверх кота. */
 const doorway = (x: number, y: number): TraitProp[] => [
-  { art: "env/door", state: "open", x, y, scale: 0.38 },
-  { art: "env/door/leaf", state: null, x, y, scale: 0.38 },
-  { art: "env/door/post", state: null, x, y, scale: 0.38, front: true },
+  { art: "env/door", state: "open", x, y, scale: 0.5 },
+  { art: "env/door/leaf", state: null, x, y, scale: 0.5 },
+  { art: "env/door/post", state: null, x, y, scale: 0.5, front: true },
 ];
-/** Ваші сліди (гліф «👣», A12): куди ви пішли. */
-const steps = (x: number, y: number, rot = 0): TraitProp => ({ art: "ui/glyph/steps", state: null, x, y, rot, scale: 0.3, front: true });
-const THROUGH_DOOR = [...doorway(-10, -10), steps(-60, 12, -140)];
-const BY_DOOR = [...doorway(40, -24), steps(62, -26, 40)];
+/** Ваші сліди (гліф «👣», A12): носками туди, куди ви пішли (`rot` — від «угору» за годинниковою); позаду кота — не поверх нього. */
+const steps = (x: number, y: number, rot: number, front = true): TraitProp => ({ art: "ui/glyph/steps", state: null, x, y, rot, scale: 0.42, ...(front ? { front } : {}) });
+/** Ви пройшли крізь двері до камери ліворуч, а кіт іде вашим слідом. */
+const TRAIL_THROUGH = [...doorway(62, -38), steps(92, -58, -120, false), steps(56, -36, -120, false), steps(-52, 20, -120)];
+/** Ви пішли в інші двері, а кіт лишився: сліди від нього — у прочинений проріз. */
+const TRAIL_AWAY = [...doorway(120, -50), steps(46, -12, 60), steps(84, -32, 60)];
 
-const HOUSE: TraitProp[] = [{ art: "item/house/premium", state: null, x: -44, y: -20, scale: 0.5 }];
-
-/** Коробка перед котом: визирає з-за неї. */
-const BOX: TraitProp[] = [{ art: "env/boxes", state: "pile-1", x: -22, y: 12, scale: 0.32, front: true }];
-
-const icon = (name: string, x: number, y: number, s = 0.3, front = false): TraitProp => ({ art: `icon/${name}`, state: null, x, y, scale: s, ...(front ? { front } : {}) });
-
-/**
- * Кадр речі на фото виходить ≈ в 1,6 раза більшим за одиниці місця (підібрано за знімками галереї), тож і точка `icon` фону
- * бабла (`ui/bubble/*`, A12) — у стільки ж разів далі від його pivot. Місця в кошеняти ближчі, а розмір той самий: іконка в нього
- * трохи нижча за середину бабла.
- */
-const DRAWN = 1.6;
-/** Бабл вголос: `x`, `y` — вістря хвостика (рот того, хто каже). */
-const say = (name: string, x: number, y: number, s = 0.34): TraitProp[] => [
-  { art: "ui/bubble/say", state: null, x, y, scale: s },
-  { art: `icon/${name}`, state: null, x: x + 5.5 * s * DRAWN, y: y - 47 * s * DRAWN, scale: s },
-];
-/** Бабл-думка: `x`, `y` — найменший кружечок (біля голови того, хто думає); поверх іконки — позначка `icon/mark/*`, якщо є. */
-const think = (name: string, x: number, y: number, s = 0.34, mark?: string): TraitProp[] => {
-  const at = { x: x + 22.5 * s * DRAWN, y: y - 59 * s * DRAWN };
-  return [
-    { art: "ui/bubble/think", state: null, x, y, scale: s },
-    { art: `icon/${name}`, state: null, ...at, scale: 0.9 * s },
-    ...(mark ? [{ art: `icon/mark/${mark}` as const, state: null, ...at, scale: 0.9 * s }] : []),
-  ];
-};
-
-// Де бабл у пози кота: вістря — трохи праворуч і вище за голову.
-const SAY_SIT = { x: 28, y: -68 };
-const SAY_LOAF = { x: 38, y: -46 };
-const SAY_BEG = { x: 16, y: -88 };
-const THINK_SIT = { x: 24, y: -72 };
-const THINK_LOAF = { x: 34, y: -50 };
-const THINK_BACK = { x: 26, y: -66 };
-const THINK_NUDGE = { x: 38, y: -70 };
-
-/** Серце на замку: довіру ще треба заслужити. */
-const LOCKED_HEART: TraitProp[] = [icon("heart", 34, -84, 0.34), icon("lock", 42, -72, 0.26)];
-
-const basket = (load: string): TraitProp => ({ art: "env/laundry-basket", state: load, x: 56, y: -12, scale: 0.6 });
-const SURPRISE: TraitProp = { art: "mess/surprise", state: null, x: 40, y: 18, front: true, scale: 0.7 };
-const TREAT = icon("treats", 34, 10, 0.3, true);
-/** Рука гладить кота — іконка «хоче уваги» (A12) над ним. */
-const PETTED = icon("attention", 10, -48, 0.4);
+const basket = (load: string): TraitProp => ({ art: "env/laundry-basket", state: load, x: 64, y: -14, scale: 0.8 });
+const SURPRISE: TraitProp = { art: "mess/surprise", state: null, x: 46, y: 20, front: true, scale: 0.85 };
+const TREAT = icon("treats", 40, 14, 0.36, true);
+/** Покусана долоня біля вашої руки, яку кіт ухопив лапами: «ой!», як бабл укусу над персонажем у грі. */
+const BITE_SAY = icon("bite", 36, -44, 0.3, true);
 
 export const SHOTS: TraitPhotoShots = {
   affection: {
@@ -97,79 +72,90 @@ export const SHOTS: TraitPhotoShots = {
         props: [icon("pleasant", 42, -86, 0.3)],
       },
       calm: {
-        idea: "Хвіст трубою, треться щокою об невидиму руку, очі спокійно напівзаплющені: по ласку — щодня, як на роботу.",
-        still: { base: "nudge", at: 820, eyes: "half" },
+        idea: "Хвіст трубою, треться щокою об невидиму руку, а над ним — менші сердечка: по ласку — щодня, як на роботу.",
+        still: { base: "nudge", at: 820 },
+        props: [icon("pleasant", 42, -80, 0.26)],
       },
       sulk: {
-        idea: "Тягнеться лобом уперед, але хвіст і вуха опущені, погляд сумний, а в думці — сердечка: просить ласки, якої бракує.",
-        still: { base: "nudge", at: 320, view: "front", bones: { tail: -45 } },
-        props: think("pleasant", THINK_NUDGE.x, THINK_NUDGE.y),
+        idea: "Тягнеться лобом уперед, але голова похнюплена, вуха притиснуті, очі напівзаплющені, а в думці — сердечка: бодається, а ласки не дістає.",
+        still: { base: "nudge", at: 320, eyes: "half", ears: "flat", bones: { head: 16, tail: -45 } },
+        bubbles: [think("pleasant")],
       },
       ill: {
-        idea: "Хворий лежить буханцем, але тягне голову вгору, ніби бодається в руку, а в думці — сердечка: мріє про ласку, якої поруч немає.",
+        idea: "Хворий лежить буханцем, але тягне голову вгору, ніби бодається в руку, а в думці — сердечка: і хворий тягнеться по ласку.",
         still: { bones: { neck: -8, head: -20 } },
-        props: think("pleasant", THINK_LOAF.x, THINK_LOAF.y - 4, 0.28),
+        bubbles: [think("pleasant")],
       },
     },
     minus: {
       content: {
-        idea: "Лежить біля власного будиночка й задоволено мружиться сам до себе: у нього свої сховки, і ласка йому потрібна лише тоді, коли сам захоче.",
-        still: { base: "loaf", flip: true },
-        props: HOUSE,
+        idea: "Іде геть боком до камери, хвіст трубою, задоволено мружиться, а в думці — кіт, що йде з-під руки: щасливий сам по собі, рук не треба.",
+        still: { base: "walk", at: 100, eyes: "arc", bones: { tail: 30 } },
+        bubbles: [think("aloof")],
       },
       calm: {
-        idea: "Іде геть спиною до камери, хвіст рівно: щойно потяглися погладити, чемно вислизнув з-під руки.",
+        idea: "Іде геть спиною до камери, хвіст рівно, а в думці — кіт, що йде з-під руки: щойно потяглися погладити, чемно вислизнув.",
         still: { base: "walk", at: 100, view: "back", bones: { tail: 20 } },
+        bubbles: [think("aloof")],
       },
       sulk: {
-        idea: "Іде геть спиною до камери, похнюпившись і опустивши хвіст: тримається осторонь, хоч самотньо.",
-        still: { base: "walk", at: 100, bones: { head: 12, tail: -40 } },
+        idea: "Сидить окремо, насуплений, вуха притиснуті, а в думці — кіт, що йде з-під руки: ображений, а рук однаково не підпускає.",
+        bubbles: [think("aloof")],
       },
       ill: {
-        idea: "Хворий лежить біля свого будиночка, відвернувшись від усіх: забився у свій куток і нікого не чекає.",
+        idea: "Хворий лежить буханцем, відвернувшись, а в думці — кіт, що йде з-під руки: і тепер не хоче, щоб його чіпали.",
         still: { flip: true },
-        props: HOUSE,
+        bubbles: [think("aloof")],
       },
     },
   },
   petting: {
     plus: {
       content: {
-        idea: "Розтікся на боці, очі заплющені від блаженства, а над ним — рука, що гладить: такого можна гладити годинами — і гладять.",
+        idea: "Розтікся на боці, очі заплющені від блаженства, а ваша рука гладить його: такого можна гладити годинами — і гладять.",
         still: { base: "sprawl" },
-        props: [PETTED],
+        person: HAND,
+        frame: LOW,
       },
       calm: {
-        idea: "Спокійно лежить на боці, підставивши бік, очі напівзаплющені, а над ним — рука, що гладить: терпить будь-які пестощі й не думає кусатися.",
-        still: { base: "sprawl", eyes: "half" },
-        props: [PETTED],
+        idea: "Спокійно дрімає на боці під вашою рукою, очі заплющені: терпить будь-які пестощі й не думає кусатися.",
+        still: { base: "sprawl", eyes: "closed" },
+        person: HAND,
+        frame: LOW,
       },
       sulk: {
-        idea: "Лежить на боці спиною до камери, а в думці — рука, що гладить: терпіння на години пестощів, а гладять хвилинку.",
-        still: { base: "sprawl" },
-        props: think("attention", 30, -40),
+        idea: "Лежить на боці, розплющені очі сумні, вуха притиснуті, а в думці — рука, що гладить: терпіння на години пестощів, а гладять хвилинку.",
+        still: { base: "sprawl", eyes: "open", ears: "flat" },
+        bubbles: [think("attention")],
+        frame: LOW,
       },
       ill: {
-        idea: "Хворий безсило лежить на боці з хворими очима, а над ним — рука, що гладить: усе одно підставляє бік під руку.",
+        idea: "Хворий безсило лежить на боці з хворими очима, а ваша рука гладить його: усе одно підставляє бік під руку.",
         still: { base: "sprawl" },
-        props: [PETTED],
+        person: HAND,
+        frame: LOW,
       },
     },
     minus: {
       content: {
-        idea: "«Пастка на животику»: лежить на спині, пухнастий живіт напоказ, задоволено мружиться, а поруч — покусана долоня: радісно хапає кожну руку, що спокусилася.",
-        still: { base: "belly" },
-        props: [icon("bite", 46, -56, 0.3)],
+        idea: "«Пастка на животику»: лежить на спині, живіт напоказ, задоволено мружиться й, вишкіривши ікла, хапає лапами вашу руку, а біля неї — покусана долоня: радісно ловить кожну руку, що спокусилася.",
+        still: { base: "belly", mouth: "hiss" },
+        person: HAND_BELLY,
+        props: [BITE_SAY],
+        frame: LOW,
       },
       calm: {
         idea: "Лежить на спині животом догори, але вуха притиснуті, а поруч — покусана долоня: живіт — приманка, торкнешся — вкусить.",
         still: { base: "belly", ears: "flat" },
         props: [icon("bite", 46, -56, 0.3)],
+        frame: LOW,
       },
       sulk: {
-        idea: "Живіт напоказ, проте очі сердито примружені й вуха притиснуті, а поруч — покусана долоня: кожну ласку спершу перевіряє на зуб.",
-        still: { base: "belly", view: "front", eyes: "squint", ears: "flat" },
-        props: [icon("bite", 46, -56, 0.3)],
+        idea: "Лежить на спині, живіт напоказ, проте очі сердито примружені, вуха притиснуті, і він шипить, учепившись лапами у вашу руку, а біля неї — покусана долоня: кожну ласку спершу перевіряє на зуб.",
+        still: { base: "belly", eyes: "squint", ears: "flat", mouth: "hiss" },
+        person: HAND_BELLY,
+        props: [BITE_SAY],
+        frame: LOW,
       },
       ill: {
         idea: "Хворий лежить буханцем і шипить, вишкіривши ікла, вуха назад, а поруч — покусана долоня: від болю кусає кожну руку.",
@@ -183,44 +169,44 @@ export const SHOTS: TraitPhotoShots = {
       content: {
         idea: "Звівся на задні лапи й нявчить у камеру, мружачись, а в баблі вголос — рука, що гладить: вимагає уваги й знає, що отримає.",
         still: { base: "beg", at: 1300, mouth: "meow" },
-        props: say("attention", SAY_BEG.x, SAY_BEG.y),
+        bubbles: [say("attention")],
       },
       calm: {
         idea: "Стоїть на задніх лапах і нявчить просто в камеру, а в баблі вголос — рука, що гладить: «увага — зараз».",
         still: { base: "beg", at: 1300, mouth: "meow" },
-        props: say("attention", SAY_BEG.x, SAY_BEG.y),
+        bubbles: [say("attention")],
       },
       sulk: {
-        idea: "На задніх лапах нявчить у камеру, але погляд ображений і вуха опущені, а в баблі вголос — рука, що гладить: уваги вимагає щодня, та її не дають.",
-        still: { base: "beg", at: 1300, view: "front", mouth: "meow" },
-        props: say("attention", SAY_BEG.x, SAY_BEG.y),
+        idea: "На задніх лапах нявчить у камеру, але очі сердито примружені й вуха притиснуті, а в баблі вголос — рука, що гладить: уваги вимагає щодня, та її не дають.",
+        still: { base: "beg", at: 1300, mouth: "meow", eyes: "squint" },
+        bubbles: [say("attention")],
       },
       ill: {
         idea: "Хворий, сидить і, піднявши лапу, нявчить у камеру, а в баблі вголос — рука, що гладить: до хрипоти благає уваги.",
         still: { base: "beg", at: 160, mouth: "meow" },
-        props: say("attention", 24, -80, 0.3),
+        bubbles: [say("attention")],
       },
     },
     minus: {
       content: {
-        idea: "Скромно сидить, схиливши голову, задоволено мружиться, а ласку лише уявляє в думці: нічого не просить — і щасливий тим, що має.",
-        still: { bones: { head: 12 } },
-        props: think("attention", THINK_SIT.x, THINK_SIT.y),
+        idea: "Скромно сидить, схиливши голову й дивлячись убік, задоволено мружиться, а в думці — рука, що гладить, зі знаком питання: «може, колись погладите?» — і щасливий тим, що має.",
+        still: { flip: true, bones: { head: 14 } },
+        bubbles: [think("attention", "ask")],
       },
       calm: {
-        idea: "Сидить тихенько, схиливши голову, і лише думає про ласку: чемно чекає, поки помітять, і не пхається.",
-        still: { bones: { head: 12 } },
-        props: think("attention", THINK_SIT.x, THINK_SIT.y),
+        idea: "Сидить тихенько, схиливши голову й дивлячись убік, а в думці — рука, що гладить, зі знаком питання: чемно чекає, поки помітять, і не пхається.",
+        still: { flip: true, bones: { head: 14 } },
+        bubbles: [think("attention", "ask")],
       },
       sulk: {
-        idea: "Сидить, низько опустивши голову й вуха, а ласка — лише в думці: не дочекався уваги, а попросити так і не наважився.",
-        still: { base: "sit", view: "front", bones: { head: 18 } },
-        props: think("attention", THINK_SIT.x, THINK_SIT.y),
+        idea: "Сидить, низько опустивши голову й вуха, дивиться вбік, а в думці — рука, що гладить, зі знаком питання: не дочекався уваги, а попросити так і не наважився.",
+        still: { flip: true, bones: { head: 18, tail: -30 } },
+        bubbles: [think("attention", "ask")],
       },
       ill: {
-        idea: "Хворий лежить буханцем, низько схиливши голову, а ласка — лише в думці: так і не наважився попросити уваги.",
-        still: { bones: { neck: 14, head: 22 } },
-        props: think("attention", THINK_LOAF.x, THINK_LOAF.y + 4, 0.28),
+        idea: "Хворий лежить буханцем, низько схиливши голову, а в думці — рука, що гладить, зі знаком питання: так і не наважився попросити уваги.",
+        still: { flip: true, bones: { neck: 14, head: 22 } },
+        bubbles: [think("attention", "ask")],
       },
     },
   },
@@ -229,165 +215,246 @@ export const SHOTS: TraitPhotoShots = {
       content: {
         idea: "Задер голову й співає на все горло, мружачись від задоволення, а в баблі — нявкання з дугами звуку: оперний співак, і його охоче слухають.",
         still: { mouth: "meow", bones: { head: -22, tail: 20 } },
-        props: say("meow", SAY_SIT.x, SAY_SIT.y - 4),
+        bubbles: [say("meow")],
       },
       calm: {
         idea: "Сидить і голосно нявчить у камеру, а в баблі — нявкання з дугами звуку: коментує все, що діється вдома.",
         still: { mouth: "meow", bones: { head: -16 } },
-        props: say("meow", SAY_SIT.x, SAY_SIT.y),
+        bubbles: [say("meow")],
       },
       sulk: {
-        idea: "Нявчить, задерши голову, але погляд ображений і вуха опущені, а в баблі — нявкання з дугами звуку: скаржиться на весь дім.",
-        still: { base: "sit", view: "front", mouth: "meow", bones: { head: -16 } },
-        props: say("meow", SAY_SIT.x, SAY_SIT.y),
+        idea: "Нявчить, задерши голову, але погляд ображений і вуха притиснуті, а в баблі — нявкання з дугами звуку: скаржиться на весь дім.",
+        still: { mouth: "meow", bones: { head: -16, tail: -30 } },
+        bubbles: [say("meow")],
       },
       ill: {
         idea: "Хворий лежить буханцем і кличе, розтуливши рота, а в баблі — нявкання: голос слабкий, а відповіді немає.",
         still: { mouth: "meow", bones: { neck: -6, head: -12 } },
-        props: say("meow", SAY_LOAF.x, SAY_LOAF.y - 4, 0.3),
+        bubbles: [say("meow")],
       },
     },
     minus: {
       content: {
         idea: "Сидить, стуливши рота, і лагідно мружиться, а в баблі — лише три крапки: розуміє вас без слів.",
         still: { bones: { head: -6 } },
-        props: say("meow-silent", SAY_SIT.x, SAY_SIT.y),
+        bubbles: [say("meow-silent")],
       },
       calm: {
-        idea: "Розтуляє рота, а в баблі замість звуку — три крапки: «Німе кіно» просить, не видавши ні звуку.",
-        still: { mouth: "meow", bones: { head: -8 } },
-        props: say("meow-silent", SAY_SIT.x, SAY_SIT.y),
+        idea: "Сидить, стуливши рота, а в баблі замість звуку — три крапки: «Німе кіно» просить, не видавши ні звуку.",
+        still: { bones: { head: -8 } },
+        bubbles: [say("meow-silent")],
       },
       sulk: {
-        idea: "Сидить, вуха опущені, рот розтулено, а в баблі — три крапки: скривджений, але й не пискне.",
-        still: { base: "sit", view: "front", mouth: "meow" },
-        props: say("meow-silent", SAY_SIT.x, SAY_SIT.y),
+        idea: "Сидить насуплений, вуха притиснуті, рот стулений, а в баблі — три крапки: скривджений, але й не пискне.",
+        bubbles: [say("meow-silent")],
       },
       ill: {
         idea: "Хворий лежить буханцем, а в баблі — три крапки: навіть тепер не скаржиться вголос.",
-        props: say("meow-silent", SAY_LOAF.x, SAY_LOAF.y, 0.3),
+        bubbles: [say("meow-silent")],
       },
     },
   },
   follower: {
     plus: {
-      content: { idea: "Біжить слідом крізь відчинені двері в іншу кімнату, хвіст трубою, мружиться: тінь господаря.", still: { base: "walk", at: 100, flip: true }, props: THROUGH_DOOR },
-      calm: { idea: "Крокує крізь дверний проріз за вами: з кімнати в кімнату, ні на крок не відстаючи.", still: { base: "walk", at: 100, flip: true }, props: THROUGH_DOOR },
-      sulk: {
-        idea: "Плентається крізь двері слідом, похнюпившись і опустивши хвіст: ходить за вами, хоч на нього рідко озираються.",
-        still: { base: "sadWalk", at: 100, flip: true, eyes: "half", ears: "side" },
-        props: THROUGH_DOOR,
+      content: {
+        idea: "Вийшов із дверей іншої кімнати й радісно, хвіст трубою, ступає вашим слідом, що веде повз нього далі: тінь господаря.",
+        still: { base: "walk", at: 100, flip: true, bones: { neck: 10, head: 24, tail: 30 } },
+        props: TRAIL_THROUGH,
       },
-      ill: { idea: "Хворий, понуро бреде крізь двері слідом за вами: і тепер не лишається сам.", still: { base: "sadWalk", at: 100, flip: true }, props: THROUGH_DOOR },
+      calm: {
+        idea: "Крокує з дверного прорізу вашим слідом, носом до слідів: з кімнати в кімнату, ні на крок не відстаючи.",
+        still: { base: "walk", at: 100, flip: true, bones: { neck: 10, head: 24, tail: 10 } },
+        props: TRAIL_THROUGH,
+      },
+      sulk: {
+        idea: "Плентається з дверей вашим слідом, похнюпившись, вуха притиснуті, хвіст опущений: ходить за вами, хоч на нього рідко озираються.",
+        still: { base: "sadWalk", at: 100, flip: true, ears: "flat" },
+        props: TRAIL_THROUGH,
+      },
+      ill: {
+        idea: "Хворий, понуро бреде з дверей вашим слідом: і тепер не відстає ні на крок.",
+        still: { base: "sadWalk", at: 100, flip: true },
+        props: TRAIL_THROUGH,
+      },
     },
     minus: {
-      content: { idea: "Лежить буханцем біля відчинених дверей і мружиться: чекає там, де його лишили, — знає, що ви повернетеся.", still: { base: "loaf" }, props: BY_DOOR },
-      calm: { idea: "Сидить біля відчинених дверей і нікуди не йде: де лишили, там і шукайте.", props: BY_DOOR },
-      sulk: { idea: "Сидить спиною до камери й дивиться в двері, за якими ви зникли: чекає, але слідом не йде.", props: BY_DOOR },
-      ill: { idea: "Хворий лежить біля дверей, яких не переступає: днями чекає у своєму кутку.", props: BY_DOOR },
+      content: {
+        idea: "Лежить буханцем на своєму місці й мружиться, а ваші сліди йдуть від нього в далекі двері: ви пішли, а він лишився, де був, — знає, що повернетеся.",
+        still: { base: "loaf" },
+        props: TRAIL_AWAY,
+      },
+      calm: {
+        idea: "Сидить на своєму місці, а ваші сліди йдуть від нього в далекі двері: слідом не пішов — де лишили, там і шукайте.",
+        props: TRAIL_AWAY,
+      },
+      sulk: {
+        idea: "Сидить насуплений на своєму місці, а ваші сліди йдуть від нього в далекі двері: сумує, що лишили, але слідом не йде.",
+        props: TRAIL_AWAY,
+      },
+      ill: {
+        idea: "Хворий лежить на своєму місці, а ваші сліди йдуть від нього в далекі двері: днями чекає там, де лишили.",
+        props: TRAIL_AWAY,
+      },
     },
   },
   legs: {
     plus: {
-      content: { idea: "Треться щокою й боком об ніжку стільця, хвіст трубою, очі заплющені: «вісімка» під ногами — з любов'ю.", still: { base: "nudge", at: 820 }, props: LEG_CLOSE },
-      calm: { idea: "Треться щокою об ніжку стільця, хвіст угору: щоденна «вісімка» біля ніг.", still: { base: "nudge", at: 820, eyes: "half" }, props: LEG_CLOSE },
-      sulk: {
-        idea: "Треться об ніжку стільця спиною до камери, похнюпившись і опустивши хвіст: пхається під ноги, а чує бурчання.",
-        still: { base: "nudge", at: 820, view: "back", bones: { head: 8, tail: -40 } },
-        props: LEG_CLOSE,
+      content: {
+        idea: "Треться щокою й боком об вашу ногу, хвіст трубою, очі заплющені: «вісімка» під ногами — з любов'ю.",
+        still: { base: "nudge", at: 820 },
+        person: LEGS_CLOSE,
       },
-      ill: { idea: "Хворий лежить, притулившись до ніжки стільця: тулиться до ніг, які рідко зупиняються поруч.", props: kitchenChair(30, -14) },
+      calm: {
+        idea: "Треться щокою об вашу гомілку, хвіст угору: щоденна «вісімка» біля ніг.",
+        still: { base: "nudge", at: 820 },
+        person: LEGS_CLOSE,
+      },
+      sulk: {
+        idea: "Треться об вашу ногу, але похнюпився, вуха притиснуті, хвіст опущений: пхається під ноги, а чує бурчання.",
+        still: { base: "nudge", at: 820, bones: { head: 10, tail: -40 } },
+        person: LEGS_CLOSE,
+      },
+      ill: {
+        idea: "Хворий лежить, притулившись до ваших ніг: тулиться до них і тепер.",
+        person: { pose: "stand", x: 34, y: -14 },
+      },
     },
     minus: {
-      content: { idea: "Сидить на чемній відстані від стільця й задоволено мружиться: поруч, але не під ногами.", props: LEG_FAR },
-      calm: { idea: "Сидить поодаль від стільця: особистий простір понад усе.", props: LEG_FAR },
-      sulk: { idea: "Сидить спиною на відстані від стільця: чекає збоку, поки підійдуть самі, — та проходять повз.", props: LEG_FAR },
-      ill: { idea: "Хворий лежить далеко від стільця: давно не чекає тепла біля ніг.", props: LEG_FAR },
+      content: {
+        idea: "Сидить на чемній відстані від ваших ніг і задоволено мружиться: поруч, але не під ногами.",
+        person: LEGS_FAR,
+        frame: { w: 170, h: 100 },
+      },
+      calm: {
+        idea: "Сидить поодаль від ваших ніг: особистий простір понад усе.",
+        person: LEGS_FAR,
+        frame: { w: 170, h: 100 },
+      },
+      sulk: {
+        idea: "Сидить насуплений на відстані від ваших ніг: чекає збоку, поки підійдуть самі, — та проходять повз.",
+        person: LEGS_FAR,
+        frame: { w: 170, h: 100 },
+      },
+      ill: {
+        idea: "Хворий лежить на відстані від ваших ніг: і тепер не тулиться.",
+        person: LEGS_FAR,
+        frame: { w: 170, h: 100 },
+      },
     },
   },
   helper: {
     plus: {
       content: { idea: "Розлігся просто на клавіатурі перед увімкненим монітором і мружиться: співавтор вносить правки у звіт.", still: { base: "sprawl" }, props: ON_KEYBOARD },
       calm: { idea: "Лежить буханцем на клавіатурі перед увімкненим монітором: прокинувся саме тоді, коли вам працювати.", still: { base: "loaf" }, props: ON_KEYBOARD },
-      sulk: { idea: "Сидить на робочому столі спиною до камери й дивиться в монітор: годинами стежить, як ви працюєте, і чекає уваги.", props: ON_DESK_EDGE },
+      sulk: {
+        idea: "Лежить буханцем на клавіатурі перед увімкненим монітором, насуплений, вуха притиснуті: займає ваше місце, бо інакше уваги не дочекатися.",
+        still: { base: "loaf", bones: { head: 12 } },
+        props: ON_KEYBOARD,
+      },
       ill: { idea: "Хворий лежить на клавіатурі перед погаслим монітором: гріється там, де давно ніхто не працює.", props: desk(6.4, 50.8, "off") },
     },
     minus: {
       content: {
         idea: "Лежить буханцем на підлозі біля робочого столу й мружиться, а в думці — кіт на клавіатурі, перекреслений: не заважає працювати — найкращий колега.",
         still: { base: "loaf" },
-        props: [...BY_DESK, ...think("cat-laptop", 6, -50, 0.34, "no")],
+        props: BY_DESK,
+        bubbles: [think("cat-laptop", "no")],
       },
       calm: {
         idea: "Лежить біля робочого столу, а не на ньому, а в думці — перекреслений кіт на клавіатурі: клавіатура — ваша, він лише складає компанію.",
         still: { base: "loaf" },
-        props: [...BY_DESK, ...think("cat-laptop", 6, -50, 0.34, "no")],
+        props: BY_DESK,
+        bubbles: [think("cat-laptop", "no")],
       },
       sulk: {
-        idea: "Сидить біля столу спиною до камери, а в думці — перекреслений кіт на клавіатурі: ви працюєте, а він нудьгує й чекає, коли відірветеся від екрана.",
-        props: [...BY_DESK, ...think("cat-laptop", -14, -64, 0.34, "no")],
+        idea: "Сидить насуплений на підлозі біля столу з увімкненим монітором: нудно, а на стіл однаково не лізе — чекає, поки відірветеся від екрана.",
+        props: BY_DESK,
       },
       ill: {
-        idea: "Хворий лежить біля робочого столу, а в думці — перекреслений кіт на клавіатурі: не сміє завадити роботі.",
-        props: [...BY_DESK, ...think("cat-laptop", 6, -46, 0.3, "no")],
+        idea: "Хворий лежить на підлозі біля столу з увімкненим монітором: тихо складає компанію, поки ви працюєте.",
+        props: BY_DESK,
       },
     },
   },
   lap: {
     plus: {
-      content: { idea: "Згорнувся клубком на вашому кріслі й солодко спить: де коліна — там і він, а нема колін — то хоч їхнє місце.", still: { base: "sleep" }, props: ON_CHAIR },
-      calm: { idea: "Лежить буханцем на сидінні крісла: чекає, поки сядете, щоб перебратися на коліна.", still: { base: "loaf" }, props: ON_CHAIR },
-      sulk: { idea: "Сидить на кріслі спиною до камери: чатує на коліна, а ви сідаєте так рідко.", props: ON_CHAIR },
-      ill: { idea: "Хворий лежить на кріслі, де мали б бути ваші коліна.", props: ON_CHAIR },
+      content: {
+        idea: "Лежить буханцем у вас на колінах і блаженно мружиться: де коліна — там і він.",
+        still: { base: "loaf", shadow: false },
+        person: LAP,
+      },
+      calm: {
+        idea: "Спокійно вмостився буханцем у вас на колінах: щойно сіли — він уже тут.",
+        still: { base: "loaf", shadow: false },
+        person: LAP,
+      },
+      sulk: {
+        idea: "Сидить у вас на колінах, але насуплений, вуха притиснуті: на коліна дістався, а гладити його й не думають.",
+        still: { shadow: false },
+        person: LAP,
+      },
+      ill: {
+        idea: "Хворий лежить у вас на колінах: і хворий тулиться до рук.",
+        still: { shadow: false },
+        person: LAP,
+      },
     },
     minus: {
       content: {
-        idea: "Сидить на підлозі біля порожнього крісла, відвернувшись від нього, і щасливо мружиться: любить вас, але суто з підлоги — на коліна нізащо.",
-        still: { flip: true },
-        props: BY_CHAIR,
+        idea: "Задоволено зістрибує з ваших колін: на руках не всидить — воля дорожча.",
+        still: { base: "jumpDown", at: 125, shadow: false },
+        person: LAP_LEAP,
+        props: [LEAP_SHADOW],
       },
       calm: {
-        idea: "Сидить біля порожнього крісла, відвернувшись, вуха набік, а над ним — сліди кігтів: на руки — ні, бо подряпає.",
-        still: { flip: true, ears: "side" },
-        props: [...BY_CHAIR, icon("claws", -40, -70, 0.26)],
+        idea: "Зістрибує з ваших колін, притиснувши вуха, а в баблі вголос — злість: на руках не всидить і хвилини.",
+        still: { base: "jumpDown", at: 125, ears: "flat", shadow: false },
+        person: LAP_LEAP,
+        props: [LEAP_SHADOW],
+        bubbles: [say("angry")],
       },
       sulk: {
-        idea: "Б'є лапою з притиснутими вухами й сердитими очима, а над ним — сліди кігтів: «не чіпай мене» — з рук виривається.",
-        still: { base: "paw", at: 0, view: "front", eyes: "squint", ears: "flat" },
-        props: [...BY_CHAIR, icon("claws", -36, -86, 0.26)],
+        idea: "Вириваючись, стрибає з ваших колін, очі сердито примружені, вуха притиснуті, а в баблі вголос — злість: «не чіпай мене».",
+        still: { base: "jumpDown", at: 125, eyes: "squint", ears: "flat", shadow: false },
+        person: LAP_LEAP,
+        props: [LEAP_SHADOW],
+        bubbles: [say("angry")],
       },
       ill: {
-        idea: "Хворий лежить біля крісла, відвернувшись, вуха притиснуті, а над ним — сліди кігтів: з рук виривається, хоч сил і мало.",
-        still: { flip: true, ears: "flat" },
-        props: [...BY_CHAIR, icon("claws", -42, -52, 0.24)],
+        idea: "Хворий лежить у вас на колінах, але вуха притиснуті, шипить, а в баблі вголос — злість: на руках не всидить, хоч сил і мало.",
+        still: { ears: "flat", mouth: "hiss", shadow: false },
+        person: LAP,
+        bubbles: [say("angry")],
       },
     },
   },
   devotion: {
     plus: {
-      content: { idea: "Сидить під вхідними дверима обличчям до вас і повільно, щасливо мружиться: зустрів і каже по-котячому «люблю».", still: { overlay: "slowBlink" }, props: FRONT_DOOR },
-      calm: { idea: "Зустрічає біля вхідних дверей, повільно моргаючи в камеру: дочекався.", still: { overlay: "slowBlink", eyes: "half" }, props: FRONT_DOOR },
-      sulk: { idea: "Сидить спиною до камери й дивиться на зачинені вхідні двері: цілий день чекав, а ви все барилися.", props: FRONT_DOOR },
-      ill: { idea: "Хворий лежить під вхідними дверима: вірить, що ось-ось почує ваші кроки.", props: FRONT_DOOR },
+      content: { idea: "Сидить під вхідними дверима обличчям до вас і повільно, щасливо мружиться, а над ним — серце: зустрів і каже по-котячому «люблю».", still: { overlay: "slowBlink" }, props: [...FRONT_DOOR, icon("heart", 34, -84, 0.34)] },
+      calm: { idea: "Зустрічає біля вхідних дверей, повільно моргаючи в камеру, а над ним — серце: дочекався.", still: { overlay: "slowBlink" }, props: [...FRONT_DOOR, icon("heart", 34, -84, 0.34)] },
+      sulk: {
+        idea: "Сидить насуплений під зачиненими вхідними дверима обличчям до вас, а над ним — серце: цілий день чекав, а ви все барилися.",
+        props: [...FRONT_DOOR, icon("heart", 34, -80, 0.34)],
+      },
+      ill: { idea: "Хворий лежить під вхідними дверима, а над ним — серце: вірить, що ось-ось почує ваші кроки.", props: [...FRONT_DOOR, icon("heart", 40, -66, 0.32)] },
     },
     minus: {
       content: {
-        idea: "Визирає з-за коробки й обережно мружиться, а над ним — сердечко: довго придивлявся, перш ніж відтанути, — зате тепер назавжди.",
-        props: [...BOX, icon("heart", 30, -86, 0.3)],
+        idea: "Сидить і щасливо мружиться, а над ним — серце на замку: живе собі радо, але довіряє не одразу.",
+        props: lockedHeart(34, -84),
       },
       calm: {
-        idea: "Сидить, підозріло примруживши очі, а над ним — серце на замку: не поспішає довіряти, довіру треба заслужити.",
-        still: { eyes: "squint" },
-        props: LOCKED_HEART,
+        idea: "Спокійно сидить, а над ним — серце на замку: не поспішає довіряти, довіру треба заслужити.",
+        props: lockedHeart(34, -84),
       },
       sulk: {
-        idea: "Сидить, сердито примружившись, вуха опущені, а над ним — серце на замку: довіряє по крихті, а після кожної прикрості — знову спочатку.",
-        still: { base: "sit", view: "front", eyes: "squint" },
-        props: LOCKED_HEART,
+        idea: "Сидить, сердито примружившись, вуха притиснуті, а над ним — серце на замку: довіряє по крихті, а після кожної прикрості — знову спочатку.",
+        still: { eyes: "squint" },
+        props: lockedHeart(34, -84),
       },
       ill: {
         idea: "Хворий лежить буханцем, а над ним — серце на замку: нікого не підпускає до серця, навіть тепер.",
-        props: [icon("heart", 40, -66, 0.32), icon("lock", 48, -55, 0.24)],
+        props: lockedHeart(40, -66),
       },
     },
   },
@@ -395,80 +462,80 @@ export const SHOTS: TraitPhotoShots = {
     plus: {
       content: {
         idea: "Сидить боком, демонстративно відвернувшись і задерши носа, але мружиться, а в думці — надута образа: ображається величаво — і скоро так само величаво пробачить.",
-        still: { flip: true, bones: { head: -14 } },
-        props: think("sulk", -24, -72),
+        still: { flip: true, eyes: "arc", bones: { head: -14 } },
+        bubbles: [think("sulk")],
       },
       calm: {
         idea: "Сидить спиною до камери, підкреслено не помічаючи вас, а в думці — надута образа: дметься через дрібницю.",
         still: { base: "sulk", view: "back", ears: "up" },
-        props: think("sulk", THINK_BACK.x, THINK_BACK.y),
+        bubbles: [think("sulk")],
       },
       sulk: {
-        idea: "Сидить спиною до камери, низько схиливши голову, вуха притиснуті, а в думці — надута образа: образа надовго.",
-        still: { ears: "flat", bones: { head: 10 } },
-        props: think("sulk", THINK_BACK.x, THINK_BACK.y),
+        idea: "Сидить насуплений, низько схиливши голову, вуха притиснуті, а в думці — надута образа: образа надовго.",
+        still: { flip: true },
+        bubbles: [think("sulk")],
       },
       ill: {
-        idea: "Хворий лежить, відвернувшись від камери, а в думці — надута образа: і хворіє, і ображається мовчки.",
+        idea: "Хворий лежить, відвернувшись, а в думці — надута образа: і хворіє, і ображається мовчки.",
         still: { flip: true },
-        props: think("sulk", -30, -50, 0.28),
+        bubbles: [think("sulk")],
       },
     },
     minus: {
       content: {
-        idea: "Іде просто до камери, хвіст трубою, мружиться, а в думці — надута образа, перекреслена мазком «ні»: хоч би що сталося, уже йде ластитися — прощає ще до перепросин.",
+        idea: "Іде просто до камери, хвіст трубою, мружиться, а над ним — розбите серце з пластирем: хоч би що сталося, уже йде ластитися — прощає ще до перепросин.",
         still: { base: "walk", at: 100 },
-        props: think("sulk", 30, -66, 0.34, "no"),
+        props: healedHeart(34, -84),
       },
       calm: {
-        idea: "Іде до камери з хвостом угору, а в думці — перекреслена образа: після будь-якої халепи за хвилину знову по ласку, наче нічого не сталося.",
+        idea: "Іде до камери з хвостом угору, а над ним — розбите серце з пластирем: після будь-якої халепи за хвилину знову по ласку, наче нічого не сталося.",
         still: { base: "walk", at: 100 },
-        props: think("sulk", 30, -66, 0.34, "no"),
+        props: healedHeart(34, -84),
       },
       sulk: {
-        idea: "Іде до камери, хоч вуха ще опущені й погляд сумний, а в думці — перекреслена образа: прикрість уже викинув з голови й знову по ласку.",
-        still: { base: "walk", at: 100, view: "front" },
-        props: think("sulk", 30, -66, 0.34, "no"),
+        idea: "Іде до камери, хоч вуха ще притиснуті й погляд насуплений, а над ним — розбите серце з пластирем: прикрість уже загоюється, і він знову по ласку.",
+        still: { base: "walk", at: 100 },
+        props: healedHeart(34, -84),
       },
       ill: {
-        idea: "Хворий, понуро бреде до камери, а в думці — перекреслена образа: без докору знову йде по ласку, якої бракує.",
+        idea: "Хворий, понуро бреде до камери, а над ним — розбите серце з пластирем: без докору знову йде по ласку, якої бракує.",
         still: { base: "sadWalk", at: 100 },
-        props: think("sulk", 36, -56, 0.28, "no"),
+        props: healedHeart(40, -66, 0.46),
       },
     },
   },
   vengeful: {
     plus: {
-      content: { idea: "Сидить біля кошика з білизною поруч зі своїм «сюрпризом» і задоволено мружиться: карає рідко й лише за діло.", props: [basket("load-1"), SURPRISE] },
+      content: { idea: "Сидить біля кошика з вашою білизною поруч зі своїм «сюрпризом» і задоволено мружиться: карає рідко й лише за діло.", props: [basket("load-3"), SURPRISE] },
       calm: {
         idea: "Біля кошика з вашою білизною — свіжий «сюрприз», а кіт хитро мружиться: звів рахунки за прикрість.",
         still: { eyes: "squint" },
         props: [basket("load-3"), SURPRISE],
       },
-      sulk: { idea: "Сидить спиною до камери біля кошика з білизною й «сюрпризу»: ображений — і вже помстився.", props: [basket("load-4"), SURPRISE] },
+      sulk: { idea: "Сидить насуплений біля кошика з вашою білизною й свого «сюрпризу»: ображений — і вже помстився.", props: [basket("load-4"), SURPRISE] },
       ill: {
         idea: "Хворий лежить біля переповненого кошика з білизною, поруч смердить «сюрприз»: тиха війна, у якій немає переможців.",
-        props: [basket("overflow"), SURPRISE, { art: "fx/smell", state: "a", x: 40, y: 8, front: true, scale: 0.6 }],
+        props: [basket("overflow"), SURPRISE, { art: "fx/smell", state: "a", x: 48, y: 6, front: true, scale: 0.5 }],
       },
     },
     minus: {
       content: {
-        idea: "Облизується біля кошика з білизною над рибкою-ласощами й мружиться — і довкола чисто: будь-яка образа тане від одного ласого шматочка.",
+        idea: "Облизується над рибкою-ласощами біля кошика з білизною й мружиться, довкола чисто, а над ним — розбите серце з пластирем: будь-яка образа тане від одного ласого шматочка.",
         still: { mouth: "tongue" },
-        props: [basket("load-2"), TREAT],
+        props: [basket("load-3"), TREAT, ...healedHeart(18, -88)],
       },
       calm: {
-        idea: "Спокійно лежить біля кошика з білизною й облизується на рибку-ласощі, підлога чиста: прикрість забута за смаколик.",
+        idea: "Спокійно лежить біля кошика з білизною й облизується на рибку-ласощі, підлога чиста, а над ним — серце з пластирем: прикрість забута за смаколик.",
         still: { base: "loaf", mouth: "tongue" },
-        props: [basket("load-2"), TREAT],
+        props: [basket("load-3"), TREAT, ...healedHeart(14, -70)],
       },
       sulk: {
-        idea: "Сидить спиною до камери біля кошика з білизною — ображений, але без «сюрпризу», а в думці — рибка-ласощі: чекає смаколика, щоб пробачити.",
-        props: [basket("load-4"), ...think("treats", -30, -64)],
+        idea: "Сидить насуплений біля кошика з білизною, але без «сюрпризу»: перед ним рибка-ласощі, а над ним — розбите серце з пластирем: смаколик уже гоїть образу.",
+        props: [basket("load-4"), TREAT, ...healedHeart(18, -88)],
       },
       ill: {
-        idea: "Хворий лежить біля кошика з білизною, довкола чисто, а в думці — рибка-ласощі: навіть тепер не мститься, пробачив би за шматочок.",
-        props: [basket("overflow"), ...think("treats", -24, -46, 0.28)],
+        idea: "Хворий лежить біля кошика з білизною, довкола чисто, перед ним — рибка-ласощі, а над ним — серце з пластирем: навіть тепер не мститься, пробачив за шматочок.",
+        props: [basket("load-4"), TREAT, ...healedHeart(24, -70, 0.46)],
       },
     },
   },
