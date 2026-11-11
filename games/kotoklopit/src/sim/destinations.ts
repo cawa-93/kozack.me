@@ -35,8 +35,9 @@ import { observe } from "./knowledge";
 import { priceFactor, vetPriceFactor, weekPriceFactor } from "./modifiers";
 import { addCat, applyMorningSanity, giveStarterPack } from "./night";
 import { createRng, deriveSeed, stateRng, type Rng } from "./rng";
+import { remember } from "./story";
 import { weekOf } from "./time";
-import type { Cat, Destination, DiseaseId, GameState, Product, Quality, ThingKind, TripRider, VisitLog } from "./types";
+import type { Cat, Destination, DiseaseId, GameState, Product, Quality, ShowPlace, ThingKind, TripRider, VisitLog } from "./types";
 import { changeReputation, isWorkday } from "./work";
 
 /** Товар магазину: запаси чи річ для котів (і те, і те буває «litter»: наповнювач і лоток). */
@@ -340,7 +341,7 @@ export function groom(state: GameState, quality: Quality, rng: Rng): boolean {
   return true;
 }
 
-/** Виставка котів (§4.1): бал за настроєм і породою; приз — гроші й здоровий глузд; кіт хвилюється. */
+/** Виставка котів (§4.1): бал за настроєм і породою; приз — гроші й здоровий глузд; кіт хвилюється. Кожна участь — запис титрів життя (§4.2). */
 export function enterShow(state: GameState, rng: Rng): number | null {
   const cat = tripCat(state);
   const trip = state.trip;
@@ -354,8 +355,10 @@ export function enterShow(state: GameState, rng: Rng): number | null {
   // «Душа компанії» спокійно тримається перед суддями, «Шипить на гостей» — навпаки (§9.12, «Гості»).
   const score = cat.mood / 100 + pedigree + rng.next() * show.luck + GUESTS.showStep * traitLevel(cat, "guests");
   changeMood(state, cat, show.mood, "виставка");
-  const prize = show.prizes.find((p) => score >= p.score);
+  const place = show.prizes.findIndex((p) => score >= p.score);
+  const prize = show.prizes[place];
   (trip.log ??= { exam: null, done: [] }).done.push(`show:${prize?.money ?? 0}`);
+  remember(state, { kind: "show", day: state.day, minute: state.minute, cat: cat.id, ...(prize ? { place: (place + 1) as ShowPlace } : {}) });
   if (!prize) return 0;
   // Гроші призу сталі, а здоровий глузд — з множником «Здоровий глузд від котів», як пестощі (§4.1, §6.2;
   // рішення автора 2026-10-29, `GENERAL_REVIEW.md`, дрібні питання — «Приз виставки»).

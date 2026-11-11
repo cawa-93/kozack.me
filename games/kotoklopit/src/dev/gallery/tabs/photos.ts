@@ -1,6 +1,6 @@
 // Вкладка галереї «Фото титрів» (§4.2, «Титри життя»): кожна поза фото на кількох котах (кошеня, дорослі різних шерстей і
 // форм), мама з кошенятами, пози персонажа на трьох зовнішностях і три речі — тим самим `drawPhoto`, що й стрічка, на полях
-// полароїда. Сітка — DOM поверх області перегляду. `?photos=cats|litters|people|things` — лише один розділ (для знімків).
+// полароїда. Сітка — DOM поверх області перегляду. `?photos=cats|litters|people|things|broke|show` — лише один розділ (для знімків).
 // `?photos=traits` — знімки рис (§4.2, `src/view/traitphoto/`): кожен бік кожної групи в кожній позі рівня; фільтри `area=`, `group=`
 // (через кому), `side=plus|minus`, інший кіт — `cat=<номер у CATS>`. Полотно знімка має `data-shot="<група>.<бік>.<поза>"`
 // (`shots.ts --canvases`).
@@ -252,6 +252,17 @@ function mount(ctx: GalleryContext): GalleryView {
         }
       }
       polaroid(line, storyPhoto({ kind: "broke", day: 8, at: 11520, thing: "sofa", cat: who }, state), "sofa", `broke.${label === "Кошеня" ? "kitten" : "adult"}.sofa`);
+    }
+  }
+
+  const show = section("show", "Виставка котів");
+  if (show) {
+    for (const [label, sample] of [["Дорослий", CATS[4]!], ["Кошеня", CATS[0]!]] as const) {
+      const line = row(show, label);
+      const who = story(catOf(state, 500, sample));
+      for (const place of [1, 2, 3] as const) {
+        polaroid(line, storyPhoto({ kind: "show", day: 13, at: 18720, cat: who, place }, state), `місце ${place}`, `show.${label === "Кошеня" ? "kitten" : "adult"}.${place}`);
+      }
     }
   }
 

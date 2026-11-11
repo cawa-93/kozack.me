@@ -1341,17 +1341,21 @@ export interface GameState {
 export type StoryThing = "robot" | "fountain" | "feeder";
 /** Дорожча річ, яку зламав кіт, — подія титрів життя (§4.2); у дивана якості немає. */
 export type StoryBroken = "carrier" | "house" | "scratcher" | "sofa";
+/** Призове місце на виставці котів (§4.1): перше — головний приз `MODIFIERS.show.prizes`, далі — за списком. */
+export type ShowPlace = 1 | 2 | 3;
 
 /**
  * Запис титрів життя (§4.2): зміна посади (`position` — індекс у `POSITIONS` після зміни), нова техніка вдома, річ, яку зламав
- * кіт `cat` (id), чи його риса `group`, яку гравець відкрив, коли кіт жив із середнім настроєм `mood` (`lifeMood`). `minute` —
- * хвилина дня `day` (`GameState.minute`); у найперших записах її немає.
+ * кіт `cat` (id), його риса `group`, яку гравець відкрив, коли кіт жив із середнім настроєм `mood` (`lifeMood`), чи його участь у
+ * виставці котів (`place` — призове місце; без призу — немає). `minute` — хвилина дня `day` (`GameState.minute`); у найперших
+ * записах її немає.
  */
 export type StoryEntry =
   | { kind: "career"; day: number; minute?: number; change: "promoted" | "demoted" | "fired" | "hired"; position: number }
   | { kind: "thing"; day: number; minute?: number; thing: StoryThing; quality: Quality }
   | { kind: "broke"; day: number; minute?: number; thing: StoryBroken; quality?: Quality; cat: number }
-  | { kind: "trait"; day: number; minute?: number; cat: number; group: string; mood: number };
+  | { kind: "trait"; day: number; minute?: number; cat: number; group: string; mood: number }
+  | { kind: "show"; day: number; minute?: number; cat: number; place?: ShowPlace };
 
 /** Збереження: поточний стан і знімки для перегравання (§6.1). */
 export interface Save {

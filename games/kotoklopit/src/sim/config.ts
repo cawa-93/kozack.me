@@ -1110,8 +1110,22 @@ export const MODIFIERS = {
   /** Множник довжини дороги: інакше обережний водій їхав би так само довго. */
   road: { traffic: 1.3, "empty-roads": 0.8 } as Record<string, number>,
   catFoodPrice: { "food-price-up": 1.3, "pet-sale": 0.7 } as Record<string, number>,
-  /** Виставка: `pedigree` і `luck` (випадково, до цього числа) — у бал; здоровий глузд призу × `DIFFICULTY.catSanity` (§6.2), гроші — ні. */
-  show: { fee: 30, mood: -5, pedigree: { pure: 0.5, half: 0.25 }, luck: 0.3, prizes: [{ score: 1, money: 300, sanity: 10 }, { score: 0.8, money: 150, sanity: 5 }, { score: 0.6, money: 60, sanity: 0 }] },
+  /**
+   * Виставка: неділя кожного `everyWeeks`-го тижня; `pedigree` і `luck` (випадково, до цього числа) — у бал; здоровий глузд призу ×
+   * `DIFFICULTY.catSanity` (§6.2), гроші — ні.
+   */
+  show: {
+    everyWeeks: 2,
+    fee: 30,
+    mood: -5,
+    pedigree: { pure: 0.5, half: 0.25 },
+    luck: 0.3,
+    prizes: [
+      { score: 1, money: 300, sanity: 10 },
+      { score: 0.8, money: 150, sanity: 5 },
+      { score: 0.6, money: 60, sanity: 0 },
+    ],
+  },
   /** × репутація за годину посади. */
   officeAbsent: -5,
   /** «Чужий кіт під вікном»: настрій за кожен спалах злості на підвіконні (§9.12 «Вікно»): сидить там кіт лише до спалаху. */

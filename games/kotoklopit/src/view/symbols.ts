@@ -85,8 +85,9 @@ export const UTILITIES_ICON: IconName = "utilities";
 /** Кар'єра на лінії титрів життя (§4.2): рядок підвищення чи пониження — з іконкою, вагомою точкою на лінії часу. */
 export const CAREER_ICONS = { promoted: "promotion", demoted: "demotion" } as const satisfies Partial<Record<CareerChange, IconName>>;
 
-/** Іконка події на лінії титрів життя; null — без іконки (полароїд, інші події). */
+/** Іконка події на лінії титрів життя; null — без іконки (полароїд, інші події). Виставка без призу — іконкою самої виставки. */
 export function storyIcon(item: StoryItem): IconName | null {
+  if (item.kind === "show") return item.place === null ? DESTINATION_ICONS.show : null;
   if (item.kind !== "career" || item.milestone) return null;
   return item.change === "promoted" || item.change === "demoted" ? CAREER_ICONS[item.change] : null;
 }

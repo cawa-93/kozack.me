@@ -11,7 +11,7 @@ import type { StoryCat, StoryItem } from "../src/sim/story";
 import type { AlbumEntry, Cat, GameState } from "../src/sim/types";
 import { drawPhoto } from "../src/ui/photo";
 import { portraitFrame, type PortraitPart } from "../src/view/art/compose";
-import { artEntries } from "../src/view/art/manifest";
+import { artEntries, artEntry } from "../src/view/art/manifest";
 import { resetArtSources, shareArtAtlas } from "../src/view/art/sources";
 import { ART_INDEX_VERSION, framesOf, type ArtIndex, type FrameId, type IndexFrame } from "../src/view/art/types";
 import { lifePhotoPose, livingCatPhoto, PHOTO_HOME_CATS, PHOTO_KITTENS, retirementPhoto, storyPhoto, type CatPhotoPose, type Photo, type PersonPhotoPose } from "../src/view/photo";
@@ -114,6 +114,36 @@ describe("подія → фото (§4.2)", () => {
       if (thing !== "sofa") expect(props.some((p) => p.art.startsWith("mess/")), `${thing}: уламки`).toBe(true);
       expect(missing(catPhotoParts(subject.cat, subject.pose, subject.shot)), thing).toEqual([]);
     }
+  });
+
+  it("виставка: місця 1–3 — той кіт у віці того дня на сходинці п'єдесталу свого місця, переможець мружиться; без призу — без фото", () => {
+    const state = game();
+    const who = story(cat(state, 7), 12);
+    const podium = artEntry("item/podium");
+    expect(podium?.points).toBeDefined();
+    const steps = { 1: "first", 2: "second", 3: "third" } as const;
+    const spots = new Set<string>();
+    for (const place of [1, 2, 3] as const) {
+      const subjects = storyPhoto({ kind: "show", day: 6, at: 8640, cat: who, place }, state)?.subjects ?? [];
+      expect(subjects, `${place}`).toHaveLength(1);
+      const subject = subjects[0];
+      if (subject?.kind !== "cat") throw new Error(`місце ${place}: на фото не кіт`);
+      expect(subject.cat).toBe(who);
+      expect(subject.pose).toBe(place === 1 ? "content" : "calm");
+      // Кіт — на сходинці: без тіні на підлозі, корінь — на верху сходинки свого місця.
+      expect(subject.shot?.still?.shadow).toBe(false);
+      const prop = (subject.shot?.props ?? []).find((p) => p.art === "item/podium");
+      const top = podium?.points?.[steps[place]];
+      expect(prop && top, `місце ${place}`).toBeTruthy();
+      if (!prop || !top || !podium) continue;
+      expect(prop.x + top.x - podium.pivot.x).toBeCloseTo(0, 6);
+      expect(prop.y + top.y - podium.pivot.y).toBeCloseTo(0, 6);
+      expect(prop.front ?? false).toBe(false);
+      spots.add(`${prop.x};${prop.y}`);
+      expect(missing(catPhotoParts(subject.cat, subject.pose, subject.shot)), `місце ${place}`).toEqual([]);
+    }
+    expect(spots.size).toBe(3);
+    expect(storyPhoto({ kind: "show", day: 6, at: 8640, cat: who, place: null }, state)).toBeNull();
   });
 
   it("відкрита риса — кіт у віці того дня, у позі за настроєм життя на ту мить, зі знімком саме цієї риси", () => {

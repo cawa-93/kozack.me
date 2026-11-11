@@ -1,10 +1,10 @@
-// Титри життя (§4.2): шлях гравця для екрана пенсії. Коти — зі стану (коти й альбом), зміни посади, техніка, поломки й відкриті
-// риси — з `story`.
+// Титри життя (§4.2): шлях гравця для екрана пенсії. Коти — зі стану (коти й альбом), зміни посади, техніка, поломки, відкриті
+// риси й виставки котів — з `story`.
 
 import { DAYS_PER_WEEK, MINUTES_PER_DAY, POSITIONS } from "./config";
 import { wakeMinute } from "./sleep";
 import { absoluteMinute, weekOf } from "./time";
-import type { AlbumEntry, Cat, CatSource, GameState, Quality, StoryBroken, StoryEntry, StoryThing, Trait } from "./types";
+import type { AlbumEntry, Cat, CatSource, GameState, Quality, ShowPlace, StoryBroken, StoryEntry, StoryThing, Trait } from "./types";
 
 /** Кіт на фото: живий чи з альбому, і його вік у мить події (кошеня на фото приїзду — мале). */
 export interface StoryCat {
@@ -27,6 +27,8 @@ export type StoryItem =
   | { kind: "trait"; day: number; at: number; cat: StoryCat; trait: Trait; mood: number }
   /** Перша поломка кожного виду дорожчої речі; `cat` — хто зламав, у віці того дня. */
   | { kind: "broke"; day: number; at: number; thing: StoryBroken; quality?: Quality; cat: StoryCat }
+  /** Участь у виставці котів — кожна; `cat` — хто виступав, у віці того дня; `place` — призове місце, null — без призу (рядок). */
+  | { kind: "show"; day: number; at: number; cat: StoryCat; place: ShowPlace | null }
   /**
    * Серія підвищень чи понижень поспіль за тиждень — один запис про посаду, якої дійшли (`position`), у мить останньої зміни;
    * звільнення й нова робота — кожне окремо. `milestone` — полароїд (звільнення, нова робота, вершина), інакше — рядок без фото.
@@ -51,7 +53,7 @@ export function rememberBroken(state: GameState, cat: Cat, thing: string, qualit
   remember(state, { kind: "broke", day: state.day, minute: state.minute, thing, ...(quality ? { quality } : {}), cat: cat.id });
 }
 
-const ORDER: readonly StoryItem["kind"][] = ["start", "arrival", "births", "thing", "trait", "broke", "career", "farewell"];
+const ORDER: readonly StoryItem["kind"][] = ["start", "arrival", "births", "thing", "trait", "broke", "show", "career", "farewell"];
 
 /** Шлях гравця від першого дня до останнього (§4.2). */
 export function lifeStory(state: GameState): StoryItem[] {
@@ -72,6 +74,7 @@ export function lifeStory(state: GameState): StoryItem[] {
     ...firstThings(story).map(({ minute, ...thing }): StoryItem => ({ ...thing, at: at(thing.day, minute) })),
     ...openedTraits(state, cats, story).map(({ minute, ...trait }): StoryItem => ({ ...trait, at: at(trait.day, minute) })),
     ...firstBreaks(state, cats, story).map(({ minute, ...broke }): StoryItem => ({ ...broke, at: at(broke.day, minute) })),
+    ...shows(state, cats, story).map(({ minute, ...show }): StoryItem => ({ ...show, at: at(show.day, minute) })),
     ...career(story).map(({ minute, ...change }): StoryItem => ({ ...change, at: at(change.day, minute) })),
     ...state.album.map((entry): StoryItem => {
       const minute = entry.minute ?? (entry.cause.kind === "given" ? morning : MINUTES_PER_DAY + morning);
@@ -175,6 +178,21 @@ function openedTraits(
     if (!cat || !trait) return [];
     const { group: _group, ...rest } = entry;
     return [{ ...rest, cat: { cat, ageWeeks: ageOn(state, cat, entry.day) }, trait }];
+  });
+}
+
+/** Виставки — кожна участь; кота немає ні вдома, ні в пам'яті (сценарій) — запису немає. */
+function shows(
+  state: GameState,
+  cats: readonly (Cat | AlbumEntry)[],
+  story: readonly StoryEntry[],
+): { kind: "show"; day: number; minute?: number; cat: StoryCat; place: ShowPlace | null }[] {
+  return story.flatMap((entry) => {
+    if (entry.kind !== "show") return [];
+    const cat = cats.find((c) => c.id === entry.cat);
+    if (!cat) return [];
+    const { place, ...rest } = entry;
+    return [{ ...rest, cat: { cat, ageWeeks: ageOn(state, cat, entry.day) }, place: place ?? null }];
   });
 }
 

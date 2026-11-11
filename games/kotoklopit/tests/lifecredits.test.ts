@@ -9,7 +9,7 @@ import { endingText } from "../src/texts";
 import { creditsPlan } from "../src/ui/creditsplan";
 import { beatPx, CREDITS_INTRO, CREDITS_MUSIC, creditsMusicGain, polaroidTilt, ROLL, rollEnd, rollOffset, rollSpeed, slotHeight } from "../src/ui/rollmath";
 import { storyPhoto } from "../src/view/photo";
-import { CAREER_ICONS, storyIcon } from "../src/view/symbols";
+import { CAREER_ICONS, DESTINATION_ICONS, storyIcon } from "../src/view/symbols";
 import type { StoryItem } from "../src/sim/story";
 
 function finale(id: string) {
@@ -66,6 +66,19 @@ describe("титри життя: іконки на лінії часу (§4.2, �
     expect(storyIcon(career("demoted"))).toBe(CAREER_ICONS.demoted);
     expect(CAREER_ICONS.promoted).toBe("promotion");
     expect(CAREER_ICONS.promoted).not.toBe(CAREER_ICONS.demoted);
+  });
+
+  it("виставка котів: призове місце — полароїд без іконки, участь без призу — рядок з іконкою виставки", () => {
+    const show = (place: 1 | 2 | 3 | null): StoryItem => ({ kind: "show", day: 13, at: 0, cat: {}, place }) as unknown as StoryItem;
+    expect(storyIcon(show(null))).toBe(DESTINATION_ICONS.show);
+    for (const place of [1, 2, 3] as const) expect(storyIcon(show(place))).toBeNull();
+    // У стрічці фіналу: три полароїди призових місць і один рядок без призу.
+    const state = finale("finale-perfect-balance");
+    const plan = creditsPlan(state);
+    const titles = (kind: "polaroid" | "line"): string[] => plan.flatMap((block) => (block.kind === kind ? [block.caption.title] : []));
+    expect(titles("polaroid").filter((title) => title.includes("на виставці"))).toHaveLength(3);
+    const lines = plan.filter((block) => block.kind === "line" && block.caption.title.startsWith("Виставка котів"));
+    expect(lines).toEqual([{ kind: "line", caption: { title: "Виставка котів: Мурка без призу" }, icon: DESTINATION_ICONS.show }]);
   });
 
   it("полароїди й решта подій — без іконки на лінії", () => {

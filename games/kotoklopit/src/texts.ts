@@ -379,7 +379,10 @@ export const DAY_MODIFIER_TEXTS: Record<string, { title: string; situation?: str
     situation: "У сусідів гостює величезний пес. Гуляють сходами.",
   },
   "pet-sale": { title: "Акція на корм" },
-  "show": { title: "Виставка котів" },
+  "show": {
+    title: "Виставка котів",
+    situation: "Сьогодні журі шукає найкращого кота в місті. Ви знаєте, де він живе.",
+  },
   "office": {
     title: "Збори в офісі",
     situation: "Керівництво хоче бачити всіх особисто.",
@@ -1102,6 +1105,9 @@ export function accidentLines(state: GameState): string[] {
  * Повідомлення дня «Мамині гостинці» (§4.1, рішення автора 2026-10-26): мама заходила й поставила судочки в холодильник
  * чи лишила пакет під дверима — він у ящиках біля входу.
  */
+/** Титулка напередодні виставки котів (§4.1): блок під модифікатором дня — про виставку знають заздалегідь. */
+export const SHOW_EVE_TEXTS = { title: "Завтра виставка котів", situation: "Є ще день, щоб умовити кота на переноску." } as const;
+
 /** Приз виставки котів за місцем (§4.1): перше, друге, третє — як `MODIFIERS.show.prizes`. */
 export const SHOW_PRIZE_TEXTS: readonly string[] = [
   "{кіт} — перше місце й {сума} ₴! Журі в захваті.",
@@ -1521,6 +1527,24 @@ export const STORY_TEXTS = {
     scratcher: { title: "{кіт} [додер|додерла] кігтеточку до кінця", text: "Сизаль скінчився раніше, ніж котячий запал. Диван поруч тривожно мовчить." },
     sofa: { title: "{кіт} [подер|подерла] диван", text: "Оббивку біля підлокітника пущено на бахрому. Тепер у дивана є характер — і [його|її] автограф." },
   },
+  /** Виставка котів — кожна участь: призові місця (перше, друге, третє) — полароїдом, за статтю кота; без призу — рядок. */
+  show: {
+    places: [
+      {
+        title: "{кіт} [переміг|перемогла] на виставці котів",
+        text: "Журі було в захваті, суперники — у розпачі. Додому [він їхав|вона їхала] з виглядом [того, хто й так знав|тієї, що й так знала], чим усе скінчиться.",
+      },
+      {
+        title: "{кіт} [посів|посіла] друге місце на виставці",
+        text: "Журі довго вагалося, і до першого місця забракло зовсім трохи. [Він певен|Вона певна], що судді просто нічого не тямлять у котах.",
+      },
+      {
+        title: "{кіт} [посів|посіла] третє місце на виставці",
+        text: "Третя сходинка — теж п'єдестал. Розетку за призове місце вдома вже встигли спробувати на зуб.",
+      },
+    ],
+    none: "Виставка котів: {кіт} без призу",
+  },
   /** `{посада}` — якої дійшли: з великої в рядках і з малої на полароїдах. */
   career: {
     promoted: "Підвищення: {посада}",
@@ -1603,6 +1627,12 @@ export function storyCaption(item: StoryItem, state: GameState): StoryCaption {
       const { title, text } = STORY_TEXTS.broke[item.thing];
       const cat = item.cat.cat;
       return { title: fill(title, cat.sex, { кіт: cat.name }), text: fill(text, cat.sex, { кіт: cat.name }) };
+    }
+    case "show": {
+      const cat = item.cat.cat;
+      const values = { кіт: cat.name };
+      const prize = item.place === null ? undefined : STORY_TEXTS.show.places[item.place - 1];
+      return prize ? { title: fill(prize.title, cat.sex, values), text: fill(prize.text, cat.sex, values) } : { title: fill(STORY_TEXTS.show.none, cat.sex, values) };
     }
     case "career": {
       const position = fill(POSITION_TITLES[item.position] ?? "", address);

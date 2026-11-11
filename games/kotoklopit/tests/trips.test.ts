@@ -831,6 +831,37 @@ describe("поїздки й робота (§8.6)", () => {
     expect(tripBlocker(save.current, "show")).toBe("show");
   });
 
+  it("участь у виставці — запис титрів життя: кіт, хвилина й місце; без призу — без місця (§4.2)", () => {
+    // Бал — настрій / 100: безпорідний кіт без рис і без удачі.
+    const entered = (mood: number, pure = false): GameState => {
+      const save = game(9 * 60);
+      save.current.day = 6;
+      save.current.modifiers.day = "show";
+      const cat = withCat(save);
+      cat.breed = pure ? ["perska", "perska"] : [MIXED, MIXED];
+      save.current.home.carriers = [{ quality: "cheap", wear: 0 }];
+      save.current.character.held = { kind: "cat", cat: cat.id };
+      expect(startTrip(save.current, "show")).toBe(true);
+      driveSafely(save);
+      // Настрій — уже на місці: посадка в переноску й дорога його змінюють.
+      cat.mood = mood;
+      expect(save.current.story ?? []).toEqual([]);
+      expect(enterShow(save.current, { ...createRng(1), next: () => 0 })).not.toBeNull();
+      // Друга спроба того самого дня нічого не додає.
+      expect(enterShow(save.current, createRng(1))).toBeNull();
+      return save.current;
+    };
+    const entry = (state: GameState) => ({ kind: "show", day: 6, minute: state.minute, cat: state.cats[0]?.id });
+    const first = entered(100, true);
+    expect(first.story).toEqual([{ ...entry(first), place: 1 }]);
+    const second = entered(80);
+    expect(second.story).toEqual([{ ...entry(second), place: 2 }]);
+    const third = entered(60);
+    expect(third.story).toEqual([{ ...entry(third), place: 3 }]);
+    const none = entered(30);
+    expect(none.story).toEqual([entry(none)]);
+  });
+
   it("здоровий глузд призу виставки — з множником «Здоровий глузд від котів», а гроші — сталі (рішення автора 2026-10-29, дрібні питання)", () => {
     const prize = (difficulty: Difficulty): { sanity: number; money: number } => {
       const save = withCatCorner(newGame({ address: "she", difficulty, seed: 6 }));

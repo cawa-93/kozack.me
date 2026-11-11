@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { applyScenario, addCatCorner, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { createCat } from "../src/sim/cat";
-import { FIRST_WEEK_PROTECTION, JOB_SEARCH, KITTEN_SANITY_THRESHOLD, MINUTES_PER_DAY, POSITIONS } from "../src/sim/config";
+import { FIRST_WEEK_PROTECTION, JOB_SEARCH, KITTEN_SANITY_THRESHOLD, MINUTES_PER_DAY, MODIFIERS, POSITIONS } from "../src/sim/config";
 import { adopt, shelterCats } from "../src/sim/destinations";
 import { orderThing, place, receivePackages, tickDeliveries } from "../src/sim/economy";
 import { advertise, removeCat } from "../src/sim/farewell";
@@ -15,7 +15,7 @@ import { addCat, runNight } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { wakeMinute } from "../src/sim/sleep";
 import { lifeStory, remember, type StoryItem } from "../src/sim/story";
-import { absoluteMinute, WEEKDAY_NAMES } from "../src/sim/time";
+import { absoluteMinute, weekdayOf, WEEKDAY_NAMES, weekOf } from "../src/sim/time";
 import { startTrip } from "../src/sim/trips";
 import type { Address, AlbumEntry, Cat, CatSource, FarewellCause, GameState, HomeItem, Save, Sex, ThingKind } from "../src/sim/types";
 import { changeReputation } from "../src/sim/work";
@@ -386,6 +386,22 @@ describe("шлях гравця — lifeStory (§4.2)", () => {
     ]);
   });
 
+  it("виставки — кожна участь: кіт живий чи з пам'яті, у віці того дня, з місцем (без призу — null); кота немає ніде — запису немає", () => {
+    const state = game().current;
+    state.day = 30;
+    const murka = cat(state, { source: "shelter", age: 10, day: 0, now: 14 });
+    const barsik = farewell(state, cat(state, { source: "shelter", age: 28, day: 0, now: 30 }), { kind: "given" }, 20);
+    remember(state, { kind: "show", day: 6, minute: hours(12), cat: murka.id, place: 1 });
+    remember(state, { kind: "show", day: 12, minute: hours(12), cat: barsik.id });
+    remember(state, { kind: "show", day: 13, minute: hours(12), cat: 9999, place: 2 });
+    remember(state, { kind: "show", day: 27, minute: hours(12), cat: murka.id, place: 3 });
+    expect(ofKind(lifeStory(state), "show")).toEqual([
+      { kind: "show", day: 6, at: absoluteMinute(6, hours(12)), cat: { cat: murka, ageWeeks: 10 }, place: 1 },
+      { kind: "show", day: 12, at: absoluteMinute(12, hours(12)), cat: { cat: barsik, ageWeeks: 29 }, place: null },
+      { kind: "show", day: 27, at: absoluteMinute(27, hours(12)), cat: { cat: murka, ageWeeks: 13 }, place: 3 },
+    ]);
+  });
+
   it("відкриті риси — кожна: кіт живий чи з пам'яті, у віці того дня, з рисою й настроєм життя на ту мить; кота чи риси немає — запису немає", () => {
     const state = game().current;
     state.day = 30;
@@ -632,6 +648,29 @@ describe("підписи стрічки (§4.2, `TEXTS.md`, «Титри жит�
     }
   });
 
+  it("виставка: перше, друге й третє місце — свій підпис і текст, з ім'ям і за статтю кота; без призу — рядок без тексту", () => {
+    const state = game().current;
+    const caption = (place: 1 | 2 | 3 | null, sex: Sex) => {
+      const who = cat(state, { source: "shelter", age: 10, day: 0, sex, name: sex === "male" ? "Барсик" : "Мурка" });
+      return storyCaption({ kind: "show", day: 6, at: 0, cat: { cat: who, ageWeeks: 10 }, place }, state);
+    };
+    const places = ([1, 2, 3] as const).map((place) => caption(place, "male"));
+    for (const c of places) {
+      clean(c);
+      expect(c.title).toContain("Барсик");
+      expect(c.text).toBeDefined();
+    }
+    expect(new Set(places.map((c) => c.title)).size).toBe(3);
+    expect(new Set(places.map((c) => c.text)).size).toBe(3);
+    expect(places[0]?.title).toBe("Барсик переміг на виставці котів");
+    expect(places[1]?.title).toBe("Барсик посів друге місце на виставці");
+    expect(caption(3, "female").title).toBe("Мурка посіла третє місце на виставці");
+    for (const place of [1, 2] as const) expect(caption(place, "female").text).not.toBe(caption(place, "male").text);
+    const none = caption(null, "female");
+    clean(none);
+    expect(none).toEqual({ title: "Виставка котів: Мурка без призу" });
+  });
+
   it("відкрита риса — як новина телефона: «{кіт} — {риса}» за статтю, під фото — опис риси", () => {
     const state = game().current;
     for (const [sex, name] of [["male", "Барсик"], ["female", "Мурка"]] as const) {
@@ -776,5 +815,20 @@ describe("підписи стрічки (§4.2, `TEXTS.md`, «Титри жит�
     }
     // Відкрита риса — справді відома гравцеві.
     for (const item of traits) expect(item.trait.known, item.trait.group).toBe(true);
+  });
+
+  it("«Ідеальний баланс» показує в титрах і виставки котів: три призові місця й участь без призу — у дні виставок, за життя кота в домі (§4.1, §4.2, §11.5)", () => {
+    const state = applyScenario(FILE_SCENARIOS["finale-perfect-balance"]!).current;
+    const shows = ofKind(lifeStory(state), "show");
+    expect(shows.map((s) => `${s.cat.cat.name}: ${s.place}`)).toEqual(["Мурка: 1", "Мурка: null", "Сірко: 3", "Ряска: 2"]);
+    for (const item of shows) {
+      const cat = item.cat.cat;
+      // Виставка — неділя кожного `MODIFIERS.show.everyWeeks`-го тижня.
+      expect(weekdayOf(item.day), cat.name).toBe(6);
+      expect(weekOf(item.day) % MODIFIERS.show.everyWeeks, cat.name).toBe(0);
+      expect(item.day, cat.name).toBeGreaterThanOrEqual(cat.arrivedDay);
+      if ("cause" in cat) expect(item.day, cat.name).toBeLessThanOrEqual(cat.day);
+      clean(storyCaption(item, state));
+    }
   });
 });

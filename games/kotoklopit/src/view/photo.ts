@@ -7,6 +7,7 @@ import { TRAIT_GROUPS } from "../sim/traits";
 import type { Cat, GameState, Look, Quality, StoryThing, Trait } from "../sim/types";
 import { characterTrait } from "../texts";
 import { brokeShot } from "./brokephoto";
+import { showShot } from "./showphoto";
 import { TRAIT_PHOTOS } from "./traitphoto";
 import type { LifePose, TraitShot } from "./traitphoto/types";
 
@@ -96,6 +97,9 @@ export function storyPhoto(item: StoryItem, state: GameState): Photo | null {
     }
     case "broke":
       return { subjects: [{ kind: "cat", cat: item.cat, pose: "content", shot: brokeShot(item.thing, item.quality) }] };
+    case "show":
+      // Переможець мружиться, другий і третій спокійно сидять; без призу — рядок без фото.
+      return item.place === null ? null : { subjects: [{ kind: "cat", cat: item.cat, pose: item.place === 1 ? "content" : "calm", shot: showShot(item.place) }] };
     case "career":
       if (!item.milestone) return null;
       return { subjects: [{ kind: "person", look, pose: item.change === "fired" || item.change === "demoted" ? "gloomy" : "desk" }] };
