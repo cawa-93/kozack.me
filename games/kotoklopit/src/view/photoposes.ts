@@ -65,7 +65,24 @@ interface CatStill {
   flip?: boolean;
   figure?: "fat" | "slim";
   shadow?: false;
+  /**
+   * Знак настрою біля морди — градусник у роті хворого, пара ображеного: кадр, його точка від pivot у роті, кут і розмір. Лише
+   * мордою до камери й з закритим ротом.
+   */
+  held?: Held;
 }
+
+interface Held {
+  art: ArtId;
+  grip: { x: number; y: number };
+  rot: number;
+  scale: number;
+}
+
+/** Градусник у роті хворого: кінчик `icon/thermometer` (нижній лівий) — у роті, решта стирчить уперед і трохи вгору. */
+const THERMOMETER: Held = { art: "icon/thermometer", grip: { x: -14, y: 14 }, rot: 20, scale: 0.45 };
+/** Пара ображеного (😤, як в іконці `sulk`): від носа вперед. */
+const HUFF: Held = { art: "fx/huff", grip: { x: -4, y: -1 }, rot: 10, scale: 1 };
 
 const face = (eyes: string, mouth: string, ears: FaceFrames["ears"]): FaceFrames => ({ eyes, mouth, ears });
 
@@ -78,9 +95,9 @@ const tweak = (bones: Readonly<Record<string, number>>): Loose => ({
 
 /**
  * Пози кота (§4.2) — підібрані за знімками галереї (вкладка «Фото титрів»), щоб у ≈ 200 px не плутались: цікаво — голова набік і
- * хвіст угору; задоволено — мружиться дужками, як під рукою; спокійно — просто сидить; ображено — насуплено, голова й хвіст
- * опущені (спиною сліпі глядачі бачили спокійного кота, а річ поруч — «нюхає»); хворий — буханцем, голова похилена, очі хворі
- * (без сльози хворого читали як сумного чи сонного). Годує — буханцем, а не на боці (`sprawl`): на боці мама з хвостом широка, і
+ * хвіст угору; задоволено — мружиться дужками, як під рукою; спокійно — просто сидить; ображено — насуплено, вуха назад, голова
+ * й хвіст опущені, пара від носа; хворий — буханцем, голова похилена, очі хворі, градусник у роті. Без знаків біля морди сліпі
+ * глядачі серед інших фото бачили ображеного спокійним, а хворого — невдоволеним; спиною ображеного — теж спокійним. Годує — буханцем, а не на боці (`sprawl`): на боці мама з хвостом широка, і
  * кошенята віком 0 в полароїді — крихти.
  */
 const CAT_STILLS: Readonly<Record<CatPhotoPose, CatStill>> = {
@@ -89,8 +106,8 @@ const CAT_STILLS: Readonly<Record<CatPhotoPose, CatStill>> = {
   nursing: { base: "loaf", overlay: null, at: 0, view: "front", face: face("arc", "closed", "up") },
   content: { base: "sit", overlay: CAT_ANIMS.content as Loose, at: 800, view: "front", face: face("arc", "closed", "up") },
   calm: { base: "sit", overlay: null, at: 0, view: "front", face: face("open", "closed", "up") },
-  sulk: { base: "sit", overlay: tweak({ head: 12, tail: -30 }), at: 0, view: "front", face: face("half", "closed", "flat") },
-  ill: { base: "loaf", overlay: tweak({ neck: 10, head: 14 }), at: 0, view: "front", face: face("sick", "closed", "side") },
+  sulk: { base: "sit", overlay: tweak({ head: 18, tail: -40 }), at: 0, view: "front", face: face("squint", "closed", "back"), held: HUFF },
+  ill: { base: "loaf", overlay: tweak({ neck: 10, head: 14 }), at: 0, view: "front", face: face("sick", "closed", "side"), held: THERMOMETER },
 };
 
 /** Новонароджене при мамі — спить клубочком. */
@@ -135,6 +152,7 @@ function withShot(life: CatStill, shot: TraitShot | undefined): CatStill {
     flip: change.flip ?? false,
     ...(change.figure ? { figure: change.figure } : {}),
     ...(change.shadow === false ? { shadow: false as const } : {}),
+    ...(life.held && (change.mouth ?? life.face.mouth) === "closed" && (change.view ?? life.view) === "front" ? { held: life.held } : {}),
   };
   byLife.set(life, still);
   return still;
@@ -249,7 +267,7 @@ function catPhotoPieces(story: StoryCat, pose: CatPhotoPose, shot?: TraitShot, b
   rig.play(composeCatAnim(CAT_ANIMS[still.base] as Loose, still.overlay, still.face) as never, 0, { blend: 0 });
   rig.evaluate(still.at);
   const shadow: PortraitPart = { ...framePart("fx/shadow/cat", null), x: 0, y: 0, scaleX: size.scale * girth, scaleY: size.scale };
-  const body = [...(still.shadow === false ? [] : [shadow]), ...rigParts(rig, still.view, CAT_FAR, size.scale)];
+  const body = [...(still.shadow === false ? [] : [shadow]), ...rigParts(rig, still.view, CAT_FAR, size.scale), ...heldPart(rig, still.held, size.scale)];
   const props = shot?.props ?? [];
   const parts = [
     ...props.filter((prop) => !prop.front).map((prop) => propPart(prop, size.relative)),
@@ -262,6 +280,24 @@ function catPhotoPieces(story: StoryCat, pose: CatPhotoPose, shot?: TraitShot, b
   const dir = still.flip ? -1 : 1;
   const head = { x: anchor.x * size.scale * dir, y: anchor.y * size.scale };
   return { parts, bubbles: ownBubbles.flatMap((bubble) => bubbleParts(bubble, head, dir)) };
+}
+
+/** Річ у роті (`CatStill.held`) — поверх морди, точкою `grip` у якорі `mouth`. */
+function heldPart(rig: LooseRig, held: Held | undefined, scale: number): PortraitPart[] {
+  const mouth = held ? rig.anchor("mouth", { x: 0, y: 0 }, false) : null;
+  if (!held || !mouth) return [];
+  const s = held.scale * scale;
+  const rad = (held.rot * Math.PI) / 180;
+  const gx = held.grip.x * s;
+  const gy = held.grip.y * s;
+  return [{
+    ...framePart(held.art, null),
+    x: mouth.x * scale - (Math.cos(rad) * gx - Math.sin(rad) * gy),
+    y: mouth.y * scale - (Math.sin(rad) * gx + Math.cos(rad) * gy),
+    rot: held.rot,
+    scaleX: s,
+    scaleY: s,
+  }];
 }
 
 // --- Персонаж ------------------------------------------------------------------------------------

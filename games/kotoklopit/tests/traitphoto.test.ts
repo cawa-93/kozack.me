@@ -328,6 +328,33 @@ describe("можливості знімка (§4.2)", () => {
     expect(ginger.other).not.toBe(black.other);
   });
 
+  it("поза рівня каже настрій і річчю біля морди: «хворий» — градусник у роті, «ображено» — пара від носа (😤)", () => {
+    const state = game();
+    const one = hero(state);
+    for (const [pose, id] of [["ill", "icon/thermometer"], ["sulk", "fx/huff"]] as const) {
+      const parts = catPhotoParts(one, pose);
+      const sign = find(parts, id);
+      const head = parts.find((p) => p.id.startsWith("cat/head"));
+      expect(sign && head, pose).toBeTruthy();
+      // Біля морди й поверх неї.
+      expect(parts.indexOf(sign!), pose).toBeGreaterThan(parts.indexOf(head!));
+      expect(Math.hypot((sign!.x ?? 0) - (head!.x ?? 0), (sign!.y ?? 0) - (head!.y ?? 0)), pose).toBeLessThan(30);
+      // Кіт ліворуч — і знак з іншого боку морди.
+      const left = find(catPhotoParts(one, pose, { idea: "ліворуч", still: { flip: true } }), id)!;
+      expect(left.x, pose).toBeCloseTo(-(sign!.x ?? 0));
+      expect(Math.sign(left.scaleX ?? 1), pose).toBe(-Math.sign(sign!.scaleX ?? 1));
+      // Кошеня — менший знак.
+      expect(Math.abs(find(catPhotoParts(hero(state, 1), pose), id)!.scaleX ?? 1), pose).toBeLessThan(Math.abs(sign!.scaleX ?? 1));
+      // Знімок відкрив котові рот чи повернув його спиною — знака немає.
+      expect(find(catPhotoParts(one, pose, { idea: "нявкає", still: { mouth: "meow" } }), id), pose).toBeUndefined();
+      expect(find(catPhotoParts(one, pose, { idea: "спиною", still: { view: "back" } }), id), pose).toBeUndefined();
+    }
+    for (const pose of ["content", "calm"] as const) {
+      const ids = catPhotoParts(one, pose).map((p) => p.id);
+      expect(ids.includes("icon/thermometer") || ids.includes("fx/huff"), pose).toBe(false);
+    }
+  });
+
   it("рамка знімка — замість типової; статура й тінь — свої", () => {
     const state = game();
     const one = hero(state);

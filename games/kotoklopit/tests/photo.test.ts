@@ -206,10 +206,10 @@ describe("пози кота — частини скелета з гри", () => 
     expect(eyes(catPhotoParts(one, "calm"))).toBe("open");
     expect(eyes(catPhotoParts(one, "curious"))).toBe("round");
     // Спиною ображеного читали як спокійного, а річ поруч — як «нюхає» (сліпа перевірка знімків рис): морду видно, очі
-    // напівзаплющені.
+    // примружені сердито.
     const sulk = catPhotoParts(one, "sulk");
     expect(sulk.some((p) => p.view === "back")).toBe(false);
-    expect(eyes(sulk)).toBe("half");
+    expect(eyes(sulk)).toBe("squint");
     // Новонароджене кошеня при мамі спить: очі заплющені.
     expect(eyes(catPhotoParts(story(cat(state, 11, 0), 0), "nursing"))).toBe("closed");
   });
