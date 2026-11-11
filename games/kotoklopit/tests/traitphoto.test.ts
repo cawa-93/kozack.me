@@ -449,6 +449,32 @@ describe("можливості знімка (§4.2)", () => {
     expect(Math.abs(kitten.part.scaleX ?? 1)).toBeLessThan(Math.abs(sit.part.scaleX ?? 1));
   });
 
+  it("кожен бабл і кожна річ кожного знімка рис потрапляє на фото: є над ким (інший кіт, персонаж) і з чого малювати", () => {
+    const state = game();
+    for (const who of [hero(state), hero(state, 1)]) {
+      for (const [area, groups] of Object.entries(TRAIT_PHOTOS)) {
+        for (const [group, sides] of Object.entries(groups)) {
+          for (const side of SIDES) {
+            for (const pose of LIFE_POSES) {
+              const shot = sides[side][pose];
+              const name = `${area}.${group}.${side}.${pose}`;
+              const pieces = photoLayout({ subjects: [{ kind: "cat", cat: who, pose, shot }] }).pieces;
+              const count = (test: (id: string) => boolean) => pieces.filter((piece) => test(piece.part.id)).length;
+              // Хмарку знімок може скласти й сам, річчю (`ui/bubble/*` серед `props`).
+              const drawn = (shot.props ?? []).filter((prop) => prop.art.startsWith("ui/bubble/")).length;
+              expect(count((id) => id.startsWith("ui/bubble/")), name).toBe((shot.bubbles?.length ?? 0) + drawn);
+              for (const prop of shot.props ?? []) expect(count((id) => id === prop.art), `${name}: ${prop.art}`).toBeGreaterThan(0);
+              for (const piece of pieces) expect(FRAMES.has(portraitFrame(piece.part)), `${name}: ${portraitFrame(piece.part)}`).toBe(true);
+              for (const piece of pieces) {
+                for (const v of [piece.part.x ?? 0, piece.part.y ?? 0, piece.part.scaleX ?? 1, piece.part.scaleY ?? 1, piece.part.rot ?? 0]) expect(Number.isFinite(v), name).toBe(true);
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
   it("рамка знімка — замість типової; статура й тінь — свої", () => {
     const state = game();
     const one = hero(state);
