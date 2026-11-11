@@ -13,15 +13,9 @@ import type { TraitBubble, TraitPhotoShots, TraitProp, TraitStill } from "./type
 const prop = (art: ArtId, state: string | null, x: number, y: number, more: Partial<TraitProp> = {}): TraitProp => ({ art, state, x, y, ...more });
 const think = (icon: IconName, mark?: Mark): TraitBubble => ({ kind: "think", icon, ...(mark ? { mark } : {}) });
 
-/**
- * Меблі й лотки, у яких кіт стоїть чи біля яких сидить, — за розміром кота (`withCat`): місце від кореня кота й так за ним, і
- * кошеня опинилося б поза лотком чи кабіною. Розмір — для дорослого кота.
- */
-const furniture = { withCat: true } as const;
-
 /** Відкритий лоток позаду кота: кадр лотка цілий, і поверх кота передній борт закрив би його. */
 const BOX_SCALE = 1.2;
-const box = (state: string, x = 0, y = -4, scale = BOX_SCALE): TraitProp => prop("item/litter/cheap", state, x, y, { scale, ...furniture });
+const box = (state: string, x = 0, y = -4, scale = BOX_SCALE): TraitProp => prop("item/litter/cheap", state, x, y, { scale });
 /**
  * Лоток під котом, що стоїть на наповнювачі, як у грі (`LITTER_SEAT.lift` над точкою лотка): лапи — на наповнювачі, передній борт
  * — нижче за них (трохи глибше, ніж у грі, і лівіше від середини: лапа, що гребе, лягає на наповнювач, а не на борт). Кіт біля
@@ -39,7 +33,7 @@ const litter = (x: number, y: number): TraitProp => prop("mess/litter", null, x,
 const smell = (x: number, y: number, scale = 0.7): TraitProp => prop("fx/smell", "a", x, y, { front: true, scale });
 
 /** Кут кімнати позаду кота (pivot — підлога в самому куті): туди «Мітчик» задкує й мітить. */
-const corner = (x = 0, y = -16): TraitProp => prop("env/corner", null, x, y, { scale: 1.1, ...furniture });
+const corner = (x = 0, y = -16): TraitProp => prop("env/corner", null, x, y, { scale: 1.1 });
 /** Калюжка мітки під піднятим хвостом того, хто задкує в кут. */
 const mark = (x = -28, y = -2, more: Partial<TraitProp> = {}): TraitProp => prop("mess/mark", null, x, y, { scale: 0.8, ...more });
 
@@ -56,18 +50,18 @@ const LICK_PAW: TraitStill = { base: "groom", at: 220, mouth: "tongue", bones: {
  * Думка «цього немає» — перекреслений кадр безладу в хмарці думки, складеній із речей: тиху половину («не мітить», «без грудок»,
  * «не линяє») інакше не видно. Іконки гри тут не стають: мітки серед них немає, а `cough` і `fur` — з рудим котом поза переліком
  * заміни шерсті (`COAT_ICONS`). (x, y) — вістря хмарки: над головою, де його ставить бабл гри. Розмір — як у бабла гри на фото
- * (`PHOTO_BUBBLE_SCALE`), але за котом (`withCat`): місця частин — від кореня кота, і під кошеням вони б роз'їхались.
+ * (`PHOTO_BUBBLE_SCALE`); кадр безладу в хмарці — значок (`sign`), а не річ на підлозі.
  */
 const THOUGHT_SCALE = 0.5;
 /** Центр поля іконки від вістря `ui/bubble/think` (точка `icon` − pivot). */
 const THOUGHT_ICON = { x: 22.5, y: -59 } as const;
 const absent = (art: ArtId, size: number, x: number, y: number): TraitProp[] => {
   const at = { x: x + THOUGHT_ICON.x * THOUGHT_SCALE, y: y + THOUGHT_ICON.y * THOUGHT_SCALE };
-  const part = { front: true, ...furniture } as const;
+  const part = { front: true } as const;
   return [
     prop("ui/bubble/think", null, x, y, { ...part, scale: THOUGHT_SCALE }),
     // Pivot кадру безладу — підлога під ним, трохи нижче від середини малюнка.
-    prop(art, null, at.x, at.y + 1, { ...part, scale: size }),
+    prop(art, null, at.x, at.y + 1, { ...part, scale: size, sign: true }),
     prop("icon/mark/no", null, at.x, at.y, { ...part, scale: THOUGHT_SCALE }),
   ];
 };
@@ -80,7 +74,7 @@ const noFur = (x: number, y: number): TraitProp[] => absent("mess/fur-tuft", 0.7
 
 /** Душова кабіна позаду кота: кіт — на її піддоні (`tray` — на 22,5 лівіше від pivot і на 5 ближче). */
 const SHOWER_SCALE = 0.65;
-const shower = (state: "dry" | "running" | "wet", x = 0, y = 0): TraitProp => prop("env/shower", state, x + 22.5 * SHOWER_SCALE, y - 5 * SHOWER_SCALE, { scale: SHOWER_SCALE, ...furniture });
+const shower = (state: "dry" | "running" | "wet", x = 0, y = 0): TraitProp => prop("env/shower", state, x + 22.5 * SHOWER_SCALE, y - 5 * SHOWER_SCALE, { scale: SHOWER_SCALE });
 
 export const SHOTS: TraitPhotoShots = {
   scatter: {
@@ -132,7 +126,7 @@ export const SHOTS: TraitPhotoShots = {
       content: {
         idea: "Мружиться біля бездоганно чистого закритого лотка: брудного він не знає.",
         still: { flip: true },
-        props: [prop("item/litter/premium", "premium", -44, -8, { scale: 1.1, ...furniture })],
+        props: [prop("item/litter/premium", "premium", -44, -8, { scale: 1.1 })],
       },
       calm: {
         idea: "Суворо, як санінспектор, обнюхує лоток із грудками, перш ніж у нього ступити.",

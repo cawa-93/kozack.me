@@ -6,7 +6,7 @@
 import type { TraitBubble, TraitPerson, TraitPhotoShots, TraitProp } from "./types";
 
 /** Робот під котом: верх кришки (`top`) — на висоті кореня кота, тож кіт сидить на ньому. */
-const ROBOT: TraitProp = { art: "item/robot/cheap", state: "cleaning", x: 0, y: 12, scale: 1.4, withCat: true };
+const ROBOT: TraitProp = { art: "item/robot/cheap", state: "cleaning", x: 0, y: 12, scale: 1.4 };
 const VACUUM = (x: number, y: number, scale = 0.7): TraitProp => ({ art: "env/vacuum", state: null, x, y, scale });
 const RIDE: TraitProp[] = [VACUUM(-66, -16, 0.6), ROBOT];
 /**
@@ -21,8 +21,8 @@ const BOX_SCALE = 1;
 const box = (lift = 0, hum = false): TraitProp[] => [
   ...(hum ? [{ art: "icon/loud", state: null, x: -72, y: -38 + lift, scale: 0.45 } satisfies TraitProp] : []),
   VACUUM(hum ? -80 : -96, -12 + lift, 0.6),
-  { art: "env/boxes", state: "pile-1", x: 0, y: 48 * BOX_SCALE + lift, scale: BOX_SCALE, withCat: true },
-  { art: "env/boxes/front", state: "pile-1", x: 0, y: 48 * BOX_SCALE + lift, scale: BOX_SCALE, withCat: true, front: true },
+  { art: "env/boxes", state: "pile-1", x: 0, y: 48 * BOX_SCALE + lift, scale: BOX_SCALE },
+  { art: "env/boxes/front", state: "pile-1", x: 0, y: 48 * BOX_SCALE + lift, scale: BOX_SCALE, front: true },
 ];
 const BOX = box();
 const BOX_HUM = box(0, true);
@@ -34,7 +34,7 @@ const DOZE_LOW: TraitProp = { ...DOZE, x: 34, y: -50 };
 /** Нервове вилизування — думка гри (подія `nervous`); жмутики шерсті поруч читались линянням — їх немає. */
 const NERVOUS: TraitBubble = { kind: "think", icon: "lick-nervous" };
 /** Переноска позаду ліворуч, кіт лежить у відчинених дверцятах: морда — перед ними, зад — в отворі. */
-const carrierIn = (x = -26, y = -6, scale = 0.95): TraitProp[] => [{ art: "item/carrier/premium", state: "body", x, y, scale, withCat: true }];
+const carrierIn = (x = -26, y = -6, scale = 0.95): TraitProp[] => [{ art: "item/carrier/premium", state: "body", x, y, scale }];
 /** Ціла відчинена переноска праворуч, навпроти кота. */
 const CARRIER_FOE: TraitProp = { art: "item/carrier/premium", state: "body", x: 78, y: -12, scale: 0.8 };
 /** Стетоскоп і градусник — огляд, а не ліки (ліки — хвороба, а не вдача). */
@@ -63,7 +63,7 @@ const DOOR: TraitProp[] = [{ art: "env/door", state: "closed", x: -50, y: -26, s
 const HIDE: TraitProp[] = [
   { art: "env/door", state: "closed", x: -112, y: -40, scale: 0.5 },
   BELL(-130, -124),
-  { art: "item/house/cheap", state: null, x: -14, y: 18, scale: 0.7, withCat: true, front: true },
+  { art: "item/house/cheap", state: null, x: -14, y: 18, scale: 0.7, front: true },
 ];
 /** Стіл зі стравою позаду праворуч: кіт сидить коло нього, а не на ньому. */
 const TABLE: TraitProp[] = [
@@ -72,7 +72,7 @@ const TABLE: TraitProp[] = [
 ];
 /** «Згадав ні» — думка гри (подія `cat-remembered`): стіл, перекреслений. */
 const REMEMBERED: TraitBubble = { kind: "think", icon: "table", mark: "no" };
-const STOVE: TraitProp = { art: "env/stove", state: "off", x: 0, y: 46, scale: 0.75, withCat: true };
+const STOVE: TraitProp = { art: "env/stove", state: "off", x: 0, y: 46, scale: 0.75 };
 
 export const SHOTS: TraitPhotoShots = {
   bravery: {

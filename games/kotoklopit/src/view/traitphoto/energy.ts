@@ -16,7 +16,7 @@ const BALL: readonly TraitProp[] = [
   { art: "fx/speed", state: null, x: 56, y: 2, scale: 0.5, front: true },
 ];
 /** Сліди забігу: лінії швидкості й пил за котом, що мчить праворуч (pivot — біля хвоста); за розміром кота, щоб у кошеняти не лягали на речі позаду. */
-const SPEED: TraitProp = { art: "fx/speed", state: null, x: -28, y: -14, scale: 0.8, withCat: true };
+const SPEED: TraitProp = { art: "fx/speed", state: null, x: -28, y: -14, scale: 0.8 };
 /** Вилизана порожня миска (не синя: синю порожню читали мискою з водою). */
 const LICKED_BOWL: TraitProp = { art: "item/bowl/premium", state: "licked", x: 40, y: 10, front: true, scale: 0.7 };
 
@@ -90,7 +90,7 @@ export const SHOTS: TraitPhotoShots = {
         still: { base: "sleep", eyes: "closed", shadow: false },
         props: [
           { art: "fx/sweep-dust", state: "b", x: -32, y: 12, scale: 0.8 },
-          { art: "item/robot/cheap", state: "cleaning", x: 0, y: 10, withCat: true },
+          { art: "item/robot/cheap", state: "cleaning", x: 0, y: 10 },
           ZZ,
           icon("loud", -44, -26, 0.3),
         ],

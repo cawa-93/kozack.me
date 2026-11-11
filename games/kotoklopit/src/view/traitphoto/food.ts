@@ -23,12 +23,10 @@ const treat = (state: "premium-1" | "premium-2", x: number, y: number, more: Par
 const licked = (x: number, y: number, more: Partial<TraitProp> = {}): TraitProp => prop("item/bowl/premium", "licked", x, y, { scale: BOWL_SCALE, front: y > 0, ...more });
 /**
  * Простий корм, від якого «Перебірливому» тхне: миска й хвилі запаху над нею з проміжком над обідком і трохи вбік, від кота, — щоб
- * корм під ними було видно; хвилі, що росли просто з миски, читалися вазоном із травою. Миска — за розміром кота (`withCat`):
- * проміжок — це місце, а воно за котом, тож під кошеням звичайна миска знову сягнула б запаху; хвилі — свого розміру, щоб їх було
- * видно й над мискою кошеняти.
+ * корм під ними було видно; хвилі, що росли просто з миски, читалися вазоном із травою.
  */
 const stinky = (x: number, y: number): TraitProp[] => [
-  bowl("cheap-2", x, y, { withCat: true }),
+  bowl("cheap-2", x, y),
   prop("fx/smell", "a", x + Math.sign(x) * 8, y - 26, { front: y > 0, scale: 0.45 }),
 ];
 const water = (quality: "cheap" | "premium", state: string, x: number, y: number): TraitProp => prop(`item/water/${quality}`, state, x, y, { scale: BOWL_SCALE, front: y > 0 });
@@ -65,25 +63,19 @@ const LAP: TraitStill = { base: "drink", at: 0, bones: { head: -10 } };
 const LOW = { w: 80, h: 56 } as const;
 
 /**
- * Меблі, на яких кіт сидить чи біля яких стоїть, — за розміром кота (`withCat`): місце від кореня кота й так за ним, і кошеня
- * опинилося б нижче краю умивальника чи стільниці. Розмір — для дорослого; менший за справжній, щоб кіт лишався головним на фото.
- */
-const furniture = { withCat: true } as const;
-
-/**
  * Умивальник під котом: кіт сидить на краю стільниці (`edge` — на 70 над pivot) лівіше від крана, мордою до нього, — посередині він
  * закривав кран собою.
  */
 const SINK_SCALE = 0.9;
-const sink = (state: "off" | "running"): TraitProp => prop("env/sink", state, 18, 70 * SINK_SCALE, { scale: SINK_SCALE, ...furniture });
+const sink = (state: "off" | "running"): TraitProp => prop("env/sink", state, 18, 70 * SINK_SCALE, { scale: SINK_SCALE });
 
 /** Кухонний стіл позаду кота зі стравою на стільниці (`dish` — на 60 над pivot, на 13 лівіше). */
 const TABLE_SCALE = 0.65;
 const TABLE = { x: -46, y: -20 } as const;
-const table = (): TraitProp => prop("env/table", null, TABLE.x, TABLE.y, { scale: TABLE_SCALE, ...furniture });
+const table = (): TraitProp => prop("env/table", null, TABLE.x, TABLE.y, { scale: TABLE_SCALE });
 const tableWithDish = (dish: "cheap" | "premium"): TraitProp[] => [table(), prop("item/dish/meal", dish, TABLE.x - 13 * TABLE_SCALE, TABLE.y - 60 * TABLE_SCALE, { scale: 0.75 })];
 /** Стіл під котом: кіт стоїть на стільниці (підібрано за знімками), тінь на підлогу не падає. */
-const UNDER_TABLE: TraitProp = prop("env/table", null, 4, 36, { scale: 0.76, ...furniture });
+const UNDER_TABLE: TraitProp = prop("env/table", null, 4, 36, { scale: 0.76 });
 /** Ваша страва — тарілка з гілочкою й золотою цяткою: її читають тарілкою господаря лише на столі (на підлозі — ласощами). */
 const meal = (x: number, y: number, more: Partial<TraitProp> = {}): TraitProp => prop("item/dish/meal", "premium", x, y, { front: y > 0, ...more });
 /**

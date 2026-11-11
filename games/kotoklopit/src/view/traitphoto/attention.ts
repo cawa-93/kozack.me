@@ -29,7 +29,7 @@ const LEGS_FAR: TraitPerson = { pose: "stand", x: 86, y: -14 };
 const LAP: TraitPerson = { pose: "lap", x: -4, y: 35 };
 /** Кіт пірнає з ваших колін носом донизу: задні лапи ще біля колін, передні — над підлогою, тінь — на підлозі під ними. */
 const LAP_LEAP: TraitPerson = { pose: "lap", x: -45, y: 34 };
-const LEAP_SHADOW: TraitProp = { art: "fx/shadow/cat", state: null, x: 18, y: 36, scale: 0.8, withCat: true };
+const LEAP_SHADOW: TraitProp = { art: "fx/shadow/cat", state: null, x: 18, y: 36, scale: 0.8 };
 const LEAP_FRAME: { w: number; h: number } = { w: 130, h: 100 };
 /** Рука гладить кота, що лежить на боці. */
 const HAND: TraitPerson = { pose: "pet", x: -50, y: 16, front: true };

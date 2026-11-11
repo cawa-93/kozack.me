@@ -17,7 +17,8 @@ import { framesOf } from "../src/view/art/types";
 import { lifePhotoPose, livingCatPhoto, retirementPhoto, storyPhoto, type Photo } from "../src/view/photo";
 import { personRecipe } from "../src/view/art/recipes";
 import { COAT_ICONS, iconCoat, recolorCoat } from "../src/view/photocoat";
-import { catPhotoParts, PHOTO_BUBBLE_SCALE, photoLayout, personShotContact } from "../src/view/photoposes";
+import { photoFrame, PROP_FRAME } from "../src/view/photoframe";
+import { catPhotoParts, PHOTO_BUBBLE_SCALE, PHOTO_PROP_SCALE, photoLayout, personShotContact } from "../src/view/photoposes";
 import { CAT_ANIMS } from "../src/view/rig/anims";
 import { TRAIT_PHOTOS } from "../src/view/traitphoto";
 import { CAT_PHOTO_BONES, LIFE_POSES, type LifePose, type TraitPerson, type TraitShot } from "../src/view/traitphoto/types";
@@ -110,7 +111,7 @@ describe("знімок риси на фото (§4.2)", () => {
     idea: "іграшка позаду, миска попереду",
     props: [
       { art: "item/toy/cheap", state: null, x: 30, y: -4 },
-      { art: "item/bowl/cheap", state: "empty", x: -28, y: 6, front: true, scale: 0.8 },
+      { art: "item/bowl/cheap", state: "empty", x: -28, y: 6, front: true },
     ],
   };
 
@@ -125,16 +126,15 @@ describe("знімок риси на фото (§4.2)", () => {
     expect(toy).toBeLessThan(first);
     expect(bowl).toBeGreaterThan(last);
     expect(parts[toy]).toMatchObject({ x: 30, y: -4 });
-    expect(parts[bowl]).toMatchObject({ x: -28, y: 6, scaleX: 0.8, scaleY: 0.8, state: "empty" });
+    expect(parts[bowl]).toMatchObject({ x: -28, y: 6, scaleX: PHOTO_PROP_SCALE, scaleY: PHOTO_PROP_SCALE, state: "empty" });
   });
 
-  it("кошеня — річ ближче до нього, але того самого розміру", () => {
+  it("кошеня — серед тих самих речей на тих самих місцях: як у квартирі, меншає лише кіт", () => {
     const state = game();
     const young = cat(state, 4, 1);
     const adult = catPhotoParts({ cat: young, ageWeeks: 30 }, "calm", SHOT).find((p) => p.id === "item/toy/cheap");
     const kitten = catPhotoParts({ cat: young, ageWeeks: 1 }, "calm", SHOT).find((p) => p.id === "item/toy/cheap");
-    expect(Math.abs(kitten?.x ?? 0)).toBeLessThan(Math.abs(adult?.x ?? 0));
-    expect(kitten?.scaleX ?? 1).toBe(adult?.scaleX ?? 1);
+    expect({ x: kitten?.x, y: kitten?.y, s: kitten?.scaleX }).toEqual({ x: adult?.x, y: adult?.y, s: adult?.scaleX });
   });
 
   it("поза риси: обличчя й основа — свої, чого не задано — як у позі рівня", () => {
@@ -409,7 +409,7 @@ describe("можливості знімка (§4.2)", () => {
     expect(Math.hypot(hand.x, hand.y)).toBeGreaterThan(20);
   });
 
-  it("річ у зубах — у гнізді `teeth`: іде за головою, з котом віддзеркалюється й меншає", () => {
+  it("річ на коті — у зубах (`teeth`) чи на маківці (`head`): іде за головою й віддзеркалюється з котом; знак меншає з кошеням, річ квартири — ні", () => {
     const state = game();
     const toy = { art: "item/toy/cheap", state: null, x: 0, y: 0, socket: "teeth" } as const;
     const at = (who: ReturnType<typeof hero>, still?: TraitShot["still"]) => {
@@ -428,7 +428,22 @@ describe("можливості знімка (§4.2)", () => {
     expect(left.part.x).toBeCloseTo(-(sit.part.x ?? 0));
     const kitten = at(hero(state, 1));
     expect(Math.abs(kitten.part.y ?? 0)).toBeLessThan(Math.abs(sit.part.y ?? 0));
-    expect(Math.abs(kitten.part.scaleX ?? 1)).toBeLessThan(Math.abs(sit.part.scaleX ?? 1));
+    expect(Math.abs(kitten.part.scaleX ?? 1)).toBe(Math.abs(sit.part.scaleX ?? 1));
+    expect(Math.abs(sit.part.scaleX ?? 1)).toBe(PHOTO_PROP_SCALE);
+    // Знак біля морди (пара, чхання) — за розміром кота.
+    const sign = (who: ReturnType<typeof hero>) => find(catPhotoParts(who, "calm", { idea: "пирхає", props: [{ art: "fx/huff", state: null, x: 4, y: 2, socket: "teeth" }] }), "fx/huff")!;
+    expect(Math.abs(sign(hero(state, 1)).scaleX ?? 1)).toBeLessThan(Math.abs(sign(one).scaleX ?? 1));
+    // На маківці: над головою, вище за зуби; лежить — нижче; ліворуч — дзеркально.
+    const bird = (who: ReturnType<typeof hero>, still?: TraitShot["still"]) => {
+      const parts = catPhotoParts(who, "calm", { idea: "пташка на голові", props: [{ art: "icon/bird", state: null, x: 0, y: -8, scale: 0.45, socket: "head" }], ...(still ? { still } : {}) });
+      const part = find(parts, "icon/bird")!;
+      return { part, index: parts.indexOf(part), head: parts.findIndex((p) => p.id.startsWith("cat/head")) };
+    };
+    const perched = bird(one);
+    expect(perched.index).toBeGreaterThan(perched.head);
+    expect(perched.part.y ?? 0).toBeLessThan((sit.part.y ?? 0) - 10);
+    expect(bird(one, { base: "loaf" }).part.y ?? 0).toBeGreaterThan((perched.part.y ?? 0) + 5);
+    expect(bird(one, { flip: true }).part.x).toBeCloseTo(-(perched.part.x ?? 0));
   });
 
   it("кожен бабл і кожна річ кожного знімка рис потрапляє на фото: є над ким (інший кіт, персонаж) і з чого малювати", () => {
@@ -471,14 +486,55 @@ describe("можливості знімка (§4.2)", () => {
     expect(shadow(catPhotoParts(one, "calm", { idea: "на підвіконні", still: { shadow: false } }))).toBeUndefined();
   });
 
-  it("річ «за котом» — під кошеням менша, як і її місце; інша — того самого розміру", () => {
+  it("річ квартири на фото — у масштабі гри, хоч би який її `scale` і розмір кота: росте від найближчої до кота точки; знак — свого розміру й місця", () => {
     const state = game();
-    const shot: TraitShot = { idea: "на роботі", props: [{ art: "item/robot/cheap", state: "charging", x: 0, y: 2, scale: 0.8, withCat: true }, { art: "item/toy/cheap", state: null, x: 30, y: 0 }] };
-    const adult = catPhotoParts(hero(state), "calm", shot);
-    const kitten = catPhotoParts(hero(state, 1), "calm", shot);
-    expect(find(kitten, "item/robot/cheap")!.scaleX ?? 1).toBeLessThan(find(adult, "item/robot/cheap")!.scaleX ?? 1);
-    expect(find(adult, "item/robot/cheap")!.scaleX).toBeCloseTo(0.8);
-    expect(find(kitten, "item/toy/cheap")!.scaleX ?? 1).toBe(find(adult, "item/toy/cheap")!.scaleX ?? 1);
+    const shot: TraitShot = {
+      idea: "на дивані",
+      props: [
+        // Кіт у межах кадру дивана — диван росте від кореня кота: під котом та сама точка.
+        { art: "env/sofa", state: null, x: 10, y: 20, scale: 0.4 },
+        // Миска збоку (кадр 56 × 48, pivot 28, 32): ближчий до кота край лишається на місці.
+        { art: "item/bowl/cheap", state: "empty", x: 60, y: 0, scale: 0.5, front: true },
+        { art: "item/water/cheap", state: "full", x: -60, y: 0, scale: 0.5, flip: true },
+        // У масштабі гри — як задано.
+        { art: "mess/sock", state: "peek", x: -24, y: 30, rot: 15 },
+        { art: "icon/zz", state: null, x: 30, y: -60, scale: 0.3 },
+        { art: "fx/speed", state: null, x: -28, y: -14, scale: 0.8 },
+      ],
+    };
+    for (const who of [hero(state), hero(state, 1), hero(state, 30, [trait("size", 2, true)])]) {
+      const parts = catPhotoParts(who, "calm", shot);
+      const at = (id: string) => {
+        const part = find(parts, id)!;
+        return [part.x, part.y, part.scaleX, part.scaleY, part.rot ?? 0].map((v) => Math.round((v ?? 0) * 1000) / 1000);
+      };
+      const g = PHOTO_PROP_SCALE;
+      expect(at("env/sofa")).toEqual([25 * g, 50 * g, g, g, 0]);
+      // Лівий край миски був на 60 − 28 · 0,5 = 46 — там і лишився: pivot на 46 + 28.
+      expect(at("item/bowl/cheap")).toEqual([46 + 28 * g, 0, g, g, 0]);
+      expect(at("item/water/cheap")).toEqual([-(46 + 28 * g), 0, -g, g, 0]);
+      expect(at("mess/sock")).toEqual([-24, 30, 1, 1, 15]);
+      expect(at("icon/zz")).toEqual([30, -60, 0.3, 0.3, 0]);
+      expect(at("fx/speed")).toEqual([-28, -14, 0.8, 0.8, 0]);
+    }
+  });
+
+  it("рамку фото задають герої: речі знімка — м'які (у кадр входять, лише доки він не завеликий), персонаж — поза рамкою", () => {
+    const state = game();
+    const shot: TraitShot = {
+      idea: "на дивані з думкою",
+      props: [{ art: "env/sofa", state: null, x: 10, y: 20 }, { art: "icon/zz", state: null, x: 30, y: -60, scale: 0.3, front: true }],
+      companions: [{ age: "adult", still: { base: "sit" }, x: 70, y: 0 }],
+      bubbles: [{ kind: "think", icon: "kibble" }],
+      person: { pose: "stand", x: -50, y: -10 },
+    };
+    const pieces = photoLayout({ subjects: [{ kind: "cat", cat: hero(state), pose: "calm", shot }] }).pieces;
+    const kind = (piece: (typeof pieces)[number]) => (piece.bleed ? "bleed" : piece.soft ? "soft" : "core");
+    const of = (test: (id: string) => boolean) => new Set(pieces.filter((piece) => test(piece.part.id)).map(kind));
+    expect(of((id) => id === "env/sofa" || id === "icon/zz")).toEqual(new Set(["soft"]));
+    expect(of((id) => id.startsWith("cat/") || id === "fx/shadow/cat")).toEqual(new Set(["core"]));
+    expect(of((id) => id.startsWith("ui/bubble/") || id === "icon/kibble")).toEqual(new Set(["core"]));
+    expect(of((id) => id.startsWith("person/"))).toEqual(new Set(["bleed"]));
   });
 
   it("інший кіт — за породою героя, а не його віком; вік кошеняти можна задати", () => {
@@ -557,5 +613,52 @@ describe("який знімок риси на фото (§4.2, §9.7)", () => {
     const plain = cat(state, 14, 30, [trait("catnip", 1, true)]);
     Object.assign(plain, { moodHistory: [40], mood: 40 });
     expect(catSubject(livingCatPhoto(plain, state))?.look).toBeUndefined();
+  });
+});
+
+describe("рамка фото за героями (§4.2)", () => {
+  const cat = { minX: -30, minY: -60, maxX: 30, maxY: 2 };
+  const size = (box: { minX: number; minY: number; maxX: number; maxY: number }) => ({ w: box.maxX - box.minX, h: box.maxY - box.minY });
+
+  it("без речей — рамка героїв; без героїв — рамка речей", () => {
+    expect(photoFrame(cat, [])).toEqual(cat);
+    expect(photoFrame(null, [{ minX: 0, minY: 0, maxX: 40, maxY: 20 }, { minX: -10, minY: 5, maxX: 5, maxY: 30 }])).toEqual({ minX: -10, minY: 0, maxX: 40, maxY: 30 });
+    expect(photoFrame(null, [])).toBeNull();
+  });
+
+  it("дрібна річ поруч із котом — у кадрі цілком", () => {
+    const bowl = { minX: 34, minY: -14, maxX: 62, maxY: 10 };
+    expect(photoFrame(cat, [bowl])).toEqual({ minX: -30, minY: -60, maxX: 62, maxY: 10 });
+  });
+
+  it("велика річ обрізається: кадр не більший за найбільшу рамку, і кіт у ньому цілком — приблизно на половину", () => {
+    const sofa = { minX: -200, minY: -150, maxX: 180, maxY: 80 };
+    const frame = photoFrame(cat, [sofa])!;
+    expect(size(frame)).toEqual({ w: PROP_FRAME.w, h: PROP_FRAME.h });
+    expect(frame.minX).toBeLessThanOrEqual(cat.minX);
+    expect(frame.maxX).toBeGreaterThanOrEqual(cat.maxX);
+    expect(frame.minY).toBeLessThanOrEqual(cat.minY);
+    expect(frame.maxY).toBeGreaterThanOrEqual(cat.maxY);
+    expect(size(cat).w / size(frame).w).toBeGreaterThan(0.4);
+    expect(size(cat).h / size(frame).h).toBeGreaterThan(0.4);
+  });
+
+  it("кадр зсувається туди, де річ: під котом — униз, над ним — угору, збоку — вбік", () => {
+    const below = photoFrame(cat, [{ minX: -40, minY: 0, maxX: 40, maxY: 260 }])!;
+    expect(below.minY).toBe(cat.minY);
+    expect(below.maxY).toBe(cat.minY + PROP_FRAME.h);
+    const above = photoFrame(cat, [{ minX: -40, minY: -300, maxX: 40, maxY: 0 }])!;
+    expect(above.maxY).toBe(cat.maxY);
+    expect(above.minY).toBe(cat.maxY - PROP_FRAME.h);
+    const right = photoFrame(cat, [{ minX: 20, minY: -40, maxX: 400, maxY: 0 }])!;
+    expect(right.minX).toBe(cat.minX);
+    expect(right.maxX).toBe(cat.minX + PROP_FRAME.w);
+    // Річ далеко поза найбільшою рамкою — кадру не міняє.
+    expect(photoFrame(cat, [{ minX: 300, minY: -40, maxX: 400, maxY: 0 }])).toEqual(cat);
+  });
+
+  it("герої більші за найбільшу рамку — рамка героїв: речі її не розширюють", () => {
+    const wide = { minX: -120, minY: -150, maxX: 120, maxY: 2 };
+    expect(photoFrame(wide, [{ minX: -300, minY: -300, maxX: 300, maxY: 100 }])).toEqual(wide);
   });
 });

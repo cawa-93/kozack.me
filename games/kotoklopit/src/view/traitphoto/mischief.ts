@@ -15,16 +15,14 @@ const NOT: (icon: IconName) => TraitBubble[] = (icon) => [{ kind: "think", icon,
 /** Та сама думка, зсунута за спину кота: попереду висока річ, і бабл не закриває її. */
 const BACK_NOT: (icon: IconName) => TraitBubble[] = (icon) => [{ kind: "think", icon, mark: "no", dx: -26 }];
 
-/** Меблі, на яких кіт сидить, — за його розміром: зі сталим розміром дорослий кіт висів над столом, підібраним під кошеня. */
-const ON = { withCat: true } as const;
 /** Кухонний стіл, на якому сидить кіт: корінь кота — посередині стільниці. */
-const TABLE: TraitProp = { art: "env/table", state: null, x: 4, y: 36, scale: 0.76, ...ON };
+const TABLE: TraitProp = { art: "env/table", state: null, x: 4, y: 36, scale: 0.76 };
 /** Стілець перед лівою ніжкою стола: ховає складений папірець під нею (арт стола), який читали «щось упало». */
 const TABLE_CHAIR: TraitProp[] = [
-  { art: "env/chair-kitchen", state: "seat", x: -46, y: 40, scale: 0.76, front: true, ...ON },
-  { art: "env/chair-kitchen", state: "backrest", x: -46, y: 40, scale: 0.76, front: true, ...ON },
+  { art: "env/chair-kitchen", state: "seat", x: -46, y: 40, scale: 0.76, front: true },
+  { art: "env/chair-kitchen", state: "backrest", x: -46, y: 40, scale: 0.76, front: true },
 ];
-const MUG_ON_TABLE: TraitProp = { art: "mess/trinket/mug", state: "standing", x: 26, y: 2, scale: 0.9, ...ON };
+const MUG_ON_TABLE: TraitProp = { art: "mess/trinket/mug", state: "standing", x: 26, y: 2, scale: 0.9 };
 /** Стільниця на фото — ромб: на частку довжини від середини (−1 — лівий дальній кінець, 1 — правий ближній) — стільки одиниць. */
 const TABLE_ALONG = { x: 48.7, y: 24.3 };
 /** Стіл, на якому кіт сидить не посередині, а на частці `at` довжини стільниці: решта стільниці — під цілі речі. */
@@ -44,7 +42,6 @@ const onTable = (at: number, kind: "mug" | "phone", along: number, across: numbe
   y: Math.round((along - at + across) * TABLE_ALONG.y),
   scale: 0.9,
   front: true,
-  ...ON,
 });
 /** Кіт сидить на лівій половині стола, цілі кухоль і телефон стоять на правій. */
 const SIT_AT = -0.55;
@@ -73,20 +70,20 @@ const WIRE_FAR = WIRE("whole", 76, -30, false);
 
 /** Велика коробка з покупками, у якій сидить кіт: стінки спереду — поверх нього. */
 const BOX: TraitProp[] = [
-  { art: "env/boxes", state: "pile-1", x: 0, y: 48, scale: 1, ...ON },
-  { art: "env/boxes/front", state: "pile-1", x: 0, y: 48, scale: 1, front: true, ...ON },
+  { art: "env/boxes", state: "pile-1", x: 0, y: 48, scale: 1 },
+  { art: "env/boxes/front", state: "pile-1", x: 0, y: 48, scale: 1, front: true },
 ];
 const NEW_BOX = (x: number, y: number): TraitProp => ({ art: "env/boxes", state: "pile-1", x, y, scale: 0.4 });
 
-const FRIDGE_TOP: TraitProp = { art: "env/fridge", state: "closed", x: 0, y: 101, scale: 0.82, ...ON };
-const WARDROBE_TOP: TraitProp = { art: "env/wardrobe", state: null, x: 0, y: 102, scale: 0.73, ...ON };
+const FRIDGE_TOP: TraitProp = { art: "env/fridge", state: "closed", x: 0, y: 101, scale: 0.82 };
+const WARDROBE_TOP: TraitProp = { art: "env/wardrobe", state: null, x: 0, y: 102, scale: 0.73 };
 /**
  * Низьке місце кота, що тримається землі: лежанка на підлозі, а холодильник із порожнім верхом — далеко за спиною. Шафу з одягом
  * читали «хоче в шафу», задерту до верху голову — «хоче нагору».
  */
 const LOW_PLACE: TraitProp[] = [
   { art: "env/fridge", state: "closed", x: -72, y: -30, scale: 0.4 },
-  { art: "item/cat-bed", state: null, x: 0, y: 6, scale: 0.85, withCat: true },
+  { art: "item/cat-bed", state: null, x: 0, y: 6, scale: 0.85 },
 ];
 
 /** Зачинені вхідні двері в розрізі передньої стіни: низьке червоне полотно з номером і ручкою між стояками. */

@@ -23,9 +23,9 @@ const CAKE: TraitProp = { art: "item/cake", state: null, x: 46, y: 8, scale: 0.7
  * за дно: буханець без нього майже не видно з-за борту.
  */
 const fragileBox = (lift = 0): TraitProp[] => [
-  { art: "env/boxes", state: "pile-1", x: 0, y: 48 + lift, withCat: true },
-  { art: "env/boxes/front", state: "pile-1", x: 0, y: 48 + lift, withCat: true, front: true },
-  { art: "item/fragile-sign", state: null, x: 30, y: 31 + lift, scale: 1.3, withCat: true, front: true },
+  { art: "env/boxes", state: "pile-1", x: 0, y: 48 + lift },
+  { art: "env/boxes/front", state: "pile-1", x: 0, y: 48 + lift, front: true },
+  { art: "item/fragile-sign", state: null, x: 30, y: 31 + lift, scale: 1.3, front: true },
 ];
 const FRAGILE_BOX = fragileBox();
 
@@ -43,7 +43,7 @@ const TWO_LICKED_BOWLS: readonly TraitProp[] = [
   { ...LICKED_BOWL, x: 68, y: 8, front: false },
 ];
 /** Ваги для кота: кіт стоїть на платформі. */
-const SCALES: TraitProp = { art: "item/scales", state: null, x: 0, y: 8, withCat: true };
+const SCALES: TraitProp = { art: "item/scales", state: null, x: 0, y: 8 };
 /** Думка «ожиріння ✗» (іконка хвороби в лікаря — товстий кіт на вагах). */
 const NOT_FAT: readonly TraitBubble[] = [{ kind: "think", icon: "obese", mark: "no" }];
 
@@ -53,7 +53,7 @@ const COLD = icon("chilly", 34, -60, 0.36);
 const HOT = icon("hot", 34, -50, 0.4);
 const WATER: TraitProp = { art: "item/water/cheap", state: "full", x: -44, y: 8, scale: 0.7 };
 /** Прохолодна плитка з ванної: кіт розлігся на ній. */
-const COOL_TILE: TraitProp = { art: "env/cool-tile", state: null, x: 0, y: 4, scale: 0.8, withCat: true };
+const COOL_TILE: TraitProp = { art: "env/cool-tile", state: null, x: 0, y: 4, scale: 0.8 };
 
 export const SHOTS: TraitPhotoShots = {
   // Тиха група: знімок — метафора. «+» — торт зі свічками «20» (ювілей довгожителя), «−» — кіт у коробці з наліпкою «крихке».
