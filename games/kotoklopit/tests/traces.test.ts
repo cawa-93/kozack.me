@@ -110,6 +110,18 @@ describe("сліди від дії кота: уперше — і назавжд�
     });
   }
 
+  it("подер диван — запис титрів (§4.2) лише першого разу, з котом; одвірок, килимок і коробки — ні", () => {
+    const save = game();
+    save.current.home.boxes = { food: { cheap: 3, premium: 0 } };
+    const cat = withCat(save);
+    for (const where of ["doorframe", "rug", "boxes"] as const) scratch(save, cat, where);
+    expect(save.current.story).toBeUndefined();
+    save.current.minute = hours(11);
+    scratch(save, cat, "sofa");
+    scratch(save, cat, "sofa");
+    expect(save.current.story).toEqual([{ kind: "broke", day: save.current.day, minute: hours(11), thing: "sofa", cat: cat.id }]);
+  });
+
   it("кігтеточка слідів не лишає", () => {
     const save = game();
     const post = place(save.current, "scratcher", "cheap");

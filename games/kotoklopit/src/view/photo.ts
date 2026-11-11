@@ -46,21 +46,26 @@ export function lifePhotoPose(mood: number): LifePose {
   return (LIFE_PHOTO_POSES.find((row) => level >= row.from) ?? LIFE_PHOTO_POSES[LIFE_PHOTO_POSES.length - 1]!).pose;
 }
 
+/** Знімок риси для пози рівня. */
+function shotOf(trait: Trait, pose: LifePose): TraitShot | undefined {
+  const group = TRAIT_GROUPS.find((g) => g.id === trait.group);
+  return group && TRAIT_PHOTOS[group.area][group.id]?.[trait.level > 0 ? "plus" : "minus"][pose];
+}
+
 /** Знімок риси з опису життя (§9.7) для пози рівня; кіт без рис — немає. */
 export function traitShot(state: GameState, traits: readonly Trait[], pose: LifePose): TraitShot | undefined {
   const trait = characterTrait(state, traits);
-  const group = trait && TRAIT_GROUPS.find((g) => g.id === trait.group);
-  if (!trait || !group) return undefined;
-  return TRAIT_PHOTOS[group.area][group.id]?.[trait.level > 0 ? "plus" : "minus"][pose];
+  return trait ? shotOf(trait, pose) : undefined;
 }
 
 const catShot = (cat: StoryCat, pose: CatPhotoPose): PhotoSubject => ({ kind: "cat", cat, pose });
 
+const withShot = (cat: StoryCat, pose: LifePose, shot: TraitShot | undefined): PhotoSubject => (shot ? { kind: "cat", cat, pose, shot } : catShot(cat, pose));
+
 /** Кіт у позі за рівнем життя `mood` зі знімком своєї риси. */
 function lifeShot(state: GameState, cat: StoryCat, mood: number): PhotoSubject {
   const pose = lifePhotoPose(mood);
-  const shot = traitShot(state, cat.cat.traits, pose);
-  return shot ? { kind: "cat", cat, pose, shot } : catShot(cat, pose);
+  return withShot(cat, pose, traitShot(state, cat.cat.traits, pose));
 }
 
 /** Фото події стрічки; null — подія без фото (рядок). */
@@ -77,6 +82,10 @@ export function storyPhoto(item: StoryItem, state: GameState): Photo | null {
       };
     case "thing":
       return { subjects: [{ kind: "thing", thing: item.thing, quality: item.quality }] };
+    case "trait": {
+      const pose = lifePhotoPose(item.mood);
+      return { subjects: [withShot(item.cat, pose, shotOf(item.trait, pose))] };
+    }
     case "broke":
       return { subjects: [{ kind: "cat", cat: item.cat, pose: "content", shot: brokeShot(item.thing, item.quality) }] };
     case "career":

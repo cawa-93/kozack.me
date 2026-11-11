@@ -7,7 +7,7 @@ import { lifeLevel } from "./sim/farewell";
 import type { CleanerVisit, GuestsVisit } from "./sim/events";
 import type { StoryItem } from "./sim/story";
 import { visibility } from "./sim/knowledge";
-import { TRAIT_GROUPS, type TraitArea } from "./sim/traits";
+import { TRAIT_GROUPS, traitName, type TraitArea } from "./sim/traits";
 import { TRAIT_LIFE_LINES } from "./traitlife";
 import type { PersonStateId } from "./view/personstates";
 import { formatClock } from "./sim/time";
@@ -1385,6 +1385,15 @@ export const TRAIT_AREAS: Record<TraitArea, string> = {
   health: "Помічено щось дивне — у [його|її] тілі й самопочутті.",
 };
 
+/** Опис риси: для «+» чи для «−», у формі за статтю кота. */
+export function traitAbout(trait: Pick<Trait, "group" | "level">, sex: Sex): string {
+  // Немонотонна шкала (§9.9, «Котяча м'ята»): свій опис для окремого рівня.
+  const level = TRAIT_ABOUT_LEVEL[trait.group]?.[trait.level];
+  if (level !== undefined) return fill(level, sex);
+  const about = TRAIT_ABOUT[trait.group];
+  return about ? fill(about[trait.level > 0 ? 0 : 1], sex) : "";
+}
+
 /** Опис риси для картки кота (§9.9): що гравець помітить у поведінці, без чисел і механік; «+» (рівні +1, +2) і «−» (−1, −2). */
 export const TRAIT_ABOUT: Record<string, readonly [string, string]> = {
   energy: ["Енергії через край: носиться, грається й бешкетує, а ввечері майже не дрімає.", "Більше лежить, ніж бігає: дрімає навіть увечері й менше бешкетує."],
@@ -1510,6 +1519,7 @@ export const STORY_TEXTS = {
       text: "Будиночок служив вірно, але котячої любові не витримав. Тепер [він спить|вона спить], де заманеться, — найчастіше там, де заважає.",
     },
     scratcher: { title: "{кіт} [додер|додерла] кігтеточку до кінця", text: "Сизаль скінчився раніше, ніж котячий запал. Диван поруч тривожно мовчить." },
+    sofa: { title: "{кіт} [подер|подерла] диван", text: "Оббивку біля підлокітника пущено на бахрому. Тепер у дивана є характер — і [його|її] автограф." },
   },
   /** `{посада}` — якої дійшли: з великої в рядках і з малої на полароїдах. */
   career: {
@@ -1583,6 +1593,11 @@ export function storyCaption(item: StoryItem, state: GameState): StoryCaption {
     case "thing": {
       const { title, text } = STORY_TEXTS.things[item.thing];
       return { title, text: fill(text, address, { річ: VARIANT_TITLES[`thing:${item.thing}`]?.[item.quality] ?? "" }) };
+    }
+    case "trait": {
+      // Як новина телефона про відкриту рису (`traitNews`).
+      const cat = item.cat.cat;
+      return { title: `${cat.name} — ${fill(traitName(item.trait), cat.sex)}`, text: traitAbout(item.trait, cat.sex) };
     }
     case "broke": {
       const { title, text } = STORY_TEXTS.broke[item.thing];

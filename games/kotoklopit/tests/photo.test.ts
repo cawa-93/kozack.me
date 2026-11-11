@@ -16,6 +16,8 @@ import { resetArtSources, shareArtAtlas } from "../src/view/art/sources";
 import { ART_INDEX_VERSION, framesOf, type ArtIndex, type FrameId, type IndexFrame } from "../src/view/art/types";
 import { lifePhotoPose, livingCatPhoto, PHOTO_HOME_CATS, PHOTO_KITTENS, retirementPhoto, storyPhoto, type CatPhotoPose, type Photo, type PersonPhotoPose } from "../src/view/photo";
 import { catPhotoParts, personPhotoParts, photoCat, photoLayout, thingPhotoParts } from "../src/view/photoposes";
+import { TRAIT_PHOTOS } from "../src/view/traitphoto";
+import { traitGroup } from "../src/sim/traits";
 import { withCatCorner } from "./helpers";
 
 const CAT_POSES: readonly CatPhotoPose[] = ["curious", "wary", "nursing", "content", "calm", "sulk", "ill"];
@@ -99,17 +101,36 @@ describe("подія → фото (§4.2)", () => {
       ["carrier", "premium", "mess/carrier/premium"],
       ["house", "cheap", "item/house/cheap"],
       ["scratcher", "cheap", "item/scratcher/cheap"],
+      ["sofa", undefined, "env/trace/sofa"],
     ] as const;
     for (const [thing, quality, art] of cases) {
-      const subjects = storyPhoto({ kind: "broke", day: 8, at: 11520, thing, quality, cat: who }, state)?.subjects ?? [];
+      const subjects = storyPhoto({ kind: "broke", day: 8, at: 11520, thing, ...(quality ? { quality } : {}), cat: who }, state)?.subjects ?? [];
       expect(subjects, thing).toHaveLength(1);
       const subject = subjects[0];
       if (subject?.kind !== "cat") throw new Error(`${thing}: на фото не кіт`);
       expect(subject.cat).toBe(who);
       const props = subject.shot?.props ?? [];
       expect(props.map((p) => p.art), thing).toContain(art);
-      expect(props.some((p) => p.art.startsWith("mess/")), `${thing}: уламки`).toBe(true);
+      if (thing !== "sofa") expect(props.some((p) => p.art.startsWith("mess/")), `${thing}: уламки`).toBe(true);
       expect(missing(catPhotoParts(subject.cat, subject.pose, subject.shot)), thing).toEqual([]);
+    }
+  });
+
+  it("відкрита риса — кіт у віці того дня, у позі за настроєм життя на ту мить, зі знімком саме цієї риси", () => {
+    const state = game();
+    const who = cat(state, 8);
+    who.traits = [
+      { group: "talkative", level: 2, seen: 6, known: true },
+      { group: "energy", level: -1, seen: 6, known: true },
+    ];
+    const at = story(who, 12);
+    for (const [trait, side] of [[who.traits[0]!, "plus"], [who.traits[1]!, "minus"]] as const) {
+      for (const [mood, pose] of [[90, "content"], [55, "calm"], [35, "sulk"], [5, "ill"]] as const) {
+        const subjects = storyPhoto({ kind: "trait", day: 8, at: 11520, cat: at, trait, mood }, state)?.subjects;
+        const shot = TRAIT_PHOTOS[traitGroup(trait.group).area][trait.group]?.[side][pose];
+        expect(subjects, `${trait.group} ${mood}`).toEqual([{ kind: "cat", cat: at, pose, ...(shot ? { shot } : {}) }]);
+        expect(lifePhotoPose(mood)).toBe(pose);
+      }
     }
   });
 

@@ -13,6 +13,7 @@ import { decideFoundling } from "../src/sim/modifiers";
 import { fill, TRAIT_HINTS } from "../src/texts";
 import { traitNews } from "../src/ui/traits";
 import { observe, visibility, witnesses } from "../src/sim/knowledge";
+import { OBSERVATIONS } from "../src/sim/config";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, TraitLevel } from "../src/sim/types";
@@ -81,6 +82,21 @@ describe("свідок (§9.9)", () => {
 });
 
 describe("прояв — лише того боку, що показала поведінка (пошук багів 2026-10-25)", () => {
+  it("риса відкрилася спостереженнями — запис титрів (§4.2): кіт, група й настрій життя на ту мить; відома з притулку — ні", () => {
+    const save = game();
+    save.current.day = 5;
+    save.current.minute = 600;
+    const cat = withCat(save, { talkative: 2, energy: 1 });
+    cat.traits[1]!.known = true;
+    cat.moodHistory = [80, 60];
+    for (let i = 1; i < OBSERVATIONS.normal; i++) observe(save.current, cat, "talkative");
+    observe(save.current, cat, "energy");
+    expect(save.current.story).toBeUndefined();
+    observe(save.current, cat, "talkative");
+    observe(save.current, cat, "talkative");
+    expect(save.current.story).toEqual([{ kind: "trait", day: 5, minute: 600, cat: cat.id, group: "talkative", mood: 70 }]);
+  });
+
   it("«Німе кіно» не відкривається тим, що нявкає інший бік групи; «Балакучий» — відкривається", () => {
     const save = game();
     const quiet = withCat(save, { talkative: -2 });

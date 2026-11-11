@@ -137,6 +137,7 @@ import { angryAtWindow, chatters, dogOnStairs, pigeonsFactor, strayMood, valeria
 import { handOn } from "./petpair";
 import { damageParcel, intactParcels } from "./parcels";
 import { addTrace, SCRATCH_TRACES, tidyBoxTraces } from "./traces";
+import { rememberBroken } from "./story";
 import { BIG_BOX_TARGET, bigBoxAt, bigBoxFree, bigBoxScratchAt, bigBoxSpot, inBigBox, scratchesBigBox } from "./bigbox";
 import type { BowlItem, Cat, CatAct, CatActKind, Dish, ForbiddenZone, GameState, HomeItem, LitterItem, Mess, MessKind, PlayPhase, Product, Quality, ToyItem, TrinketKind, Vec, WaterItem } from "./types";
 import { exercise, gainWeight, settleWeight, weightSeen } from "./weight";
@@ -2465,6 +2466,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       } else if (act.target === "sofa" || act.target === "doorframe") state.home.repairs += SOFA_REPAIR;
       const where: ScratchSpot = post ? "post" : act.target === "doorframe" || act.target === "rug" || act.target === "boxes" || act.target === BIG_BOX_TARGET ? act.target : "sofa";
       emit(state, { type: "scratched", cat: cat.id, where });
+      if (where === "sofa") rememberBroken(state, cat, "sofa");
       // Перший раз на цьому місці — слід назавжди (§9.12, «Котячі сліди в квартирі»); кігтеточка слідів не лишає.
       const trace = SCRATCH_TRACES[where];
       if (trace) addTrace(state, trace);

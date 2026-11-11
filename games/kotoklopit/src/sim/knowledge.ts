@@ -1,10 +1,11 @@
 // Що знає персонаж (§9.9): риси відкриваються спостереженням — прояв зараховується, лише якщо
 // персонаж його бачив (був у тій самій кімнаті й не спав).
 
-import { traitLevel } from "./cat";
+import { lifeMood, traitLevel } from "./cat";
 import { OBSERVATIONS, WITNESS_DISTANCE } from "./config";
 import { emit } from "./events";
 import { roomAt } from "./home";
+import { remember } from "./story";
 import { absoluteMinute } from "./time";
 import { traitGroup } from "./traits";
 import type { Cat, GameState, Trait, Vec } from "./types";
@@ -97,4 +98,6 @@ export function observe(state: GameState, cat: Cat, group: string, side: 1 | -1 
   const after = visibility(state, trait);
   if (after === 3) trait.known = true;
   if (after !== before && after !== 0) emit(state, { type: "trait-noticed", cat: cat.id, group, stage: after });
+  // Відкрита риса — подія титрів життя (§4.2).
+  if (after !== before && after === 3) remember(state, { kind: "trait", day: state.day, minute: state.minute, cat: cat.id, group, mood: lifeMood(cat) });
 }

@@ -1,4 +1,5 @@
-// Фото поломки на титрах життя (§4.2): кіт, що зламав річ, задоволено мружиться поруч з уламками й тим, що від неї лишилося.
+// Фото поломки на титрах життя (§4.2): кіт, що зламав річ, задоволено мружиться поруч з уламками й тим, що від неї лишилося, чи
+// з подертим диваном.
 
 import type { Quality, StoryBroken } from "../sim/types";
 import type { TraitProp, TraitShot } from "./traitphoto/types";
@@ -20,13 +21,23 @@ const scratcher = (quality: Quality): TraitShot => ({
   props: [{ art: `item/scratcher/${quality}`, state: null, x: -44, y: -6, scale: 0.6, rot: -80 }, SHARDS(38, 14)],
 });
 
+const SOFA: TraitShot = {
+  idea: "Кіт задоволено мружиться перед диваном із подертим підлокітником.",
+  props: [
+    { art: "env/sofa", state: null, x: -68, y: -14, scale: 0.32 },
+    { art: "env/trace/sofa", state: null, x: -68, y: -14, scale: 0.32 },
+  ],
+};
+
 // Ті самі об'єкти щоразу: кадр кота з поломкою кешується за знімком (`photoposes.ts`).
 const SHOTS: Readonly<Record<StoryBroken, Readonly<Record<Quality, TraitShot>>>> = {
   carrier: { cheap: carrier("cheap"), premium: carrier("premium") },
   house: { cheap: house("cheap"), premium: house("premium") },
   scratcher: { cheap: scratcher("cheap"), premium: scratcher("premium") },
+  sofa: { cheap: SOFA, premium: SOFA },
 };
 
-export function brokeShot(thing: StoryBroken, quality: Quality): TraitShot {
+/** Знімок поломки; у дивана якості немає. */
+export function brokeShot(thing: StoryBroken, quality: Quality = "cheap"): TraitShot {
   return SHOTS[thing][quality];
 }

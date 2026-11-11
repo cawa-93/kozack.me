@@ -20,6 +20,7 @@ import { startTrip } from "../src/sim/trips";
 import type { Address, AlbumEntry, Cat, CatSource, FarewellCause, GameState, HomeItem, Save, Sex, ThingKind } from "../src/sim/types";
 import { changeReputation } from "../src/sim/work";
 import { diseaseTitle, farewellText, fill, livingCatCaption, POSITION_TITLES, storyCaption, storyWeek } from "../src/texts";
+import { traitNews } from "../src/ui/traits";
 import { driveSafely, hours, standAt } from "./helpers";
 
 const game = (address: Address = "she"): Save => newGame({ address, difficulty: "normal", seed: 3 });
@@ -216,7 +217,7 @@ describe("шлях гравця — lifeStory (§4.2)", () => {
     void mother;
   });
 
-  it("старі записи без хвилин — того самого дня за таблицею: перший день, приїзд, пологи, техніка, поломка, кар'єра, прощання; далі — за id кота й порядком запису", () => {
+  it("старі записи без хвилин — того самого дня за таблицею: перший день, приїзд, пологи, техніка, риса, поломка, кар'єра, прощання; далі — за id кота й порядком запису", () => {
     const state = game().current;
     state.day = 20;
     const mother = cat(state, { source: "shelter", age: 3, day: 0, sex: "female" });
@@ -228,6 +229,8 @@ describe("шлях гравця — lifeStory (§4.2)", () => {
     remember(state, { kind: "career", day: 3, change: "promoted", position: 1 });
     remember(state, { kind: "thing", day: 3, thing: "robot", quality: "cheap" });
     remember(state, { kind: "broke", day: 3, thing: "house", quality: "cheap", cat: a.id });
+    a.traits = [{ group: "talkative", level: 2, seen: 6, known: true }];
+    remember(state, { kind: "trait", day: 3, cat: a.id, group: "talkative", mood: 50 });
     // Прощання — у порядку альбому, а не за id.
     const gb = farewell(state, b, { kind: "sorrow" }, 3);
     const ga = farewell(state, a, { kind: "old" }, 3);
@@ -240,6 +243,7 @@ describe("шлях гравця — lifeStory (§4.2)", () => {
       [3, "arrival"],
       [3, "births"],
       [3, "thing"],
+      [3, "trait"],
       [3, "broke"],
       [3, "career"],
       [3, "farewell"],
@@ -379,6 +383,29 @@ describe("шлях гравця — lifeStory (§4.2)", () => {
     expect(ofKind(lifeStory(state), "broke")).toEqual([
       { kind: "broke", day: 8, at: absoluteMinute(8, hours(12)), thing: "house", quality: "cheap", cat: { cat: murka, ageWeeks: 11 } },
       { kind: "broke", day: 9, at: absoluteMinute(9, hours(12)), thing: "carrier", quality: "premium", cat: { cat: barsik, ageWeeks: 29 } },
+    ]);
+  });
+
+  it("відкриті риси — кожна: кіт живий чи з пам'яті, у віці того дня, з рисою й настроєм життя на ту мить; кота чи риси немає — запису немає", () => {
+    const state = game().current;
+    state.day = 30;
+    const murka = cat(state, { source: "shelter", age: 10, day: 0, now: 14 });
+    murka.traits = [
+      { group: "talkative", level: 2, seen: 6, known: true },
+      { group: "energy", level: -1, seen: 6, known: true },
+    ];
+    const gone = cat(state, { source: "shelter", age: 28, day: 0, now: 30 });
+    gone.traits = [{ group: "playful", level: 1, seen: 6, known: true }];
+    const barsik = farewell(state, gone, { kind: "given" }, 20);
+    remember(state, { kind: "trait", day: 8, minute: hours(12), cat: murka.id, group: "talkative", mood: 70 });
+    remember(state, { kind: "trait", day: 9, minute: hours(12), cat: barsik.id, group: "playful", mood: 35 });
+    remember(state, { kind: "trait", day: 10, minute: hours(12), cat: murka.id, group: "energy", mood: 50 });
+    remember(state, { kind: "trait", day: 11, minute: hours(12), cat: 9999, group: "energy", mood: 50 });
+    remember(state, { kind: "trait", day: 12, minute: hours(12), cat: murka.id, group: "hunting", mood: 50 });
+    expect(ofKind(lifeStory(state), "trait")).toEqual([
+      { kind: "trait", day: 8, at: absoluteMinute(8, hours(12)), cat: { cat: murka, ageWeeks: 11 }, trait: murka.traits[0], mood: 70 },
+      { kind: "trait", day: 9, at: absoluteMinute(9, hours(12)), cat: { cat: barsik, ageWeeks: 29 }, trait: barsik.traits[0], mood: 35 },
+      { kind: "trait", day: 10, at: absoluteMinute(10, hours(12)), cat: { cat: murka, ageWeeks: 11 }, trait: murka.traits[1], mood: 50 },
     ]);
   });
 
@@ -585,23 +612,34 @@ describe("підписи стрічки (§4.2, `TEXTS.md`, «Титри жит�
 
   it("поломка — свій підпис на кожну річ, з ім'ям і за статтю кота, що зламав", () => {
     const state = game().current;
-    const caption = (thing: "carrier" | "house" | "scratcher", sex: Sex) => {
+    const caption = (thing: "carrier" | "house" | "scratcher" | "sofa", sex: Sex) => {
       const who = cat(state, { source: "shelter", age: 10, day: 0, sex, name: sex === "male" ? "Барсик" : "Мурка" });
       return storyCaption({ kind: "broke", day: 4, at: 0, thing, quality: "cheap", cat: { cat: who, ageWeeks: 10 } }, state);
     };
-    const things = (["carrier", "house", "scratcher"] as const).map((thing) => caption(thing, "male"));
+    const things = (["carrier", "house", "scratcher", "sofa"] as const).map((thing) => caption(thing, "male"));
     for (const c of things) {
       clean(c);
       expect(c.title).toContain("Барсик");
       expect(c.text).toBeDefined();
     }
-    expect(new Set(things.map((c) => c.title.replace("Барсик", ""))).size).toBe(3);
-    expect(new Set(things.map((c) => c.text)).size).toBe(3);
-    for (const thing of ["carrier", "house", "scratcher"] as const) {
+    expect(new Set(things.map((c) => c.title.replace("Барсик", ""))).size).toBe(4);
+    expect(new Set(things.map((c) => c.text)).size).toBe(4);
+    for (const thing of ["carrier", "house", "scratcher", "sofa"] as const) {
       const female = caption(thing, "female");
       clean(female);
       expect(female.title).toContain("Мурка");
       expect(female.title.replace("Мурка", "")).not.toBe(caption(thing, "male").title.replace("Барсик", ""));
+    }
+  });
+
+  it("відкрита риса — як новина телефона: «{кіт} — {риса}» за статтю, під фото — опис риси", () => {
+    const state = game().current;
+    for (const [sex, name] of [["male", "Барсик"], ["female", "Мурка"]] as const) {
+      const who = cat(state, { source: "shelter", age: 10, day: 0, sex, name });
+      who.traits = [{ group: "talkative", level: 2, seen: 6, known: true }];
+      const caption = storyCaption({ kind: "trait", day: 4, at: 0, cat: { cat: who, ageWeeks: 10 }, trait: who.traits[0]!, mood: 50 }, state);
+      clean(caption);
+      expect(caption).toEqual(traitNews(state, who.id, "talkative", 3));
     }
   });
 

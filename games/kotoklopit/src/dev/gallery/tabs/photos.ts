@@ -216,6 +216,7 @@ function mount(ctx: GalleryContext): GalleryView {
           polaroid(line, storyPhoto({ kind: "broke", day: 8, at: 11520, thing, quality, cat: who }, state), `${thing} · ${quality}`, `broke.${label === "Кошеня" ? "kitten" : "adult"}.${thing}.${quality}`);
         }
       }
+      polaroid(line, storyPhoto({ kind: "broke", day: 8, at: 11520, thing: "sofa", cat: who }, state), "sofa", `broke.${label === "Кошеня" ? "kitten" : "adult"}.sofa`);
     }
   }
 

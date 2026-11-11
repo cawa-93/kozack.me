@@ -22,7 +22,8 @@ import { startWork } from "../src/sim/work";
 import { careCard } from "../src/ui/cards";
 import { named, splitIcons } from "../src/ui/icons";
 import { goodsIcon } from "../src/ui/shop";
-import { traitAbout, traitHint } from "../src/ui/traits";
+import { traitHint } from "../src/ui/traits";
+import { traitAbout } from "../src/texts";
 import { hours, recordEvents, withCatCorner } from "./helpers";
 
 function game(seed = 11): Save {

@@ -7,9 +7,8 @@ import { createCat } from "../src/sim/cat";
 import { createRng } from "../src/sim/rng";
 import type { Cat } from "../src/sim/types";
 import { breedAbout, breedText } from "../src/ui/cards";
-import { traitAbout } from "../src/ui/traits";
 import { DISEASES, POSITIONS } from "../src/sim/config";
-import { BREED_ABOUT, BREED_HALF, endingText, fill, HOME_VET_NOBODY, homeVetText, KITTEN_MESSAGE, POSITION_TITLES, TRAIT_ABOUT, TRAIT_HINTS, VET_ADVICE } from "../src/texts";
+import { BREED_ABOUT, BREED_HALF, endingText, fill, HOME_VET_NOBODY, homeVetText, KITTEN_MESSAGE, POSITION_TITLES, TRAIT_ABOUT, TRAIT_HINTS, traitAbout, VET_ADVICE } from "../src/texts";
 
 describe("тексти (TEXTS.md)", () => {
   it("підставляє значення й обирає форму за статтю", () => {

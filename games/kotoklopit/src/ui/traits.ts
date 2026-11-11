@@ -4,18 +4,9 @@
 import { visibility } from "../sim/knowledge";
 import { traitGroup, traitName } from "../sim/traits";
 import type { Cat, GameState, Sex, Trait } from "../sim/types";
-import { fill, TRAIT_ABOUT, TRAIT_ABOUT_LEVEL, TRAIT_AREAS, TRAIT_HINTS } from "../texts";
+import { fill, TRAIT_AREAS, TRAIT_HINTS, traitAbout } from "../texts";
 import { hintBubble } from "./hintbubble";
 import { element } from "./overlay";
-
-/** Опис риси: для «+» чи для «−», у формі за статтю кота. */
-export function traitAbout(trait: Pick<Trait, "group" | "level">, sex: Sex): string {
-  // Немонотонна шкала (§9.9, «Котяча м'ята»): свій опис для окремого рівня.
-  const level = TRAIT_ABOUT_LEVEL[trait.group]?.[trait.level];
-  if (level !== undefined) return fill(level, sex);
-  const about = TRAIT_ABOUT[trait.group];
-  return about ? fill(about[trait.level > 0 ? 0 : 1], sex) : "";
-}
 
 /**
  * Підказка про рису (§9.9, рівень 2): «Здається, Мурка гостріше реагує на температуру.» — де шукати, без боку й сили; бік, якого
