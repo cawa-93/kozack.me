@@ -4,7 +4,7 @@
 // котові (шипить з причиною, муркоче поруч, вихопив ласощі), — баблом гри над тим, хто це каже чи відчуває (`eventBubbles`, §11.4):
 // самих виразу й пози сліпі глядачі не читали.
 
-import type { TraitBubble, TraitCompanion, TraitPhotoShots, TraitProp } from "./types";
+import type { TraitBubble, TraitCompanion, TraitPerson, TraitPhotoShots, TraitProp } from "./types";
 
 const adult = (still: TraitCompanion["still"], x: number, y: number): TraitCompanion => ({ age: "adult", still, x, y });
 /** Кошеня: новонароджене (0 тижнів) спить клубочком, тижневе вже сидить і повзає. */
@@ -22,16 +22,28 @@ const pleasant = (over?: number, dx?: number): TraitBubble => ({ kind: "think", 
 /** Над буханцем бабл зсунутий назад (`dx`): голова буханця попереду, і бабл ліг би над іншим котом. */
 const LOAF_DX = -16;
 
-/** Друг, що смакує рибку праворуч, мордою геть від героя: рибка — під його носом, а героєві видно, як той їсть. */
-const EATER_X = 64;
-const eater = (x = EATER_X): TraitCompanion => adult({ base: "eat", mouth: "eat", eyes: "arc" }, x, -16);
-const eaterTreat = (x = EATER_X): TraitProp => TREAT(x + 36, -8);
+/**
+ * Друг, що хрумтить рибкою праворуч, мордою геть від героя: рибка — впритул під його ротом, над ним — бабл гри «хрумтить ласощами»
+ * (`CRUNCH`, як у `treat-snatched`), тож видно, кому перепало; хвіст задерто вгору, щоб не лягав на героя («кусає за хвіст»).
+ */
+const EATER_X = 84;
+const eater = (x = EATER_X): TraitCompanion => adult({ base: "eat", mouth: "eat", eyes: "half", bones: { tail: 75 } }, x, -16);
+const eaterTreat = (x = EATER_X): TraitProp => TREAT(x + 31, -11);
+const CRUNCH: TraitBubble = { kind: "say", icon: "treats", over: 0, dx: -24 };
 /** Друг, якого пестять: лежить на спині й мружиться, над ним — серце. */
 const PETTED_X = 70;
 const petted = (x = PETTED_X): TraitCompanion => adult({ base: "belly", eyes: "arc" }, x, -8);
 const pettedHeart = (x = PETTED_X): TraitProp => HEART(x - 2, -66);
-/** Друг лежить буханцем позаду праворуч, мордою до героя, й мружиться: його голова — під язиком героя. */
-const GROOMED = adult({ base: "loaf", flip: true, eyes: "arc" }, 64, -8);
+/** Ви гладите друга, що лежить на спині: стоїте праворуч від нього, нахилившись, — подалі від героя та його бабла. */
+const PETTED_BY_X = 76;
+const pettingHand = (x = PETTED_BY_X): TraitPerson => ({ pose: "pet", x: x + 38, y: -12, flip: true });
+/**
+ * Друг лежить буханцем упритул за героєм, мордою до нього, низько схиливши голову й мружачись: підставив маківку під язик героя
+ * (ніс до носа читалось «труться мордами»). Позаду героя, а не перед ним: кошеня-героя дорослий буханець закривав би.
+ */
+const GROOMED = adult({ base: "loaf", flip: true, eyes: "arc", bones: { neck: 15, head: 25 } }, 46, -2);
+/** «Приємно» над другом, якого вилизують: зсунуте від героя, щоб стояло над другом, а не між котами. */
+const GROOMED_PLEASANT = pleasant(0, -40);
 /** Миска героя праворуч, з неї їсть інший кіт, що підійшов з того боку. */
 const SHARED = BOWL("cheap-2", 36, 10);
 const SHARER = adult({ base: "eat", flip: true, mouth: "eat", eyes: "half" }, 76, -10);
@@ -39,6 +51,9 @@ const SHARER = adult({ base: "eat", flip: true, mouth: "eat", eyes: "half" }, 76
 const GUARDED = BOWL("cheap-2", -36, 14);
 /** Друг лагідно тягнеться вилизати героя. */
 const LICKER = adult({ base: "lick", at: 280, flip: true, mouth: "tongue", eyes: "arc" }, 60, -8);
+/** Той самий друг упритул: язик — біля потилиці героя, що сидить; до буханця ще й нахилив голову. */
+const LICKER_CLOSE = { ...LICKER, x: 46 };
+const LICKER_LOW = { ...LICKER_CLOSE, still: { ...LICKER.still, bones: { head: 20 } } };
 const REFUSED: TraitBubble = { kind: "think", icon: "lick", mark: "no" };
 
 export const SHOTS: TraitPhotoShots = {
@@ -103,63 +118,64 @@ export const SHOTS: TraitPhotoShots = {
         ],
       },
       calm: {
-        idea: "Сидить, притиснувши вуха, і шипить (бабл злості) на кота, що смакує рибку, яка дісталася не йому.",
+        idea: "Сидить, притиснувши вуха, і шипить (бабл злості) на кота, що хрумтить рибкою (над ним бабл «хрумтить ласощами»), яка дісталася не йому.",
         still: { eyes: "half", ears: "flat" },
         props: [eaterTreat()],
         companions: [eater()],
-        bubbles: [hiss("angry")],
+        bubbles: [hiss("angry"), CRUNCH],
       },
       sulk: {
-        idea: "Насуплено сидить, притиснувши вуха, і шипить (бабл злості) на кота, що смакує рибку, яка дісталася не йому.",
+        idea: "Насуплено сидить, притиснувши вуха, і шипить (бабл злості) на кота, що хрумтить рибкою (над ним бабл «хрумтить ласощами»), яка дісталася не йому.",
         still: { ears: "flat" },
         props: [eaterTreat()],
         companions: [eater()],
-        bubbles: [hiss("angry")],
+        bubbles: [hiss("angry"), CRUNCH],
       },
       ill: {
-        idea: "Хворий лежить буханцем, а все одно притиснув вуха й шипить (бабл злості) на кота, що смакує рибку.",
+        idea: "Хворий лежить буханцем, а все одно притиснув вуха й шипить (бабл злості) на кота, що хрумтить рибкою (над ним бабл «хрумтить ласощами»).",
         still: { ears: "flat" },
         props: [eaterTreat()],
         companions: [eater()],
-        bubbles: [hiss("angry", LOAF_DX)],
+        bubbles: [hiss("angry", LOAF_DX), CRUNCH],
       },
     },
     minus: {
       content: {
-        idea: "Мружиться, лежачи впритул до кота, що смакує рибку, і думає «приємно»: радіє чужому, як своєму.",
+        idea: "Мружиться, лежачи поруч із котом, що хрумтить рибкою (над ним бабл «хрумтить ласощами»), і думає «приємно»: радіє чужому, як своєму.",
         still: { base: "loaf", eyes: "arc" },
         props: [eaterTreat()],
         companions: [eater()],
-        bubbles: [pleasant(undefined, LOAF_DX)],
+        bubbles: [pleasant(undefined, LOAF_DX), CRUNCH],
       },
       calm: {
-        idea: "Спокійно лежить буханцем поруч із котом, що смакує рибку, повільно кліпає й думає «приємно» — не рахує чужих смаколиків.",
+        idea: "Спокійно лежить буханцем поруч із котом, що хрумтить рибкою (над ним бабл «хрумтить ласощами»), повільно кліпає й думає «приємно» — не рахує чужих смаколиків.",
         still: { base: "loaf", overlay: "slowBlink", at: 200, eyes: "half" },
         props: [eaterTreat()],
         companions: [eater()],
-        bubbles: [pleasant(undefined, LOAF_DX)],
+        bubbles: [pleasant(undefined, LOAF_DX), CRUNCH],
       },
       sulk: {
-        idea: "Сам невеселий, а сидить поруч із котом, що смакує рибку, і думає «приємно» — чужа радість його не гнітить.",
+        idea: "Сам невеселий, а сидить поруч із котом, що хрумтить рибкою (над ним бабл «хрумтить ласощами»), і думає «приємно» — чужа радість його не гнітить.",
         props: [eaterTreat()],
         companions: [eater()],
-        bubbles: [pleasant()],
+        bubbles: [pleasant(), CRUNCH],
       },
       ill: {
-        idea: "Хворий лежить буханцем поруч із котом, що смакує рибку, і думає «приємно» — тішиться за іншого.",
+        idea: "Хворий лежить буханцем поруч із котом, що хрумтить рибкою (над ним бабл «хрумтить ласощами»), і думає «приємно» — тішиться за іншого.",
         props: [eaterTreat()],
         companions: [eater()],
-        bubbles: [pleasant(undefined, LOAF_DX)],
+        bubbles: [pleasant(undefined, LOAF_DX), CRUNCH],
       },
     },
   },
   jealousy: {
     plus: {
       content: {
-        idea: "Мружиться під вашою рукою, а інший кіт, притиснувши вуха, понуро йде геть: герой прогнав його з-під руки (бабл «шипить за руку»).",
-        person: { pose: "pet", x: -40, y: -8, front: true },
-        companions: [adult({ base: "sadWalk", eyes: "half", ears: "flat" }, 80, -12)],
-        bubbles: [hiss("hiss-hand", 32)],
+        idea: "Мружиться буханцем у вас на колінах і шипить, вишкіривши ікла (бабл «шипить за руку» просто над ним), а кіт, якого він звідти зігнав, притиснувши вуха, понуро йде геть по підлозі.",
+        still: { base: "loaf", mouth: "hiss", shadow: false },
+        person: { pose: "lap", x: -4, y: 35 },
+        companions: [adult({ base: "sadWalk", eyes: "half", ears: "flat" }, 78, 38)],
+        bubbles: [hiss("hiss-hand", 14)],
       },
       calm: {
         idea: "Сидить, притиснувши вуха, і шипить (бабл «шипить за руку») на кота, що блаженно лежить на спині під серцем: ласку не ділить ні з ким.",
@@ -185,30 +201,30 @@ export const SHOTS: TraitPhotoShots = {
     },
     minus: {
       content: {
-        idea: "Мружиться, лежачи поруч із котом, якого пестять, і думає «приємно»: муркоче за компанію.",
+        idea: "Мружиться, лежачи поруч із котом, якого гладить ваша рука, і думає «приємно»: муркоче за компанію.",
         still: { base: "loaf", eyes: "arc" },
-        props: [pettedHeart(66)],
-        companions: [petted(66)],
-        bubbles: [pleasant(undefined, LOAF_DX)],
+        person: pettingHand(),
+        companions: [petted(PETTED_BY_X)],
+        bubbles: [pleasant(undefined, -28)],
       },
       calm: {
-        idea: "Спокійно лежить буханцем поряд із котом, якого пестять, і думає «приємно»: любові вистачить на всіх.",
+        idea: "Спокійно лежить буханцем поряд із котом, якого гладить ваша рука, і думає «приємно»: любові вистачить на всіх.",
         still: { base: "loaf", eyes: "half" },
-        props: [pettedHeart(66)],
-        companions: [petted(66)],
-        bubbles: [pleasant(undefined, LOAF_DX)],
+        person: pettingHand(),
+        companions: [petted(PETTED_BY_X)],
+        bubbles: [pleasant(undefined, -28)],
       },
       sulk: {
-        idea: "Сам невеселий, а сидить поруч із котом, якого пестять, і думає «приємно» — без жодного шипіння.",
-        props: [pettedHeart(66)],
-        companions: [petted(66)],
-        bubbles: [pleasant(undefined, -8)],
+        idea: "Сам невеселий, а сидить поруч із котом, якого гладить ваша рука, і думає «приємно» — без жодного шипіння.",
+        person: pettingHand(),
+        companions: [petted(PETTED_BY_X)],
+        bubbles: [pleasant(undefined, -26)],
       },
       ill: {
-        idea: "Хворий лежить буханцем поруч із котом, якого пестять, і думає «приємно» — тішиться хоч чужою ласкою.",
-        props: [pettedHeart(66)],
-        companions: [petted(66)],
-        bubbles: [pleasant(undefined, LOAF_DX)],
+        idea: "Хворий лежить буханцем поруч із котом, якого гладить ваша рука, і думає «приємно» — тішиться хоч чужою ласкою.",
+        person: pettingHand(),
+        companions: [petted(PETTED_BY_X)],
+        bubbles: [pleasant(undefined, -38)],
       },
     },
   },
@@ -235,9 +251,9 @@ export const SHOTS: TraitPhotoShots = {
         bubbles: [hiss("hiss-bowl")],
       },
       ill: {
-        idea: "Хворий лежить коло своєї миски й, притиснувши вуха, шипить (бабл «шипить за миску») на кота, що сидить навпроти, — стереже її.",
+        idea: "Хворий лежить носом до своєї миски й, притиснувши вуха, шипить (бабл «шипить за миску») на кота, що сидить поодаль навпроти, — стереже її.",
         still: { ears: "flat" },
-        props: [BOWL("cheap-1", 58, 6)],
+        props: [BOWL("cheap-1", 38, 10)],
         companions: [adult({ base: "sit", flip: true, ears: "side", eyes: "half" }, 104, -10)],
         bubbles: [hiss("hiss-bowl")],
       },
@@ -309,28 +325,28 @@ export const SHOTS: TraitPhotoShots = {
   grooming: {
     plus: {
       content: {
-        idea: "Мружиться, вилизуючи маківку іншому котові, а той підставив голову, мружиться й думає «приємно».",
+        idea: "Мружиться, вилизуючи маківку іншому котові, а той ліг упритул і низько схилив голову, мружиться й думає «приємно».",
         still: { base: "lick", at: 280, eyes: "arc", mouth: "tongue" },
         companions: [GROOMED],
-        bubbles: [pleasant(0)],
+        bubbles: [GROOMED_PLEASANT],
       },
       calm: {
-        idea: "Спокійно вилизує маківку іншому котові, а той підставив голову й думає «приємно».",
+        idea: "Спокійно вилизує маківку іншому котові, а той ліг упритул і низько схилив голову й думає «приємно».",
         still: { base: "lick", at: 280, eyes: "half", mouth: "tongue" },
         companions: [GROOMED],
-        bubbles: [pleasant(0)],
+        bubbles: [GROOMED_PLEASANT],
       },
       sulk: {
-        idea: "Похмуро, з опущеними вухами, вилизує іншого кота, а тому однаково приємно — щоб нудьгувати разом.",
-        still: { base: "lick", at: 280, view: "front", eyes: "half", mouth: "tongue", ears: "side" },
+        idea: "Насуплено, відвівши вуха, вилизує маківку іншому котові, що ліг упритул і низько схилив голову, а тому однаково приємно — щоб нудьгувати разом.",
+        still: { base: "lick", at: 280, mouth: "tongue" },
         companions: [GROOMED],
-        bubbles: [pleasant(0)],
+        bubbles: [GROOMED_PLEASANT],
       },
       ill: {
-        idea: "Хворий, а все одно вилизує іншого кота, і тому приємно — хоч так відчути тепло.",
+        idea: "Хворий, а все одно вилизує маківку іншому котові, що ліг упритул і низько схилив голову, і тому приємно — хоч так відчути тепло.",
         still: { base: "lick", at: 280, eyes: "sick", mouth: "tongue", ears: "side" },
         companions: [GROOMED],
-        bubbles: [pleasant(0)],
+        bubbles: [GROOMED_PLEASANT],
       },
     },
     minus: {
@@ -341,9 +357,9 @@ export const SHOTS: TraitPhotoShots = {
         bubbles: [REFUSED],
       },
       calm: {
-        idea: "Відвернувся, притиснувши вуха, від кота, що лагідно тягнеться його вилизати, і думає «не вилизуй».",
+        idea: "Відвернувся, притиснувши вуха, від кота, що впритул тягнеться язиком до його потилиці, і думає «не вилизуй».",
         still: { flip: true, eyes: "half", ears: "flat" },
-        companions: [LICKER],
+        companions: [LICKER_CLOSE],
         bubbles: [REFUSED],
       },
       sulk: {
@@ -353,9 +369,9 @@ export const SHOTS: TraitPhotoShots = {
         bubbles: [REFUSED],
       },
       ill: {
-        idea: "Хворий, а відвернувся, притиснувши вуха, від кота, що прийшов його вилизати, і думає «не вилизуй».",
+        idea: "Хворий, а відвернувся, притиснувши вуха, від кота, що нахилився впритул вилизати йому спину, і думає «не вилизуй».",
         still: { flip: true, ears: "flat" },
-        companions: [LICKER],
+        companions: [LICKER_LOW],
         bubbles: [REFUSED],
       },
     },
