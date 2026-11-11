@@ -5,7 +5,7 @@ import { MIXED } from "../sim/breeds";
 import { DEFAULT_LOOK } from "../sim/game";
 import { WEIGHT } from "../sim/config";
 import type { StoryCat } from "../sim/story";
-import type { AlbumEntry, Cat, Look, Quality, StoryThing, Vec } from "../sim/types";
+import type { AlbumEntry, Cat, Genes, Look, Quality, StoryThing, Vec } from "../sim/types";
 import { girthOf } from "../sim/weight";
 import type { CatAnimId, PersonAnimId } from "./anim/ids";
 import type { PortraitPart } from "./art/compose";
@@ -141,21 +141,27 @@ function withShot(life: CatStill, shot: TraitShot | undefined): CatStill {
 }
 
 /**
- * Інший кіт знімка риси (`TraitCompanion`) — сірий з білим, завжди той самий, щоб не плутався з героєм; кошеня — того самого
- * вигляду. Для малюнка потрібні лише поля `PhotoCat`, решти полів кота в нього немає.
+ * Інший кіт знімка риси (`TraitCompanion`) — рудий з білим, а біля героя з рудим у шерсті (рудий, кремовий, черепаховий) — сірий
+ * з білим, щоб не плутався з героєм; кошеня — того самого вигляду. Для малюнка потрібні лише поля `PhotoCat`, решти полів кота в
+ * нього немає.
  */
-const COMPANION = {
-  id: 0,
-  genes: { orange: [false], black: [true, true], dense: [false, false], agouti: [false, false], tabby: [1, 1], white: [1, 1], full: [true, true], short: [true, true], eyes: 2 },
-  shape: { muzzle: "normal", ears: "normal", tail: "long", build: "normal", legs: "normal", coat: null },
-  diseases: [],
-  collar: false,
-  traits: [],
-  breed: [MIXED, MIXED],
-  ageWeeks: 40,
-} as unknown as Cat;
-const COMPANION_RECIPE = catRecipeOf(COMPANION);
-const COMPANION_FAR = farRecipe(COMPANION_RECIPE);
+function companionLook(genes: Pick<Genes, "orange" | "dense">): { cat: Cat; recipe: TintRecipe; far: TintRecipe } {
+  const cat = {
+    id: 0,
+    genes: { ...genes, black: [true, true], agouti: [false, false], tabby: [1, 1], white: [1, 1], full: [true, true], short: [true, true], eyes: 2 },
+    shape: { muzzle: "normal", ears: "normal", tail: "long", build: "normal", legs: "normal", coat: null },
+    diseases: [],
+    collar: false,
+    traits: [],
+    breed: [MIXED, MIXED],
+    ageWeeks: 40,
+  } as unknown as Cat;
+  const recipe = catRecipeOf(cat);
+  return { cat, recipe, far: farRecipe(recipe) };
+}
+const COMPANION_GINGER = companionLook({ orange: [true], dense: [true, true] });
+const COMPANION_GREY = companionLook({ orange: [false], dense: [false, false] });
+const companionFor = (hero: Pick<Cat, "genes">) => (hero.genes.orange.some(Boolean) ? COMPANION_GREY : COMPANION_GINGER);
 /** Вік іншого кота на фото: дорослий і кошеня, ще кошенячих пропорцій. */
 const COMPANION_WEEKS = { adult: 40, kitten: 1 } as const;
 
@@ -369,8 +375,7 @@ const PERSON_IN_SHOT: Readonly<Record<TraitPerson["pose"], { anim: PersonAnimId;
   pet: { anim: "pet", at: 400, chair: false },
 };
 
-/** Частини персонажа знімка риси: ноги — у (0, 0), спереду, як у квартирі; крісло — під ним, позаду. */
-function personShotParts(look: Look, pose: TraitPerson["pose"]): { part: PortraitPart; person: boolean }[] {
+function personShotRig(look: Look, pose: TraitPerson["pose"]): LooseRig {
   const still = PERSON_IN_SHOT[pose];
   const rig = new Rig(PERSON_RIG, {
     fit: PERSON_FIT,
@@ -381,6 +386,27 @@ function personShotParts(look: Look, pose: TraitPerson["pose"]): { part: Portrai
   }) as unknown as LooseRig;
   rig.play(PERSON_ANIMS[still.anim] as never, 0, { blend: 0 });
   rig.evaluate(still.at);
+  return rig;
+}
+
+/** Чим персонаж знімка торкається кота: стоїть — ногами, сидить — колінами, гладить — долонею. */
+const PERSON_CONTACT: Readonly<Record<TraitPerson["pose"], "lap" | "hands" | null>> = { stand: null, lap: "lap", pet: "hands" };
+
+/**
+ * Точка дотику персонажа знімка риси (`TraitPerson`) від його ніг, одиниці фото: коліна (`lap`), долоня (`pet`); стоїть — самі
+ * ноги. Біля меншого кота разом із котом зсувається вона, а не ноги: інакше кошеня не на колінах, а рука — не над ним.
+ */
+export function personShotContact(look: Look, person: Pick<TraitPerson, "pose" | "flip">): { x: number; y: number } {
+  const anchor = PERSON_CONTACT[person.pose];
+  const at = anchor ? personShotRig(look, person.pose).anchor(anchor, { x: 0, y: 0 }, false) : null;
+  if (!at) return { x: 0, y: 0 };
+  return { x: person.flip ? -at.x : at.x, y: at.y };
+}
+
+/** Частини персонажа знімка риси: ноги — у (0, 0), спереду, як у квартирі; крісло — під ним, позаду. */
+function personShotParts(look: Look, pose: TraitPerson["pose"]): { part: PortraitPart; person: boolean }[] {
+  const still = PERSON_IN_SHOT[pose];
+  const rig = personShotRig(look, pose);
   const chair = SEATS.find((seat) => seat.object === "computer")?.art ?? "env/chair-desk";
   return [
     ...(still.chair ? [framePart(chair, "backrest"), framePart(chair, "seat")].map((part) => ({ part, person: false })) : []),
@@ -520,10 +546,11 @@ export function photoLayout(photo: Photo): PhotoLayout {
       // відстанню до камери.
       const size = catSize(photoCat(subject.cat.cat, subject.cat.ageWeeks));
       const shot = subject.shot;
+      const mate = companionFor(lookOf(subject.cat.cat));
       for (const [i, companion] of (shot?.companions ?? []).entries()) {
         const spot = { x: at.x + companion.x * size.relative, y: at.y + companion.y * size.relative };
-        const other = catPhotoPieces({ cat: COMPANION, ageWeeks: companion.weeks ?? COMPANION_WEEKS[companion.age] }, "calm", companionShot(shot!, i), size.breed);
-        groups.push({ y: spot.y, pieces: other.parts.map((part) => ({ part: shifted(part, spot), recipe: part.id.startsWith("cat/") ? (part.far ? COMPANION_FAR : COMPANION_RECIPE) : AS_IS })) });
+        const other = catPhotoPieces({ cat: mate.cat, ageWeeks: companion.weeks ?? COMPANION_WEEKS[companion.age] }, "calm", companionShot(shot!, i), size.breed);
+        groups.push({ y: spot.y, pieces: other.parts.map((part) => ({ part: shifted(part, spot), recipe: part.id.startsWith("cat/") ? (part.far ? mate.far : mate.recipe) : AS_IS })) });
         for (const part of other.bubbles) bubbles.push({ part: shifted(part, spot), recipe: AS_IS });
       }
       // Персонаж знімка — у вигляді гравця, поза рамкою фото: позаду всіх героїв чи поверх них.
@@ -531,7 +558,11 @@ export function photoLayout(photo: Photo): PhotoLayout {
         const look = subject.look ?? DEFAULT_LOOK;
         const own = personRecipe(look);
         const ownFar = farRecipe(own);
-        const spot = { x: at.x + shot.person.x * size.relative, y: at.y + shot.person.y * size.relative };
+        const contact = personShotContact(look, shot.person);
+        const spot = {
+          x: at.x + (shot.person.x + contact.x) * size.relative - contact.x,
+          y: at.y + (shot.person.y + contact.y) * size.relative - contact.y,
+        };
         const parts = personShotParts(look, shot.person.pose).map(({ part, person: body }): PhotoPiece => ({
           part: shifted(shot.person?.flip ? mirrored(part) : part, spot),
           recipe: body && part.id.startsWith("person/") ? (part.far ? ownFar : own) : AS_IS,

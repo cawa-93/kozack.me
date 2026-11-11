@@ -16,10 +16,11 @@ import { artEntries, artEntry } from "../src/view/art/manifest";
 import { framesOf } from "../src/view/art/types";
 import { lifePhotoPose, livingCatPhoto, retirementPhoto, storyPhoto, type Photo } from "../src/view/photo";
 import { personRecipe } from "../src/view/art/recipes";
-import { catPhotoParts, PHOTO_BUBBLE_SCALE, photoLayout } from "../src/view/photoposes";
+import { catPhotoParts, PHOTO_BUBBLE_SCALE, photoLayout, personShotContact } from "../src/view/photoposes";
 import { CAT_ANIMS } from "../src/view/rig/anims";
 import { TRAIT_PHOTOS } from "../src/view/traitphoto";
-import { CAT_PHOTO_BONES, LIFE_POSES, type LifePose, type TraitShot } from "../src/view/traitphoto/types";
+import { CAT_PHOTO_BONES, LIFE_POSES, type LifePose, type TraitPerson, type TraitShot } from "../src/view/traitphoto/types";
+import type { Genes } from "../src/sim/types";
 import { withCatCorner } from "./helpers";
 
 const SIDES = ["plus", "minus"] as const;
@@ -262,6 +263,69 @@ describe("можливості знімка (§4.2)", () => {
     const shot: TraitShot = { idea: "капці", props: [{ art: "person/shoe/slippers", state: null, x: 30, y: 6, front: true }] };
     const layout = photoLayout({ subjects: [{ kind: "cat", cat: hero(state), pose: "calm", shot, look }] });
     expect(layout.pieces.find((piece) => piece.part.id === "person/shoe/slippers")?.recipe.key).toBe(personRecipe(look).key);
+  });
+
+  it("персонаж біля кошеняти — того самого розміру, а разом із котом зсувається точка дотику: ноги, коліна, долоня", () => {
+    const state = game();
+    const adult = hero(state);
+    const kitten = hero(state, 1);
+    const where = (who: ReturnType<typeof hero>, person: TraitPerson) =>
+      photoLayout({ subjects: [{ kind: "cat", cat: who, pose: "calm", shot: { idea: "з персонажем", person } }] })
+        .pieces.filter((piece) => piece.part.id.startsWith("person/"))
+        .map((piece) => ({ x: piece.part.x ?? 0, y: piece.part.y ?? 0, s: piece.part.scaleX ?? 1 }));
+    const shift = (person: TraitPerson) => {
+      const big = where(adult, person);
+      return where(kitten, person).map((p, i) => ({ x: p.x - big[i]!.x, y: p.y - big[i]!.y, s: p.s / big[i]!.s }));
+    };
+    const feet = shift({ pose: "stand", x: 30, y: 0 })[0]!;
+    expect(feet.x).toBeLessThan(-5);
+    for (const pose of ["stand", "lap", "pet"] as const) {
+      for (const flip of [false, true]) {
+        const contact = personShotContact(DEFAULT_LOOK, { pose, flip });
+        // Точка дотику під котом — персонаж біля кошеняти там само, де біля дорослого, і того самого розміру.
+        for (const s of shift({ pose, flip, x: -contact.x, y: -contact.y })) {
+          expect(s.x, `${pose} ${flip}`).toBeCloseTo(0);
+          expect(s.y, `${pose} ${flip}`).toBeCloseTo(0);
+          expect(s.s, `${pose} ${flip}`).toBeCloseTo(1);
+        }
+        // Точка дотику збоку від кота — зсувається, як ноги, що стоять там само.
+        for (const s of shift({ pose, flip, x: 30 - contact.x, y: -contact.y })) {
+          expect(s.x, `${pose} ${flip}`).toBeCloseTo(feet.x);
+          expect(s.y, `${pose} ${flip}`).toBeCloseTo(feet.y);
+        }
+      }
+    }
+    expect(personShotContact(DEFAULT_LOOK, { pose: "stand" })).toEqual({ x: 0, y: 0 });
+    for (const pose of ["lap", "pet"] as const) {
+      const contact = personShotContact(DEFAULT_LOOK, { pose });
+      expect(Math.hypot(contact.x, contact.y), pose).toBeGreaterThan(20);
+      expect(personShotContact(DEFAULT_LOOK, { pose, flip: true })).toEqual({ x: -contact.x, y: contact.y });
+    }
+  });
+
+  it("інший кіт не схожий на героя: у рудого чи черепахового — сірий, в інших — рудий", () => {
+    const state = game();
+    const colored = (genes: Partial<Genes>) => {
+      const one = hero(state);
+      one.cat.genes = { ...one.cat.genes, ...genes };
+      return one;
+    };
+    const keys = (who: ReturnType<typeof hero>) => {
+      const shot: TraitShot = { idea: "друг позаду", companions: [{ age: "adult", still: { base: "sit" }, x: 60, y: -30 }] };
+      const body = (s?: TraitShot) =>
+        photoLayout({ subjects: [{ kind: "cat", cat: who, pose: "calm", ...(s ? { shot: s } : {}) }] }).pieces.find((piece) => piece.part.id.startsWith("cat/body"))!.recipe.key;
+      return { own: body(), other: body(shot) };
+    };
+    const base: Partial<Genes> = { black: [true, true], dense: [false, false], tabby: [1, 1], full: [true, true], short: [true, true] };
+    const blueWhite = keys(colored({ ...base, orange: [false, false], agouti: [false, false], white: [1, 1] }));
+    const greyTabby = keys(colored({ ...base, orange: [false, false], agouti: [true, true], white: [0, 0] }));
+    const black = keys(colored({ ...base, orange: [false, false], dense: [true, true], agouti: [false, false], white: [0, 0] }));
+    const ginger = keys(colored({ ...base, orange: [true, true], dense: [true, true], agouti: [false, false], white: [0, 0] }));
+    const tortie = keys(colored({ ...base, orange: [true, false], dense: [true, true], agouti: [false, false], white: [0, 0] }));
+    for (const one of [blueWhite, greyTabby, black, ginger, tortie]) expect(one.other).not.toBe(one.own);
+    expect(new Set([blueWhite.other, greyTabby.other, black.other]).size).toBe(1);
+    expect(ginger.other).toBe(tortie.other);
+    expect(ginger.other).not.toBe(black.other);
   });
 
   it("рамка знімка — замість типової; статура й тінь — свої", () => {
