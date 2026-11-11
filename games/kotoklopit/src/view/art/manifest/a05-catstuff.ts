@@ -19,7 +19,8 @@ import { floorItem } from "./lib/geometry";
 
 const QUALITIES = ["cheap", "premium"] as const;
 /** Корм у мисці: порожньо, далі вид корму × порції (1 — до порції, 2 — повна). */
-const BOWL_FOOD = ["empty", "cheap-1", "cheap-2", "premium-1", "premium-2", "sterile-1", "sterile-2", "sterile-premium-1", "sterile-premium-2"] as const;
+// `licked` — вилизана дочиста порожня миска: лише на фото титрів (§4.2), де порожня `empty` читалася мискою молока.
+const BOWL_FOOD = ["empty", "cheap-1", "cheap-2", "premium-1", "premium-2", "sterile-1", "sterile-2", "sterile-premium-1", "sterile-premium-2", "licked"] as const;
 /** Корм у бункері годівниці. */
 const FEEDER_FOOD = ["empty", "cheap-low", "cheap-full", "premium-low", "premium-full", "sterile-low", "sterile-full", "sterile-premium-low", "sterile-premium-full"] as const;
 /**
