@@ -759,4 +759,22 @@ describe("підписи стрічки (§4.2, `TEXTS.md`, «Титри жит�
     const balance = lifeStory(applyScenario(FILE_SCENARIOS["finale-perfect-balance"]!).current);
     expect(ofKind(balance, "thing").map((t) => t.thing)).toEqual(expect.arrayContaining(["robot", "fountain"]));
   });
+
+  it("«Ідеальний баланс» показує в титрах і поломки дорожчих речей, і відкриті риси котів — за життя кота в домі (§4.2, §11.5)", () => {
+    const state = applyScenario(FILE_SCENARIOS["finale-perfect-balance"]!).current;
+    const story = lifeStory(state);
+    const broke = ofKind(story, "broke");
+    const traits = ofKind(story, "trait");
+    expect(broke.map((b) => b.thing).sort()).toEqual(["carrier", "scratcher", "sofa"]);
+    expect(traits.map((t) => `${t.cat.cat.name}: ${t.trait.group}`).sort()).toEqual(["Бублик: escape", "Бублик: obedience", "Ряска: carrier", "Ряска: talkative"]);
+    for (const item of [...broke, ...traits]) {
+      const cat = item.cat.cat;
+      expect(item.day, cat.name).toBeGreaterThanOrEqual(cat.arrivedDay);
+      if ("cause" in cat) expect(item.day, cat.name).toBeLessThanOrEqual(cat.day);
+      expect(item.cat.ageWeeks, cat.name).toBeGreaterThanOrEqual(0);
+      clean(storyCaption(item, state));
+    }
+    // Відкрита риса — справді відома гравцеві.
+    for (const item of traits) expect(item.trait.known, item.trait.group).toBe(true);
+  });
 });

@@ -1,6 +1,6 @@
 {
   "name": "Фінал: ідеальний баланс",
-  "description": "Неділя останнього тижня, 21:00, персонаж біля ліжка. Вершина кар'єри, щасливі коти: двоє вдома й двоє в альбомі (старість і віддана). Ляжте спати — титри життя: перший день, коти, техніка, підвищення до вершини, підсумок «Ідеальний баланс» і живі коти.",
+  "description": "Неділя останнього тижня, 21:00, персонаж біля ліжка. Вершина кар'єри, щасливі коти: двоє вдома й двоє в альбомі (старість і віддана). Ляжте спати — титри життя: перший день, коти, техніка, поломки дорожчих речей (диван, переноска, кігтеточка), відкриті риси живих котів, підвищення до вершини, підсумок «Ідеальний баланс» і живі коти.",
   "game": { "address": "she", "difficulty": "normal", "seed": 7, "name": "Соломія" },
   "state": {
     "day": 139,
@@ -16,6 +16,7 @@
       { "kind": "career", "day": 6, "minute": 830, "change": "promoted", "position": 1 },
       { "kind": "career", "day": 13, "minute": 690, "change": "promoted", "position": 2 },
       { "kind": "career", "day": 20, "minute": 760, "change": "promoted", "position": 3 },
+      { "kind": "broke", "day": 25, "minute": 1100, "thing": "sofa", "cat": 7 },
       { "kind": "career", "day": 26, "minute": 920, "change": "promoted", "position": 4 },
       { "kind": "career", "day": 33, "minute": 640, "change": "promoted", "position": 5 },
       { "kind": "career", "day": 40, "minute": 1010, "change": "promoted", "position": 6 },
@@ -26,13 +27,19 @@
       { "kind": "career", "day": 61, "minute": 610, "change": "promoted", "position": 9 },
       { "kind": "career", "day": 68, "minute": 940, "change": "promoted", "position": 10 },
       { "kind": "career", "day": 75, "minute": 720, "change": "promoted", "position": 11 },
+      { "kind": "broke", "day": 80, "minute": 600, "thing": "carrier", "quality": "premium", "cat": 8 },
       { "kind": "career", "day": 82, "minute": 880, "change": "promoted", "position": 12 },
       { "kind": "career", "day": 89, "minute": 670, "change": "promoted", "position": 13 },
       { "kind": "career", "day": 96, "minute": 990, "change": "promoted", "position": 14 },
       { "kind": "career", "day": 103, "minute": 740, "change": "promoted", "position": 15 },
+      { "kind": "trait", "day": 108, "minute": 900, "cat": 5, "group": "talkative", "mood": 92 },
       { "kind": "career", "day": 110, "minute": 810, "change": "promoted", "position": 16 },
+      { "kind": "trait", "day": 116, "minute": 720, "cat": 5, "group": "carrier", "mood": 88 },
       { "kind": "career", "day": 117, "minute": 650, "change": "promoted", "position": 17 },
-      { "kind": "career", "day": 124, "minute": 960, "change": "promoted", "position": 18 }
+      { "kind": "career", "day": 124, "minute": 960, "change": "promoted", "position": 18 },
+      { "kind": "broke", "day": 125, "minute": 1000, "thing": "scratcher", "quality": "cheap", "cat": 6 },
+      { "kind": "trait", "day": 128, "minute": 800, "cat": 6, "group": "escape", "mood": 62 },
+      { "kind": "trait", "day": 133, "minute": 1150, "cat": 6, "group": "obedience", "mood": 38 }
     ]
   },
   "cats": [
