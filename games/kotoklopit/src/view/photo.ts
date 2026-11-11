@@ -16,8 +16,11 @@ export type CatPhotoPose = "curious" | "wary" | "nursing" | "content" | "calm" |
 export type PersonPhotoPose = "unpack" | "desk" | "gloomy" | "phone" | "proud";
 
 export type PhotoSubject =
-  /** `shot` — знімок поверх пози: риси (прощання й живі коти) чи поломки; немає — лише поза. */
-  | { kind: "cat"; cat: StoryCat; pose: CatPhotoPose; shot?: TraitShot }
+  /**
+   * `shot` — знімок поверх пози: риси (прощання й живі коти) чи поломки; немає — лише поза. `look` — вигляд персонажа, коли він є
+   * в знімку (`TraitShot.person`).
+   */
+  | { kind: "cat"; cat: StoryCat; pose: CatPhotoPose; shot?: TraitShot; look?: Look }
   | { kind: "person"; look: Look; pose: PersonPhotoPose }
   | { kind: "thing"; thing: StoryThing; quality: Quality };
 

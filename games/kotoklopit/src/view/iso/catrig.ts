@@ -157,6 +157,8 @@ export interface CatSize {
   scale: number;
   /** Розмір відносно дорослого кота (для пар: `catPairs`). */
   relative: number;
+  /** Множник породи (риса «Розмір»), без віку. */
+  breed: number;
 }
 
 export function catSize(cat: Pick<Cat, "ageWeeks" | "traits" | "breed">): CatSize {
@@ -166,7 +168,7 @@ export function catSize(cat: Pick<Cat, "ageWeeks" | "traits" | "breed">): CatSiz
   const size = kitten ? (KITTEN_SIZE[week] ?? 1) : 1;
   const root = 1 + (KITTEN_ROOT - 1) * look;
   const breed = 1 + BREED_SIZE_STEP * traitLevel(cat, "size");
-  return { kitten: look, scale: (size / root) * breed, relative: size * breed };
+  return { kitten: look, scale: (size / root) * breed, relative: size * breed, breed };
 }
 
 /** Півширина дорослого кота звичайної статури на екрані, одиниці арту (≈ 70 завдовжки від носа до кінчика хвоста). */

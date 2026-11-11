@@ -2,6 +2,8 @@
 // пози з кадрів квартири. Тут лише розрахунок частин і рецептів; малює `src/ui/photo.ts`. Без Phaser і DOM.
 
 import { MIXED } from "../sim/breeds";
+import { DEFAULT_LOOK } from "../sim/game";
+import { WEIGHT } from "../sim/config";
 import type { StoryCat } from "../sim/story";
 import type { AlbumEntry, Cat, Look, Quality, StoryThing, Vec } from "../sim/types";
 import { girthOf } from "../sim/weight";
@@ -14,8 +16,10 @@ import { composeCatAnim, type FaceFrames } from "./iso/catanim";
 import { catSize, CAT_FAR_SLOTS, fatStep, ISO_CAT_FIT, ISO_CAT_RIG, isoCatSkin, proportionsOf } from "./iso/catrig";
 import { PHONE_HELD, shadowScale } from "./iso/personlook";
 import { SEATS } from "./iso/personseat";
+import { bubbleArt } from "./iconnames";
+import { isoBubbleLook } from "./iso/bubblelook";
 import type { CatPhotoPose, PersonPhotoPose, Photo } from "./photo";
-import type { TraitCompanion, TraitProp, TraitShot } from "./traitphoto/types";
+import type { TraitBubble, TraitPerson, TraitProp, TraitShot } from "./traitphoto/types";
 import { CAT_ANIMS, PERSON_ANIMS } from "./rig/anims";
 import { PERSON_FAR_SLOTS, PERSON_FIT, PERSON_RIG, personProportions, personSkin } from "./rig/defs/person";
 import { Rig, slotFrame } from "./rig/rigcore";
@@ -59,6 +63,8 @@ interface CatStill {
   view: ArtView;
   face: FaceFrames;
   flip?: boolean;
+  figure?: "fat" | "slim";
+  shadow?: false;
 }
 
 const face = (eyes: string, mouth: string, ears: FaceFrames["ears"]): FaceFrames => ({ eyes, mouth, ears });
@@ -127,6 +133,8 @@ function withShot(life: CatStill, shot: TraitShot | undefined): CatStill {
     view: change.view ?? life.view,
     face: face(change.eyes ?? life.face.eyes, change.mouth ?? life.face.mouth, change.ears ?? life.face.ears),
     flip: change.flip ?? false,
+    ...(change.figure ? { figure: change.figure } : {}),
+    ...(change.shadow === false ? { shadow: false as const } : {}),
   };
   byLife.set(life, still);
   return still;
@@ -151,22 +159,54 @@ const COMPANION_FAR = farRecipe(COMPANION_RECIPE);
 /** Вік іншого кота на фото: дорослий і кошеня, ще кошенячих пропорцій. */
 const COMPANION_WEEKS = { adult: 40, kitten: 1 } as const;
 
-/** Пози інших котів як знімки — раз на кота знімка (`withShot` пам'ятає кадр за знімком). */
-const COMPANION_SHOTS = new WeakMap<TraitCompanion, TraitShot>();
+/**
+ * Пози інших котів як знімки — раз на знімок і кота (`withShot` пам'ятає кадр за знімком): з позою іншого кота й баблами над ним.
+ * Той самий кіт-стала може стояти в кількох знімках з різними баблами, тож ключ — знімок героя.
+ */
+const COMPANION_SHOTS = new WeakMap<TraitShot, TraitShot[]>();
 
-function companionShot(companion: TraitCompanion): TraitShot {
-  let shot = COMPANION_SHOTS.get(companion);
-  if (!shot) {
-    shot = { idea: "", still: companion.still };
-    COMPANION_SHOTS.set(companion, shot);
+function companionShot(shot: TraitShot, index: number): TraitShot {
+  let list = COMPANION_SHOTS.get(shot);
+  if (!list) {
+    list = (shot.companions ?? []).map((companion, i) => {
+      // Над іншим котом бабл — його власний: без `over`.
+      const bubbles = (shot.bubbles ?? []).filter((bubble) => bubble.over === i).map(({ over: _over, ...bubble }) => bubble);
+      return { idea: "", still: companion.still, ...(bubbles.length > 0 ? { bubbles } : {}) };
+    });
+    COMPANION_SHOTS.set(shot, list);
   }
-  return shot;
+  return list[index]!;
 }
 
-/** Річ знімка риси: місце — від кореня кота за розміром кота (`CatSize.relative`), розмір — свій. */
+/**
+ * Річ знімка риси: місце — від кореня кота за розміром кота (`CatSize.relative`), розмір — свій, а в речі «за котом» (`withCat`) —
+ * теж за ним.
+ */
 function propPart(prop: TraitProp, scale: number): PortraitPart {
-  const size = prop.scale ?? 1;
+  const size = (prop.scale ?? 1) * (prop.withCat ? scale : 1);
   return { ...framePart(prop.art, prop.state), x: prop.x * scale, y: prop.y * scale, rot: prop.rot ?? 0, scaleX: prop.flip ? -size : size, scaleY: size };
+}
+
+/**
+ * Розмір бабла на фото. У грі бабл (`ISO_BUBBLE_SCALE`) — над котом у квартирі, де той займає кілька відсотків екрана; на фото
+ * кіт — на весь полароїд, тож бабл менший, щоб не закривав кота й речі.
+ */
+export const PHOTO_BUBBLE_SCALE = 0.5;
+
+/** Вістря бабла від якоря `head` скелета (над вухами), одиниці фото: трохи вперед і вгору. */
+const BUBBLE_FROM_HEAD = { x: 8, y: -6 } as const;
+
+/** Бабл гри (`TraitBubble`) над точкою `head` (якір голови, уже з віддзеркаленням); `dir` — куди дивиться кіт (1 — праворуч). */
+function bubbleParts(bubble: TraitBubble, head: { x: number; y: number }, dir: 1 | -1): PortraitPart[] {
+  const look = isoBubbleLook(bubble.kind);
+  const s = PHOTO_BUBBLE_SCALE;
+  const tip = { x: head.x + dir * (BUBBLE_FROM_HEAD.x + (bubble.dx ?? 0)), y: head.y + BUBBLE_FROM_HEAD.y + (bubble.dy ?? 0) };
+  const icon = { x: tip.x + look.icon.x * s, y: tip.y + look.icon.y * s, scaleX: s, scaleY: s };
+  return [
+    { ...framePart(bubbleArt(bubble.kind), null), ...tip, scaleX: s, scaleY: s },
+    { ...framePart(`icon/${bubble.icon}`, null), ...icon },
+    ...(bubble.mark ? [{ ...framePart(`icon/mark/${bubble.mark}`, null), ...icon }] : []),
+  ];
 }
 
 /**
@@ -174,28 +214,48 @@ function propPart(prop: TraitProp, scale: number): PortraitPart {
  * (`catview.ts`: ширша на обхват). Знімок риси `shot` змінює позу й ставить речі: позаду кота — до нього, поверх — після.
  */
 export function catPhotoParts(story: StoryCat, pose: CatPhotoPose, shot?: TraitShot): PortraitPart[] {
+  const { parts, bubbles } = catPhotoPieces(story, pose, shot);
+  return [...parts, ...bubbles];
+}
+
+/** Найбільший обхват (`girthOf` при найбільшій вазі): статура `fat` знімка. */
+const FAT_GIRTH = 1 + WEIGHT.girthStep;
+
+/**
+ * Частини кота окремо від баблів над ним: на фото бабли — поверх усіх героїв. `breed` — множник розміру поверх власного (інший кіт
+ * знімка — за породою героя).
+ */
+function catPhotoPieces(story: StoryCat, pose: CatPhotoPose, shot?: TraitShot, breed = 1): { parts: PortraitPart[]; bubbles: PortraitPart[] } {
   const cat = photoCat(story.cat, story.ageWeeks);
   const still = withShot(catStill(cat, pose), shot);
-  const size = catSize(cat);
+  const own = catSize(cat);
+  const size = { ...own, scale: own.scale * breed, relative: own.relative * breed };
+  const shape = still.figure === "slim" ? { ...cat.shape, build: "slim" as const } : cat.shape;
   // Повнота — за вагою; у запису альбому ваги немає — звичайна.
-  const girth = girthOf(cat as Cat);
+  const girth = still.figure === "fat" ? FAT_GIRTH : still.figure === "slim" ? 1 : girthOf(cat as Cat);
   const rig = new Rig(ISO_CAT_RIG, {
     fit: ISO_CAT_FIT,
     lookup: artEntry,
-    skin: isoCatSkin(cat.shape, false),
-    proportions: proportionsOf(cat.shape, size.kitten, fatStep(girth)),
+    skin: isoCatSkin(shape, false),
+    proportions: proportionsOf(shape, size.kitten, fatStep(girth)),
     facing: { view: still.view, flip: false },
   }) as unknown as LooseRig;
   rig.play(composeCatAnim(CAT_ANIMS[still.base] as Loose, still.overlay, still.face) as never, 0, { blend: 0 });
   rig.evaluate(still.at);
   const shadow: PortraitPart = { ...framePart("fx/shadow/cat", null), x: 0, y: 0, scaleX: size.scale * girth, scaleY: size.scale };
-  const body = [shadow, ...rigParts(rig, still.view, CAT_FAR, size.scale)];
+  const body = [...(still.shadow === false ? [] : [shadow]), ...rigParts(rig, still.view, CAT_FAR, size.scale)];
   const props = shot?.props ?? [];
-  return [
+  const parts = [
     ...props.filter((prop) => !prop.front).map((prop) => propPart(prop, size.relative)),
     ...(still.flip ? body.map(mirrored) : body),
     ...props.filter((prop) => prop.front).map((prop) => propPart(prop, size.relative)),
   ];
+  const ownBubbles = (shot?.bubbles ?? []).filter((bubble) => bubble.over === undefined);
+  if (ownBubbles.length === 0) return { parts, bubbles: [] };
+  const anchor = rig.anchor("head", { x: 0, y: 0 }, false) ?? { x: 0, y: 0 };
+  const dir = still.flip ? -1 : 1;
+  const head = { x: anchor.x * size.scale * dir, y: anchor.y * size.scale };
+  return { parts, bubbles: ownBubbles.flatMap((bubble) => bubbleParts(bubble, head, dir)) };
 }
 
 // --- Персонаж ------------------------------------------------------------------------------------
@@ -302,6 +362,32 @@ function phonePart(rig: LooseRig): PortraitPart | null {
   };
 }
 
+/** Персонаж у кадрі знімка риси (`TraitPerson`): анімація, мить і реквізит під ним (крісло, у якому він сидить). */
+const PERSON_IN_SHOT: Readonly<Record<TraitPerson["pose"], { anim: PersonAnimId; at: number; chair: boolean }>> = {
+  stand: { anim: "idle", at: 0, chair: false },
+  lap: { anim: "work", at: 0, chair: true },
+  pet: { anim: "pet", at: 400, chair: false },
+};
+
+/** Частини персонажа знімка риси: ноги — у (0, 0), спереду, як у квартирі; крісло — під ним, позаду. */
+function personShotParts(look: Look, pose: TraitPerson["pose"]): { part: PortraitPart; person: boolean }[] {
+  const still = PERSON_IN_SHOT[pose];
+  const rig = new Rig(PERSON_RIG, {
+    fit: PERSON_FIT,
+    lookup: artEntry,
+    skin: personSkin(look),
+    proportions: personProportions(look),
+    facing: { view: "front", flip: false },
+  }) as unknown as LooseRig;
+  rig.play(PERSON_ANIMS[still.anim] as never, 0, { blend: 0 });
+  rig.evaluate(still.at);
+  const chair = SEATS.find((seat) => seat.object === "computer")?.art ?? "env/chair-desk";
+  return [
+    ...(still.chair ? [framePart(chair, "backrest"), framePart(chair, "seat")].map((part) => ({ part, person: false })) : []),
+    ...rigParts(rig, "front", PERSON_FAR, 1).map((part) => ({ part, person: true })),
+  ];
+}
+
 // --- Річ -----------------------------------------------------------------------------------------
 
 /**
@@ -356,6 +442,8 @@ function rigParts(rig: LooseRig, view: ArtView, far: ReadonlySet<string>, scale:
 export interface PhotoPiece {
   part: PortraitPart;
   recipe: TintRecipe;
+  /** Не входить у рамку фото: виходить за край (персонаж у знімку риси — видно лише те, що поруч із котом). */
+  bleed?: true;
 }
 
 export interface PhotoLayout {
@@ -396,7 +484,10 @@ const BESIDE_SPOTS: readonly { x: number; y: number }[] = [
 /** Хто й де на фото: частини всіх героїв і рецепти; хто ближче до камери (більший y місця) — пізніше. */
 export function photoLayout(photo: Photo): PhotoLayout {
   const groups: { y: number; pieces: PhotoPiece[] }[] = [];
+  /** Бабли — поверх усіх героїв. */
+  const bubbles: PhotoPiece[] = [];
   let span: { w: number; h: number } = NO_SPAN;
+  let frame: { w: number; h: number } | null = null;
   const cats = photo.subjects.filter((s) => s.kind === "cat");
   const mother = cats.find((s) => s.pose === "nursing" && catSize(photoCat(s.cat.cat, s.cat.ageWeeks)).kitten === 0);
   const young = cats.filter((s) => s !== mother);
@@ -417,14 +508,33 @@ export function photoLayout(photo: Photo): PhotoLayout {
       y = at.y;
       // На фото пенсії коти дивляться на персонажа: кіт праворуч від нього — віддзеркалений (кадри кота дивляться праворуч).
       const turn = person && at.x > 0;
-      for (const part of catPhotoParts(subject.cat, subject.pose, subject.shot)) pieces.push({ part: shifted(turn ? mirrored(part) : part, at), recipe: part.id.startsWith("cat/") ? (part.far ? far : recipe) : AS_IS });
-      // Інші коти знімка риси — окремими героями: свій вигляд і своє місце в черзі за відстанню до камери.
-      const scale = catSize(photoCat(subject.cat.cat, subject.cat.ageWeeks)).relative;
-      for (const companion of subject.shot?.companions ?? []) {
-        const spot = { x: at.x + companion.x * scale, y: at.y + companion.y * scale };
-        const parts = catPhotoParts({ cat: COMPANION, ageWeeks: COMPANION_WEEKS[companion.age] }, "calm", companionShot(companion));
-        groups.push({ y: spot.y, pieces: parts.map((part) => ({ part: shifted(part, spot), recipe: part.id.startsWith("cat/") ? (part.far ? COMPANION_FAR : COMPANION_RECIPE) : AS_IS })) });
+      const hero = catPhotoPieces(subject.cat, subject.pose, subject.shot);
+      for (const part of hero.parts) pieces.push({ part: shifted(turn ? mirrored(part) : part, at), recipe: part.id.startsWith("cat/") ? (part.far ? far : recipe) : AS_IS });
+      for (const part of hero.bubbles) bubbles.push({ part: shifted(part, at), recipe: AS_IS });
+      // Інші коти знімка риси — окремими героями: свій вигляд, розмір за породою героя (не за його віком) і своє місце в черзі за
+      // відстанню до камери.
+      const size = catSize(photoCat(subject.cat.cat, subject.cat.ageWeeks));
+      const shot = subject.shot;
+      for (const [i, companion] of (shot?.companions ?? []).entries()) {
+        const spot = { x: at.x + companion.x * size.relative, y: at.y + companion.y * size.relative };
+        const other = catPhotoPieces({ cat: COMPANION, ageWeeks: companion.weeks ?? COMPANION_WEEKS[companion.age] }, "calm", companionShot(shot!, i), size.breed);
+        groups.push({ y: spot.y, pieces: other.parts.map((part) => ({ part: shifted(part, spot), recipe: part.id.startsWith("cat/") ? (part.far ? COMPANION_FAR : COMPANION_RECIPE) : AS_IS })) });
+        for (const part of other.bubbles) bubbles.push({ part: shifted(part, spot), recipe: AS_IS });
       }
+      // Персонаж знімка — у вигляді гравця, поза рамкою фото: позаду всіх героїв чи поверх них.
+      if (shot?.person) {
+        const look = subject.look ?? DEFAULT_LOOK;
+        const own = personRecipe(look);
+        const ownFar = farRecipe(own);
+        const spot = { x: at.x + shot.person.x * size.relative, y: at.y + shot.person.y * size.relative };
+        const parts = personShotParts(look, shot.person.pose).map(({ part, person: body }): PhotoPiece => ({
+          part: shifted(shot.person?.flip ? mirrored(part) : part, spot),
+          recipe: body && part.id.startsWith("person/") ? (part.far ? ownFar : own) : AS_IS,
+          bleed: true,
+        }));
+        groups.push({ y: shot.person.front ? Infinity : -Infinity, pieces: parts });
+      }
+      if (shot?.frame) frame = shot.frame;
     } else if (subject.kind === "person") {
       const recipe = personRecipe(subject.look);
       const far = farRecipe(recipe);
@@ -437,7 +547,7 @@ export function photoLayout(photo: Photo): PhotoLayout {
   }
   groups.sort((a, b) => a.y - b.y);
   // З персонажем фото вписується за силуетом: рамка кота стиснула б персонажа.
-  return { pieces: groups.flatMap((group) => group.pieces), span: person ? NO_SPAN : span };
+  return { pieces: [...groups.flatMap((group) => group.pieces), ...bubbles], span: person ? NO_SPAN : (frame ?? span) };
 }
 
 /** Частина фігури, віддзеркалена довкола її початку: так фігура дивиться в інший бік (`partMatrix`: x, кут і `scaleX` — навпаки). */

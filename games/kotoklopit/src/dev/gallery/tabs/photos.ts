@@ -16,7 +16,7 @@ import { drawPhoto } from "../../../ui/photo";
 import { portraitCanvas } from "../../../ui/portrait";
 import { storyPhoto, type CatPhotoPose, type Photo, type PersonPhotoPose } from "../../../view/photo";
 import { TRAIT_PHOTOS } from "../../../view/traitphoto";
-import { LIFE_POSES } from "../../../view/traitphoto/types";
+import { LIFE_POSES, type TraitShot } from "../../../view/traitphoto/types";
 import type { GalleryContext, GalleryTab, GalleryView } from "../tab";
 
 const CAT_POSES: readonly [CatPhotoPose, string][] = [
@@ -207,6 +207,28 @@ function mount(ctx: GalleryContext): GalleryView {
     const line = row(things, "Речі");
     for (const thing of ["robot", "fountain", "feeder"] as const) {
       for (const quality of ["cheap", "premium"] as const) polaroid(line, { subjects: [{ kind: "thing", thing, quality }] }, `${thing} · ${quality}`);
+    }
+  }
+
+  // Можливості знімка (`TraitShot`) — зразок кожної, щоб калібрувати знімки рис; лише на прохання.
+  const kit = only === "kit" ? section("kit", "Можливості знімка") : null;
+  if (kit) {
+    const KIT: readonly [string, TraitShot][] = [
+      ["думка ✗", { idea: "", bubbles: [{ kind: "think", icon: "sulk", mark: "no" }] }],
+      ["вголос", { idea: "", bubbles: [{ kind: "say", icon: "meow" }] }],
+      ["ліворуч", { idea: "", still: { flip: true }, bubbles: [{ kind: "say", icon: "meow" }] }],
+      ["над другом", { idea: "", companions: [{ age: "adult", still: { base: "sit", flip: true }, x: 64, y: 0 }], bubbles: [{ kind: "say", icon: "angry", over: 0 }] }],
+      ["ноги", { idea: "", person: { pose: "stand", x: 40, y: -12 } }],
+      ["коліна", { idea: "", still: { base: "loaf", shadow: false }, person: { pose: "lap", x: -6, y: -40 } }],
+      ["рука", { idea: "", person: { pose: "pet", x: -40, y: -8, front: true } }],
+      ["товстий", { idea: "", still: { figure: "fat" } }],
+      ["худий", { idea: "", still: { figure: "slim" } }],
+      ["рамка", { idea: "", still: { base: "eat" }, frame: { w: 80, h: 56 } }],
+    ];
+    for (const [label, sample] of [["Дорослий", TRAIT_CAT], ["Кошеня", CATS[0]!]] as const) {
+      const line = row(kit, label);
+      const who = story(catOf(state, 600, { ...sample, label: "" }));
+      for (const [name, shot] of KIT) polaroid(line, { subjects: [{ kind: "cat", cat: who, pose: "calm", shot, look: state.character.look }] }, name, `kit.${label === "Кошеня" ? "kitten" : "adult"}.${KIT.findIndex(([n]) => n === name)}`);
     }
   }
 

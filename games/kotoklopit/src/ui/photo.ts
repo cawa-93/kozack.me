@@ -56,6 +56,7 @@ function paint(canvas: HTMLCanvasElement, layout: PhotoLayout, frames: readonly 
   let maxX = -Infinity;
   let maxY = -Infinity;
   for (const [i, piece] of layout.pieces.entries()) {
+    if (piece.bleed) continue;
     const source = sources[i]!;
     // Лише напівпрозоре (тінь під ногами) — межами полотна кадру: інакше тінь обрізало б дно фото.
     const ink = inkFor(`${frames[i]}|${piece.recipe.key}`, source, piece) ?? { minX: 0, minY: 0, maxX: source.w, maxY: source.h };

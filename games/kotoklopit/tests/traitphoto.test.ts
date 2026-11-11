@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
 import { removeCat } from "../src/sim/farewell";
-import { newGame } from "../src/sim/game";
+import { DEFAULT_LOOK, newGame } from "../src/sim/game";
 import { createRng } from "../src/sim/rng";
 import { TRAIT_GROUPS } from "../src/sim/traits";
 import type { AlbumEntry, Cat, GameState, Trait } from "../src/sim/types";
@@ -15,7 +15,8 @@ import { portraitFrame, type PortraitPart } from "../src/view/art/compose";
 import { artEntries, artEntry } from "../src/view/art/manifest";
 import { framesOf } from "../src/view/art/types";
 import { lifePhotoPose, livingCatPhoto, retirementPhoto, storyPhoto, type Photo } from "../src/view/photo";
-import { catPhotoParts, photoLayout } from "../src/view/photoposes";
+import { personRecipe } from "../src/view/art/recipes";
+import { catPhotoParts, PHOTO_BUBBLE_SCALE, photoLayout } from "../src/view/photoposes";
 import { CAT_ANIMS } from "../src/view/rig/anims";
 import { TRAIT_PHOTOS } from "../src/view/traitphoto";
 import { CAT_PHOTO_BONES, LIFE_POSES, type LifePose, type TraitShot } from "../src/view/traitphoto/types";
@@ -190,6 +191,115 @@ describe("знімок риси на фото (§4.2)", () => {
     const layout = photoLayout({ subjects: [{ kind: "cat", cat: { cat: cat(state, 4), ageWeeks: 30 }, pose: "calm", shot: SHOT }] });
     const toy = layout.pieces.find((piece) => piece.part.id === "item/toy/cheap");
     expect(toy?.recipe.key).toBe("photo/as-is");
+  });
+});
+
+describe("можливості знімка (§4.2)", () => {
+  const hero = (state: GameState, ageWeeks = 30, traits: Trait[] = []) => {
+    const made = cat(state, 4, ageWeeks, traits);
+    made.shape = { ...made.shape, build: "normal" };
+    return { cat: made, ageWeeks };
+  };
+  const find = (parts: readonly PortraitPart[], id: string) => parts.find((p) => p.id === id);
+  const bubbleOf = (kind: "say" | "think") => artEntry(`ui/bubble/${kind}`)!;
+
+  it("бабл гри — над головою кота, іконка й позначка в полі іконки фону, поверх кота; розмір — як у грі, сталий", () => {
+    const state = game();
+    const shot: TraitShot = { idea: "думка «дметься» з позначкою «ні»", bubbles: [{ kind: "think", icon: "sulk", mark: "no" }] };
+    const parts = catPhotoParts(hero(state), "calm", shot);
+    const bubble = find(parts, "ui/bubble/think");
+    const icon = find(parts, "icon/sulk");
+    const mark = find(parts, "icon/mark/no");
+    const head = find(parts, "cat/head/normal") ?? parts.find((p) => p.id.startsWith("cat/head"));
+    expect(bubble && icon && mark && head).toBeTruthy();
+    const last = parts.length - 1 - [...parts].reverse().findIndex(isCat);
+    expect(parts.indexOf(bubble!)).toBeGreaterThan(last);
+    expect(bubble!.scaleX).toBe(PHOTO_BUBBLE_SCALE);
+    expect(bubble!.y ?? 0).toBeLessThan(head!.y ?? 0);
+    const entry = bubbleOf("think");
+    const point = entry.points!["icon"]!;
+    expect(icon!.x).toBeCloseTo((bubble!.x ?? 0) + (point.x - entry.pivot.x) * PHOTO_BUBBLE_SCALE);
+    expect(icon!.y).toBeCloseTo((bubble!.y ?? 0) + (point.y - entry.pivot.y) * PHOTO_BUBBLE_SCALE);
+    expect({ x: mark!.x, y: mark!.y, s: mark!.scaleX }).toEqual({ x: icon!.x, y: icon!.y, s: icon!.scaleX });
+  });
+
+  it("бабл: кіт ліворуч — бабл з іншого боку, але не віддзеркалений; у кошеняти — нижче, того самого розміру; над іншим котом — над ним", () => {
+    const state = game();
+    const say: TraitShot = { idea: "нявкає", bubbles: [{ kind: "say", icon: "meow" }] };
+    const right = find(catPhotoParts(hero(state), "calm", say), "ui/bubble/say")!;
+    const left = find(catPhotoParts(hero(state), "calm", { ...say, still: { flip: true } }), "ui/bubble/say")!;
+    expect(left.x).toBeCloseTo(-(right.x ?? 0));
+    expect(left.scaleX).toBeGreaterThan(0);
+    const kitten = find(catPhotoParts(hero(state, 1), "calm", say), "ui/bubble/say")!;
+    expect(kitten.y ?? 0).toBeGreaterThan(right.y ?? 0);
+    expect(kitten.scaleX).toBe(right.scaleX);
+    const friend: TraitShot = { idea: "друг нявкає", companions: [{ age: "adult", still: { base: "sit" }, x: 70, y: 0 }], bubbles: [{ kind: "say", icon: "meow", over: 0 }] };
+    const layout = photoLayout({ subjects: [{ kind: "cat", cat: hero(state), pose: "calm", shot: friend }] });
+    const over = layout.pieces.find((piece) => piece.part.id === "ui/bubble/say")!.part;
+    expect(over.x ?? 0).toBeGreaterThan(50);
+  });
+
+  it("персонаж у кадрі — у вигляді гравця, частинами скелета; виходить за край фото, рамку задає кіт", () => {
+    const state = game();
+    const look = { ...DEFAULT_LOOK, top: DEFAULT_LOOK.top + 1 };
+    for (const pose of ["stand", "lap", "pet"] as const) {
+      const shot: TraitShot = { idea: `персонаж ${pose}`, person: { pose, x: 40, y: -10 } };
+      const layout = photoLayout({ subjects: [{ kind: "cat", cat: hero(state), pose: "calm", shot, look }] });
+      const people = layout.pieces.filter((piece) => piece.part.id.startsWith("person/"));
+      expect(people.length, pose).toBeGreaterThan(5);
+      expect(people.every((piece) => piece.bleed === true && (piece.recipe.key === personRecipe(look).key || piece.part.far === true)), pose).toBe(true);
+      expect(layout.pieces.filter((piece) => piece.part.id.startsWith("cat/")).some((piece) => piece.bleed), pose).toBe(false);
+      for (const frame of layout.pieces.map((piece) => portraitFrame(piece.part))) expect(FRAMES.has(frame), frame).toBe(true);
+    }
+    // Без вигляду — типовий.
+    const plain = photoLayout({ subjects: [{ kind: "cat", cat: hero(state), pose: "calm", shot: { idea: "ноги", person: { pose: "stand", x: 40, y: -10 } } }] });
+    expect(plain.pieces.find((piece) => piece.part.id.startsWith("person/") && !piece.part.far)?.recipe.key).toBe(personRecipe(DEFAULT_LOOK).key);
+  });
+
+  it("рамка знімка — замість типової; статура й тінь — свої", () => {
+    const state = game();
+    const one = hero(state);
+    expect(photoLayout({ subjects: [{ kind: "cat", cat: one, pose: "calm", shot: { idea: "низько", frame: { w: 80, h: 60 } } }] }).span).toEqual({ w: 80, h: 60 });
+    const shadow = (parts: readonly PortraitPart[]) => find(parts, "fx/shadow/cat");
+    const plain = catPhotoParts(one, "calm");
+    const fat = catPhotoParts(one, "calm", { idea: "товстий", still: { figure: "fat" } });
+    expect(shadow(fat)!.scaleX ?? 1).toBeGreaterThan(shadow(plain)!.scaleX ?? 1);
+    const slim = catPhotoParts(one, "calm", { idea: "худий", still: { figure: "slim" } });
+    expect(slim.some((p) => p.id === "cat/body/slim")).toBe(true);
+    expect(plain.some((p) => p.id === "cat/body/slim")).toBe(false);
+    expect(shadow(catPhotoParts(one, "calm", { idea: "на підвіконні", still: { shadow: false } }))).toBeUndefined();
+  });
+
+  it("річ «за котом» — під кошеням менша, як і її місце; інша — того самого розміру", () => {
+    const state = game();
+    const shot: TraitShot = { idea: "на роботі", props: [{ art: "item/robot/cheap", state: "charging", x: 0, y: 2, scale: 0.8, withCat: true }, { art: "item/toy/cheap", state: null, x: 30, y: 0 }] };
+    const adult = catPhotoParts(hero(state), "calm", shot);
+    const kitten = catPhotoParts(hero(state, 1), "calm", shot);
+    expect(find(kitten, "item/robot/cheap")!.scaleX ?? 1).toBeLessThan(find(adult, "item/robot/cheap")!.scaleX ?? 1);
+    expect(find(adult, "item/robot/cheap")!.scaleX).toBeCloseTo(0.8);
+    expect(find(kitten, "item/toy/cheap")!.scaleX ?? 1).toBe(find(adult, "item/toy/cheap")!.scaleX ?? 1);
+  });
+
+  it("інший кіт — за породою героя, а не його віком; вік кошеняти можна задати", () => {
+    const state = game();
+    const shot = (weeks?: number): TraitShot => ({
+      idea: "друг і кошеня",
+      companions: [
+        { age: "adult", still: { base: "sit" }, x: 60, y: 0 },
+        { age: "kitten", still: { base: "sleep" }, x: -50, y: 0, ...(weeks === undefined ? {} : { weeks }) },
+      ],
+    });
+    const bodies = (who: ReturnType<typeof hero>, s: TraitShot) =>
+      photoLayout({ subjects: [{ kind: "cat", cat: who, pose: "calm", shot: s }] })
+        .pieces.filter((piece) => piece.part.id.startsWith("cat/body") && piece.recipe.key !== catRecipeKey(who))
+        .map((piece) => Math.abs(piece.part.scaleX ?? 1));
+    const catRecipeKey = (who: ReturnType<typeof hero>) => photoLayout({ subjects: [{ kind: "cat", cat: who, pose: "calm" }] }).pieces.find((piece) => piece.part.id.startsWith("cat/body"))!.recipe.key;
+    const normal = bodies(hero(state), shot());
+    const big = bodies(hero(state, 30, [trait("size", 2, true)]), shot());
+    const kittenHero = bodies(hero(state, 1), shot());
+    expect(Math.max(...big)).toBeCloseTo(Math.max(...normal) * 1.12);
+    expect(Math.max(...kittenHero)).toBeCloseTo(Math.max(...normal));
+    expect(Math.min(...bodies(hero(state), shot(0)))).toBeLessThan(Math.min(...normal));
   });
 });
 
