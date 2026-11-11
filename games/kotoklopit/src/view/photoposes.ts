@@ -19,6 +19,7 @@ import { SEATS } from "./iso/personseat";
 import { bubbleArt } from "./iconnames";
 import { isoBubbleLook } from "./iso/bubblelook";
 import type { CatPhotoPose, PersonPhotoPose, Photo } from "./photo";
+import { COAT_ICONS, iconCoat } from "./photocoat";
 import type { TraitBubble, TraitPerson, TraitProp, TraitShot } from "./traitphoto/types";
 import { CAT_ANIMS, PERSON_ANIMS } from "./rig/anims";
 import { PERSON_FAR_SLOTS, PERSON_FIT, PERSON_RIG, personProportions, personSkin } from "./rig/defs/person";
@@ -267,8 +268,17 @@ function catPhotoPieces(story: StoryCat, pose: CatPhotoPose, shot?: TraitShot, b
   rig.play(composeCatAnim(CAT_ANIMS[still.base] as Loose, still.overlay, still.face) as never, 0, { blend: 0 });
   rig.evaluate(still.at);
   const shadow: PortraitPart = { ...framePart("fx/shadow/cat", null), x: 0, y: 0, scaleX: size.scale * girth, scaleY: size.scale };
-  const body = [...(still.shadow === false ? [] : [shadow]), ...rigParts(rig, still.view, CAT_FAR, size.scale), ...heldPart(rig, still.held, size.scale)];
-  const props = shot?.props ?? [];
+  const all = shot?.props ?? [];
+  // Річ у зубах — частина кота: з ним віддзеркалюється.
+  const mouth = all.some((prop) => prop.socket) ? (rig.socket("teeth", undefined, false) ?? rig.anchor("mouth", { x: 0, y: 0 }, false)) : null;
+  const carried = mouth
+    ? all.filter((prop) => prop.socket).map((prop): PortraitPart => {
+        const s = (prop.scale ?? 1) * size.scale;
+        return { ...framePart(prop.art, prop.state), x: (mouth.x + prop.x) * size.scale, y: (mouth.y + prop.y) * size.scale, rot: prop.rot ?? 0, scaleX: prop.flip ? -s : s, scaleY: s };
+      })
+    : [];
+  const body = [...(still.shadow === false ? [] : [shadow]), ...rigParts(rig, still.view, CAT_FAR, size.scale), ...carried, ...heldPart(rig, still.held, size.scale)];
+  const props = all.filter((prop) => !prop.socket);
   const parts = [
     ...props.filter((prop) => !prop.front).map((prop) => propPart(prop, size.relative)),
     ...(still.flip ? body.map(mirrored) : body),
@@ -407,8 +417,10 @@ function phonePart(rig: LooseRig): PortraitPart | null {
 /** Персонаж у кадрі знімка риси (`TraitPerson`): анімація, мить і реквізит під ним (крісло, у якому він сидить). */
 const PERSON_IN_SHOT: Readonly<Record<TraitPerson["pose"], { anim: PersonAnimId; at: number; chair: boolean }>> = {
   stand: { anim: "idle", at: 0, chair: false },
+  walk: { anim: "walk", at: 150, chair: false },
   lap: { anim: "work", at: 0, chair: true },
   pet: { anim: "pet", at: 400, chair: false },
+  bitten: { anim: "bitten", at: 90, chair: false },
 };
 
 function personShotRig(look: Look, pose: TraitPerson["pose"]): LooseRig {
@@ -426,7 +438,7 @@ function personShotRig(look: Look, pose: TraitPerson["pose"]): LooseRig {
 }
 
 /** Чим персонаж знімка торкається кота: стоїть — ногами, сидить — колінами, гладить — долонею. */
-const PERSON_CONTACT: Readonly<Record<TraitPerson["pose"], "lap" | "hands" | null>> = { stand: null, lap: "lap", pet: "hands" };
+const PERSON_CONTACT: Readonly<Record<TraitPerson["pose"], "lap" | "hands" | null>> = { stand: null, walk: null, lap: "lap", pet: "hands", bitten: "hands" };
 
 /**
  * Точка дотику персонажа знімка риси (`TraitPerson`) від його ніг, одиниці фото: коліна (`lap`), долоня (`pet`); стоїть — самі
@@ -439,15 +451,19 @@ export function personShotContact(look: Look, person: Pick<TraitPerson, "pose" |
   return { x: person.flip ? -at.x : at.x, y: at.y };
 }
 
-/** Частини персонажа знімка риси: ноги — у (0, 0), спереду, як у квартирі; крісло — під ним, позаду. */
-function personShotParts(look: Look, pose: TraitPerson["pose"]): { part: PortraitPart; person: boolean }[] {
+/** Частини персонажа знімка риси: ноги — у (0, 0), спереду, як у квартирі; крісло — під ним, позаду; `head` — якір над головою. */
+function personShotParts(look: Look, pose: TraitPerson["pose"]): { parts: { part: PortraitPart; person: boolean }[]; head: { x: number; y: number } } {
   const still = PERSON_IN_SHOT[pose];
   const rig = personShotRig(look, pose);
+  const head = rig.anchor("head", { x: 0, y: 0 }, false) ?? { x: 0, y: 0 };
   const chair = SEATS.find((seat) => seat.object === "computer")?.art ?? "env/chair-desk";
-  return [
-    ...(still.chair ? [framePart(chair, "backrest"), framePart(chair, "seat")].map((part) => ({ part, person: false })) : []),
-    ...rigParts(rig, "front", PERSON_FAR, 1).map((part) => ({ part, person: true })),
-  ];
+  return {
+    parts: [
+      ...(still.chair ? [framePart(chair, "backrest"), framePart(chair, "seat")].map((part) => ({ part, person: false })) : []),
+      ...rigParts(rig, "front", PERSON_FAR, 1).map((part) => ({ part, person: true })),
+    ],
+    head,
+  };
 }
 
 // --- Річ -----------------------------------------------------------------------------------------
@@ -506,6 +522,8 @@ export interface PhotoPiece {
   recipe: TintRecipe;
   /** Не входить у рамку фото: виходить за край (персонаж у знімку риси — видно лише те, що поруч із котом). */
   bleed?: true;
+  /** Колір шерсті замість рудого кота іконки (`recolorCoat`). */
+  coat?: number;
 }
 
 export interface PhotoLayout {
@@ -577,7 +595,8 @@ export function photoLayout(photo: Photo): PhotoLayout {
         const tint = part.id.startsWith("cat/") ? (part.far ? far : recipe) : part.id.startsWith("person/") ? worn : AS_IS;
         pieces.push({ part: shifted(turn ? mirrored(part) : part, at), recipe: tint });
       }
-      for (const part of hero.bubbles) bubbles.push({ part: shifted(part, at), recipe: AS_IS });
+      const ownCoat = iconCoat(lookOf(subject.cat.cat));
+      for (const part of hero.bubbles) bubbles.push(bubblePiece(shifted(part, at), ownCoat));
       // Інші коти знімка риси — окремими героями: свій вигляд, розмір за породою героя (не за його віком) і своє місце в черзі за
       // відстанню до камери.
       const size = catSize(photoCat(subject.cat.cat, subject.cat.ageWeeks));
@@ -587,7 +606,7 @@ export function photoLayout(photo: Photo): PhotoLayout {
         const spot = { x: at.x + companion.x * size.relative, y: at.y + companion.y * size.relative };
         const other = catPhotoPieces({ cat: mate.cat, ageWeeks: companion.weeks ?? COMPANION_WEEKS[companion.age] }, "calm", companionShot(shot!, i), size.breed);
         groups.push({ y: spot.y, pieces: other.parts.map((part) => ({ part: shifted(part, spot), recipe: part.id.startsWith("cat/") ? (part.far ? mate.far : mate.recipe) : AS_IS })) });
-        for (const part of other.bubbles) bubbles.push({ part: shifted(part, spot), recipe: AS_IS });
+        for (const part of other.bubbles) bubbles.push(bubblePiece(shifted(part, spot), iconCoat(mate.cat)));
       }
       // Персонаж знімка — у вигляді гравця, поза рамкою фото: позаду всіх героїв чи поверх них.
       if (shot?.person) {
@@ -599,12 +618,18 @@ export function photoLayout(photo: Photo): PhotoLayout {
           x: at.x + (shot.person.x + contact.x) * size.relative - contact.x,
           y: at.y + (shot.person.y + contact.y) * size.relative - contact.y,
         };
-        const parts = personShotParts(look, shot.person.pose).map(({ part, person: body }): PhotoPiece => ({
+        const figure = personShotParts(look, shot.person.pose);
+        const parts = figure.parts.map(({ part, person: body }): PhotoPiece => ({
           part: shifted(shot.person?.flip ? mirrored(part) : part, spot),
           recipe: body && part.id.startsWith("person/") ? (part.far ? ownFar : own) : AS_IS,
           bleed: true,
         }));
         groups.push({ y: shot.person.front ? Infinity : -Infinity, pieces: parts });
+        const dir = shot.person.flip ? -1 : 1;
+        const head = { x: spot.x + figure.head.x * dir, y: spot.y + figure.head.y };
+        for (const bubble of shot.bubbles ?? []) {
+          if (bubble.over === "person") for (const part of bubbleParts(bubble, head, dir)) bubbles.push({ part, recipe: AS_IS });
+        }
       }
       if (shot?.frame) frame = shot.frame;
     } else if (subject.kind === "person") {
@@ -620,6 +645,12 @@ export function photoLayout(photo: Photo): PhotoLayout {
   groups.sort((a, b) => a.y - b.y);
   // З персонажем фото вписується за силуетом: рамка кота стиснула б персонажа.
   return { pieces: [...groups.flatMap((group) => group.pieces), ...bubbles], span: person ? NO_SPAN : (frame ?? span) };
+}
+
+/** Частина бабла; кіт в іконці — шерстю того, над ким бабл (`photocoat.ts`). */
+function bubblePiece(part: PortraitPart, coat: number | undefined): PhotoPiece {
+  const cat = coat !== undefined && part.id.startsWith("icon/") && COAT_ICONS.has(part.id.slice(5));
+  return { part, recipe: AS_IS, ...(cat ? { coat } : {}) };
 }
 
 /** Частина фігури, віддзеркалена довкола її початку: так фігура дивиться в інший бік (`partMatrix`: x, кут і `scaleX` — навпаки). */

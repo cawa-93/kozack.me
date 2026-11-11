@@ -16,6 +16,7 @@ import { artEntries, artEntry } from "../src/view/art/manifest";
 import { framesOf } from "../src/view/art/types";
 import { lifePhotoPose, livingCatPhoto, retirementPhoto, storyPhoto, type Photo } from "../src/view/photo";
 import { personRecipe } from "../src/view/art/recipes";
+import { COAT_ICONS, iconCoat, recolorCoat } from "../src/view/photocoat";
 import { catPhotoParts, PHOTO_BUBBLE_SCALE, photoLayout, personShotContact } from "../src/view/photoposes";
 import { CAT_ANIMS } from "../src/view/rig/anims";
 import { TRAIT_PHOTOS } from "../src/view/traitphoto";
@@ -353,6 +354,97 @@ describe("можливості знімка (§4.2)", () => {
       const ids = catPhotoParts(one, pose).map((p) => p.id);
       expect(ids.includes("icon/thermometer") || ids.includes("fx/huff"), pose).toBe(false);
     }
+  });
+
+  it("кіт в іконці бабла — шерстю того, над ким бабл: рудий лишається рудим, іконки без кота не чіпаємо", () => {
+    const state = game();
+    const colored = (genes: Partial<Genes>) => {
+      const one = hero(state);
+      one.cat.genes = { ...one.cat.genes, ...genes };
+      return one;
+    };
+    const grey = colored({ orange: [false, false], black: [true, true], dense: [false, false], agouti: [false, false], white: [0, 0], full: [true, true] });
+    const ginger = colored({ orange: [true, true], dense: [true, true], white: [0, 0], full: [true, true] });
+    const shot: TraitShot = {
+      idea: "думки",
+      companions: [{ age: "adult", still: { base: "sit" }, x: 70, y: 0 }],
+      bubbles: [{ kind: "think", icon: "attention", mark: "no" }, { kind: "think", icon: "kibble", dx: 30 }, { kind: "say", icon: "meow", over: 0 }],
+    };
+    const coats = (who: ReturnType<typeof hero>) => {
+      const pieces = photoLayout({ subjects: [{ kind: "cat", cat: who, pose: "calm", shot }] }).pieces;
+      const coat = (id: string) => pieces.find((piece) => piece.part.id === id)!.coat;
+      return { own: coat("icon/attention"), kibble: coat("icon/kibble"), mark: coat("icon/mark/no"), other: coat("icon/meow"), bubble: coat("ui/bubble/think") };
+    };
+    const g = coats(grey);
+    expect(g.own).toBe(iconCoat(grey.cat));
+    expect(g.own).toBeTypeOf("number");
+    expect([g.kibble, g.mark, g.bubble, g.other]).toEqual([undefined, undefined, undefined, undefined]);
+    const o = coats(ginger);
+    expect(o.own).toBeUndefined();
+    expect(o.other).toBeTypeOf("number");
+    expect(iconCoat(ginger.cat)).toBeUndefined();
+    // Заміна кольору: руде — у шерсть (світліше лишається світлішим), контур, папір і прозоре — як були.
+    const px = new Uint8ClampedArray([0xd9, 0x84, 0x3f, 255, 0xea, 0xa9, 0x67, 255, 0x2e, 0x1f, 0x29, 255, 0xf2, 0xe7, 0xd0, 255, 0xd9, 0x84, 0x3f, 0]);
+    recolorCoat(px, 0x7f8b97);
+    expect([...px.slice(0, 3)]).toEqual([0x7f, 0x8b, 0x97]);
+    expect(px[4]!).toBeGreaterThan(0x7f);
+    expect(px[6]! - px[4]!).toBeGreaterThan(10);
+    expect([...px.slice(8, 16)]).toEqual([0x2e, 0x1f, 0x29, 255, 0xf2, 0xe7, 0xd0, 255]);
+    expect([...px.slice(16, 20)]).toEqual([0xd9, 0x84, 0x3f, 0]);
+  });
+
+  it("іконки з рудим котом, які знімки ставлять у бабли, — усі в переліку заміни шерсті", () => {
+    const svgs = import.meta.glob<string>("../art/icon/*.svg", { query: "?raw", import: "default", eager: true });
+    const used = new Set<string>();
+    for (const area of Object.values(TRAIT_PHOTOS)) for (const group of Object.values(area)) for (const side of SIDES) for (const pose of LIFE_POSES) for (const bubble of group[side][pose].bubbles ?? []) used.add(bubble.icon);
+    expect(used.size).toBeGreaterThan(10);
+    for (const icon of used) {
+      const ginger = (svgs[`../art/icon/${icon}.svg`] ?? "").includes("#d9843f");
+      if (ginger) expect(COAT_ICONS.has(icon), icon).toBe(true);
+    }
+    for (const icon of COAT_ICONS) expect(svgs[`../art/icon/${icon}.svg`], icon).toContain("#d9843f");
+  });
+
+  it("персонаж іде й відсмикує руку; бабл над персонажем — над його головою", () => {
+    const state = game();
+    for (const pose of ["walk", "bitten"] as const) {
+      const shot: TraitShot = { idea: pose, person: { pose, x: 60, y: -10 }, bubbles: [{ kind: "say", icon: "bite", over: "person" }] };
+      const pieces = photoLayout({ subjects: [{ kind: "cat", cat: hero(state), pose: "calm", shot }] }).pieces;
+      const people = pieces.filter((piece) => piece.part.id.startsWith("person/"));
+      expect(people.length, pose).toBeGreaterThan(5);
+      const bubble = pieces.find((piece) => piece.part.id === "ui/bubble/say")!;
+      expect(bubble, pose).toBeTruthy();
+      expect(pieces.indexOf(bubble), pose).toBeGreaterThan(pieces.indexOf(people[people.length - 1]!));
+      expect(bubble.part.y ?? 0, pose).toBeLessThan(Math.min(...people.map((piece) => piece.part.y ?? 0)) + 20);
+      expect(Math.abs((bubble.part.x ?? 0) - 60), pose).toBeLessThan(45);
+      // Над героєм цього бабла немає.
+      expect(pieces.filter((piece) => piece.part.id === "ui/bubble/say").length, pose).toBe(1);
+    }
+    expect(personShotContact(DEFAULT_LOOK, { pose: "walk" })).toEqual({ x: 0, y: 0 });
+    const hand = personShotContact(DEFAULT_LOOK, { pose: "bitten" });
+    expect(Math.hypot(hand.x, hand.y)).toBeGreaterThan(20);
+  });
+
+  it("річ у зубах — у гнізді `teeth`: іде за головою, з котом віддзеркалюється й меншає", () => {
+    const state = game();
+    const toy = { art: "item/toy/cheap", state: null, x: 0, y: 0, socket: "teeth" } as const;
+    const at = (who: ReturnType<typeof hero>, still?: TraitShot["still"]) => {
+      const parts = catPhotoParts(who, "calm", { idea: "у зубах", props: [toy], ...(still ? { still } : {}) });
+      const part = find(parts, "item/toy/cheap")!;
+      return { part, index: parts.indexOf(part), head: parts.findIndex((p) => p.id.startsWith("cat/head")), parts };
+    };
+    const one = hero(state);
+    const sit = at(one);
+    expect(sit.index).toBeGreaterThan(sit.head);
+    const headPart = sit.parts[sit.head]!;
+    expect(Math.hypot((sit.part.x ?? 0) - (headPart.x ?? 0), (sit.part.y ?? 0) - (headPart.y ?? 0))).toBeLessThan(30);
+    const low = at(one, { base: "eat" });
+    expect(low.part.y ?? 0).toBeGreaterThan((sit.part.y ?? 0) + 5);
+    const left = at(one, { flip: true });
+    expect(left.part.x).toBeCloseTo(-(sit.part.x ?? 0));
+    const kitten = at(hero(state, 1));
+    expect(Math.abs(kitten.part.y ?? 0)).toBeLessThan(Math.abs(sit.part.y ?? 0));
+    expect(Math.abs(kitten.part.scaleX ?? 1)).toBeLessThan(Math.abs(sit.part.scaleX ?? 1));
   });
 
   it("рамка знімка — замість типової; статура й тінь — свої", () => {

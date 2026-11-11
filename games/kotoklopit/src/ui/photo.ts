@@ -4,6 +4,7 @@
 import { clothIds } from "../view/art/cloth";
 import { composeFrame, createCtx, figureState, inkOf, loadFigure, partCloth, partMatrix, portraitFrame, type Canvas2D, type FigureInk } from "../view/art/compose";
 import { artLayerSource, type FrameLayers } from "../view/art/sources";
+import { recolorCoat } from "../view/photocoat";
 import type { FrameId } from "../view/art/types";
 import type { Photo } from "../view/photo";
 import { photoLayout, type PhotoLayout, type PhotoPiece } from "../view/photoposes";
@@ -126,5 +127,10 @@ function tinted(source: FrameLayers, piece: PhotoPiece): Canvas2D | null {
   part.clearRect(0, 0, part.canvas.width, part.canvas.height);
   const view = piece.part.view;
   composeFrame(part, source.source, piece.recipe, { w: source.w, h: source.h, cloth: partCloth(clothIds(piece.recipe), source, view === undefined ? "front" : view) });
+  if (piece.coat !== undefined) {
+    const image = part.getImageData(0, 0, source.w, source.h);
+    recolorCoat(image.data, piece.coat);
+    part.putImageData(image, 0, 0);
+  }
   return part;
 }
