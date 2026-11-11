@@ -19,6 +19,9 @@ import {
   type GridOptions,
 } from "../src/dev/gallery/framegrid";
 import { formatZoom, parseGalleryParams, parseZoom, PHONE_ZOOM, withParams } from "../src/dev/gallery/params";
+import { traitRowNote } from "../src/dev/gallery/traitnotes";
+import { TRAIT_GROUPS } from "../src/sim/traits";
+import { traitAbout } from "../src/texts";
 
 const FRIDGE: ArtEntry = { id: "env/fridge", size: { w: 140, h: 260 }, pivot: { x: 70, y: 228 }, states: ["closed", "open"] };
 const HEAD: ArtEntry = {
@@ -192,5 +195,41 @@ describe("вкладка «Кадри»: сітка", () => {
     const onlyReady = layoutFrames(sources, { ...options, show: "ready", ready: (f) => f === "icon/thirst" }, 2);
     expect(onlyReady.items.map((item) => item.kind)).toEqual(["category", "file", "entry", "cell"]);
     expect(layoutFrames([], options, 2).items).toEqual([]);
+  });
+});
+
+describe("вкладка «Фото титрів»: підпис ряду знімків рис", () => {
+  const group = (id: string) => TRAIT_GROUPS.find((g) => g.id === id)!;
+
+  it("опис боку — той самий, що в картці кота: один рядок, коли обидва рівні боку описано однаково", () => {
+    expect(traitRowNote(group("legs"), "plus", "female")).toEqual([traitAbout({ group: "legs", level: 1 }, "female")]);
+    expect(traitRowNote(group("petting"), "plus", "male")).toEqual([traitAbout({ group: "petting", level: 2 }, "male")]);
+  });
+
+  it("рівні боку описано по-різному — рядок на рівень, з назвою рівня; спершу слабший рівень", () => {
+    const legs = group("legs");
+    const names = (name: string) => name.replace(/\[([^|\]]*)\|[^\]]*\]/g, "$1");
+    expect(traitRowNote(legs, "minus", "female")).toEqual([
+      `${names(legs.names[2])}: ${traitAbout({ group: "legs", level: -1 }, "female")}`,
+      `${names(legs.names[3])}: ${traitAbout({ group: "legs", level: -2 }, "female")}`,
+    ]);
+    const sleep = group("sleep");
+    expect(traitRowNote(sleep, "plus", "female")).toEqual([
+      `${names(sleep.names[1])}: ${traitAbout({ group: "sleep", level: 1 }, "female")}`,
+      `${names(sleep.names[0])}: ${traitAbout({ group: "sleep", level: 2 }, "female")}`,
+    ]);
+  });
+
+  it("опис є в кожного боку кожної групи, без розмітки форм за статтю", () => {
+    for (const g of TRAIT_GROUPS) {
+      for (const side of ["plus", "minus"] as const) {
+        const lines = traitRowNote(g, side, "female");
+        expect(lines.length, `${g.id} ${side}`).toBeGreaterThan(0);
+        for (const line of lines) {
+          expect(line.length, `${g.id} ${side}`).toBeGreaterThan(10);
+          expect(line, `${g.id} ${side}`).not.toMatch(/[[\]|]/);
+        }
+      }
+    }
   });
 });

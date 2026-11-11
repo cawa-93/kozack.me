@@ -18,6 +18,7 @@ import { storyPhoto, type CatPhotoPose, type Photo, type PersonPhotoPose } from 
 import { TRAIT_PHOTOS } from "../../../view/traitphoto";
 import { LIFE_POSES, type TraitShot } from "../../../view/traitphoto/types";
 import type { GalleryContext, GalleryTab, GalleryView } from "../tab";
+import { firstForm, traitRowNote } from "../traitnotes";
 
 const CAT_POSES: readonly [CatPhotoPose, string][] = [
   ["curious", "цікаво"],
@@ -91,7 +92,6 @@ const story = (cat: Cat, ageWeeks = cat.ageWeeks): StoryCat => ({ cat, ageWeeks 
 const TRAIT_CAT: CatSample = { label: "Світлий смугастий", ageWeeks: 40, genes: { agouti: [true, true], dense: [false, false], tabby: [1, 1] } };
 
 /** Перша форма назви рівня: «[Спокійний|Спокійна]» → «Спокійний». */
-const firstForm = (name: string): string => name.replace(/\[([^|\]]*)\|[^\]]*\]/g, "$1");
 
 function mount(ctx: GalleryContext): GalleryView {
   const state = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
@@ -110,6 +110,8 @@ function mount(ctx: GalleryContext): GalleryView {
     zIndex: "2",
     cursor: "auto",
   } satisfies Partial<CSSStyleDeclaration>);
+  // Сцена галереї забирає коліщатко собі (прокручує світ Phaser і скасовує типову дію) — тут прокручується сама сторінка фото.
+  root.addEventListener("wheel", (event) => event.stopPropagation(), { passive: true });
 
   const section = (id: string, title: string): HTMLElement | null => {
     if (only !== null && only !== id) return null;
@@ -121,12 +123,18 @@ function mount(ctx: GalleryContext): GalleryView {
     root.append(head, grid);
     return grid;
   };
-  const row = (grid: HTMLElement, label: string, width = 90): HTMLElement => {
+  const row = (grid: HTMLElement, label: string, width = 90, notes: readonly string[] = []): HTMLElement => {
     const line = document.createElement("div");
     Object.assign(line.style, { display: "flex", gap: "10px", alignItems: "flex-end", width: "100%" });
     const name = document.createElement("div");
     name.textContent = label;
     Object.assign(name.style, { width: `${width}px`, flex: "none", alignSelf: "center" });
+    for (const text of notes) {
+      const note = document.createElement("div");
+      note.textContent = text;
+      Object.assign(note.style, { marginTop: "4px", fontSize: "11px", opacity: "0.7" });
+      name.append(note);
+    }
     line.append(name);
     grid.append(line);
     return line;
@@ -184,7 +192,7 @@ function mount(ctx: GalleryContext): GalleryView {
       if (groups && !groups.includes(group.id)) continue;
       for (const side of sides) {
         const names = side === "plus" ? [group.names[0], group.names[1]] : [group.names[2], group.names[3]];
-        const line = row(traits, `${group.title} ${side === "plus" ? "+" : "−"}: ${names.map(firstForm).join(", ")}`, 170);
+        const line = row(traits, `${group.title} ${side === "plus" ? "+" : "−"}: ${names.map(firstForm).join(", ")}`, 230, traitRowNote(group, side, model.sex));
         const shots = TRAIT_PHOTOS[group.area][group.id]?.[side];
         for (const pose of LIFE_POSES) {
           const title = CAT_POSES.find(([p]) => p === pose)?.[1] ?? pose;
