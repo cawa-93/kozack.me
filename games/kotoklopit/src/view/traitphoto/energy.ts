@@ -1,13 +1,14 @@
 // Знімки рис розділу «Енергія й сон» на фото титрів (§4.2; `TRAIT_GROUPS`, `TRAITS.md`).
 
-import type { TraitBubble, TraitCompanion, TraitPhotoShots, TraitProp } from "./types";
+import type { TraitBubble, TraitCompanion, TraitPerson, TraitPhotoShots, TraitProp, TraitStill } from "./types";
 
 /** Іконка як річ на фото: pivot у центрі, тож на підлозі y — мінус половина висоти. */
 const icon = (name: string, x: number, y: number, scale = 0.4): TraitProp => ({ art: `icon/${name}`, state: null, x, y, scale });
 
 const MOON = icon("moon", -30, -78);
 const ZZ = icon("zz", 30, -66, 0.36);
-const ALARM = icon("alarm", 44, -12, 0.42);
+/** «Щастя+»: щасливий кіт, що спить, — розлігся й мружиться (як «Співавтор» на клавіатурі). */
+const BLISS: TraitStill = { base: "sprawl" };
 /** Пилосос позаду ліворуч гуркоче (значок гучності хвилями до кота): у звуку є джерело, тож його не приписують котові. */
 const NOISE: readonly TraitProp[] = [{ art: "env/vacuum", state: null, x: -44, y: -6, scale: 0.45 }, icon("loud", -66, -34, 0.3)];
 /** М'ячик, що котиться попереду, і лінії швидкості за ним. */
@@ -18,22 +19,29 @@ const BALL: readonly TraitProp[] = [
 /** Сліди забігу: лінії швидкості й пил за котом, що мчить праворуч (pivot — біля хвоста); за розміром кота, щоб у кошеняти не лягали на речі позаду. */
 const SPEED: TraitProp = { art: "fx/speed", state: null, x: -28, y: -14, scale: 0.8 };
 /** Вилизана порожня миска (не синя: синю порожню читали мискою з водою). */
-const LICKED_BOWL: TraitProp = { art: "item/bowl/premium", state: "licked", x: 40, y: 10, front: true, scale: 0.7 };
+const LICKED_BOWL: TraitProp = { art: "item/bowl/premium", state: "licked", x: 48, y: 12, front: true };
 
-/** Диван: кіт на сидінні (`seat`). Меблі менші за справжні, бо широка річ на фото зменшує кота. */
-const SOFA: TraitProp = { art: "env/sofa", state: null, x: -2, y: 11, scale: 0.3 };
-/** Ліжко, у якому під ковдрою спите ви (горбик): кіт у самих ногах, на ковдрі; «z-z» над подушкою — ви спите. */
-const BED: readonly TraitProp[] = [{ art: "env/bed", state: "hump", x: 29, y: 6, scale: 0.5 }, icon("zz", 58, -54, 0.28)];
-/** Ліжко збоку, у ньому під ковдрою спите ви: кіт на підлозі біля нього. */
-const BED_BESIDE: TraitProp = { art: "env/bed", state: "hump", x: -46, y: -18, scale: 0.34 };
-/** «Z-z» над подушкою ліжка поруч: ви ще спите. */
-const ZZ_BESIDE = icon("zz", -40, -62, 0.3);
+/** Диван: кіт на сидінні (точка `seat` — на 37 над pivot і на 6,5 правіше). */
+const SOFA: TraitProp = { art: "env/sofa", state: null, x: -6.5, y: 37 };
+/**
+ * Ліжко, у якому під ковдрою спите ви: кіт у самих ногах, на ковдрі; на подушці (точка `pillow` — 45 правіше й 66,5 вище pivot) —
+ * ваша голова, над нею «z-z».
+ */
+const BED_AT = { x: 58, y: 12 } as const;
+const bed = (x: number = BED_AT.x, y: number = BED_AT.y): readonly TraitProp[] => [{ art: "env/bed", state: "made", x, y }, icon("zz", x + 51, y - 94, 0.28)];
+const asleep = (x: number = BED_AT.x, y: number = BED_AT.y): TraitPerson => ({ pose: "bed", x: x + 45, y: y - 66.5 });
+/** Рамка, у яку входить і кіт у ногах ліжка, і ваша голова на подушці за дві клітинки від нього. */
+const WHOLE_BED = { w: 200, h: 140 } as const;
+/**
+ * Ліжко під котом, що сидить у вас на обличчі: з-під ковдри видно лише вашу голову на подушці. Кіт — на лобі, трохи вище середини
+ * обличчя: просто на ній він закривав голову цілком, і людини в кадрі не лишалося.
+ */
+const FACE: TraitPerson = { pose: "bed", x: -4, y: 18 };
+const BED_UNDER: TraitProp = { art: "env/bed", state: "made", x: FACE.x - 45, y: FACE.y + 66.5 };
 /** Думка «нявкати ✗»: кіт вирішив не будити. */
 const QUIET: TraitBubble = { kind: "think", icon: "meow", mark: "no" };
 /** Чистий лоток позаду: кіт щойно з нього. */
 const LITTER: TraitProp = { art: "item/litter/cheap", state: "cheap", x: -58, y: -6, scale: 0.6 };
-/** Неторканий м'ячик на підлозі перед диваном: гратися ліньки. */
-const IDLE_BALL: TraitProp = { ...BALL[0]!, x: 30, y: 36 };
 /** Інший кіт гасає позаду, за ним лінії швидкості: герой поруч із ним — статечний. */
 const RACER: readonly TraitCompanion[] = [{ age: "adult", still: { base: "run", at: 112, eyes: "round" }, x: -66, y: -18 }];
 const RACER_SPEED: TraitProp = { art: "fx/speed", state: null, x: -96, y: -32, scale: 0.8 };
@@ -42,8 +50,9 @@ export const SHOTS: TraitPhotoShots = {
   energy: {
     plus: {
       content: {
-        idea: "Кіт злітає в стрибку, витягнувши передні лапи вперед, і мружиться від радості: невгамовний стрибун не всидів і на фото.",
-        still: { base: "jumpUp", at: 90 },
+        idea: "Кіт летить у стрибку, витягнувши передні лапи до м'ячика, що котиться перед ним, і мружиться від радості: невгамовний стрибун не всидів і на фото.",
+        still: { base: "jumpDown", at: 125 },
+        props: [{ ...BALL[0]!, x: 52, y: 10 }, SPEED],
       },
       calm: {
         idea: "Кіт із круглими очима летить у стрибку, витягнувши передні лапи до м'ячика, що котиться перед ним: полює на все, що котиться.",
@@ -56,7 +65,7 @@ export const SHOTS: TraitPhotoShots = {
         props: [BALL[0]!, SPEED],
       },
       ill: {
-        idea: "Хворий кіт із градусником припав до підлоги в засідці на м'ячик просто перед лапами, хвіст угору, думка «гратися»: навіть знесилений, рветься гратися.",
+        idea: "Хворий кіт припав до підлоги в засідці на м'ячик просто перед лапами, хвіст угору, думка «гратися»: навіть знесилений, рветься гратися.",
         still: { base: "crouch", bones: { tail: 30 } },
         props: [{ ...BALL[0]!, x: 44, y: 10 }],
         bubbles: [{ kind: "think", icon: "toy" }],
@@ -64,30 +73,30 @@ export const SHOTS: TraitPhotoShots = {
     },
     minus: {
       content: {
-        idea: "Кіт блаженно лежить буханцем на дивані й мружиться, м'ячик на підлозі лежить неторканий: диванний філософ на своєму троні.",
-        still: { base: "loaf" },
-        props: [SOFA, IDLE_BALL],
+        idea: "Кіт блаженно розлігся на дивані й мружиться: диванний філософ на своєму троні.",
+        still: BLISS,
+        props: [SOFA],
       },
       calm: {
-        idea: "Кіт дрімає буханцем на дивані, над ним «z-z», м'ячик на підлозі лежить неторканий: поспішати нікуди, бігати — нема причини.",
+        idea: "Кіт дрімає буханцем на дивані, над ним «z-z»: поспішати нікуди, бігати — нема причини.",
         still: { base: "loaf", eyes: "closed" },
-        props: [SOFA, { ...ZZ, x: 26, y: -60 }, IDLE_BALL],
+        props: [SOFA, { ...ZZ, x: 26, y: -60 }],
       },
       sulk: {
-        idea: "Насуплений кіт сидить на дивані й куняє, над ним «z-z», м'ячик на підлозі лежить неторканий: ображений, а встати однаково ліньки.",
-        props: [SOFA, { ...ZZ, x: 26, y: -72 }, IDLE_BALL],
+        idea: "Насуплений кіт сидить на дивані й куняє, над ним «z-z»: ображений, а встати однаково ліньки.",
+        props: [SOFA, { ...ZZ, x: 26, y: -72 }],
       },
       ill: {
-        idea: "Хворий кіт непорушно лежить на дивані й куняє, над ним «z-z», м'ячик на підлозі лежить неторканий: це вже не спокій, а знесилення.",
-        props: [SOFA, { ...ZZ, x: 26, y: -60 }, IDLE_BALL],
+        idea: "Хворий кіт непорушно лежить на дивані й куняє, над ним «z-z»: це вже не спокій, а знесилення.",
+        props: [SOFA, { ...ZZ, x: 26, y: -60 }],
       },
     },
   },
   sleep: {
     plus: {
       content: {
-        idea: "Кіт солодко спить клубком просто на робот-пилососі, що гуркоче й здіймає пил: такого сну не перерве жоден гуркіт.",
-        still: { base: "sleep", eyes: "closed", shadow: false },
+        idea: "Кіт солодко спить, розлігшись просто на робот-пилососі, що гуркоче й здіймає пил: такого сну не перерве жоден гуркіт.",
+        still: { ...BLISS, shadow: false },
         props: [
           { art: "fx/sweep-dust", state: "b", x: -32, y: 12, scale: 0.8 },
           { art: "item/robot/cheap", state: "cleaning", x: 0, y: 10 },
@@ -166,74 +175,84 @@ export const SHOTS: TraitPhotoShots = {
     },
     minus: {
       content: {
-        idea: "Уночі кіт солодко спить клубком на ліжку в ногах того, хто спить під ковдрою («z-z» над подушкою): найкраща грілка в ноги.",
-        still: { base: "sleep", eyes: "closed", flip: true, shadow: false },
-        props: [...BED, { ...MOON, y: -70 }],
+        idea: "Уночі кіт солодко спить, розлігшись на ліжку у вас у ногах («z-z» над вашою подушкою): найкраща грілка в ноги.",
+        still: { ...BLISS, flip: true, shadow: false },
+        props: [...bed(), { ...MOON, y: -70 }],
+        person: asleep(),
+        frame: WHOLE_BED,
       },
       calm: {
-        idea: "Під місяцем кіт дрімає буханцем на ліжку в ногах того, хто спить під ковдрою, «z-z» — над обома: ночами сумлінно спить разом із вами.",
+        idea: "Під місяцем кіт дрімає буханцем на ліжку у вас у ногах, «z-z» — над обома: ночами сумлінно спить разом із вами.",
         still: { base: "loaf", eyes: "closed", flip: true, shadow: false },
-        props: [...BED, { ...MOON, x: -46, y: -78 }, { ...ZZ, x: -12, y: -58, scale: 0.28 }],
+        props: [...bed(), { ...MOON, x: -46, y: -78 }, { ...ZZ, x: -12, y: -58, scale: 0.28 }],
+        person: asleep(),
+        frame: WHOLE_BED,
       },
       sulk: {
-        idea: "Насуплений кіт лежить буханцем у самих ногах ліжка під місяцем і куняє («z-z» над ним і над подушкою), поруч горбик того, хто спить під ковдрою: ображений, а щоночі однаково приходить грітися.",
+        idea: "Насуплений кіт лежить буханцем у самих ногах ліжка під місяцем і куняє («z-z» над ним і над вашою подушкою): ображений, а щоночі однаково спить поруч.",
         still: { base: "loaf", flip: true, shadow: false },
-        props: [{ ...BED[0]!, x: 38, y: 2 }, { ...BED[1]!, x: 67, y: -58 }, { ...MOON, x: -46, y: -78 }, { ...ZZ, x: -12, y: -58, scale: 0.28 }],
+        props: [...bed(76, 4), { ...MOON, x: -46, y: -78 }, { ...ZZ, x: -12, y: -58, scale: 0.28 }],
+        person: asleep(76, 4),
+        frame: WHOLE_BED,
       },
       ill: {
-        idea: "Хворий кіт зіщулився буханцем на ліжку під місяцем, у ногах того, хто спить під ковдрою: тулиться до єдиного тепла.",
+        idea: "Хворий кіт зіщулився буханцем на ліжку під місяцем, у ногах у вас: тулиться до єдиного тепла.",
         still: { flip: true, shadow: false },
-        props: [...BED, { ...MOON, y: -70 }],
+        props: [...bed(), { ...MOON, y: -70 }],
+        person: asleep(),
+        frame: WHOLE_BED,
       },
     },
   },
   morning: {
     plus: {
       content: {
-        idea: "Поруч будильник, а кіт мружиться й гучно нявчить: живий будильник, що будить з поваги до традицій.",
-        still: { mouth: "meow" },
-        props: [ALARM],
+        idea: "Ви ще спите, з-під ковдри видно лише голову, а кіт сидить просто на вашому обличчі, мружиться й гучно нявчить: живий будильник.",
+        still: { mouth: "meow", shadow: false },
+        props: [BED_UNDER],
+        person: FACE,
       },
       calm: {
-        idea: "Кіт звівся на задні лапи й вимогливо нявчить біля будильника: ранок почався, сніданку!",
-        still: { base: "beg", at: 1000, mouth: "meow" },
-        props: [ALARM],
+        idea: "Ви ще спите під ковдрою, а кіт звівся на задні лапи просто на вашому обличчі й вимогливо нявчить: ранок почався, сніданку!",
+        still: { base: "beg", at: 1000, mouth: "meow", shadow: false },
+        props: [BED_UNDER],
+        person: FACE,
       },
       sulk: {
-        idea: "Насуплений кіт біля будильника вголос вимагає корму: щоранку будить заради сніданку, якого довго чекати.",
-        still: { mouth: "meow" },
-        props: [{ ...ALARM, x: -40 }],
-        bubbles: [{ kind: "say", icon: "kibble" }],
+        idea: "Ви ще спите під ковдрою, а насуплений кіт сидить на вашому обличчі й вголос вимагає сніданку, якого довго чекати.",
+        still: { mouth: "meow", shadow: false },
+        props: [BED_UNDER],
+        person: FACE,
       },
       ill: {
-        idea: "Хворий кіт лежить буханцем біля будильника й кричить уголос: щоранку будить, аж поки не сяде голос.",
-        still: { mouth: "meow" },
-        props: [{ ...ALARM, x: -42 }],
-        bubbles: [{ kind: "say", icon: "meow" }],
+        idea: "Ви ще спите під ковдрою, а хворий кіт лежить буханцем на вашому обличчі й кричить, аж поки не сяде голос.",
+        still: { mouth: "meow", shadow: false },
+        props: [BED_UNDER],
+        person: FACE,
       },
     },
     minus: {
       content: {
-        idea: "Кіт задоволено лежить буханцем біля ліжка, де ви ще спите під ковдрою, і вилизаної миски, думка «нявкати ✗»: дає доспати.",
+        idea: "Кіт задоволено лежить буханцем біля вилизаної миски, думка «нявкати ✗»: сніданок зачекає, поки ви доспите.",
         still: { base: "loaf", mouth: "closed" },
-        props: [BED_BESIDE, ZZ_BESIDE, LICKED_BOWL],
+        props: [LICKED_BOWL],
         bubbles: [QUIET],
       },
       calm: {
-        idea: "Кіт тихо лежить буханцем біля ліжка, де ви ще спите, і вилизаної миски, думка «нявкати ✗»: терпляче чекає, поки ви прокинетеся.",
+        idea: "Кіт тихо лежить буханцем біля вилизаної миски, думка «нявкати ✗»: терпляче чекає, поки ви прокинетеся.",
         still: { base: "loaf", mouth: "closed" },
-        props: [BED_BESIDE, ZZ_BESIDE, LICKED_BOWL],
+        props: [LICKED_BOWL],
         bubbles: [QUIET],
       },
       sulk: {
-        idea: "Насуплений кіт лежить буханцем біля ліжка, де ви спите, і вилизаної миски, думка «нявкати ✗»: голодний і ображений, а не будить.",
+        idea: "Насуплений кіт лежить буханцем біля вилизаної миски, думка «нявкати ✗»: голодний і ображений, а не будить.",
         still: { base: "loaf", mouth: "closed" },
-        props: [BED_BESIDE, ZZ_BESIDE, LICKED_BOWL],
+        props: [LICKED_BOWL],
         bubbles: [QUIET],
       },
       ill: {
-        idea: "Хворий кіт тихо лежить біля ліжка, де ви спите, і порожньої миски й думає про корм: не наважується розбудити, хоч голодний.",
-        props: [BED_BESIDE, ZZ_BESIDE, LICKED_BOWL],
+        idea: "Хворий кіт тихо лежить біля порожньої миски й думає про корм: не наважується розбудити, хоч голодний.",
+        props: [LICKED_BOWL],
         bubbles: [{ kind: "think", icon: "kibble" }],
       },
     },
@@ -256,7 +275,7 @@ export const SHOTS: TraitPhotoShots = {
         props: [{ art: "mess/broken", state: null, x: -70, y: 8, scale: 0.7 }, SPEED],
       },
       ill: {
-        idea: "Хворий кіт із градусником лежить буханцем, за ним — лінії швидкості, пил і скалки розбитого кухля: щойно мчав, не розбираючи дороги, — і геть знесилився.",
+        idea: "Хворий кіт лежить буханцем, за ним — лінії швидкості, пил і скалки розбитого кухля: щойно мчав, не розбираючи дороги, — і геть знесилився.",
         props: [{ art: "mess/broken", state: null, x: -74, y: 8, scale: 0.7 }, { ...SPEED, x: -36, y: -12 }],
       },
     },
@@ -280,7 +299,7 @@ export const SHOTS: TraitPhotoShots = {
         companions: RACER,
       },
       ill: {
-        idea: "Хворий кіт із градусником повільно бреде, а позаду щодуху гасає інший кіт: з останніх сил, але так само поважно.",
+        idea: "Хворий кіт повільно бреде, а позаду щодуху гасає інший кіт: з останніх сил, але так само поважно.",
         still: { base: "sadWalk", at: 0 },
         props: [RACER_SPEED],
         companions: RACER,

@@ -1,8 +1,5 @@
 // Знімки рис розділу «Бешкет» на фото титрів (§4.2; `TRAIT_GROUPS`, `TRAITS.md`).
 //
-// Речі на фото виходять ≈ в 1,5 раза більшими відносно кота, ніж їхні одиниці: кіт стає на верх речі масштабу s з висотою h на
-// y ≈ 1,5 · s · h (стіл, холодильник, шафа, коробка).
-//
 // Тиха половина («−») має власний знак — думку з перекресленою іконкою прояву «+», як «Делікатний» над кухлем у грі: інакше
 // єдина річ у кадрі — знак плюса, і фото читається як плюс. Річ-спокуса поруч із такою думкою читається «хоче, та не можна»,
 // тож у «−» її в кадрі немає, або вона далеко за спиною кота, або ціла й на своєму місці; кіт зайнятий своїм.
@@ -46,20 +43,26 @@ const onTable = (at: number, kind: "mug" | "phone", along: number, across: numbe
 /** Кіт сидить на лівій половині стола, цілі кухоль і телефон стоять на правій. */
 const SIT_AT = -0.55;
 const TABLE_INTACT: TraitProp[] = [...tableUnder(SIT_AT), onTable(SIT_AT, "phone", 0.85, -0.15), onTable(SIT_AT, "mug", 0.35, 0.1)];
+/** Рамка, у яку входить і друга половина стола з цілими речами: у типовій телефон на її кінці лишався за краєм фото. */
+const WHOLE_TABLE = { w: 200, h: 200 } as const;
 /** Те саме під буханцем: він довший, тож ближче до середини. */
 const LOAF_AT = -0.35;
 const TABLE_INTACT_LOAF: TraitProp[] = [...tableUnder(LOAF_AT), onTable(LOAF_AT, "phone", 0.9, -0.2), onTable(LOAF_AT, "mug", 0.55, 0.15)];
 /** Той самий стіл позаду кота, що сидить на підлозі. */
 const TABLE_BEHIND: TraitProp = { ...TABLE, x: -40, y: -22 };
 
-/** Диван позаду: кіт дере торець підлокітника, де латка й подряпини. */
-const SOFA = (x: number): TraitProp[] => [
-  { art: "env/sofa", state: null, x, y: -14, scale: 0.32 },
-  { art: "env/trace/sofa", state: null, x, y: -14, scale: 0.32 },
+/**
+ * Подертий диван позаду, спинкою до камери: кіт стоїть під нею біля правого підлокітника, і латка з розрізами
+ * (`env/trace/sofa`: на 27 правіше від pivot і на 4 нижче) — під лапами того, хто дере.
+ */
+const SOFA: TraitProp[] = [
+  { art: "env/sofa", state: null, x: -54, y: -66 },
+  { art: "env/trace/sofa", state: null, x: -54, y: -66 },
 ];
-const SCRATCHER = (x: number, y: number): TraitProp => ({ art: "item/scratcher/cheap", state: null, x, y, scale: 0.6 });
+/** Кігтеточка в масштабі гри: стовпчик — біля pivot, лапи кота, що дере, дістають до нього. */
+const SCRATCHER = (x: number, y: number): TraitProp => ({ art: "item/scratcher/cheap", state: null, x, y });
 /** Дорога кігтеточка: стовпчик із полицею, без великого помпона дешевої (той читали «нема з ким гратися»). */
-const SCRATCHER_PREMIUM = (x: number, y: number): TraitProp => ({ art: "item/scratcher/premium", state: null, x, y, scale: 0.6 });
+const SCRATCHER_PREMIUM = (x: number, y: number): TraitProp => ({ art: "item/scratcher/premium", state: null, x, y });
 
 const WIRE = (state: "whole" | "chewed", x: number, y: number, front = true): TraitProp => ({ art: "env/wire", state, x, y, scale: 0.75, front });
 const SPARK: TraitProp = { art: "fx/spark", state: "a", x: 18, y: 6, scale: 0.6, front: true };
@@ -73,34 +76,40 @@ const BOX: TraitProp[] = [
   { art: "env/boxes", state: "pile-1", x: 0, y: 48, scale: 1 },
   { art: "env/boxes/front", state: "pile-1", x: 0, y: 48, scale: 1, front: true },
 ];
-const NEW_BOX = (x: number, y: number): TraitProp => ({ art: "env/boxes", state: "pile-1", x, y, scale: 0.4 });
+/** Нова коробка поруч: кіт — біля її основи (pivot коробки — підлога під серединою, півширина — 72). */
+const NEW_BOX = (x: number, y: number): TraitProp => ({ art: "env/boxes", state: "pile-1", x, y });
 
 const FRIDGE_TOP: TraitProp = { art: "env/fridge", state: "closed", x: 0, y: 101, scale: 0.82 };
 const WARDROBE_TOP: TraitProp = { art: "env/wardrobe", state: null, x: 0, y: 102, scale: 0.73 };
 /**
- * Низьке місце кота, що тримається землі: лежанка на підлозі, а холодильник із порожнім верхом — далеко за спиною. Шафу з одягом
- * читали «хоче в шафу», задерту до верху голову — «хоче нагору».
+ * Шафа, біля основи якої лежить кіт, що тримається землі: pivot шафи — підлога під її серединою, ближній кут — на 40 нижче; кіт —
+ * перед ним.
  */
-const LOW_PLACE: TraitProp[] = [
-  { art: "env/fridge", state: "closed", x: -72, y: -30, scale: 0.4 },
-  { art: "item/cat-bed", state: null, x: 0, y: 6, scale: 0.85 },
-];
+const WARDROBE_BY: TraitProp = { art: "env/wardrobe", state: null, x: 10, y: -44 };
 
-/** Зачинені вхідні двері в розрізі передньої стіни: низьке червоне полотно з номером і ручкою між стояками. */
-const DOOR_SHUT: TraitProp = { art: "env/door", state: "closed", x: 62, y: -20, scale: 0.45 };
-/** Прочинені вхідні двері на повну висоту, за ними — сходи: двері в розрізі, відчинені, читалися проходом у коридор. */
-const FRONT_DOOR = (x: number, y: number, scale = 0.32): TraitProp => ({ art: "env/front-door", state: null, x, y, scale });
-/** Ті самі двері більші й ближче до кота, що сидить до них спиною: головний знак «−» — відчинено, а він не йде. */
-const DOOR_OPEN = FRONT_DOOR(58, -22, 0.4);
+/**
+ * Вхідні двері в розрізі передньої стіни, як у квартирі: низьке полотно з номером і ручкою між стояками. Відчинені — кіт на порозі
+ * (pivot — середина порога), правий стояк поверх нього. Місця підібрано для дверей розміру `scale`.
+ */
+const DOOR_SHUT: TraitProp = { art: "env/door", state: "closed", x: 62, y: -20, scale: 0.82 };
+const DOOR_OPEN = (x: number, y: number, scale = 0.82): TraitProp[] => [
+  { art: "env/door", state: "open", x, y, scale },
+  { art: "env/door/leaf", state: null, x, y, scale },
+  { art: "env/door/post", state: null, x, y, scale, front: true },
+];
+/** Двері, відчинені за спиною кота, що не йде: головний знак «−». */
+const DOOR_BEHIND = DOOR_OPEN(70, -12, 0.73);
+/** Рамка, у яку входить більша частина прорізу дверей поруч із котом: у типовій від них лишався вузький край зі стояком. */
+const DOORWAY = { w: 190, h: 150 } as const;
 
 const ROLL_EMPTY: TraitProp = { art: "env/toilet-roll", state: "unrolled", x: 54, y: 18, scale: 0.6 };
 const PAPER = (front = false): TraitProp => ({ art: "mess/paper", state: null, x: 0, y: 10, scale: 0.8, front });
 
 /**
- * Пташка поруч із котом, що не полює, чи в нього на спині (насуплена морда поруч із пташкою на підлозі читалася «підстерігає»):
- * окремого арту пташки немає — іконка `icon/bird` як річ.
+ * Пташка сидить просто на голові кота, що не полює (на підлозі поруч із насупленою мордою її читали «підстерігає»): окремого арту
+ * пташки немає — іконка `icon/bird` як річ на маківці.
  */
-const BIRD = (x: number, y: number): TraitProp => ({ art: "icon/bird", state: null, x, y, scale: 0.45, front: true });
+const BIRD: TraitProp = { art: "icon/bird", state: null, x: 0, y: -8, scale: 0.45, socket: "head" };
 const SOCK = (x: number, y: number, flip = false, front = true): TraitProp => ({ art: "mess/sock", state: "peek", x, y, scale: 0.7, front, flip });
 const FEATHERS = (x: number, y: number, front = true): TraitProp => ({ art: "item/toy/cheap", state: "hidden", x, y, scale: 0.6, front });
 /**
@@ -109,13 +118,6 @@ const FEATHERS = (x: number, y: number, front = true): TraitProp => ({ art: "ite
  */
 const STASH: TraitProp[] = [SOCK(-52, -33, false, false), SOCK(-22, -19, true, false), FEATHERS(-38, -27, false), { art: "env/sofa", state: null, x: -20, y: -46, scale: 0.32 }];
 
-/** Ліжко позаду — укриття, з-за якого кіт вистрибує. */
-const BED_BEHIND: TraitProp = { art: "env/bed", state: "made", x: -56, y: -22, scale: 0.28 };
-/**
- * Те саме ліжко одразу за котом у засідці: рамку фото задають кіт і речі, а персонаж у неї не входить, тож із ліжком далеко
- * ліворуч ноги праворуч опинялися за краєм кадру, і засідку читали «ховається під ліжко».
- */
-const BED_COVER: TraitProp = { ...BED_BEHIND, x: -34, y: -30 };
 /** Ваші ноги просто перед мордою кота в засідці: у кадрі поруч із ним. */
 const LEGS_AHEAD: TraitPerson = { pose: "stand", x: 38, y: -10 };
 /** Думка кота в засідці: «кинутися на ногу» — над спиною, щоб не закривала ніг. */
@@ -128,6 +130,8 @@ const CABINET_OPEN: TraitProp[] = [
 const CABINET_SHUT: TraitProp = { art: "env/cat-cabinet", state: "closed", x: -40, y: -16, scale: 0.42 };
 /** Зачинена шафка далеко за спиною голодного кота: упритул до неї вилизану миску читали «намагається відчинити». */
 const CABINET_FAR: TraitProp = { ...CABINET_SHUT, x: -72, y: -24 };
+/** Рамка, у яку входить і шафка далеко за спиною кота: у типовій від неї лишався вузький край. */
+const WITH_CABINET = { w: 190, h: 160 } as const;
 /** Ваші ноги перед котом, одразу за вилизаною мискою: корму він чекає від вас, а не з шафки. */
 const LEGS_BY_BOWL: TraitPerson = { pose: "stand", x: 44, y: -12 };
 /** Миска з кормом: керамічна, не синя — порожню синю читали мискою з водою; вилизана — `licked`. */
@@ -169,6 +173,7 @@ export const SHOTS: TraitPhotoShots = {
         idea: "Щасливий кіт мружиться на столі поруч із цілими кухлем і телефоном, що стоять посеред стільниці; на підлозі — нічого, а в думці — перекреслений кухоль: «не чіпати».",
         props: TABLE_INTACT,
         bubbles: BACK_NOT("mug"),
+        frame: WHOLE_TABLE,
       },
       calm: {
         idea: "Спокійний кіт на столі лише обнюхує цілий кухоль посеред стільниці, не торкаючись його лапою, і думає «не чіпати» з перекресленим кухлем.",
@@ -181,50 +186,52 @@ export const SHOTS: TraitPhotoShots = {
         still: { flip: true },
         props: TABLE_INTACT,
         bubbles: NOT("mug"),
+        frame: WHOLE_TABLE,
       },
       ill: {
         idea: "Хворий кіт лежить буханцем на столі спиною до цілих кухля й телефона, а в думці — перекреслений кухоль: навіть тепер нічого не зачепить.",
         still: { flip: true },
         props: TABLE_INTACT_LOAF,
         bubbles: NOT("mug"),
+        frame: WHOLE_TABLE,
       },
     },
   },
   scratching: {
     plus: {
       content: {
-        idea: "Щасливий кіт, мружачись, стоїть на задніх лапах і дере торець дивана — там уже латка й нитки.",
+        idea: "Щасливий кіт, мружачись, стоїть на задніх лапах і дере спинку дивана — там уже латка й нитки.",
         still: { base: "scratch", at: 300, flip: true },
-        props: SOFA(-58),
+        props: SOFA,
       },
       calm: {
         idea: "Спокійний кіт стоїть на задніх лапах і точить кігті об подертий диван.",
         still: { base: "scratch", at: 750, flip: true },
-        props: SOFA(-58),
+        props: SOFA,
       },
       sulk: {
         idea: "Ображений кіт, похмуро примруживши очі й опустивши вуха, однаково дере диван — уже обдертий до ниток.",
         still: { base: "scratch", at: 300, flip: true, view: "front", eyes: "half", ears: "side" },
-        props: SOFA(-58),
+        props: SOFA,
       },
-      ill: { idea: "Хворий кіт лежить буханцем біля подертого дивана — єдиного м'якого, що йому траплялося.", props: SOFA(-74) },
+      ill: { idea: "Хворий кіт лежить буханцем біля подертого дивана — єдиного м'якого, що йому траплялося.", props: SOFA },
     },
     minus: {
       content: {
         idea: "Щасливий кіт, мружачись, дере дорогу кігтеточку з лежанкою — диван йому не потрібен.",
         still: { base: "scratch", at: 300 },
-        props: [SCRATCHER_PREMIUM(20, -6)],
+        props: [SCRATCHER_PREMIUM(24, -6)],
       },
-      calm: { idea: "Спокійний кіт дере звичайну кігтеточку, як належить.", still: { base: "scratch", at: 750 }, props: [SCRATCHER(20, -6)] },
+      calm: { idea: "Спокійний кіт дере звичайну кігтеточку, як належить.", still: { base: "scratch", at: 750 }, props: [SCRATCHER(24, -6)] },
       sulk: {
         idea: "Ображений кіт, похмуро примруживши очі й опустивши вуха, однаково дере кігтеточку, а не диван.",
         still: { base: "scratch", at: 300, view: "front", eyes: "half", ears: "side" },
-        props: [SCRATCHER(20, -6)],
+        props: [SCRATCHER(24, -6)],
       },
       ill: {
         idea: "Хворий кіт лежить буханцем на подушці-полиці своєї кігтеточки — найріднішому місці в домі.",
         still: { shadow: false },
-        props: [SCRATCHER_PREMIUM(0, 90)],
+        props: [SCRATCHER_PREMIUM(0, 100)],
       },
     },
   },
@@ -272,24 +279,24 @@ export const SHOTS: TraitPhotoShots = {
       content: {
         idea: "Щасливий кіт, мружачись, іде геть від нової коробки, а в думці — перекреслений «кіт у коробці»: йому й без неї добре.",
         still: { base: "walk", at: 200, eyes: "arc" },
-        props: [NEW_BOX(-88, -12)],
+        props: [NEW_BOX(-78, -14)],
         bubbles: NOT("cat-box"),
       },
       calm: {
         idea: "Спокійний кіт сидить подалі від нової коробки, притиснувши вуха й трохи відвернувши голову, і думає «в коробку — ні».",
         still: { bones: { head: -10 }, ears: "flat" },
-        props: [NEW_BOX(-88, -8)],
+        props: [NEW_BOX(-78, -12)],
         bubbles: NOT("cat-box"),
       },
       sulk: {
         idea: "Ображений кіт насуплено сидить, відвернувшись від нової коробки, і в думці перекреслює «кіт у коробці».",
-        props: [NEW_BOX(-88, -10)],
+        props: [NEW_BOX(-78, -12)],
         bubbles: NOT("cat-box"),
       },
       ill: {
         idea: "Хворий кіт лежить буханцем, притиснувши вуха й відвернувшись від нової коробки, і в думці — перекреслений «кіт у коробці».",
         still: { flip: true, ears: "flat" },
-        props: [NEW_BOX(70, -10)],
+        props: [NEW_BOX(78, -14)],
         bubbles: NOT("cat-box"),
       },
     },
@@ -303,27 +310,26 @@ export const SHOTS: TraitPhotoShots = {
     },
     minus: {
       content: {
-        idea: "Щасливий кіт мружиться у своїй лежанці на підлозі, холодильник із порожнім верхом — далеко за спиною, а в думці — перекреслений «кіт нагорі»: нагору йому не треба.",
-        still: { shadow: false },
-        props: LOW_PLACE,
+        idea: "Щасливий кіт мружиться, лежачи буханцем на підлозі біля основи шафи, а в думці — перекреслений «кіт нагорі»: нагору йому не треба.",
+        still: { base: "loaf" },
+        props: [WARDROBE_BY],
         bubbles: NOT("cat-high"),
       },
       calm: {
-        idea: "Спокійний кіт лежить буханцем у лежанці на підлозі, спиною до холодильника з порожнім верхом, і думає «нагору — ні».",
-        still: { base: "loaf", shadow: false },
-        props: LOW_PLACE,
+        idea: "Спокійний кіт лежить буханцем на підлозі біля основи шафи й думає «нагору — ні».",
+        still: { base: "loaf" },
+        props: [WARDROBE_BY],
         bubbles: NOT("cat-high"),
       },
       sulk: {
-        idea: "Ображений кіт насуплено сидить у лежанці на підлозі, холодильник — далеко за спиною, і в думці — перекреслений «кіт нагорі»: навіть сховатися нагору не полізе.",
-        still: { shadow: false },
-        props: LOW_PLACE,
+        idea: "Ображений кіт насуплено лежить буханцем біля основи шафи, і в думці — перекреслений «кіт нагорі»: навіть сховатися нагору не полізе.",
+        still: { base: "loaf" },
+        props: [WARDROBE_BY],
         bubbles: NOT("cat-high"),
       },
       ill: {
-        idea: "Хворий кіт лежить буханцем у лежанці на підлозі, холодильник — далеко за спиною, а в думці — перекреслений «кіт нагорі»: нагору не полізе.",
-        still: { shadow: false },
-        props: LOW_PLACE,
+        idea: "Хворий кіт лежить буханцем біля основи шафи, а в думці — перекреслений «кіт нагорі»: нагору не полізе.",
+        props: [WARDROBE_BY],
         bubbles: NOT("cat-high"),
       },
     },
@@ -331,51 +337,59 @@ export const SHOTS: TraitPhotoShots = {
   escape: {
     plus: {
       content: {
-        idea: "Щасливий кіт щодуху біжить від нас у прочинені вхідні двері — на сходи, хвіст трубою.",
+        idea: "Щасливий кіт щодуху вибігає від нас у відчинені вхідні двері — на сходи, хвіст трубою.",
         still: { base: "run", at: 150, view: "back" },
-        props: [FRONT_DOOR(34, -34, 0.34), { art: "fx/speed", state: null, x: -18, y: 6, scale: 0.6 }],
+        props: DOOR_OPEN(4, -6),
+        frame: DOORWAY,
       },
       calm: {
         idea: "Спокійний кіт сидить під зачиненими дверима, тягне до них лапу й нявчить — бабл гри «проситься на сходи».",
         still: { base: "beg", at: 1000, mouth: "meow" },
         props: [DOOR_SHUT],
+        frame: DOORWAY,
         bubbles: [{ kind: "say", icon: "door-ask" }],
       },
       sulk: {
         idea: "Ображений кіт насуплено сидить під зачиненими дверима, а в думці — «на сходи»: не випускають.",
         props: [DOOR_SHUT],
+        frame: DOORWAY,
         bubbles: [{ kind: "think", icon: "door-ask" }],
       },
       ill: {
         idea: "Хворий кіт лежить буханцем під зачиненими дверима й хрипко проситься на сходи — бабл гри вголос.",
         still: { mouth: "meow" },
         props: [DOOR_SHUT],
+        frame: DOORWAY,
         bubbles: [{ kind: "say", icon: "door-ask" }],
       },
     },
     minus: {
       content: {
-        idea: "Щасливий кіт мружиться спиною до розчинених вхідних дверей, за якими видно сходи, а в думці — перекреслене «на сходи»: йому й удома добре.",
+        idea: "Щасливий кіт мружиться спиною до відчинених вхідних дверей, а в думці — перекреслене «на сходи»: йому й удома добре.",
         still: { flip: true },
-        props: [DOOR_OPEN],
+        props: DOOR_BEHIND,
+        frame: DOORWAY,
         bubbles: NOT("door-ask"),
       },
       calm: {
-        idea: "Спокійний кіт, притиснувши вуха, іде геть від прочинених вхідних дверей, думаючи «на сходи — ні».",
+        idea: "Спокійний кіт, притиснувши вуха, іде геть від відчинених вхідних дверей, думаючи «на сходи — ні».",
         still: { base: "walk", at: 300, flip: true, ears: "flat" },
-        props: [FRONT_DOOR(72, -24)],
+        props: DOOR_BEHIND,
+        frame: DOORWAY,
         bubbles: NOT("door-ask"),
       },
       sulk: {
-        idea: "Ображений кіт насуплено сидить, відвернувшись від розчинених дверей, за якими видно сходи, і в думці перекреслює «на сходи»: за поріг ні кроку.",
+        idea: "Ображений кіт насуплено сидить, відвернувшись від відчинених дверей, і в думці перекреслює «на сходи»: за поріг ні кроку.",
         still: { flip: true },
-        props: [DOOR_OPEN],
+        props: DOOR_BEHIND,
+        frame: DOORWAY,
         bubbles: NOT("door-ask"),
       },
       ill: {
-        idea: "Хворий кіт лежить буханцем, відвернувшись від розчинених дверей, за якими видно сходи, а в думці — перекреслене «на сходи».",
+        idea: "Хворий кіт лежить буханцем, відвернувшись від відчинених дверей, а в думці — перекреслене «на сходи».",
         still: { flip: true },
-        props: [DOOR_OPEN],
+        props: DOOR_BEHIND,
+        frame: DOORWAY,
         bubbles: NOT("door-ask"),
       },
     },
@@ -388,14 +402,14 @@ export const SHOTS: TraitPhotoShots = {
       ill: { idea: "Хворий кіт лежить буханцем на розмотаному папері — єдиній здобичі в порожній квартирі.", props: [ROLL_EMPTY, PAPER()] },
     },
     minus: {
-      content: { idea: "Щасливий кіт мружиться, а пташка спокійно походжає в нього під носом.", props: [BIRD(56, 8)] },
+      content: { idea: "Щасливий кіт мружиться, а пташка спокійно сидить у нього просто на голові.", props: [BIRD] },
       calm: {
-        idea: "Спокійний кіт лежить буханцем, ліниво примруживши очі й дивлячись геть, а пташка походжає біля його хвоста.",
+        idea: "Спокійний кіт лежить буханцем, ліниво примруживши очі й дивлячись геть, а пташка сидить у нього на голові.",
         still: { base: "loaf", flip: true, eyes: "half" },
-        props: [BIRD(46, 8)],
+        props: [BIRD],
       },
-      sulk: { idea: "Ображений кіт насуплено сидить, а пташка спокійно вмостилася в нього на спині: навіть не в гуморі він її не чіпає.", props: [BIRD(-15, -45)] },
-      ill: { idea: "Хворий кіт лежить буханцем, а пташка спокійно сидить у нього на спині — він їй не загроза.", props: [BIRD(-10, -38)] },
+      sulk: { idea: "Ображений кіт насуплено сидить, а пташка спокійно вмостилася в нього на голові: навіть не в гуморі він її не чіпає.", props: [BIRD] },
+      ill: { idea: "Хворий кіт лежить буханцем, а пташка спокійно сидить у нього на голові — він їй не загроза.", props: [BIRD] },
     },
   },
   gifts: {
@@ -438,30 +452,27 @@ export const SHOTS: TraitPhotoShots = {
   ambush: {
     plus: {
       content: {
-        idea: "Щасливий кіт, мружачись, вилетів з-за ліжка й у стрибку вчепився передніми лапами у вашу ногу, що йде повз, — за ним ще тягнуться лінії швидкості, на нозі — подряпини.",
+        idea: "Щасливий кіт, мружачись, вилетів із засідки й у стрибку вчепився передніми лапами у вашу ногу, що йде повз, — за ним ще тягнуться лінії швидкості, на нозі — подряпини.",
         still: { base: "pounce", at: 560 },
         // Подряпини на нозі (`claws` — бабл «подряпав» у грі) — знак нападу, а не ласки; заразом тримають ноги в рамці фото.
-        props: [BED_BEHIND, { art: "fx/speed", state: null, x: -26, y: -4, scale: 0.6 }, { art: "icon/claws", state: null, x: 33, y: -40, scale: 0.36, front: true }],
+        props: [{ art: "fx/speed", state: null, x: -26, y: -4, scale: 0.6 }, { art: "icon/claws", state: null, x: 33, y: -40, scale: 0.36, front: true }],
         person: { pose: "walk", x: 26, y: -4 },
       },
       calm: {
-        idea: "Спокійний кіт у засідці біля ліжка: припав до підлоги й втупився круглими очима, ваші ноги — просто перед мордою, а в думці — «кинутися на ногу».",
+        idea: "Спокійний кіт у засідці: припав до підлоги й втупився круглими очима, ваші ноги — просто перед мордою, а в думці — «кинутися на ногу».",
         still: { base: "crouch", at: 160, eyes: "round", ears: "up" },
-        props: [BED_COVER],
         person: LEGS_AHEAD,
         bubbles: POUNCE_THOUGHT,
       },
       sulk: {
-        idea: "Ображений кіт насуплено припав у засідці біля ліжка просто перед вашими ногами, а в думці — «кинутися на ногу»: чатує й не в гуморі.",
+        idea: "Ображений кіт насуплено припав у засідці просто перед вашими ногами, а в думці — «кинутися на ногу»: чатує й не в гуморі.",
         still: { base: "crouch", at: 160 },
-        props: [BED_COVER],
         person: LEGS_AHEAD,
         bubbles: POUNCE_THOUGHT,
       },
       ill: {
-        idea: "Хворий кіт ледь тримається в засідці біля ліжка просто перед вашими ногами, а в думці — «кинутися на ногу»: чатує на них навіть тепер.",
+        idea: "Хворий кіт ледь тримається в засідці просто перед вашими ногами, а в думці — «кинутися на ногу»: чатує на них навіть тепер.",
         still: { base: "crouch", at: 0 },
-        props: [BED_COVER],
         person: LEGS_AHEAD,
         bubbles: POUNCE_THOUGHT,
       },
@@ -511,6 +522,7 @@ export const SHOTS: TraitPhotoShots = {
         still: { bones: { head: -14 }, mouth: "meow" },
         props: [CABINET_FAR, BOWL("licked", 40, 10)],
         person: LEGS_BY_BOWL,
+        frame: WITH_CABINET,
         bubbles: [
           { kind: "say", icon: "kibble", dx: 6 },
           { kind: "think", icon: "cabinet-open", mark: "no", dx: -42 },
@@ -520,12 +532,14 @@ export const SHOTS: TraitPhotoShots = {
         idea: "Ображений кіт насуплено сидить біля вилизаної миски перед вашими ногами; зачинена шафка — далеко за спиною, а в думці — перекреслена відчинена шафка: чекає, поки нагодуєте, сам не відчинить.",
         props: [CABINET_FAR, BOWL("licked", 40, 10)],
         person: LEGS_BY_BOWL,
+        frame: WITH_CABINET,
         bubbles: BACK_NOT("cabinet-open"),
       },
       ill: {
         idea: "Хворий кіт лежить біля вилизаної миски перед вашими ногами; зачинена шафка — далеко за спиною, а в думці — перекреслена відчинена шафка: що корм за дверцятами, не здогадується.",
         props: [CABINET_FAR, BOWL("licked", 42, 9)],
         person: LEGS_BY_BOWL,
+        frame: WITH_CABINET,
         bubbles: BACK_NOT("cabinet-open"),
       },
     },

@@ -177,7 +177,7 @@ function companionShot(shot: TraitShot, index: number): TraitShot {
   if (!list) {
     list = (shot.companions ?? []).map((companion, i) => {
       // Над іншим котом бабл — його власний: без `over`.
-      const bubbles = (shot.bubbles ?? []).filter((bubble) => bubble.over === i).map(({ over: _over, ...bubble }) => bubble);
+      const bubbles = (shot.bubbles ?? []).filter((bubble) => bubble.over === i && !bubble.at).map(({ over: _over, ...bubble }) => bubble);
       return { idea: "", still: companion.still, ...(bubbles.length > 0 ? { bubbles } : {}) };
     });
     COMPANION_SHOTS.set(shot, list);
@@ -191,20 +191,19 @@ export const PHOTO_PROP_SCALE = 1;
 /** Річ квартири (меблі, котячі речі, безлад, взуття персонажа) — на відміну від знака: іконки, ефекту, хмарки. */
 const worldProp = (prop: TraitProp): boolean => !prop.sign && /^(env|item|mess|person)\//.test(prop.art);
 
-/** Розмір речі на фото й у скільки разів він більший за заданий (`TraitProp.scale`): річ квартири — у масштабі гри, знак — як задано. */
+/**
+ * Розмір речі на фото й у скільки разів масштаб гри більший за той, для якого підібрано її місце (`TraitProp.scale`): річ квартири
+ * — у масштабі гри (`size` — ще більша, але місця не зсуває), знак — як задано.
+ */
 function propSize(prop: TraitProp): { size: number; grow: number } {
   const own = prop.scale ?? 1;
-  return worldProp(prop) ? { size: PHOTO_PROP_SCALE, grow: PHOTO_PROP_SCALE / own } : { size: own, grow: 1 };
+  return worldProp(prop) ? { size: PHOTO_PROP_SCALE * (prop.size ?? 1), grow: PHOTO_PROP_SCALE / own } : { size: own, grow: 1 };
 }
 
-/**
- * Місце pivot речі квартири, збільшеної до масштабу гри: вона росте від найближчої до кореня кота точки свого кадру (кіт стоїть
- * на ній — від самого кореня). Так під котом лишається та сама точка дивана чи стільниці, миска — біля морди, а шафа поруч не
- * налазить на кота й не від'їжджає від нього.
- */
-function grownPlace(prop: TraitProp, grow: number): { x: number; y: number } {
+/** Кадр речі в заданому розмірі (`TraitProp.scale`) там, де вона стоїть: з віддзеркаленням і поворотом. */
+function propBox(prop: TraitProp): { minX: number; minY: number; maxX: number; maxY: number } | null {
   const entry = artEntry(prop.art);
-  if (!entry || grow === 1) return { x: prop.x, y: prop.y };
+  if (!entry) return null;
   const own = prop.scale ?? 1;
   const rad = ((prop.rot ?? 0) * Math.PI) / 180;
   const cos = Math.cos(rad);
@@ -228,15 +227,55 @@ function grownPlace(prop: TraitProp, grow: number): { x: number; y: number } {
     maxX = Math.max(maxX, x);
     maxY = Math.max(maxY, y);
   }
-  const ax = Math.min(maxX, Math.max(minX, 0));
-  const ay = Math.min(maxY, Math.max(minY, 0));
-  return { x: ax + (prop.x - ax) * grow, y: ay + (prop.y - ay) * grow };
+  return { minX, minY, maxX, maxY };
 }
 
-/** Річ знімка риси: місце — від кореня кота, однакове для кота будь-якого розміру. */
-function propPart(prop: TraitProp): PortraitPart {
-  const { size, grow } = propSize(prop);
-  return { ...framePart(prop.art, prop.state), ...grownPlace(prop, grow), rot: prop.rot ?? 0, scaleX: prop.flip ? -size : size, scaleY: size };
+/** На скільки ширший кадр більшої речі, коли шукаємо, що на ній стоїть: шкарпетка визирає з-під самого краю дивана. */
+const RIDE_MARGIN = 8;
+/** У скільки разів більший (за площею кадру) той, із ким річ їде. */
+const RIDE_BIGGER = 1.5;
+
+/**
+ * Місця pivot речей знімка. Річ квартири, збільшена до масштабу гри, росте від найближчої до кореня кота точки свого кадру (кіт
+ * стоїть на ній — від самого кореня): під котом лишається та сама точка дивана чи стільниці, миска — біля морди, а шафа поруч не
+ * налазить на кота й не від'їжджає від нього. Річ, що стоїть у межах кадру більшої (тарілка на столі, шкарпетки під диваном), їде
+ * разом із нею. Знак — де задано.
+ */
+function propPlaces(props: readonly TraitProp[]): Map<TraitProp, { x: number; y: number }> {
+  const grown = props.flatMap((prop) => {
+    const box = worldProp(prop) ? propBox(prop) : null;
+    if (!box) return [];
+    // Найближча до кореня кота точка кадру.
+    const anchor = { x: Math.min(box.maxX, Math.max(box.minX, 0)), y: Math.min(box.maxY, Math.max(box.minY, 0)) };
+    return [{ prop, box, anchor, grow: propSize(prop).grow, area: (box.maxX - box.minX) * (box.maxY - box.minY) }];
+  });
+  const places = new Map<TraitProp, { x: number; y: number }>();
+  for (const prop of props) {
+    const own = grown.find((item) => item.prop === prop);
+    if (!own) {
+      places.set(prop, { x: prop.x, y: prop.y });
+      continue;
+    }
+    const base = grown
+      .filter(
+        (item) =>
+          item.area > own.area * RIDE_BIGGER &&
+          prop.x >= item.box.minX - RIDE_MARGIN &&
+          prop.x <= item.box.maxX + RIDE_MARGIN &&
+          prop.y >= item.box.minY - RIDE_MARGIN &&
+          prop.y <= item.box.maxY + RIDE_MARGIN,
+      )
+      .sort((a, b) => b.area - a.area)[0];
+    const by = base ?? own;
+    places.set(prop, { x: by.anchor.x + (prop.x - by.anchor.x) * by.grow, y: by.anchor.y + (prop.y - by.anchor.y) * by.grow });
+  }
+  return places;
+}
+
+/** Річ знімка риси на місці `at`: воно однакове для кота будь-якого розміру. */
+function propPart(prop: TraitProp, at: { x: number; y: number }): PortraitPart {
+  const { size } = propSize(prop);
+  return { ...framePart(prop.art, prop.state), ...at, rot: prop.rot ?? 0, scaleX: prop.flip ? -size : size, scaleY: size };
 }
 
 /**
@@ -250,9 +289,13 @@ const BUBBLE_FROM_HEAD = { x: 8, y: -6 } as const;
 
 /** Бабл гри (`TraitBubble`) над точкою `head` (якір голови, уже з віддзеркаленням); `dir` — куди дивиться кіт (1 — праворуч). */
 function bubbleParts(bubble: TraitBubble, head: { x: number; y: number }, dir: 1 | -1): PortraitPart[] {
+  return bubbleAt(bubble, { x: head.x + dir * (BUBBLE_FROM_HEAD.x + (bubble.dx ?? 0)), y: head.y + BUBBLE_FROM_HEAD.y + (bubble.dy ?? 0) });
+}
+
+/** Бабл гри вістрям у точці `tip`. */
+function bubbleAt(bubble: TraitBubble, tip: { x: number; y: number }): PortraitPart[] {
   const look = isoBubbleLook(bubble.kind);
   const s = PHOTO_BUBBLE_SCALE;
-  const tip = { x: head.x + dir * (BUBBLE_FROM_HEAD.x + (bubble.dx ?? 0)), y: head.y + BUBBLE_FROM_HEAD.y + (bubble.dy ?? 0) };
   const icon = { x: tip.x + look.icon.x * s, y: tip.y + look.icon.y * s, scaleX: s, scaleY: s };
   return [
     { ...framePart(bubbleArt(bubble.kind), null), ...tip, scaleX: s, scaleY: s },
@@ -267,14 +310,20 @@ function bubbleParts(bubble: TraitBubble, head: { x: number; y: number }, dir: 1
  */
 export function catPhotoParts(story: StoryCat, pose: CatPhotoPose, shot?: TraitShot): PortraitPart[] {
   const { behind, body, front, bubbles } = catPhotoPieces(story, pose, shot);
-  return [...behind, ...body, ...front, ...bubbles];
+  return [...behind.map((piece) => piece.part), ...body, ...front.map((piece) => piece.part), ...bubbles];
+}
+
+/** Річ знімка на фото: `soft` — річ квартири (край фото її обрізає), інакше знак, що в кадрі завжди цілком. */
+interface PropPiece {
+  part: PortraitPart;
+  soft: boolean;
 }
 
 /** Кіт фото частинами: речі позаду, сам кіт (з тінню й речами на ньому), речі поверх і бабли над ним. */
 interface CatPieces {
-  behind: PortraitPart[];
+  behind: PropPiece[];
   body: PortraitPart[];
-  front: PortraitPart[];
+  front: PropPiece[];
   bubbles: PortraitPart[];
 }
 
@@ -317,10 +366,12 @@ function catPhotoPieces(story: StoryCat, pose: CatPhotoPose, shot?: TraitShot, b
   });
   const self = [...(still.shadow === false ? [] : [shadow]), ...rigParts(rig, still.view, CAT_FAR, size.scale), ...carried];
   const props = all.filter((prop) => !prop.socket);
-  const behind = props.filter((prop) => !prop.front).map(propPart);
+  const places = propPlaces(props);
+  const placed = (prop: TraitProp): PropPiece => ({ part: propPart(prop, places.get(prop) ?? prop), soft: worldProp(prop) });
+  const behind = props.filter((prop) => !prop.front).map(placed);
   const body = still.flip ? self.map(mirrored) : self;
-  const front = props.filter((prop) => prop.front).map(propPart);
-  const ownBubbles = (shot?.bubbles ?? []).filter((bubble) => bubble.over === undefined);
+  const front = props.filter((prop) => prop.front).map(placed);
+  const ownBubbles = (shot?.bubbles ?? []).filter((bubble) => bubble.over === undefined && !bubble.at);
   if (ownBubbles.length === 0) return { behind, body, front, bubbles: [] };
   const anchor = rig.anchor("head", { x: 0, y: 0 }, false) ?? { x: 0, y: 0 };
   const dir = still.flip ? -1 : 1;
@@ -565,7 +616,7 @@ export interface PhotoPiece {
   recipe: TintRecipe;
   /** Не входить у рамку фото: виходить за край (персонаж у знімку риси — видно лише те, що поруч із котом). */
   bleed?: true;
-  /** Річ знімка: у рамку входить лише доки та не завелика — кадр задають герої (`photoFrame`). */
+  /** Річ квартири в знімку: у рамку входить лише доки та не завелика — кадр задають герої й знаки (`layoutFrame`). */
   soft?: true;
   /** Колір шерсті замість рудого кота іконки (`recolorCoat`). */
   coat?: number;
@@ -641,13 +692,17 @@ export function photoLayout(photo: Photo): PhotoLayout {
         return { part: shifted(turn ? mirrored(part) : part, at), recipe: tint, ...(soft ? { soft: true as const } : {}) };
       };
       const sleeper: PhotoPiece[] = [];
-      for (const part of hero.behind) pieces.push(piece(part, true));
+      for (const { part, soft } of hero.behind) pieces.push(piece(part, soft));
       // Голова персонажа, що спить у ліжку, — поверх ліжка (речі позаду), під котом.
       const bedAt = pieces.length;
       for (const part of hero.body) pieces.push(piece(part, false));
-      for (const part of hero.front) pieces.push(piece(part, true));
+      for (const { part, soft } of hero.front) pieces.push(piece(part, soft));
       const ownCoat = iconCoat(lookOf(subject.cat.cat));
       for (const part of hero.bubbles) bubbles.push(bubblePiece(shifted(part, at), ownCoat));
+      // Бабл речі (дзвінок у двері) — у своїй точці, без шерсті героя: каже не кіт.
+      for (const bubble of subject.shot?.bubbles ?? []) {
+        if (bubble.at) for (const part of bubbleAt(bubble, bubble.at)) bubbles.push({ part: shifted(part, at), recipe: AS_IS });
+      }
       // Інші коти знімка риси — окремими героями: свій вигляд, розмір за породою героя (не за його віком) і своє місце в черзі за
       // відстанню до камери.
       const size = catSize(photoCat(subject.cat.cat, subject.cat.ageWeeks));
@@ -680,7 +735,7 @@ export function photoLayout(photo: Photo): PhotoLayout {
         const dir = shot.person.flip ? -1 : 1;
         const head = { x: spot.x + figure.head.x * dir, y: spot.y + figure.head.y };
         for (const bubble of shot.bubbles ?? []) {
-          if (bubble.over === "person") for (const part of bubbleParts(bubble, head, dir)) bubbles.push({ part, recipe: AS_IS });
+          if (bubble.over === "person" && !bubble.at) for (const part of bubbleParts(bubble, head, dir)) bubbles.push({ part, recipe: AS_IS });
         }
       }
       if (shot?.frame) frame = shot.frame;

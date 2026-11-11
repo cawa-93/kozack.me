@@ -26,8 +26,6 @@ const box = (lift = 0, hum = false): TraitProp[] => [
 ];
 const BOX = box();
 const BOX_HUM = box(0, true);
-/** Гучномовець ліворуч, хвилі звуку — просто на кота. */
-const LOUD: TraitProp = { art: "icon/loud", state: null, x: -58, y: -16, scale: 0.55 };
 /** «zz» над котом, що дрімає: над тим, що сидить, і над буханцем. */
 const DOZE: TraitProp = { art: "icon/zz", state: null, x: 32, y: -68, scale: 0.32 };
 const DOZE_LOW: TraitProp = { ...DOZE, x: 34, y: -50 };
@@ -57,14 +55,21 @@ const VET_SIT: TraitPerson = { pose: "pet", x: -40, y: -8, front: true };
 const VET_LOAF: TraitPerson = { pose: "pet", x: -30, y: -4, front: true };
 /** Стетоскоп, притулений диском до грудей кота, трубки — від нього вбік. */
 const stethoscope = (x: number, y: number): TraitProp => ({ ...EXAM[0]!, x, y, scale: 0.36, front: true, flip: true });
-const BELL = (x: number, y: number): TraitProp => ({ art: "icon/bell", state: null, x, y, scale: 0.42 });
-const DOOR: TraitProp[] = [{ art: "env/door", state: "closed", x: -50, y: -26, scale: 0.6 }, BELL(-70, -126)];
-/** Двері з дзвінком далеко ліворуч, ближче — будиночок поверх кота: кіт за ним ховається від дверей. */
-const HIDE: TraitProp[] = [
-  { art: "env/door", state: "closed", x: -112, y: -40, scale: 0.5 },
-  BELL(-130, -124),
-  { art: "item/house/cheap", state: null, x: -14, y: 18, scale: 0.7, front: true },
-];
+/**
+ * Вхідні двері, як у квартирі: кіт чекає гостей на клітинці перед ними (`DOOR_TILE` — на пів клітинки лівіше й дві клітинки далі від
+ * камери за поріг), тож двері в розрізі передньої стіни — ліворуч унизу, ближче до камери, поверх кота.
+ */
+const DOOR: TraitProp[] = [{ art: "env/door", state: "closed", x: -96, y: 80, front: true }];
+/** Дзвінок у двері — бабл гри вголос над дверима (`doorbell` у `symbols.ts`). */
+const RING: TraitBubble = { kind: "say", icon: "bell", at: { x: -96, y: 14 } };
+/** Рамка, у яку входять і кіт, і двері за дві клітинки від нього. */
+const GREET = { w: 180, h: 160 } as const;
+/**
+ * Кіт сховався в будиночку: з темного входу (точка `door` — на 24,5 правіше й 14 вище pivot) визирає лише голова (`peek`: очі — на 7
+ * над коренем кота). Дзвінок — бабл гри вголос збоку: двері лишилися за кадром.
+ */
+const HOUSE: TraitProp[] = [{ art: "item/house/cheap", state: null, x: -24.5, y: 7 }];
+const RING_AWAY: TraitBubble = { kind: "say", icon: "bell", at: { x: 58, y: -38 } };
 /** Стіл зі стравою позаду праворуч: кіт сидить коло нього, а не на ньому. */
 const TABLE: TraitProp[] = [
   { art: "env/table", state: null, x: 66, y: -12, scale: 0.75 },
@@ -121,24 +126,24 @@ export const SHOTS: TraitPhotoShots = {
   stress: {
     plus: {
       content: {
-        idea: "Блаженно спить животом догори просто під гучномовцем, що гримить (над ним «zz»): розбудили — перевернувся й спить далі.",
-        still: { base: "belly", eyes: "arc", ears: "up" },
-        props: [LOUD, { ...DOZE, x: 52, y: -42 }],
+        idea: "Блаженно спить, розлігшись і мружачись уві сні (над ним «zz»): розбудити його непросто.",
+        still: { base: "sprawl" },
+        props: [{ ...DOZE, x: 52, y: -42 }],
       },
       calm: {
-        idea: "Дрімає буханцем, напівзаплющивши очі, а гучномовець гримить просто на нього — навіть вухом не веде.",
+        idea: "Дрімає буханцем, напівзаплющивши очі (над ним «zz»), — навіть вухом не веде.",
         still: { base: "loaf", eyes: "half" },
-        props: [LOUD, DOZE],
+        props: [DOZE],
       },
       sulk: {
-        idea: "Насуплено дрімає сидячи, спиною до гучномовця, що гримить (над ним «zz»), і вух не притискає: гуркіт його не будить, хоч і не тішить.",
+        idea: "Насуплено дрімає сидячи (над ним «zz») і вух не притискає: гуркіт його не будить, хоч і не тішить.",
         still: { eyes: "half", ears: "side" },
-        props: [LOUD, DOZE],
+        props: [DOZE],
       },
       ill: {
-        idea: "Хворий міцно спить буханцем, заплющивши очі (над ним «zz»), хоч поодаль гримить гучномовець, — перечікує біду, як негоду.",
+        idea: "Хворий міцно спить буханцем, заплющивши очі (над ним «zz»), — перечікує біду, як негоду.",
         still: { eyes: "closed" },
-        props: [{ ...LOUD, x: -80 }, DOZE_LOW],
+        props: [DOZE_LOW],
       },
     },
     minus: {
@@ -222,7 +227,7 @@ export const SHOTS: TraitPhotoShots = {
       },
       sulk: { idea: "Насуплено сидить біля стетоскопа й градусника, але не тікає — стійко витримує огляд за оглядом.", props: EXAM },
       ill: {
-        idea: "Хворий сумирно лежить буханцем з градусником у роті під рукою, що його гладить, до грудей йому притулено стетоскоп, а він думає «приємно»: огляд іде просто зараз, і йому на ньому добре.",
+        idea: "Хворий сумирно лежить буханцем під рукою, що його гладить, до грудей йому притулено стетоскоп, а він думає «приємно»: огляд іде просто зараз, і йому на ньому добре.",
         person: VET_LOAF,
         props: [stethoscope(42, -3)],
         bubbles: [{ kind: "think", icon: "pleasant", dx: 16 }],
@@ -254,24 +259,28 @@ export const SHOTS: TraitPhotoShots = {
   },
   guests: {
     plus: {
-      content: { idea: "Мружиться й нявкає біля вхідних дверей, у які дзвонять: кожен гість — свято.", still: { mouth: "meow" }, props: DOOR },
-      calm: { idea: "Сидить мордою до вхідних дверей, у які дзвонять, і чекає, хто ж прийшов.", still: { flip: true }, props: DOOR },
+      content: { idea: "Мружиться й нявкає перед вхідними дверима, у які дзвонять: кожен гість — свято.", still: { mouth: "meow", flip: true }, props: DOOR, bubbles: [RING], frame: GREET },
+      calm: { idea: "Сидить перед вхідними дверима, у які дзвонять, і чекає, хто ж прийшов.", still: { flip: true }, props: DOOR, bubbles: [RING], frame: GREET },
       sulk: {
-        idea: "Насуплено сидить мордою до вхідних дверей, у які дзвонять, і чекає гостей — удома погомоніти нема з ким.",
+        idea: "Насуплено сидить перед вхідними дверима, у які дзвонять, і чекає гостей — удома погомоніти нема з ким.",
         still: { flip: true },
         props: DOOR,
+        bubbles: [RING],
+        frame: GREET,
       },
       ill: {
-        idea: "Хворий лежить буханцем мордою до вхідних дверей, у які дзвонять, і нашорошив вуха — сподівається, що прийшли до нього.",
+        idea: "Хворий лежить буханцем перед вхідними дверима, у які дзвонять, і нашорошив вуха — сподівається, що прийшли до нього.",
         still: { flip: true, ears: "up" },
         props: DOOR,
+        bubbles: [RING],
+        frame: GREET,
       },
     },
     minus: {
-      content: { idea: "Задоволено мружиться, сховавшись за будиночком від дзвінка в двері: щастя — коли вдома лише свої.", still: { base: "crouch", eyes: "arc" }, props: HIDE },
-      calm: { idea: "Притиснувши вуха, зіщулився за будиночком: у двері дзвонять, і він не вилізе, поки гості не підуть.", still: { base: "crouch", ears: "flat" }, props: HIDE },
-      sulk: { idea: "Насуплено сидить за будиночком, притиснувши вуха, — сховався від дзвінка в двері.", still: { ears: "flat" }, props: HIDE },
-      ill: { idea: "Хворий тремтить за будиночком, притиснувши вуха: у двері дзвонять, а він ховається.", still: { base: "crouch", eyes: "sick", ears: "flat" }, props: HIDE },
+      content: { idea: "У двері дзвонять, а він задоволено мружиться з входу свого будиночка: щастя — коли вдома лише свої.", still: { base: "peek", shadow: false }, props: HOUSE, bubbles: [RING_AWAY] },
+      calm: { idea: "У двері дзвонять, а він, притиснувши вуха, сховався в будиночку — визирає лише морда: не вилізе, поки гості не підуть.", still: { base: "peek", ears: "flat", shadow: false }, props: HOUSE, bubbles: [RING_AWAY] },
+      sulk: { idea: "У двері дзвонять, а він насуплено визирає з будиночка, притиснувши вуха, — сховався від гостей.", still: { base: "peek", ears: "flat", shadow: false }, props: HOUSE, bubbles: [RING_AWAY] },
+      ill: { idea: "У двері дзвонять, а хворий кіт забився в будиночок і визирає, притиснувши вуха: ховається.", still: { base: "peek", ears: "flat", shadow: false }, props: HOUSE, bubbles: [RING_AWAY] },
     },
   },
   obedience: {

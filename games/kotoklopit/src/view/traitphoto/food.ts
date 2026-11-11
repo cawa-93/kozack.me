@@ -3,12 +3,12 @@
 // Щоб групи не плутались між собою, у кожної своя примета: «Апетит» — вилизані миски й облизується (чи пів миски делікатесу, від
 // якої відходить), «Перебірливість» — простий корм, від якого тхне, і думка «не цей корм» (чи наминає його, а думка перекреслена),
 // «Жебракування» — просить «стовпчиком» і нявчить «їсти» (чи вмивається й спить по їжі), «Злодійство» — ваша страва на столі (чи
-// думка «на стіл — ні» спиною до нього), «Швидкість їжі» — калюжка зригнутого біля вилизаної миски (чи смакує над повною),
+// думка «на стіл — ні» спиною до нього), «Швидкість їжі» — калюжка зригнутого біля вилизаної миски (чи та сама миска без калюжки),
 // «Пиття» — умивальник і кухоль (чи поїлка з водою).
 
 import type { ArtId } from "../art/types";
 import type { IconName, Mark } from "../iconnames";
-import type { TraitBubble, TraitCompanion, TraitPhotoShots, TraitProp, TraitStill } from "./types";
+import type { TraitBubble, TraitPhotoShots, TraitProp, TraitStill } from "./types";
 
 const prop = (art: ArtId, state: string | null, x: number, y: number, more: Partial<TraitProp> = {}): TraitProp => ({ art, state, x, y, ...more });
 const think = (icon: IconName, mark?: Mark): TraitBubble => ({ kind: "think", icon, ...(mark ? { mark } : {}) });
@@ -19,6 +19,8 @@ const BOWL_SCALE = 0.7;
 const bowl = (state: string, x: number, y: number, more: Partial<TraitProp> = {}): TraitProp => prop("item/bowl/cheap", state, x, y, { scale: BOWL_SCALE, front: y > 0, ...more });
 /** Делікатес — керамічна миска з кормом «Гурман». */
 const treat = (state: "premium-1" | "premium-2", x: number, y: number, more: Partial<TraitProp> = {}): TraitProp => prop("item/bowl/premium", state, x, y, { scale: BOWL_SCALE, front: y > 0, ...more });
+/** Калюжка зригнутого на виду, перед котом: позаду нього її не видно. */
+const vomit = (x: number, y: number): TraitProp => prop("mess/vomit", null, x, y, { front: true });
 /** Вилизана дочиста (`licked`): порожню `empty` читали мискою з молоком. */
 const licked = (x: number, y: number, more: Partial<TraitProp> = {}): TraitProp => prop("item/bowl/premium", "licked", x, y, { scale: BOWL_SCALE, front: y > 0, ...more });
 /**
@@ -66,8 +68,7 @@ const LOW = { w: 80, h: 56 } as const;
  * Умивальник під котом: кіт сидить на краю стільниці (`edge` — на 70 над pivot) лівіше від крана, мордою до нього, — посередині він
  * закривав кран собою.
  */
-const SINK_SCALE = 0.9;
-const sink = (state: "off" | "running"): TraitProp => prop("env/sink", state, 18, 70 * SINK_SCALE, { scale: SINK_SCALE });
+const sink = (state: "off" | "running"): TraitProp => prop("env/sink", state, 20, 70);
 
 /** Кухонний стіл позаду кота зі стравою на стільниці (`dish` — на 60 над pivot, на 13 лівіше). */
 const TABLE_SCALE = 0.65;
@@ -83,12 +84,6 @@ const meal = (x: number, y: number, more: Partial<TraitProp> = {}): TraitProp =>
  * випрошує. Кіт при цьому — спиною до столу: погляд на тарілку каже «хоче».
  */
 const NOT_TABLE = think("table", "no");
-/**
- * Сусід, що свою порцію вже доїв: сидить спиною до героя над вилизаною мискою й облизується — поруч із ним видно, що герой над ще
- * повною мискою не поспішає. Сам кадр «їсть із миски» від «Всеїдного» не відрізнити.
- */
-const DONE_MATE: TraitCompanion = { age: "adult", still: { base: "sit", eyes: "arc", mouth: "tongue", flip: true }, x: -76, y: -12 };
-const DONE_BOWL = licked(-110, -6);
 
 export const SHOTS: TraitPhotoShots = {
   appetite: {
@@ -118,8 +113,8 @@ export const SHOTS: TraitPhotoShots = {
     },
     minus: {
       content: {
-        idea: "Блаженно дрімає буханцем, відвернувшись від миски, де лишилося пів порції делікатесу: наївся половиною, а решта почекає.",
-        still: { base: "decline", eyes: "arc", flip: true },
+        idea: "Блаженно дрімає, розлігшись спиною до миски, де лишилося пів порції делікатесу: наївся половиною, а решта почекає.",
+        still: { base: "sprawl", flip: true },
         props: [treat("premium-1", 40, 8)],
         frame: LOW,
       },
@@ -238,7 +233,7 @@ export const SHOTS: TraitPhotoShots = {
         props: [licked(-42, 12)],
       },
       ill: {
-        idea: "Хворий буханець із градусником дрімає, заплющивши очі, біля вилизаної миски: поїв і відпочиває — нічого ні в кого не просить.",
+        idea: "Хворий буханець дрімає, заплющивши очі, біля вилизаної миски: поїв і відпочиває — нічого ні в кого не просить.",
         still: { flip: true, eyes: "closed" },
         props: [licked(40, 6)],
       },
@@ -286,7 +281,7 @@ export const SHOTS: TraitPhotoShots = {
         bubbles: [NOT_TABLE],
       },
       ill: {
-        idea: "Хворий буханець із градусником лежить біля столу з повною тарілкою й думає «на стіл — ні»: не бере ні крихти.",
+        idea: "Хворий буханець лежить біля столу з повною тарілкою й думає «на стіл — ні»: не бере ні крихти.",
         props: tableWithDish("cheap"),
         bubbles: [NOT_TABLE],
       },
@@ -295,54 +290,46 @@ export const SHOTS: TraitPhotoShots = {
   gulping: {
     plus: {
       content: {
-        idea: "Щасливо облизується над уже вилизаною мискою, а позаду — калюжка зригнутого: з'їв порцію за мить, і не вперше.",
+        idea: "Щасливо облизується над уже вилизаною мискою, а поруч — калюжка зригнутого: з'їв порцію за мить, і не вперше.",
         still: { mouth: "tongue" },
-        props: [prop("mess/vomit", null, -30, -12, { scale: 0.6 }), licked(34, 8)],
+        props: [licked(34, 8), vomit(-40, 12)],
       },
       calm: {
-        idea: "Підвів голову з уже вилизаної миски й здивовано дивиться: порція зникла за мить, а позаду вже калюжка зригнутого.",
+        idea: "Підвів голову з уже вилизаної миски й здивовано дивиться: порція зникла за мить, а поруч уже калюжка зригнутого.",
         still: { ...CHEW, eyes: "round", mouth: "closed" },
-        props: [prop("mess/vomit", null, -30, -12, { scale: 0.6 }), licked(AT_MOUTH.x, AT_MOUTH.y)],
+        props: [licked(AT_MOUTH.x, AT_MOUTH.y), vomit(-36, 12)],
         frame: LOW,
       },
       sulk: {
         idea: "Похнюплено сидить між вилизаною мискою й калюжкою зригнутого: ковтнув порцію за мить — і розплатився.",
-        props: [licked(32, 8), prop("mess/vomit", null, -30, 12, { front: true, scale: 0.8 })],
+        props: [licked(32, 8), vomit(-40, 12)],
       },
       ill: {
         idea: "Хворий кіт зригує біля вилизаної миски: знову проковтнув їжу не жуючи.",
         still: { base: "vomit", at: 990, eyes: "sick", ears: "side" },
-        props: [licked(-34, -4), prop("mess/vomit", null, 40, 10, { front: true, scale: 0.8 })],
+        props: [licked(-34, -4), vomit(44, 10)],
       },
     },
     minus: {
+      // Ті самі кадри, що в «Квапливого», але без калюжки: їсть спокійно, і нічого не повертається.
       content: {
-        idea: "Підняв голову з повної миски делікатесу й смакує, заплющивши очі, а сусід позаду вже вилизав свою миску й облизується: їсть по шматочку, ніби на званій вечері.",
-        still: { ...CHEW, eyes: "arc" },
-        props: [DONE_BOWL, treat("premium-2", AT_MOUTH.x, AT_MOUTH.y, { scale: 0.8 })],
-        companions: [DONE_MATE],
-        frame: LOW,
+        idea: "Щасливо облизується над вилизаною мискою, і підлога довкола чиста: їсть не поспішаючи, по зернятку.",
+        still: { mouth: "tongue" },
+        props: [licked(34, 8)],
       },
       calm: {
-        idea: "Неспішно злизує шматочок із ще повної миски делікатесу, а сусід позаду вже вилизав свою й облизується: смакує кожен шматочок.",
-        still: MUNCH,
-        props: [DONE_BOWL, treat("premium-2", AT_TONGUE.x, AT_TONGUE.y, { scale: 0.8 })],
-        companions: [DONE_MATE],
+        idea: "Підвів голову з вилизаної миски й спокійно дивиться, підлога довкола чиста: смакував кожне зернятко.",
+        still: { ...CHEW, eyes: "round", mouth: "closed" },
+        props: [licked(AT_MOUTH.x, AT_MOUTH.y)],
         frame: LOW,
       },
       sulk: {
-        idea: "Насуплено, з вухами назад злизує по шматочку з ще повної миски делікатесу, а сусід позаду вже вилизав свою й облизується: поспішати йому нікуди.",
-        still: MUNCH,
-        props: [DONE_BOWL, treat("premium-2", AT_TONGUE.x, AT_TONGUE.y, { scale: 0.8 })],
-        companions: [DONE_MATE],
-        frame: LOW,
+        idea: "Похнюплено сидить біля вилизаної миски, підлога довкола чиста: з'їв по зернятку, а більше не дали.",
+        props: [licked(32, 8)],
       },
       ill: {
-        idea: "Хворий кіт ледве злизує по гранулі з ще повної миски, а сусід позаду вже вилизав свою й облизується: розтягує порцію на весь день.",
-        still: MUNCH,
-        props: [DONE_BOWL, bowl("cheap-2", AT_TONGUE.x, AT_TONGUE.y)],
-        companions: [DONE_MATE],
-        frame: LOW,
+        idea: "Хворий кіт лежить біля вилизаної миски, підлога довкола чиста: навіть нездужаючи їсть потроху.",
+        props: [licked(-34, -4)],
       },
     },
   },
@@ -354,9 +341,8 @@ export const SHOTS: TraitPhotoShots = {
         props: [sink("running")],
       },
       calm: {
-        idea: "Спокійно п'є з вашого кухля з кавою, ніби це найкраща поїлка в домі.",
-        still: { base: "drink", at: 0 },
-        props: [prop("mess/trinket/mug", "standing", 36, 4, { front: true, scale: 0.55 })],
+        idea: "Спокійно сидить на умивальнику біля відкритого крана й дивиться на струмінь: це найкраща поїлка в домі.",
+        props: [sink("running")],
       },
       sulk: {
         idea: "Ображено сидить на сухому умивальнику під закритим краном і нявчить «пити!»: чекає, поки хтось нарешті його відкриє.",
@@ -389,7 +375,7 @@ export const SHOTS: TraitPhotoShots = {
         bubbles: [say("drink")],
       },
       ill: {
-        idea: "Хворий буханець із градусником біля порожньої поїлки думає про воду: чекає, поки хтось згадає долити.",
+        idea: "Хворий буханець біля порожньої поїлки думає про воду: чекає, поки хтось згадає долити.",
         props: [water("premium", "empty", AT_LOAF.x, AT_LOAF.y)],
         bubbles: [think("drink")],
       },

@@ -5,15 +5,15 @@ import type { TraitBubble, TraitPhotoShots, TraitProp } from "./types";
 /** Іконка як річ на фото: pivot у центрі, тож на підлозі y — мінус половина висоти. */
 const icon = (name: string, x: number, y: number, scale = 0.4): TraitProp => ({ art: `icon/${name}`, state: null, x, y, scale });
 
-/** Переноска, у якій давно не їздили: павутина на ній. */
+/** Переноска, у якій давно не їздили: павутина на ній — кутова павутина кімнати як значок, зменшена до переноски. */
 const DUSTY_CARRIER: readonly TraitProp[] = [
-  { art: "item/carrier/cheap", state: "body", x: 56, y: -6, scale: 0.6 },
-  { art: "mess/cobweb", state: "corner", x: 58, y: 56, scale: 0.4 },
+  { art: "item/carrier/cheap", state: "body", x: 74.4, y: -10 },
+  { art: "mess/cobweb", state: "corner", x: 77.7, y: 93.3, scale: 0.667, sign: true },
 ];
 /** Та сама переноска далі позаду й убік, дверцятами не до кота. */
 const DUSTY_CARRIER_AWAY: readonly TraitProp[] = [
-  { art: "item/carrier/cheap", state: "body", x: 70, y: -24, scale: 0.5 },
-  { art: "mess/cobweb", state: "corner", x: 72, y: 28, scale: 0.33 },
+  { art: "item/carrier/cheap", state: "body", x: 93, y: -37 },
+  { art: "mess/cobweb", state: "corner", x: 97, y: 67, scale: 0.66, sign: true },
 ];
 /** Торт зі свічками-цифрами «20»: ювілей довгожителя (не кубок: той — іконка виставки котів). */
 const CAKE: TraitProp = { art: "item/cake", state: null, x: 46, y: 8, scale: 0.7, front: true };
@@ -25,7 +25,7 @@ const CAKE: TraitProp = { art: "item/cake", state: null, x: 46, y: 8, scale: 0.7
 const fragileBox = (lift = 0): TraitProp[] => [
   { art: "env/boxes", state: "pile-1", x: 0, y: 48 + lift },
   { art: "env/boxes/front", state: "pile-1", x: 0, y: 48 + lift, front: true },
-  { art: "item/fragile-sign", state: null, x: 30, y: 31 + lift, scale: 1.3, front: true },
+  { art: "item/fragile-sign", state: null, x: 23.5, y: 28 + lift, front: true },
 ];
 const FRAGILE_BOX = fragileBox();
 
@@ -72,7 +72,7 @@ export const SHOTS: TraitPhotoShots = {
         props: [CAKE],
       },
       ill: {
-        idea: "Хворий кіт із градусником лежить буханцем біля торта зі свічками «20»: нездужає, та вперто дотягує до чергового ювілею.",
+        idea: "Хворий кіт лежить буханцем біля торта зі свічками «20»: нездужає, та вперто дотягує до чергового ювілею.",
         props: [{ ...CAKE, x: 62 }],
       },
     },
@@ -93,7 +93,7 @@ export const SHOTS: TraitPhotoShots = {
         props: FRAGILE_BOX,
       },
       ill: {
-        idea: "Хворий кіт із градусником зіщулився в картонній коробці з наліпкою «крихке» (келих): тендітний, наче сам зі скла.",
+        idea: "Хворий кіт зіщулився в картонній коробці з наліпкою «крихке» (келих): тендітний, наче сам зі скла.",
         still: { shadow: false },
         props: fragileBox(6),
       },
@@ -196,8 +196,8 @@ export const SHOTS: TraitPhotoShots = {
   warmth: {
     plus: {
       content: {
-        idea: "Кіт солодко спить клубком на підвіконні просто над батареєю: живе на батареї.",
-        still: { base: "sleep", eyes: "closed", shadow: false },
+        idea: "Кіт солодко спить, розлігшись на підвіконні просто над батареєю: живе на батареї.",
+        still: { base: "sprawl", shadow: false },
         props: [RADIATOR],
       },
       calm: {

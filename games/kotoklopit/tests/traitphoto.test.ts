@@ -17,7 +17,7 @@ import { framesOf } from "../src/view/art/types";
 import { lifePhotoPose, livingCatPhoto, retirementPhoto, storyPhoto, type Photo } from "../src/view/photo";
 import { personRecipe } from "../src/view/art/recipes";
 import { COAT_ICONS, iconCoat, recolorCoat } from "../src/view/photocoat";
-import { photoFrame, PROP_FRAME } from "../src/view/photoframe";
+import { layoutFrame, photoFrame, PROP_FRAME, type Box } from "../src/view/photoframe";
 import { catPhotoParts, PHOTO_BUBBLE_SCALE, PHOTO_PROP_SCALE, photoLayout, personShotContact } from "../src/view/photoposes";
 import { CAT_ANIMS } from "../src/view/rig/anims";
 import { TRAIT_PHOTOS } from "../src/view/traitphoto";
@@ -57,6 +57,26 @@ const catSubject = (photo: Photo | null) => {
 };
 
 const isCat = (part: PortraitPart): boolean => part.id.startsWith("cat/");
+
+/** Полотно кадру частини на фото (не силует): з масштабом, віддзеркаленням і поворотом. */
+function canvasBox(part: PortraitPart): Box | null {
+  const entry = artEntry(part.id);
+  if (!entry) return null;
+  const rad = ((part.rot ?? 0) * Math.PI) / 180;
+  const corners = [
+    [0, 0],
+    [entry.size.w, 0],
+    [entry.size.w, entry.size.h],
+    [0, entry.size.h],
+  ].map(([cx, cy]) => {
+    const dx = (cx! - entry.pivot.x) * (part.scaleX ?? 1);
+    const dy = (cy! - entry.pivot.y) * (part.scaleY ?? 1);
+    return { x: (part.x ?? 0) + dx * Math.cos(rad) - dy * Math.sin(rad), y: (part.y ?? 0) + dx * Math.sin(rad) + dy * Math.cos(rad) };
+  });
+  const xs = corners.map((c) => c.x);
+  const ys = corners.map((c) => c.y);
+  return { minX: Math.min(...xs), minY: Math.min(...ys), maxX: Math.max(...xs), maxY: Math.max(...ys) };
+}
 
 describe("знімки рис — на кожен випадок і з того, що є (§4.2)", () => {
   it("кожна група рис — знімок на обидва боки й кожну позу рівня, із задумом", () => {
@@ -472,6 +492,29 @@ describe("можливості знімка (§4.2)", () => {
     }
   });
 
+  it("кожну річ квартири кожного знімка видно на фото: рамка обрізає велику річ, але не лишає її за краєм", () => {
+    // Рамка тут — за полотнами кадрів (на фото — за силуетами, вона трохи інша), тож оцінка груба: у кадрі — хоч п'ята частина
+    // полотна речі.
+    const SEEN = 0.2;
+    const who = hero(game());
+    const hidden: string[] = [];
+    for (const { key, pose, shot } of SHOTS) {
+      if (!shot) continue;
+      const layout = photoLayout({ subjects: [{ kind: "cat", cat: who, pose, shot }] });
+      const boxes = layout.pieces.map((piece) => canvasBox(piece.part));
+      const frame = layoutFrame(layout.pieces, (i) => boxes[i] ?? null, layout.span)!;
+      for (const [i, piece] of layout.pieces.entries()) {
+        const box = boxes[i];
+        if (!piece.soft || !box) continue;
+        const w = Math.min(box.maxX, frame.maxX) - Math.max(box.minX, frame.minX);
+        const h = Math.min(box.maxY, frame.maxY) - Math.max(box.minY, frame.minY);
+        const share = w > 0 && h > 0 ? (w * h) / ((box.maxX - box.minX) * (box.maxY - box.minY)) : 0;
+        if (share < SEEN) hidden.push(`${key}: ${piece.part.id} ${share.toFixed(2)}`);
+      }
+    }
+    expect(hidden).toEqual([]);
+  });
+
   it("рамка знімка — замість типової; статура й тінь — свої", () => {
     const state = game();
     const one = hero(state);
@@ -493,11 +536,12 @@ describe("можливості знімка (§4.2)", () => {
       props: [
         // Кіт у межах кадру дивана — диван росте від кореня кота: під котом та сама точка.
         { art: "env/sofa", state: null, x: 10, y: 20, scale: 0.4 },
-        // Миска збоку (кадр 56 × 48, pivot 28, 32): ближчий до кота край лишається на місці.
-        { art: "item/bowl/cheap", state: "empty", x: 60, y: 0, scale: 0.5, front: true },
-        { art: "item/water/cheap", state: "full", x: -60, y: 0, scale: 0.5, flip: true },
-        // У масштабі гри — як задано.
-        { art: "mess/sock", state: "peek", x: -24, y: 30, rot: 15 },
+        // Миска осторонь (кадр 56 × 48, pivot 28, 32; поза кадрами дивана й вікна): найближча до кота точка її кадру лишається на місці.
+        { art: "item/bowl/cheap", state: "empty", x: 60, y: 80, scale: 0.5, front: true },
+        { art: "item/water/cheap", state: "full", x: -60, y: 80, scale: 0.5, flip: true },
+        // У масштабі гри — як задано; `size` — більша за масштаб гри (вікно за котом на підвіконні), а місце — те, що задано.
+        { art: "mess/sock", state: "peek", x: -100, y: 30, rot: 15 },
+        { art: "env/window-bird", state: "bird", x: 24, y: 12, size: 2 },
         { art: "icon/zz", state: null, x: 30, y: -60, scale: 0.3 },
         { art: "fx/speed", state: null, x: -28, y: -14, scale: 0.8 },
       ],
@@ -510,20 +554,71 @@ describe("можливості знімка (§4.2)", () => {
       };
       const g = PHOTO_PROP_SCALE;
       expect(at("env/sofa")).toEqual([25 * g, 50 * g, g, g, 0]);
-      // Лівий край миски був на 60 − 28 · 0,5 = 46 — там і лишився: pivot на 46 + 28.
-      expect(at("item/bowl/cheap")).toEqual([46 + 28 * g, 0, g, g, 0]);
-      expect(at("item/water/cheap")).toEqual([-(46 + 28 * g), 0, -g, g, 0]);
-      expect(at("mess/sock")).toEqual([-24, 30, 1, 1, 15]);
+      // Найближчий до кота кут кадру миски був у (46, 64) — там і лишився: pivot на 28 правіше й 32 нижче.
+      expect(at("item/bowl/cheap")).toEqual([46 + 28 * g, 64 + 32 * g, g, g, 0]);
+      expect(at("item/water/cheap")).toEqual([-(46 + 28 * g), 64 + 32 * g, -g, g, 0]);
+      expect(at("mess/sock")).toEqual([-100, 30, g, g, 15]);
+      expect(at("env/window-bird")).toEqual([24 * g, 12 * g, 2 * g, 2 * g, 0]);
       expect(at("icon/zz")).toEqual([30, -60, 0.3, 0.3, 0]);
       expect(at("fx/speed")).toEqual([-28, -14, 0.8, 0.8, 0]);
     }
   });
 
-  it("рамку фото задають герої: речі знімка — м'які (у кадр входять, лише доки він не завеликий), персонаж — поза рамкою", () => {
+  it("річ, що стоїть на більшій чи під нею, переїжджає разом із нею: тарілка лишається на стільниці, а знак над котом — на місці", () => {
+    const state = game();
+    const shot: TraitShot = {
+      idea: "стіл зі стравою",
+      props: [
+        // Кіт у межах кадру стола — стіл росте від кореня кота, у 1 / 0,75 раза.
+        { art: "env/table", state: null, x: 66, y: -12, scale: 0.75 },
+        // Тарілка на стільниці — у межах кадру стола: їде з ним, а сама — у масштабі гри.
+        { art: "item/dish/meal", state: "premium", x: 61, y: -53, scale: 0.9 },
+        // Миска далеко від стола — сама по собі: ближчий до кота край на місці.
+        { art: "item/bowl/cheap", state: "empty", x: -80, y: 40, scale: 0.5 },
+        // Знак над котом теж у межах кадру стола, але лишається біля кота.
+        { art: "icon/zz", state: null, x: 30, y: -60, scale: 0.3 },
+      ],
+    };
+    const parts = catPhotoParts(hero(state), "calm", shot);
+    const at = (id: string) => {
+      const part = find(parts, id)!;
+      return [part.x, part.y, part.scaleX].map((v) => Math.round((v ?? 0) * 100) / 100);
+    };
+    const g = PHOTO_PROP_SCALE;
+    expect(at("env/table")).toEqual([88 * g, -16 * g, g]);
+    expect(at("item/dish/meal")).toEqual([Math.round((61 / 0.75) * 100 * g) / 100, Math.round((-53 / 0.75) * 100 * g) / 100, g]);
+    // Миска (56 × 48, pivot 28, 32) у половину розміру: кадр x −94…−66, y 24…48; найближча до кота точка — (−66, 24).
+    expect(at("item/bowl/cheap")).toEqual([-66 - 28 * g, 24 + 32 * g, g]);
+    expect(at("icon/zz")).toEqual([30, -60, 0.3]);
+  });
+
+  it("бабл речі — у вільній точці від кореня кота (дзвінок у двері): рівно там, раз, і не над героєм", () => {
+    const state = game();
+    const shot: TraitShot = { idea: "дзвонять у двері", bubbles: [{ kind: "say", icon: "bell", at: { x: -96, y: 12 } }, { kind: "think", icon: "kibble" }] };
+    for (const who of [hero(state), hero(state, 1)]) {
+      const pieces = photoLayout({ subjects: [{ kind: "cat", cat: who, pose: "calm", shot }] }).pieces;
+      const say = pieces.filter((piece) => piece.part.id === "ui/bubble/say");
+      expect(say.map((piece) => [piece.part.x, piece.part.y, piece.part.scaleX])).toEqual([[-96, 12, PHOTO_BUBBLE_SCALE]]);
+      expect(pieces.filter((piece) => piece.part.id === "icon/bell")).toHaveLength(1);
+      expect(pieces.filter((piece) => piece.part.id === "ui/bubble/think")).toHaveLength(1);
+      // Бабл — у рамці фото, як і бабли над героями.
+      expect(say[0]!.soft ?? say[0]!.bleed).toBeUndefined();
+    }
+  });
+
+  it("рамку фото задають герої й знаки: речі квартири — м'які (у кадр входять, лише доки він не завеликий), персонаж — поза рамкою", () => {
     const state = game();
     const shot: TraitShot = {
       idea: "на дивані з думкою",
-      props: [{ art: "env/sofa", state: null, x: 10, y: 20 }, { art: "icon/zz", state: null, x: 30, y: -60, scale: 0.3, front: true }],
+      props: [
+        { art: "env/sofa", state: null, x: 10, y: 20 },
+        { art: "item/ball", state: null, x: 44, y: 8, front: true },
+        // Знаки: іконка, ефект, хмарка, складена річчю, і кадр речі квартири як значок.
+        { art: "icon/zz", state: null, x: 30, y: -60, scale: 0.3, front: true },
+        { art: "fx/speed", state: null, x: -28, y: -14, scale: 0.8 },
+        { art: "ui/bubble/think", state: null, x: 20, y: -80, scale: 0.5, front: true },
+        { art: "mess/cobweb", state: "corner", x: 40, y: -20, scale: 0.6, sign: true },
+      ],
       companions: [{ age: "adult", still: { base: "sit" }, x: 70, y: 0 }],
       bubbles: [{ kind: "think", icon: "kibble" }],
       person: { pose: "stand", x: -50, y: -10 },
@@ -531,7 +626,8 @@ describe("можливості знімка (§4.2)", () => {
     const pieces = photoLayout({ subjects: [{ kind: "cat", cat: hero(state), pose: "calm", shot }] }).pieces;
     const kind = (piece: (typeof pieces)[number]) => (piece.bleed ? "bleed" : piece.soft ? "soft" : "core");
     const of = (test: (id: string) => boolean) => new Set(pieces.filter((piece) => test(piece.part.id)).map(kind));
-    expect(of((id) => id === "env/sofa" || id === "icon/zz")).toEqual(new Set(["soft"]));
+    expect(of((id) => id === "env/sofa" || id === "item/ball")).toEqual(new Set(["soft"]));
+    expect(of((id) => id === "icon/zz" || id === "fx/speed" || id === "mess/cobweb")).toEqual(new Set(["core"]));
     expect(of((id) => id.startsWith("cat/") || id === "fx/shadow/cat")).toEqual(new Set(["core"]));
     expect(of((id) => id.startsWith("ui/bubble/") || id === "icon/kibble")).toEqual(new Set(["core"]));
     expect(of((id) => id.startsWith("person/"))).toEqual(new Set(["bleed"]));
@@ -631,16 +727,36 @@ describe("рамка фото за героями (§4.2)", () => {
     expect(photoFrame(cat, [bowl])).toEqual({ minX: -30, minY: -60, maxX: 62, maxY: 10 });
   });
 
-  it("велика річ обрізається: кадр не більший за найбільшу рамку, і кіт у ньому цілком — приблизно на половину", () => {
+  it("велика річ обрізається: кадр не більший за найбільшу рамку, і кіт у ньому цілком — приблизно на половину ширини й висоти", () => {
     const sofa = { minX: -200, minY: -150, maxX: 180, maxY: 80 };
-    const frame = photoFrame(cat, [sofa])!;
+    // Дорослий кіт, що сидить.
+    const sitting = { minX: -45, minY: -98, maxX: 40, maxY: 2 };
+    const frame = photoFrame(sitting, [sofa])!;
     expect(size(frame)).toEqual({ w: PROP_FRAME.w, h: PROP_FRAME.h });
-    expect(frame.minX).toBeLessThanOrEqual(cat.minX);
-    expect(frame.maxX).toBeGreaterThanOrEqual(cat.maxX);
-    expect(frame.minY).toBeLessThanOrEqual(cat.minY);
-    expect(frame.maxY).toBeGreaterThanOrEqual(cat.maxY);
-    expect(size(cat).w / size(frame).w).toBeGreaterThan(0.4);
-    expect(size(cat).h / size(frame).h).toBeGreaterThan(0.4);
+    expect(frame.minX).toBeLessThanOrEqual(sitting.minX);
+    expect(frame.maxX).toBeGreaterThanOrEqual(sitting.maxX);
+    expect(frame.minY).toBeLessThanOrEqual(sitting.minY);
+    expect(frame.maxY).toBeGreaterThanOrEqual(sitting.maxY);
+    for (const share of [size(sitting).w / size(frame).w, size(sitting).h / size(frame).h]) {
+      expect(share).toBeGreaterThan(0.45);
+      expect(share).toBeLessThan(0.7);
+    }
+  });
+
+  it("рамка розкладу: герої й знаки — цілком, речі квартири — у межах найбільшої рамки, персонаж рамки не міняє", () => {
+    const boxes = [cat, { minX: -200, minY: -150, maxX: 180, maxY: 80 }, { minX: 300, minY: -40, maxX: 400, maxY: 0 }, { minX: 20, minY: -90, maxX: 44, maxY: -70 }, null];
+    const pieces = [{}, { soft: true as const }, { bleed: true as const }, {}, {}];
+    const frame = layoutFrame(pieces, (i) => boxes[i] ?? null)!;
+    // Герой і знак над ним — цілком; довкола — диван у межах найбільшої рамки.
+    expect(frame.minX).toBeLessThanOrEqual(-30);
+    expect(frame.maxX).toBeGreaterThanOrEqual(44);
+    expect(frame.minY).toBeLessThanOrEqual(-90);
+    expect(frame.maxY).toBeGreaterThanOrEqual(2);
+    expect(size(frame)).toEqual({ w: PROP_FRAME.w, h: PROP_FRAME.h });
+    expect(layoutFrame(pieces, (i) => boxes[i] ?? null, { w: 200, h: 180 })).toEqual(photoFrame({ minX: -30, minY: -90, maxX: 44, maxY: 2 }, [boxes[1]!], { w: 200, h: 180 }));
+    // Самі речі — рамка речей; сам персонаж — рамки немає.
+    expect(layoutFrame([{ soft: true as const }], () => boxes[1]!)).toEqual(boxes[1]);
+    expect(layoutFrame([{ bleed: true as const }], () => boxes[2]!)).toBeNull();
   });
 
   it("кадр зсувається туди, де річ: під котом — униз, над ним — угору, збоку — вбік", () => {
@@ -657,8 +773,20 @@ describe("рамка фото за героями (§4.2)", () => {
     expect(photoFrame(cat, [{ minX: 300, minY: -40, maxX: 400, maxY: 0 }])).toEqual(cat);
   });
 
+  it("більша рамка знімка — більше вікно для речей: двері за дві клітинки від кота входять у кадр", () => {
+    const door = { minX: -200, minY: -20, maxX: 50, maxY: 138 };
+    const plain = photoFrame(cat, [door])!;
+    expect(size(plain)).toEqual({ w: PROP_FRAME.w, h: PROP_FRAME.h });
+    const wide = photoFrame(cat, [door], { w: 180, h: 160 })!;
+    expect(size(wide)).toEqual({ w: 180, h: 160 });
+    expect(wide.minX).toBeLessThan(plain.minX);
+    expect(wide.minY).toBe(cat.minY);
+    // Менша за типову рамка знімка вікна не звужує.
+    expect(size(photoFrame(cat, [door], { w: 80, h: 56 })!)).toEqual({ w: PROP_FRAME.w, h: PROP_FRAME.h });
+  });
+
   it("герої більші за найбільшу рамку — рамка героїв: речі її не розширюють", () => {
-    const wide = { minX: -120, minY: -150, maxX: 120, maxY: 2 };
-    expect(photoFrame(wide, [{ minX: -300, minY: -300, maxX: 300, maxY: 100 }])).toEqual(wide);
+    const wide = { minX: -PROP_FRAME.w, minY: -PROP_FRAME.h - 10, maxX: PROP_FRAME.w, maxY: 2 };
+    expect(photoFrame(wide, [{ minX: -400, minY: -400, maxX: 400, maxY: 100 }])).toEqual(wide);
   });
 });

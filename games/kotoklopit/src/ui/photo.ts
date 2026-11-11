@@ -5,7 +5,7 @@ import { clothIds } from "../view/art/cloth";
 import { composeFrame, createCtx, figureState, inkOf, loadFigure, partCloth, partMatrix, portraitFrame, type Canvas2D, type FigureInk } from "../view/art/compose";
 import { artLayerSource, type FrameLayers } from "../view/art/sources";
 import { recolorCoat } from "../view/photocoat";
-import { photoFrame, type Box } from "../view/photoframe";
+import { layoutFrame, type Box } from "../view/photoframe";
 import type { FrameId } from "../view/art/types";
 import type { Photo } from "../view/photo";
 import { photoLayout, type PhotoLayout, type PhotoPiece } from "../view/photoposes";
@@ -46,8 +46,8 @@ export function drawPhoto(canvas: HTMLCanvasElement, photo: Photo): void {
 }
 
 /**
- * Усі частини на полотно: вписано за силуетом героїв із полем, не менше за рамку фото (`span`), донизу й посередині. Речі знімка
- * (`soft`) входять у кадр лише в межах найбільшої рамки довкола героїв (`photoFrame`), решту обрізає край фото.
+ * Усі частини на полотно: вписано за силуетом героїв із полем, не менше за рамку фото (`span`), донизу й посередині. Речі квартири
+ * (`soft`) входять у кадр лише в межах найбільшої рамки довкола героїв (`layoutFrame`), решту обрізає край фото.
  */
 function paint(canvas: HTMLCanvasElement, layout: PhotoLayout, frames: readonly FrameId[]): void {
   const sources: FrameLayers[] = [];
@@ -56,20 +56,15 @@ function paint(canvas: HTMLCanvasElement, layout: PhotoLayout, frames: readonly 
     if (!source) return;
     sources.push(source);
   }
-  let core: Box | null = null;
-  const soft: Box[] = [];
-  for (const [i, piece] of layout.pieces.entries()) {
-    if (piece.bleed) continue;
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
+  const inked = (i: number): Box => {
+    const piece = layout.pieces[i]!;
     const source = sources[i]!;
     // Лише напівпрозоре (тінь під ногами) — межами полотна кадру: інакше тінь обрізало б дно фото.
     const ink = inkFor(`${frames[i]}|${piece.recipe.key}`, source, piece) ?? { minX: 0, minY: 0, maxX: source.w, maxY: source.h };
     const m = partMatrix(piece.part, source.frame.pivot);
     const fx = source.frame.size.w / source.w;
     const fy = source.frame.size.h / source.h;
+    const box: Box = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
     for (const [px, py] of [
       [ink.minX, ink.minY],
       [ink.maxX, ink.minY],
@@ -78,15 +73,14 @@ function paint(canvas: HTMLCanvasElement, layout: PhotoLayout, frames: readonly 
     ] as const) {
       const x = m.a * px * fx + m.c * py * fy + m.e;
       const y = m.b * px * fx + m.d * py * fy + m.f;
-      minX = Math.min(minX, x);
-      minY = Math.min(minY, y);
-      maxX = Math.max(maxX, x);
-      maxY = Math.max(maxY, y);
+      box.minX = Math.min(box.minX, x);
+      box.minY = Math.min(box.minY, y);
+      box.maxX = Math.max(box.maxX, x);
+      box.maxY = Math.max(box.maxY, y);
     }
-    if (piece.soft) soft.push({ minX, minY, maxX, maxY });
-    else core = core ? { minX: Math.min(core.minX, minX), minY: Math.min(core.minY, minY), maxX: Math.max(core.maxX, maxX), maxY: Math.max(core.maxY, maxY) } : { minX, minY, maxX, maxY };
-  }
-  const frame = photoFrame(core, soft);
+    return box;
+  };
+  const frame = layoutFrame(layout.pieces, inked, layout.span);
   if (!frame) return;
   const { minX, minY, maxX, maxY } = frame;
   const ctx = canvas.getContext("2d");

@@ -23,6 +23,11 @@ const box = (state: string, x = 0, y = -4, scale = BOX_SCALE): TraitProp => prop
  */
 const inBox = (state: string, scale = 1): TraitProp => box(state, 6 * scale, 16 * scale, scale);
 /**
+ * Лоток під котом, що сидить чи присів у ньому: глибше, ніж під тим, хто стоїть і гребе, — стегна нижчі за лапи й інакше лягали
+ * на передній борт, і кота читали таким, що сидить перед лотком.
+ */
+const seatedInBox = (state: string): TraitProp => box(state, 4, 21, 1);
+/**
  * Загрібає: ближня лапа б'є в наповнювач (`bury` на 190 мс), далеко від рота, — піднята до морди (120 мс) читалася вмиванням.
  * Голову піднято: опущена до лапи, вона ховала морду, і кота читали таким, що спить у лотку.
  */
@@ -73,8 +78,11 @@ const noHairball = (x: number, y: number): TraitProp[] => absent("mess/hairball"
 const noFur = (x: number, y: number): TraitProp[] => absent("mess/fur-tuft", 0.7, x, y);
 
 /** Душова кабіна позаду кота: кіт — на її піддоні (`tray` — на 22,5 лівіше від pivot і на 5 ближче). */
-const SHOWER_SCALE = 0.65;
-const shower = (state: "dry" | "running" | "wet", x = 0, y = 0): TraitProp => prop("env/shower", state, x + 22.5 * SHOWER_SCALE, y - 5 * SHOWER_SCALE, { scale: SHOWER_SCALE });
+const shower = (state: "dry" | "running" | "wet"): TraitProp => prop("env/shower", state, 22.5, -5);
+/** Душова, де шумить вода, осторонь від кота: pivot — підлога під її серединою. */
+const showerAway = (x: number, y: number): TraitProp => prop("env/shower", "running", x, y);
+/** Рамка, у яку входить більша частина душової осторонь від кота: у типовій від неї лишався вузький край. */
+const BY_SHOWER = { w: 190, h: 150 } as const;
 
 export const SHOTS: TraitPhotoShots = {
   scatter: {
@@ -115,7 +123,7 @@ export const SHOTS: TraitPhotoShots = {
         props: [inBox("cheap-used")],
       },
       ill: {
-        idea: "Хворий кіт із градусником стоїть у лотку й старанно загрібає лапою рівний наповнювач — довкола ні гранули.",
+        idea: "Хворий кіт стоїть у лотку й старанно загрібає лапою рівний наповнювач — довкола ні гранули.",
         still: RAKE,
         props: [inBox("cheap")],
       },
@@ -146,24 +154,24 @@ export const SHOTS: TraitPhotoShots = {
     minus: {
       content: {
         idea: "Мружиться, вмостившись просто в брудному лотку під хвилями запаху: філософський спокій.",
-        props: [box("cheap-dirty"), smell(-26, -30)],
+        props: [seatedInBox("cheap-dirty"), smell(-48, -2, 0.6)],
       },
       calm: {
         idea: "Спокійно присів у брудному лотку, над яким пахне, і думає «бруд — гаразд»: робить свої справи без жодних драм.",
         still: { base: "squat", at: 0 },
-        props: [inBox("cheap-dirty", 1.1), smell(-48, -2, 0.6)],
+        props: [seatedInBox("cheap-dirty"), smell(-48, -2, 0.6)],
         bubbles: [think("dirty", "ok")],
       },
       sulk: {
         idea: "Насуплений, а все одно присів у повному лотку й думає «бруд — гаразд»: ображений не на лоток, ходить і в такий.",
         still: { base: "squat", at: 0 },
-        props: [inBox("cheap-dirty", 1.1), smell(-48, -2, 0.6)],
+        props: [seatedInBox("cheap-dirty"), smell(-48, -2, 0.6)],
         bubbles: [think("dirty", "ok")],
       },
       ill: {
-        idea: "Хворий кіт із градусником присів у брудному лотку й думає «бруд — гаразд»: і нездужаючи ходить у повний.",
+        idea: "Хворий кіт присів у брудному лотку й думає «бруд — гаразд»: і нездужаючи ходить у повний.",
         still: { base: "squat", at: 0 },
-        props: [inBox("cheap-dirty", 1.1), smell(-48, -2, 0.6)],
+        props: [seatedInBox("cheap-dirty"), smell(-48, -2, 0.6)],
         bubbles: [think("dirty", "ok")],
       },
     },
@@ -209,7 +217,7 @@ export const SHOTS: TraitPhotoShots = {
         props: [corner(), ...noMark(25, -74)],
       },
       ill: {
-        idea: "Хворий клубочок із градусником у чистому куті, а калюжка мітки в думці перекреслена: тривогу тримає в собі — ні калюжки довкола.",
+        idea: "Хворий клубочок у чистому куті, а калюжка мітки в думці перекреслена: тривогу тримає в собі — ні калюжки довкола.",
         still: { base: "sleep", eyes: "sick", ears: "side" },
         props: [corner(), ...noMark(26, -43)],
       },
@@ -294,7 +302,7 @@ export const SHOTS: TraitPhotoShots = {
         props: [brush(), ...noFur(25, -74)],
       },
       ill: {
-        idea: "Хворий буханець із градусником, позаду — чиста щітка для вичісування, а жмут шерсті в думці перекреслений: шерсті він не лишає навіть зараз.",
+        idea: "Хворий буханець, позаду — чиста щітка для вичісування, а жмут шерсті в думці перекреслений: шерсті він не лишає навіть зараз.",
         props: [brush(-40, -8), ...noFur(40, -51)],
       },
     },
@@ -315,7 +323,7 @@ export const SHOTS: TraitPhotoShots = {
         props: [shower("dry")],
       },
       ill: {
-        idea: "Хворий буханець із градусником лежить просто на піддоні сухої душової кабіни й думає «краплі?»: чекає, чи не ввімкнуть йому воду.",
+        idea: "Хворий буханець лежить просто на піддоні сухої душової кабіни й думає «краплі?»: чекає, чи не ввімкнуть йому воду.",
         props: [shower("dry")],
         bubbles: [think("drop", "ask")],
       },
@@ -324,13 +332,15 @@ export const SHOTS: TraitPhotoShots = {
       content: {
         idea: "Мружиться, сухий і подалі від душової, де шумить вода, і думає «води не треба»: йому добре, поки вода там.",
         still: { flip: true },
-        props: [shower("running", 96, -30)],
+        props: [showerAway(118, -40)],
         bubbles: [think("drop", "no")],
+        frame: BY_SHOWER,
       },
       calm: {
         idea: "Притиснувши вуха, рішуче йде геть від душової, де зашуміла вода.",
         still: { base: "walk", at: 0, flip: true, ears: "flat" },
-        props: [shower("running", 70, -24)],
+        props: [showerAway(110, -40)],
+        frame: BY_SHOWER,
       },
       sulk: {
         idea: "Мокрий після купання, сидить у калюжі й ображено вилизується.",
@@ -340,7 +350,8 @@ export const SHOTS: TraitPhotoShots = {
       ill: {
         idea: "Мокрий хворий кіт зіщулився й притиснув вуха біля душової, де шумить вода, — тремтить на самоті.",
         still: { base: "crouch", at: 0, eyes: "sick", ears: "flat", flip: true },
-        props: [prop("mess/puddle", null, 0, 2, { scale: 0.8 }), shower("running", 44, -16)],
+        props: [prop("mess/puddle", null, 0, 2, { scale: 0.8 }), showerAway(84, -30)],
+        frame: BY_SHOWER,
       },
     },
   },
