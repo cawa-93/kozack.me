@@ -21,11 +21,16 @@ const scratcher = (quality: Quality): TraitShot => ({
   props: [{ art: `item/scratcher/${quality}`, state: null, x: -44, y: -6, scale: 0.6, rot: -80 }, SHARDS(38, 14)],
 });
 
+/**
+ * Диван у масштабі гри, спинкою до камери: кіт сидить перед торцем правого підлокітника, а латка з розрізами (`env/trace/sofa`,
+ * точка `torn` — на 26,5 правіше від pivot і на 6 нижче) — на спинці ліворуч від нього, над хвостом.
+ */
+const SOFA_AT = { x: -88.5, y: -66 } as const;
 const SOFA: TraitShot = {
-  idea: "Кіт задоволено мружиться перед диваном із подертим підлокітником.",
+  idea: "Кіт задоволено мружиться біля дивана з подертою спинкою.",
   props: [
-    { art: "env/sofa", state: null, x: -68, y: -14, scale: 0.32 },
-    { art: "env/trace/sofa", state: null, x: -68, y: -14, scale: 0.32 },
+    { art: "env/sofa", state: null, ...SOFA_AT },
+    { art: "env/trace/sofa", state: null, ...SOFA_AT },
   ],
 };
 

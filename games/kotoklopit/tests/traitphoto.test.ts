@@ -14,6 +14,7 @@ import { CAT_OVERLAYS } from "../src/view/anim/ids";
 import { portraitFrame, type PortraitPart } from "../src/view/art/compose";
 import { artEntries, artEntry } from "../src/view/art/manifest";
 import { framesOf } from "../src/view/art/types";
+import type { StoryItem } from "../src/sim/story";
 import { lifePhotoPose, livingCatPhoto, retirementPhoto, storyPhoto, type Photo } from "../src/view/photo";
 import { personRecipe } from "../src/view/art/recipes";
 import { COAT_ICONS, iconCoat, recolorCoat } from "../src/view/photocoat";
@@ -513,6 +514,67 @@ describe("можливості знімка (§4.2)", () => {
       }
     }
     expect(hidden).toEqual([]);
+  });
+
+  it("речі фото подій — поломки й виставки котів — теж у кадрі: рамка не лишає їх за краєм", () => {
+    const SEEN = 0.2;
+    const state = game();
+    const hidden: string[] = [];
+    for (const who of [hero(state), hero(state, 1)]) {
+      const events: StoryItem[] = [
+        ...(["carrier", "house", "scratcher"] as const).flatMap((thing) => (["cheap", "premium"] as const).map((quality): StoryItem => ({ kind: "broke", day: 8, at: 0, thing, quality, cat: who }))),
+        { kind: "broke", day: 8, at: 0, thing: "sofa", cat: who },
+        ...([1, 2, 3] as const).map((place): StoryItem => ({ kind: "show", day: 13, at: 0, cat: who, place })),
+      ];
+      for (const item of events) {
+        const photo = storyPhoto(item, state);
+        expect(photo, item.kind).not.toBeNull();
+        if (!photo) continue;
+        const layout = photoLayout(photo);
+        const boxes = layout.pieces.map((piece) => canvasBox(piece.part));
+        const frame = layoutFrame(layout.pieces, (i) => boxes[i] ?? null, layout.span)!;
+        for (const [i, piece] of layout.pieces.entries()) {
+          const box = boxes[i];
+          if (!piece.soft || !box) continue;
+          const w = Math.min(box.maxX, frame.maxX) - Math.max(box.minX, frame.minX);
+          const h = Math.min(box.maxY, frame.maxY) - Math.max(box.minY, frame.minY);
+          const share = w > 0 && h > 0 ? (w * h) / ((box.maxX - box.minX) * (box.maxY - box.minY)) : 0;
+          if (share < SEEN) hidden.push(`${item.kind} ${"thing" in item ? item.thing : item.kind === "show" ? item.place : ""} (вік ${who.ageWeeks}): ${piece.part.id} ${share.toFixed(2)}`);
+        }
+      }
+    }
+    expect(hidden).toEqual([]);
+  });
+
+  it("латка подертого дивана — у кадрі фото: і в «Дряпуна», і на фото поломки", () => {
+    const state = game();
+    const who = hero(state);
+    const trace = artEntry("env/trace/sofa");
+    const torn = trace?.points?.["torn"];
+    expect(torn).toBeDefined();
+    if (!trace || !torn) return;
+    const photos: [string, Photo | null][] = [
+      ...LIFE_POSES.map((pose): [string, Photo | null] => [`scratching.plus.${pose}`, { subjects: [{ kind: "cat", cat: who, pose, shot: TRAIT_PHOTOS.mischief["scratching"]!.plus[pose] }] }]),
+      ["broke.sofa", storyPhoto({ kind: "broke", day: 8, at: 0, thing: "sofa", cat: who }, state)],
+    ];
+    for (const [name, photo] of photos) {
+      expect(photo, name).not.toBeNull();
+      if (!photo) continue;
+      const layout = photoLayout(photo);
+      const boxes = layout.pieces.map((piece) => canvasBox(piece.part));
+      const frame = layoutFrame(layout.pieces, (i) => boxes[i] ?? null, layout.span)!;
+      const sofa = layout.pieces.find((piece) => piece.part.id === "env/trace/sofa")?.part;
+      expect(sofa, name).toBeDefined();
+      if (!sofa) continue;
+      // Середина латки на фото: pivot сліду + зсув точки `torn`; з запасом від краю кадру.
+      const x = (sofa.x ?? 0) + (torn.x - trace.pivot.x) * (sofa.scaleX ?? 1);
+      const y = (sofa.y ?? 0) + (torn.y - trace.pivot.y) * (sofa.scaleY ?? 1);
+      const EDGE = 14;
+      expect(x, `${name}: x`).toBeGreaterThan(frame.minX + EDGE);
+      expect(x, `${name}: x`).toBeLessThan(frame.maxX - EDGE);
+      expect(y, `${name}: y`).toBeGreaterThan(frame.minY + EDGE);
+      expect(y, `${name}: y`).toBeLessThan(frame.maxY - EDGE);
+    }
   });
 
   it("рамка знімка — замість типової; статура й тінь — свої", () => {
