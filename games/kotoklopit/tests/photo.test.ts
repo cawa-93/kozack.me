@@ -91,6 +91,28 @@ describe("подія → фото (§4.2)", () => {
     expect(storyPhoto({ kind: "thing", day: 4, at: 5760, thing: "fountain", quality: "premium" }, state)?.subjects).toEqual([{ kind: "thing", thing: "fountain", quality: "premium" }]);
   });
 
+  it("кіт зламав річ — той кіт у віці того дня, поруч з уламками й тим, що лишилося від речі", () => {
+    const state = game();
+    const who = story(cat(state, 7), 12);
+    const cases = [
+      ["carrier", "cheap", "mess/carrier/cheap"],
+      ["carrier", "premium", "mess/carrier/premium"],
+      ["house", "cheap", "item/house/cheap"],
+      ["scratcher", "cheap", "item/scratcher/cheap"],
+    ] as const;
+    for (const [thing, quality, art] of cases) {
+      const subjects = storyPhoto({ kind: "broke", day: 8, at: 11520, thing, quality, cat: who }, state)?.subjects ?? [];
+      expect(subjects, thing).toHaveLength(1);
+      const subject = subjects[0];
+      if (subject?.kind !== "cat") throw new Error(`${thing}: на фото не кіт`);
+      expect(subject.cat).toBe(who);
+      const props = subject.shot?.props ?? [];
+      expect(props.map((p) => p.art), thing).toContain(art);
+      expect(props.some((p) => p.art.startsWith("mess/")), `${thing}: уламки`).toBe(true);
+      expect(missing(catPhotoParts(subject.cat, subject.pose, subject.shot)), thing).toEqual([]);
+    }
+  });
+
   it("кар'єра: віхи — за столом, звільнення — понуро; решта — рядок без фото", () => {
     const state = game();
     const career = (change: "promoted" | "demoted" | "fired" | "hired", milestone: boolean): StoryItem => ({ kind: "career", day: 20, at: 28800, change, position: 2, milestone });

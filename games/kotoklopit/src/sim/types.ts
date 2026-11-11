@@ -1339,14 +1339,17 @@ export interface GameState {
 
 /** Техніка, перша поява якої — подія титрів життя (§4.2). */
 export type StoryThing = "robot" | "fountain" | "feeder";
+/** Дорожча річ, яку зламав кіт, — подія титрів життя (§4.2). */
+export type StoryBroken = "carrier" | "house" | "scratcher";
 
 /**
- * Запис титрів життя (§4.2): зміна посади (`position` — індекс у `POSITIONS` після зміни) чи нова техніка вдома. `minute` — хвилина
- * дня `day` (`GameState.minute`); у найперших записах її немає.
+ * Запис титрів життя (§4.2): зміна посади (`position` — індекс у `POSITIONS` після зміни), нова техніка вдома чи річ, яку зламав
+ * кіт `cat` (id). `minute` — хвилина дня `day` (`GameState.minute`); у найперших записах її немає.
  */
 export type StoryEntry =
   | { kind: "career"; day: number; minute?: number; change: "promoted" | "demoted" | "fired" | "hired"; position: number }
-  | { kind: "thing"; day: number; minute?: number; thing: StoryThing; quality: Quality };
+  | { kind: "thing"; day: number; minute?: number; thing: StoryThing; quality: Quality }
+  | { kind: "broke"; day: number; minute?: number; thing: StoryBroken; quality: Quality; cat: number };
 
 /** Збереження: поточний стан і знімки для перегравання (§6.1). */
 export interface Save {

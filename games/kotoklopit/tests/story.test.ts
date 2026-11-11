@@ -6,9 +6,10 @@ import { applyScenario, addCatCorner, FILE_SCENARIOS } from "../src/dev/scenario
 import { createCat } from "../src/sim/cat";
 import { FIRST_WEEK_PROTECTION, JOB_SEARCH, KITTEN_SANITY_THRESHOLD, MINUTES_PER_DAY, POSITIONS } from "../src/sim/config";
 import { adopt, shelterCats } from "../src/sim/destinations";
-import { orderThing, receivePackages, tickDeliveries } from "../src/sim/economy";
+import { orderThing, place, receivePackages, tickDeliveries } from "../src/sim/economy";
 import { advertise, removeCat } from "../src/sim/farewell";
 import { advance, goToSleep, interact, newGame } from "../src/sim/game";
+import { wearOut } from "../src/sim/household";
 import { decideFoundling } from "../src/sim/modifiers";
 import { addCat, runNight } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
@@ -16,7 +17,7 @@ import { wakeMinute } from "../src/sim/sleep";
 import { lifeStory, remember, type StoryItem } from "../src/sim/story";
 import { absoluteMinute, WEEKDAY_NAMES } from "../src/sim/time";
 import { startTrip } from "../src/sim/trips";
-import type { Address, AlbumEntry, Cat, CatSource, FarewellCause, GameState, Save, Sex } from "../src/sim/types";
+import type { Address, AlbumEntry, Cat, CatSource, FarewellCause, GameState, HomeItem, Save, Sex, ThingKind } from "../src/sim/types";
 import { changeReputation } from "../src/sim/work";
 import { diseaseTitle, farewellText, fill, livingCatCaption, POSITION_TITLES, storyCaption, storyWeek } from "../src/texts";
 import { driveSafely, hours, standAt } from "./helpers";
@@ -115,6 +116,31 @@ describe("запис подій титрів (§4.2)", () => {
     for (const k of born) expect(k.arrivedMinute).toBe(report?.wokeMinute);
   });
 
+  it("кіт зламав будиночок чи кігтеточку — запис із котом, якістю й хвилиною; миска, поїлка, лоток і іграшка — ні", () => {
+    const state = game().current;
+    addCatCorner(state);
+    state.day = 6;
+    state.minute = hours(14);
+    const murka = cat(state, { source: "shelter", age: 20, day: 1 });
+    const always = { ...createRng(1), chance: () => true };
+    // Миска, поїлка, лоток і іграшка котячого кутка — дешеві; будиночок і кігтеточку купили.
+    const item = (kind: ThingKind): HomeItem => {
+      const thing = state.home.items.find((i) => i.kind === kind) ?? place(state, kind, "cheap");
+      if (!thing) throw new Error(`немає місця для ${kind}`);
+      if (!state.home.items.includes(thing)) state.home.items.push(thing);
+      return thing;
+    };
+    for (const kind of ["bowl", "water", "litter", "toy"] as const) wearOut(state, murka, item(kind), always);
+    expect(state.story).toBeUndefined();
+    wearOut(state, murka, item("house"), always);
+    state.minute = hours(15);
+    wearOut(state, murka, item("scratcher"), always);
+    expect(state.story).toEqual([
+      { kind: "broke", day: 6, minute: hours(14), thing: "house", quality: "cheap", cat: murka.id },
+      { kind: "broke", day: 6, minute: hours(15), thing: "scratcher", quality: "cheap", cat: murka.id },
+    ]);
+  });
+
   it("доставка техніки: робот, фонтанчик і автогодівниця записані з якістю й хвилиною, ручний пилосос — ні", () => {
     const state = game().current;
     addCatCorner(state);
@@ -190,7 +216,7 @@ describe("шлях гравця — lifeStory (§4.2)", () => {
     void mother;
   });
 
-  it("старі записи без хвилин — того самого дня за таблицею: перший день, приїзд, пологи, техніка, кар'єра, прощання; далі — за id кота й порядком запису", () => {
+  it("старі записи без хвилин — того самого дня за таблицею: перший день, приїзд, пологи, техніка, поломка, кар'єра, прощання; далі — за id кота й порядком запису", () => {
     const state = game().current;
     state.day = 20;
     const mother = cat(state, { source: "shelter", age: 3, day: 0, sex: "female" });
@@ -201,6 +227,7 @@ describe("шлях гравця — lifeStory (§4.2)", () => {
     kitten.parents = { mother: mother.id, father: null };
     remember(state, { kind: "career", day: 3, change: "promoted", position: 1 });
     remember(state, { kind: "thing", day: 3, thing: "robot", quality: "cheap" });
+    remember(state, { kind: "broke", day: 3, thing: "house", quality: "cheap", cat: a.id });
     // Прощання — у порядку альбому, а не за id.
     const gb = farewell(state, b, { kind: "sorrow" }, 3);
     const ga = farewell(state, a, { kind: "old" }, 3);
@@ -213,6 +240,7 @@ describe("шлях гравця — lifeStory (§4.2)", () => {
       [3, "arrival"],
       [3, "births"],
       [3, "thing"],
+      [3, "broke"],
       [3, "career"],
       [3, "farewell"],
       [3, "farewell"],
@@ -334,6 +362,24 @@ describe("шлях гравця — lifeStory (§4.2)", () => {
     expect(births).toHaveLength(1);
     expect(births[0]?.mother?.cat).toBe(mother);
     expect(births[0]?.kittens.map((k) => k.cat.id)).toEqual(kittens.map((k) => k.id));
+  });
+
+  it("поломки — лише перша кожного виду; кіт — живий чи з пам'яті, у віці того дня; кота немає ніде — запису немає", () => {
+    const state = game().current;
+    state.day = 30;
+    // Удома з першого дня у 10 тижнів: восьмого дня вже 11.
+    const murka = cat(state, { source: "shelter", age: 10, day: 0, now: 14 });
+    // Віддали 20-го дня у 30 тижнів, удома з першого дня: дев'ятого дня йому 29.
+    const barsik = farewell(state, cat(state, { source: "shelter", age: 28, day: 0, now: 30 }), { kind: "given" }, 20);
+    remember(state, { kind: "broke", day: 8, minute: hours(12), thing: "house", quality: "cheap", cat: murka.id });
+    remember(state, { kind: "broke", day: 9, minute: hours(12), thing: "carrier", quality: "premium", cat: barsik.id });
+    remember(state, { kind: "broke", day: 10, minute: hours(12), thing: "house", quality: "cheap", cat: barsik.id });
+    remember(state, { kind: "broke", day: 11, minute: hours(12), thing: "scratcher", quality: "cheap", cat: 9999 });
+    remember(state, { kind: "broke", day: 12, minute: hours(12), thing: "carrier", quality: "cheap", cat: murka.id });
+    expect(ofKind(lifeStory(state), "broke")).toEqual([
+      { kind: "broke", day: 8, at: absoluteMinute(8, hours(12)), thing: "house", quality: "cheap", cat: { cat: murka, ageWeeks: 11 } },
+      { kind: "broke", day: 9, at: absoluteMinute(9, hours(12)), thing: "carrier", quality: "premium", cat: { cat: barsik, ageWeeks: 29 } },
+    ]);
   });
 
   it("техніка — лише перша поява кожного виду", () => {
@@ -535,6 +581,28 @@ describe("підписи стрічки (§4.2, `TEXTS.md`, «Титри жит�
     }
     expect(new Set(things.map((c) => c.title)).size).toBe(3);
     expect(storyCaption({ kind: "thing", day: 4, at: 0, thing: "robot", quality: "cheap" }, state).text).not.toBe(things[0]?.text);
+  });
+
+  it("поломка — свій підпис на кожну річ, з ім'ям і за статтю кота, що зламав", () => {
+    const state = game().current;
+    const caption = (thing: "carrier" | "house" | "scratcher", sex: Sex) => {
+      const who = cat(state, { source: "shelter", age: 10, day: 0, sex, name: sex === "male" ? "Барсик" : "Мурка" });
+      return storyCaption({ kind: "broke", day: 4, at: 0, thing, quality: "cheap", cat: { cat: who, ageWeeks: 10 } }, state);
+    };
+    const things = (["carrier", "house", "scratcher"] as const).map((thing) => caption(thing, "male"));
+    for (const c of things) {
+      clean(c);
+      expect(c.title).toContain("Барсик");
+      expect(c.text).toBeDefined();
+    }
+    expect(new Set(things.map((c) => c.title.replace("Барсик", ""))).size).toBe(3);
+    expect(new Set(things.map((c) => c.text)).size).toBe(3);
+    for (const thing of ["carrier", "house", "scratcher"] as const) {
+      const female = caption(thing, "female");
+      clean(female);
+      expect(female.title).toContain("Мурка");
+      expect(female.title.replace("Мурка", "")).not.toBe(caption(thing, "male").title.replace("Барсик", ""));
+    }
   });
 
   it("кар'єра: посада за звертанням; рядок — без тексту, полароїд — з текстом; звільнення — за звертанням", () => {

@@ -1,9 +1,9 @@
-// Титри життя (§4.2): шлях гравця для екрана пенсії. Коти — зі стану (коти й альбом), зміни посади й техніка — з `story`.
+// Титри життя (§4.2): шлях гравця для екрана пенсії. Коти — зі стану (коти й альбом), зміни посади, техніка й поломки — з `story`.
 
 import { DAYS_PER_WEEK, MINUTES_PER_DAY, POSITIONS } from "./config";
 import { wakeMinute } from "./sleep";
 import { absoluteMinute, weekOf } from "./time";
-import type { AlbumEntry, Cat, CatSource, GameState, Quality, StoryEntry, StoryThing } from "./types";
+import type { AlbumEntry, Cat, CatSource, GameState, Quality, StoryBroken, StoryEntry, StoryThing } from "./types";
 
 /** Кіт на фото: живий чи з альбому, і його вік у мить події (кошеня на фото приїзду — мале). */
 export interface StoryCat {
@@ -22,6 +22,8 @@ export type StoryItem =
   | { kind: "arrival"; day: number; at: number; cat: StoryCat; source: Exclude<CatSource, "born"> }
   | { kind: "births"; day: number; at: number; mother: StoryCat | null; kittens: StoryCat[] }
   | { kind: "thing"; day: number; at: number; thing: StoryThing; quality: Quality }
+  /** Перша поломка кожного виду дорожчої речі; `cat` — хто зламав, у віці того дня. */
+  | { kind: "broke"; day: number; at: number; thing: StoryBroken; quality: Quality; cat: StoryCat }
   /**
    * Серія підвищень чи понижень поспіль за тиждень — один запис про посаду, якої дійшли (`position`), у мить останньої зміни;
    * звільнення й нова робота — кожне окремо. `milestone` — полароїд (звільнення, нова робота, вершина), інакше — рядок без фото.
@@ -34,7 +36,15 @@ export function remember(state: GameState, entry: StoryEntry): void {
   (state.story ??= []).push(entry);
 }
 
-const ORDER: readonly StoryItem["kind"][] = ["start", "arrival", "births", "thing", "career", "farewell"];
+const BROKEN: readonly StoryBroken[] = ["carrier", "house", "scratcher"];
+const storyBroken = (thing: string): thing is StoryBroken => (BROKEN as readonly string[]).includes(thing);
+
+/** Кіт зламав річ `thing`: у стрічку — лише дорожчі (§4.2). */
+export function rememberBroken(state: GameState, cat: Cat, thing: string, quality: Quality): void {
+  if (storyBroken(thing)) remember(state, { kind: "broke", day: state.day, minute: state.minute, thing, quality, cat: cat.id });
+}
+
+const ORDER: readonly StoryItem["kind"][] = ["start", "arrival", "births", "thing", "broke", "career", "farewell"];
 
 /** Шлях гравця від першого дня до останнього (§4.2). */
 export function lifeStory(state: GameState): StoryItem[] {
@@ -53,6 +63,7 @@ export function lifeStory(state: GameState): StoryItem[] {
     ),
     ...births(state, cats).map(({ minute, ...b }): StoryItem => ({ kind: "births", at: at(b.day, minute), ...b })),
     ...firstThings(story).map(({ minute, ...thing }): StoryItem => ({ ...thing, at: at(thing.day, minute) })),
+    ...firstBreaks(state, cats, story).map(({ minute, ...broke }): StoryItem => ({ ...broke, at: at(broke.day, minute) })),
     ...career(story).map(({ minute, ...change }): StoryItem => ({ ...change, at: at(change.day, minute) })),
     ...state.album.map((entry): StoryItem => {
       const minute = entry.minute ?? (entry.cause.kind === "given" ? morning : MINUTES_PER_DAY + morning);
@@ -125,6 +136,21 @@ function firstThings(story: readonly StoryEntry[]): Extract<StoryEntry, { kind: 
     if (entry.kind !== "thing" || seen.has(entry.thing)) return false;
     seen.add(entry.thing);
     return true;
+  });
+}
+
+/** Поломки: лише перша кожного виду; кота немає ні вдома, ні в пам'яті (сценарій) — запису немає. */
+function firstBreaks(
+  state: GameState,
+  cats: readonly (Cat | AlbumEntry)[],
+  story: readonly StoryEntry[],
+): (Omit<Extract<StoryEntry, { kind: "broke" }>, "cat"> & { cat: StoryCat })[] {
+  const seen = new Set<StoryBroken>();
+  return story.flatMap((entry) => {
+    if (entry.kind !== "broke" || seen.has(entry.thing)) return [];
+    seen.add(entry.thing);
+    const cat = cats.find((c) => c.id === entry.cat);
+    return cat ? [{ ...entry, cat: { cat, ageWeeks: ageOn(state, cat, entry.day) } }] : [];
   });
 }
 

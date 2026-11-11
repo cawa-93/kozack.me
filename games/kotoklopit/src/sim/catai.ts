@@ -2189,7 +2189,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         bowl.food -= 1;
         delete bowl.half;
       }
-      wearOut(state, bowl, rng);
+      wearOut(state, cat, bowl, rng);
       const quality = bowl.foodQuality ?? "cheap";
       if (bowl.food <= 0) bowl.foodQuality = null;
       cat.needs.hunger = Math.max(0, cat.needs.hunger - PORTION_HUNGER * portion);
@@ -2289,7 +2289,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       water.water -= 1;
       cat.needs.thirst = 0;
       itemMood(state, cat, water);
-      wearOut(state, water, rng);
+      wearOut(state, cat, water, rng);
       const drinking = traitLevel(cat, "drinking");
       if (drinking > 0 && fountainWorks(state)) changeMood(state, cat, DRINKING.fountainMood, "фонтанчик");
       // Легку пластикову поїлку може перекинути кожен, а +2 — частіше: так видно, що з миски він пити не любить (§9.12).
@@ -2362,7 +2362,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       }
       box.uses += 1;
       itemMood(state, cat, box);
-      wearOut(state, box, rng);
+      wearOut(state, cat, box, rng);
       resourceConflict(state, cat, rng, enoughFor(state, "litter"), "litter");
       const scatter = traitLevel(cat, "scatter");
       // Промах (§9.12): високі борти закритого лотка цього не дають.
@@ -2388,7 +2388,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       const house = itemById(state, act.target);
       if (house && act.elapsed >= MIN_CAT_NAP_MINUTES) {
         itemMood(state, cat, house);
-        wearOut(state, house, rng);
+        wearOut(state, cat, house, rng);
       }
       // «Хмаринка шерсті» після довгого сну на ліжку, дивані чи комп'ютері лишає там клапоть шерсті (§9.12).
       const shedding = traitLevel(cat, "shedding");
@@ -2461,7 +2461,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       changeMood(state, cat, SCRATCH.mood);
       if (post) {
         itemMood(state, cat, post);
-        wearOut(state, post, rng);
+        wearOut(state, cat, post, rng);
       } else if (act.target === "sofa" || act.target === "doorframe") state.home.repairs += SOFA_REPAIR;
       const where: ScratchSpot = post ? "post" : act.target === "doorframe" || act.target === "rug" || act.target === "boxes" || act.target === BIG_BOX_TARGET ? act.target : "sofa";
       emit(state, { type: "scratched", cat: cat.id, where });

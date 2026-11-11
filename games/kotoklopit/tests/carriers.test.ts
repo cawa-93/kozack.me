@@ -432,6 +432,17 @@ describe("зламана переноска (§8.7)", () => {
     }
   });
 
+  it("кіт догриз переноску — запис титрів (§4.2): переноска тієї якості й кіт, що догриз", () => {
+    for (const quality of ["cheap", "premium"] as const) {
+      const save = game(quality);
+      const state = save.current;
+      const who = cat(save);
+      seat(state, who);
+      breakout(state, [who]);
+      expect(state.story).toMatchObject([{ kind: "broke", thing: "carrier", quality, cat: who.id }]);
+    }
+  });
+
   it("випустили — міцність знову повна", () => {
     const save = game("cheap");
     const state = save.current;

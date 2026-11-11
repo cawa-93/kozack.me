@@ -24,6 +24,8 @@ import { PRODUCT_ICONS } from "../src/view/symbols";
 import { bodyMinutes, holdUntilDone, hours, recordEvents, standAt, walkTo, withCatCorner } from "./helpers";
 
 const always = () => ({ ...createRng(1), chance: () => true });
+/** Кіт, що користується річчю. */
+const user = (save: Save): Cat => createCat(save.current, createRng(5), { source: "shelter", ageWeeks: 10 });
 const never = () => ({ ...createRng(1), chance: () => false });
 
 function game(): Save {
@@ -474,9 +476,9 @@ describe("шерсть і техніка (§8.7)", () => {
     const save = game();
     const bowl = save.current.home.items.find((i) => i.kind === "bowl");
     if (!bowl) throw new Error("немає миски");
-    wearOut(save.current, { ...bowl, quality: "premium" }, always());
+    wearOut(save.current, user(save), { ...bowl, quality: "premium" }, always());
     expect(save.current.home.items).toContain(bowl);
-    wearOut(save.current, bowl, always());
+    wearOut(save.current, user(save), bowl, always());
     expect(save.current.home.items).not.toContain(bowl);
     // На місці зламаної речі — уламки.
     expect(save.current.home.messes.some((m) => m.kind === "broken")).toBe(true);
@@ -768,7 +770,7 @@ describe("автогодівниці (§9.12, правка автора 2026-10-
     const { save, bowl, feeder } = withFeeder("premium", 0);
     feeder.food = 5;
     bowl.quality = "cheap";
-    wearOut(save.current, bowl, always());
+    wearOut(save.current, user(save), bowl, always());
     expect(save.current.home.items).not.toContain(bowl);
     expect(save.current.home.feeders).toContain(feeder);
     // Нова миска стає під годівницю, і та одразу її наповнює.
@@ -813,7 +815,7 @@ describe("автогодівниці (§9.12, правка автора 2026-10-
     const { save, bowl, feeder, spare } = withSpareBowl();
     Object.assign(spare, { food: 1, foodQuality: "premium" });
     bowl.quality = "cheap";
-    wearOut(save.current, bowl, always());
+    wearOut(save.current, user(save), bowl, always());
     tickHousehold(save.current, 3 * 60, 1);
     expect(feeder.slot).toBe(spare.slot);
     expect(spare.food).toBe(1);

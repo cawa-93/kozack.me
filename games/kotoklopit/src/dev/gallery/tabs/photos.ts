@@ -206,6 +206,19 @@ function mount(ctx: GalleryContext): GalleryView {
     }
   }
 
+  const broke = section("broke", "Поломки");
+  if (broke) {
+    for (const [label, sample] of [["Дорослий", CATS[4]!], ["Кошеня", CATS[0]!]] as const) {
+      const line = row(broke, label);
+      const who = story(catOf(state, 400, sample));
+      for (const thing of ["carrier", "house", "scratcher"] as const) {
+        for (const quality of ["cheap", "premium"] as const) {
+          polaroid(line, storyPhoto({ kind: "broke", day: 8, at: 11520, thing, quality, cat: who }, state), `${thing} · ${quality}`, `broke.${label === "Кошеня" ? "kitten" : "adult"}.${thing}.${quality}`);
+        }
+      }
+    }
+  }
+
   const stage = document.querySelector<HTMLElement>(".g-stage") ?? ctx.panel;
   stage.append(root);
   return {

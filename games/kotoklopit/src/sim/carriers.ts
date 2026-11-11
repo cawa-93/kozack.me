@@ -13,6 +13,7 @@ import { applyMorningSanity } from "./night";
 import { loudNoise } from "./noise";
 import { isNewborn } from "./reproduction";
 import { stateRng, type Rng } from "./rng";
+import { rememberBroken } from "./story";
 import type { Cat, CatNeed, GameState, Home, Quality, TripRider, Vec } from "./types";
 
 export type CageStage = keyof typeof CARRIER.moodPerHour;
@@ -136,8 +137,8 @@ export function discardCarrier(state: GameState, index: number): boolean {
   return true;
 }
 
-/** Кіт догриз переноску (§8.7): вона зламана, уламки її кольору поруч, тріск, коти на волі. */
-function breakCarrier(state: GameState, index: number, rng: Rng): void {
+/** Кіт `cat` догриз переноску (§8.7): вона зламана, уламки її кольору поруч, тріск, коти на волі. */
+function breakCarrier(state: GameState, cat: Cat, index: number, rng: Rng): void {
   const quality = state.home.carriers[index]?.quality;
   // Де стояла — до того, як її прибрали: без переносок гра забуває зсув (§8.7, «Що ставить гра»).
   const spot = carrierSpot(state);
@@ -145,6 +146,7 @@ function breakCarrier(state: GameState, index: number, rng: Rng): void {
   addMess(state, "broken", { x: spot.x, y: spot.y - 0.4 }, null, quality);
   emit(state, { type: "broke", what: "carrier" });
   loudNoise(state, "broken", spot);
+  if (quality) rememberBroken(state, cat, "carrier", quality);
 }
 
 /** Хвилини кота під замком (§8.7). `present` — персонаж удома не спить: смерть уночі рахує ранок. */
@@ -180,7 +182,7 @@ export function tickCaged(state: GameState, cat: Cat, minutes: number, rng: Rng,
   const carrier = state.home.carriers[index];
   if (!carrier) return;
   carrier.wear += minutes * trait.chew;
-  if (carrier.wear >= CARRIER.strength[carrier.quality]) breakCarrier(state, index, rng);
+  if (carrier.wear >= CARRIER.strength[carrier.quality]) breakCarrier(state, cat, index, rng);
 }
 
 /** Кіт не дочекався (§8.7): помирає одразу; уночі втрату рахує ранок, як і будь-яку іншу. */

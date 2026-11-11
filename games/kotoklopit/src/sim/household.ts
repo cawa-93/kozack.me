@@ -11,6 +11,7 @@ import { hygieneFactorMod, powerOut, sheddingFactor } from "./modifiers";
 import { addMess, whereIs } from "./catai";
 import { CARRIER_TILE, hiddenTile, isFixedSolid, isSolid, isWall, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, ROBOT_DOCK, robotDockAt, robotDocked, roomAt, slotCenter, STASHES, thingPresent, withThing } from "./home";
 import { restoreThings, settleThings } from "./settle";
+import { rememberBroken } from "./story";
 import { loudNoise, quietRobot } from "./noise";
 import { waterCapacity } from "./resources";
 import type { Rng } from "./rng";
@@ -834,7 +835,7 @@ export function nightlyHousehold(state: GameState, rng: Rng): void {
 }
 
 /** Кіт скористався дешевою річчю: вона може зламатися (§6.4). */
-export function wearOut(state: GameState, item: HomeItem, rng: Rng): void {
+export function wearOut(state: GameState, cat: Cat, item: HomeItem, rng: Rng): void {
   if (item.quality !== "cheap" || item.kind === "toy") return;
   if (!rng.chance(HOUSEHOLD.breakPerUse * HOUSEHOLD.difficulty[state.difficulty])) return;
   state.home.items = state.home.items.filter((i) => i !== item);
@@ -842,4 +843,5 @@ export function wearOut(state: GameState, item: HomeItem, rng: Rng): void {
   addMess(state, "broken", itemPoint(item), null);
   emit(state, { type: "broke", what: item.kind });
   loudNoise(state, "broken", itemPoint(item));
+  rememberBroken(state, cat, item.kind, item.quality);
 }

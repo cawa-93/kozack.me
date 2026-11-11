@@ -6,6 +6,7 @@ import type { StoryCat, StoryItem } from "../sim/story";
 import { TRAIT_GROUPS } from "../sim/traits";
 import type { Cat, GameState, Look, Quality, StoryThing, Trait } from "../sim/types";
 import { characterTrait } from "../texts";
+import { brokeShot } from "./brokephoto";
 import { TRAIT_PHOTOS } from "./traitphoto";
 import type { LifePose, TraitShot } from "./traitphoto/types";
 
@@ -15,7 +16,7 @@ export type CatPhotoPose = "curious" | "wary" | "nursing" | "content" | "calm" |
 export type PersonPhotoPose = "unpack" | "desk" | "gloomy" | "phone" | "proud";
 
 export type PhotoSubject =
-  /** `shot` — знімок риси поверх пози рівня (прощання й живі коти); немає — лише поза. */
+  /** `shot` — знімок поверх пози: риси (прощання й живі коти) чи поломки; немає — лише поза. */
   | { kind: "cat"; cat: StoryCat; pose: CatPhotoPose; shot?: TraitShot }
   | { kind: "person"; look: Look; pose: PersonPhotoPose }
   | { kind: "thing"; thing: StoryThing; quality: Quality };
@@ -76,6 +77,8 @@ export function storyPhoto(item: StoryItem, state: GameState): Photo | null {
       };
     case "thing":
       return { subjects: [{ kind: "thing", thing: item.thing, quality: item.quality }] };
+    case "broke":
+      return { subjects: [{ kind: "cat", cat: item.cat, pose: "content", shot: brokeShot(item.thing, item.quality) }] };
     case "career":
       if (!item.milestone) return null;
       return { subjects: [{ kind: "person", look, pose: item.change === "fired" || item.change === "demoted" ? "gloomy" : "desk" }] };

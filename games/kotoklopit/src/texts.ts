@@ -1499,6 +1499,18 @@ export const STORY_TEXTS = {
       text: "{річ} насипає корм за розкладом, навіть коли всі сплять. Коти швидко збагнули, кого тепер чекати біля миски.",
     },
   },
+  /** Перша поломка кожного виду: форми — за статтю кота, що зламав. */
+  broke: {
+    carrier: {
+      title: "{кіт} [прогриз|прогризла] собі шлях на волю",
+      text: "Переноска трималася, скільки могла, а тоді здалася. Біля дверей — уламки, а в котячих очах — ані краплі каяття.",
+    },
+    house: {
+      title: "{кіт} [розібрав|розібрала] свій будиночок",
+      text: "Будиночок служив вірно, але котячої любові не витримав. Тепер [він спить|вона спить], де заманеться, — найчастіше там, де заважає.",
+    },
+    scratcher: { title: "{кіт} [додер|додерла] кігтеточку до кінця", text: "Сизаль скінчився раніше, ніж котячий запал. Диван поруч тривожно мовчить." },
+  },
   /** `{посада}` — якої дійшли: з великої в рядках і з малої на полароїдах. */
   career: {
     promoted: "Підвищення: {посада}",
@@ -1571,6 +1583,11 @@ export function storyCaption(item: StoryItem, state: GameState): StoryCaption {
     case "thing": {
       const { title, text } = STORY_TEXTS.things[item.thing];
       return { title, text: fill(text, address, { річ: VARIANT_TITLES[`thing:${item.thing}`]?.[item.quality] ?? "" }) };
+    }
+    case "broke": {
+      const { title, text } = STORY_TEXTS.broke[item.thing];
+      const cat = item.cat.cat;
+      return { title: fill(title, cat.sex, { кіт: cat.name }), text: fill(text, cat.sex, { кіт: cat.name }) };
     }
     case "career": {
       const position = fill(POSITION_TITLES[item.position] ?? "", address);
