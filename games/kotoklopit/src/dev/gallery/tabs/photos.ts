@@ -176,7 +176,8 @@ function mount(ctx: GalleryContext): GalleryView {
     const areas = list("area");
     const groups = list("group");
     const sides = (list("side") ?? ["plus", "minus"]).filter((side): side is "plus" | "minus" => side === "plus" || side === "minus");
-    const sample = CATS[Number(params.get("cat"))] ?? TRAIT_CAT;
+    // Без `cat` — дорослий зразок: `Number(null)` дав би кошеня `CATS[0]`.
+    const sample = (params.has("cat") ? CATS[Number(params.get("cat"))] : undefined) ?? TRAIT_CAT;
     const model = catOf(state, 300, sample);
     for (const group of TRAIT_GROUPS) {
       if (areas && !areas.includes(group.area)) continue;
