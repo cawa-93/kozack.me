@@ -256,6 +256,14 @@ describe("можливості знімка (§4.2)", () => {
     expect(plain.pieces.find((piece) => piece.part.id.startsWith("person/") && !piece.part.far)?.recipe.key).toBe(personRecipe(DEFAULT_LOOK).key);
   });
 
+  it("річ персонажа (капці) — у вигляді гравця, як він сам", () => {
+    const state = game();
+    const look = { ...DEFAULT_LOOK, shoes: DEFAULT_LOOK.shoes + 1 };
+    const shot: TraitShot = { idea: "капці", props: [{ art: "person/shoe/slippers", state: null, x: 30, y: 6, front: true }] };
+    const layout = photoLayout({ subjects: [{ kind: "cat", cat: hero(state), pose: "calm", shot, look }] });
+    expect(layout.pieces.find((piece) => piece.part.id === "person/shoe/slippers")?.recipe.key).toBe(personRecipe(look).key);
+  });
+
   it("рамка знімка — замість типової; статура й тінь — свої", () => {
     const state = game();
     const one = hero(state);

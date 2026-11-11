@@ -509,7 +509,12 @@ export function photoLayout(photo: Photo): PhotoLayout {
       // На фото пенсії коти дивляться на персонажа: кіт праворуч від нього — віддзеркалений (кадри кота дивляться праворуч).
       const turn = person && at.x > 0;
       const hero = catPhotoPieces(subject.cat, subject.pose, subject.shot);
-      for (const part of hero.parts) pieces.push({ part: shifted(turn ? mirrored(part) : part, at), recipe: part.id.startsWith("cat/") ? (part.far ? far : recipe) : AS_IS });
+      // Речі персонажа в знімку (капці) — у вигляді гравця, як і він сам.
+      const worn = subject.shot?.props?.some((prop) => prop.art.startsWith("person/")) ? personRecipe(subject.look ?? DEFAULT_LOOK) : AS_IS;
+      for (const part of hero.parts) {
+        const tint = part.id.startsWith("cat/") ? (part.far ? far : recipe) : part.id.startsWith("person/") ? worn : AS_IS;
+        pieces.push({ part: shifted(turn ? mirrored(part) : part, at), recipe: tint });
+      }
       for (const part of hero.bubbles) bubbles.push({ part: shifted(part, at), recipe: AS_IS });
       // Інші коти знімка риси — окремими героями: свій вигляд, розмір за породою героя (не за його віком) і своє місце в черзі за
       // відстанню до камери.

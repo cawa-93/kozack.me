@@ -63,10 +63,11 @@ export function traitShot(state: GameState, traits: readonly Trait[], pose: Life
 
 const catShot = (cat: StoryCat, pose: CatPhotoPose): PhotoSubject => ({ kind: "cat", cat, pose });
 
-/** Кіт зі знімком; персонаж у знімку — у вигляді гравця `look`. */
+/** Кіт зі знімком; персонаж у знімку й його речі (капці) — у вигляді гравця `look`. */
 function withShot(cat: StoryCat, pose: LifePose, shot: TraitShot | undefined, look: Look): PhotoSubject {
   if (!shot) return catShot(cat, pose);
-  return shot.person ? { kind: "cat", cat, pose, shot, look } : { kind: "cat", cat, pose, shot };
+  const person = shot.person !== undefined || (shot.props ?? []).some((prop) => prop.art.startsWith("person/"));
+  return person ? { kind: "cat", cat, pose, shot, look } : { kind: "cat", cat, pose, shot };
 }
 
 /** Кіт у позі за рівнем життя `mood` зі знімком своєї риси. */
