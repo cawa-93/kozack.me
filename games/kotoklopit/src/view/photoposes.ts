@@ -68,7 +68,7 @@ interface CatStill {
   shadow?: false;
   /**
    * Знак настрою біля морди — градусник у роті хворого, пара ображеного: кадр, його точка від pivot у роті, кут і розмір. Лише
-   * мордою до камери й з закритим ротом.
+   * мордою до камери; градусник — ще й лише з закритим ротом, пара йде від носа (`nose`) — за будь-якого.
    */
   held?: Held;
 }
@@ -78,12 +78,13 @@ interface Held {
   grip: { x: number; y: number };
   rot: number;
   scale: number;
+  nose?: true;
 }
 
 /** Градусник у роті хворого: кінчик `icon/thermometer` (нижній лівий) — у роті, решта стирчить уперед і трохи вгору. */
 const THERMOMETER: Held = { art: "icon/thermometer", grip: { x: -14, y: 14 }, rot: 20, scale: 0.45 };
 /** Пара ображеного (😤, як в іконці `sulk`): від носа вперед. */
-const HUFF: Held = { art: "fx/huff", grip: { x: -4, y: -1 }, rot: 10, scale: 1 };
+const HUFF: Held = { art: "fx/huff", grip: { x: -4, y: -1 }, rot: 10, scale: 1, nose: true };
 
 const face = (eyes: string, mouth: string, ears: FaceFrames["ears"]): FaceFrames => ({ eyes, mouth, ears });
 
@@ -153,7 +154,7 @@ function withShot(life: CatStill, shot: TraitShot | undefined): CatStill {
     flip: change.flip ?? false,
     ...(change.figure ? { figure: change.figure } : {}),
     ...(change.shadow === false ? { shadow: false as const } : {}),
-    ...(life.held && (change.mouth ?? life.face.mouth) === "closed" && (change.view ?? life.view) === "front" ? { held: life.held } : {}),
+    ...(life.held && (life.held.nose || (change.mouth ?? life.face.mouth) === "closed") && (change.view ?? life.view) === "front" ? { held: life.held } : {}),
   };
   byLife.set(life, still);
   return still;

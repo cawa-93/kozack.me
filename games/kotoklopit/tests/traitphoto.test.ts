@@ -346,8 +346,10 @@ describe("можливості знімка (§4.2)", () => {
       expect(Math.sign(left.scaleX ?? 1), pose).toBe(-Math.sign(sign!.scaleX ?? 1));
       // Кошеня — менший знак.
       expect(Math.abs(find(catPhotoParts(hero(state, 1), pose), id)!.scaleX ?? 1), pose).toBeLessThan(Math.abs(sign!.scaleX ?? 1));
-      // Знімок відкрив котові рот чи повернув його спиною — знака немає.
-      expect(find(catPhotoParts(one, pose, { idea: "нявкає", still: { mouth: "meow" } }), id), pose).toBeUndefined();
+      // Знімок відкрив котові рот: градусника в роті немає, а пара йде від носа — лишається. Спиною — знака немає.
+      for (const mouth of ["meow", "hiss", "tongue"] as const) {
+        expect(find(catPhotoParts(one, pose, { idea: "рот відкритий", still: { mouth } }), id) !== undefined, `${pose} ${mouth}`).toBe(pose === "sulk");
+      }
       expect(find(catPhotoParts(one, pose, { idea: "спиною", still: { view: "back" } }), id), pose).toBeUndefined();
     }
     for (const pose of ["content", "calm"] as const) {
