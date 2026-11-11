@@ -63,12 +63,16 @@ export function traitShot(state: GameState, traits: readonly Trait[], pose: Life
 
 const catShot = (cat: StoryCat, pose: CatPhotoPose): PhotoSubject => ({ kind: "cat", cat, pose });
 
-const withShot = (cat: StoryCat, pose: LifePose, shot: TraitShot | undefined): PhotoSubject => (shot ? { kind: "cat", cat, pose, shot } : catShot(cat, pose));
+/** Кіт зі знімком; персонаж у знімку — у вигляді гравця `look`. */
+function withShot(cat: StoryCat, pose: LifePose, shot: TraitShot | undefined, look: Look): PhotoSubject {
+  if (!shot) return catShot(cat, pose);
+  return shot.person ? { kind: "cat", cat, pose, shot, look } : { kind: "cat", cat, pose, shot };
+}
 
 /** Кіт у позі за рівнем життя `mood` зі знімком своєї риси. */
 function lifeShot(state: GameState, cat: StoryCat, mood: number): PhotoSubject {
   const pose = lifePhotoPose(mood);
-  return withShot(cat, pose, traitShot(state, cat.cat.traits, pose));
+  return withShot(cat, pose, traitShot(state, cat.cat.traits, pose), state.character.look);
 }
 
 /** Фото події стрічки; null — подія без фото (рядок). */
@@ -87,7 +91,7 @@ export function storyPhoto(item: StoryItem, state: GameState): Photo | null {
       return { subjects: [{ kind: "thing", thing: item.thing, quality: item.quality }] };
     case "trait": {
       const pose = lifePhotoPose(item.mood);
-      return { subjects: [withShot(item.cat, pose, shotOf(item.trait, pose))] };
+      return { subjects: [withShot(item.cat, pose, shotOf(item.trait, pose), look)] };
     }
     case "broke":
       return { subjects: [{ kind: "cat", cat: item.cat, pose: "content", shot: brokeShot(item.thing, item.quality) }] };

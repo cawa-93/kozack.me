@@ -340,4 +340,21 @@ describe("який знімок риси на фото (§4.2, §9.7)", () => {
     expect(beside.length).toBeGreaterThan(0);
     expect(beside.every((s) => s.kind === "cat" && s.shot === undefined)).toBe(true);
   });
+
+  it("знімок із персонажем — персонаж у вигляді гравця; без персонажа вигляду на фото кота немає", () => {
+    const withPerson = SHOTS.find((s) => s.shot?.person);
+    if (!withPerson) throw new Error("жоден знімок рис не показує персонажа (ноги, коліна, руку)");
+    const [group, side, pose] = withPerson.key.split(".") as [string, "plus" | "minus", LifePose];
+    const state = game();
+    state.character.look = { ...state.character.look, top: state.character.look.top + 1 };
+    const mood = { content: 80, calm: 55, sulk: 35, ill: 5 }[pose];
+    const home = cat(state, 13, 30, [trait(group, side === "plus" ? 1 : -1, true)]);
+    Object.assign(home, { moodHistory: [mood], mood });
+    const living = catSubject(livingCatPhoto(home, state));
+    expect(living?.shot).toBe(withPerson.shot);
+    expect(living?.look).toEqual(state.character.look);
+    const plain = cat(state, 14, 30, [trait("catnip", 1, true)]);
+    Object.assign(plain, { moodHistory: [40], mood: 40 });
+    expect(catSubject(livingCatPhoto(plain, state))?.look).toBeUndefined();
+  });
 });
