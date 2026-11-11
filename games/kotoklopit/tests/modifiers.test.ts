@@ -38,6 +38,26 @@ describe("вибір модифікаторів: перевірка модифі
     return out;
   };
 
+  it("виставка котів — за календарем: неділя кожного другого тижня, коли вдома є кіт, — за будь-якого кидка; в інші дні, без кота й на «Укро Кіт» її немає (§4.1)", () => {
+    const withCat = (save: Save): void => {
+      addCat(save.current, createCat(save.current, createRng(3), { source: "shelter", ageWeeks: 30 }));
+    };
+    const weeks = MODIFIERS.show.everyWeeks;
+    const sunday = (week: number): number => week * 7 - 1;
+    // Неділі тижнів, кратних періоду: день — лише виставковий.
+    for (const week of [weeks, 2 * weeks, 10 * weeks]) expect(seen(withCat, sunday(week)), `тиждень ${week}`).toEqual(new Set(["show"]));
+    // Неділі решти тижнів, субота напередодні й будень того самого тижня — без виставки.
+    for (const day of [sunday(1), sunday(weeks + 1), sunday(weeks) - 1, sunday(weeks) - 4]) expect(seen(withCat, day).has("show"), `день ${day}`).toBe(false);
+    // Без кота й на «Укро Кіт» виставок немає.
+    expect(seen(() => {}, sunday(weeks)).has("show")).toBe(false);
+    expect(
+      seen((save) => {
+        withCat(save);
+        save.current.difficulty = "ukro";
+      }, sunday(weeks)).has("show"),
+    ).toBe(false);
+  });
+
   it("безробітному «Планове відключення» буває, «Швидкий інтернет» — ні; на лікарняному робочих немає; суперечливі з тижнем не випадають", () => {
     const jobless = seen((save) => (save.current.job.unemployed = true));
     expect(jobless.has("outage")).toBe(true);

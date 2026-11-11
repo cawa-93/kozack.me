@@ -2,7 +2,11 @@
 
 import { describe, expect, it } from "vitest";
 
+import { createCat } from "../src/sim/cat";
+import { MODIFIERS } from "../src/sim/config";
 import { newGame } from "../src/sim/game";
+import { addCat } from "../src/sim/night";
+import { createRng } from "../src/sim/rng";
 import { absoluteMinute } from "../src/sim/time";
 import type { GameState } from "../src/sim/types";
 import { scheduleOf } from "../src/view/schedule";
@@ -58,5 +62,40 @@ describe("розклад дня (§8.4)", () => {
     courier(office, 9);
     expect(panel(office)).toEqual(["10:00 летючка", "до 18:00 офіс"]);
     expect(scheduleOf(office).slice(2)).toEqual(["09:00 робота", "≈09:00 кур'єр"]);
+  });
+
+  it("виставка котів (§4.1): напередодні — «завтра виставка котів» після подій дня, у її день — «виставка котів» першим рядком, поки не взяли участі", () => {
+    const sunday = MODIFIERS.show.everyWeeks * 7 - 1;
+    const withCat = (state: GameState): GameState => {
+      addCat(state, createCat(state, createRng(3), { source: "shelter", ageWeeks: 30 }));
+      return state;
+    };
+    // Субота напередодні, удома є кіт.
+    const eve = withCat(day(10));
+    eve.day = sunday - 1;
+    expect(scheduleOf(eve)).toEqual(["завтра виставка котів"]);
+    // Подія сьогоднішнього дня — вище за нагадування.
+    eve.modifiers.day = "guests";
+    const lines = scheduleOf(eve);
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toMatch(/гості$/);
+    expect(lines[1]).toBe("завтра виставка котів");
+    // Без кота нагадування немає; за тиждень до виставки й напередодні не тієї неділі — теж.
+    const empty = day(10);
+    empty.day = sunday - 1;
+    expect(scheduleOf(empty)).toEqual([]);
+    for (const other of [sunday - 8, sunday - 2, sunday + 6]) {
+      const state = withCat(day(10));
+      state.day = other;
+      expect(scheduleOf(state).some((line) => line.includes("виставка")), `день ${other}`).toBe(false);
+    }
+    // День виставки: рядок без часу — перший, поки не взяли участі; про «завтра» вже мови немає.
+    const show = withCat(day(10, "show"));
+    show.day = sunday;
+    courier(show, 12);
+    expect(scheduleOf(show)[0]).toBe("виставка котів");
+    expect(scheduleOf(show).some((line) => line.startsWith("завтра"))).toBe(false);
+    show.today.showDone = true;
+    expect(scheduleOf(show).some((line) => line.includes("виставка"))).toBe(false);
   });
 });

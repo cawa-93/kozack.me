@@ -7,7 +7,7 @@ import { supplyCount } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
 import { diseaseMedicine, dosedToday } from "../sim/diseases";
 import { giveAwayBlocker } from "../sim/farewell";
-import { hasFurryCat, WEEK_PAIRS } from "../sim/modifiers";
+import { hasFurryCat, isShowDay, WEEK_PAIRS } from "../sim/modifiers";
 import { hasFertileFemale, inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
 import { DEFAULT_NAME } from "../sim/game";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
@@ -22,6 +22,7 @@ import {
   CAT_DOSE_TODAY,
   CONTROLS_TITLES,
   DAY_MODIFIER_TEXTS,
+  SHOW_EVE_TEXTS,
   DIFFICULTY_TITLES,
   diseaseTitle,
   endingText,
@@ -99,6 +100,8 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
   const dayBlocks: string[][] = [];
   const modifier = state.modifiers.day ? DAY_MODIFIER_TEXTS[state.modifiers.day] : undefined;
   if (modifier) dayBlocks.push([modifier.title, ...(modifier.situation ? [modifier.situation] : [])]);
+  // Про виставку котів знають заздалегідь (§4.1): напередодні — окремий блок.
+  if (isShowDay(state, state.day + 1)) dayBlocks.push([SHOW_EVE_TEXTS.title, SHOW_EVE_TEXTS.situation]);
 
   const events: (string | HTMLElement)[][] = [];
   // Хто будив уночі (§8.8): по рядку на кота, без пояснень.

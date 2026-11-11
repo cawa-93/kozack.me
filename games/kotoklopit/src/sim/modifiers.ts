@@ -20,7 +20,7 @@ import { addSupply, stash, takeSupply } from "./economy";
 import { emit } from "./events";
 import { fallIllPerson, isIll } from "./illness";
 import { createRng, deriveSeed, stateRng, streamSeed, type Rng } from "./rng";
-import { weekdayOf } from "./time";
+import { isSunday, weekdayOf, weekOf } from "./time";
 import type { Cat, GameState } from "./types";
 import { fillFountainTank, furVisible, putVacuumDown, stockBowl } from "./household";
 import { waterCapacity } from "./resources";
@@ -29,7 +29,7 @@ import { callImpression, changeReputation, isWorkday, noticeCallLook, onSickLeav
 import { litterOrder, tickCleaner, tickConstructionDust } from "./cleaner";
 import { startParcels, tickParcels } from "./parcels";
 
-type When = "any" | "weekday" | "saturday" | "cat" | "work" | "workday" | "weekend-cat" | "cats2" | "unemployed";
+type When = "any" | "weekday" | "saturday" | "cat" | "work" | "workday" | "cats2" | "unemployed";
 
 interface Pair {
   /** Важкий бік; null — модифікатор без пари, лише легкий бік (§11.1). */
@@ -80,11 +80,16 @@ export const DAY_PAIRS: readonly Pair[] = [
   pair("food-price-up", "pet-sale", "city", "cat"),
 ];
 
-/** Особливі модифікатори дня, без пари (`DAY_MODIFIERS.md`). */
-const SPECIAL: readonly { id: string; when: When; group: Pair["group"] }[] = [
-  { id: "show", when: "weekend-cat", group: "cats" },
-  { id: "office", when: "workday", group: "work" },
-];
+/** Особливі модифікатори дня, без пари (`DAY_MODIFIERS.md`); «Виставка котів» — не з каталогу, а за календарем (`isShowDay`). */
+const SPECIAL: readonly { id: string; when: When; group: Pair["group"] }[] = [{ id: "office", when: "workday", group: "work" }];
+
+/**
+ * День виставки котів (§4.1): неділя кожного `MODIFIERS.show.everyWeeks`-го тижня, коли вдома є кіт. Календар відомий наперед,
+ * тож розклад каже про виставку ще напередодні (§8.4); на «Укро Кіт» виставок немає — там лише важкий бік пар.
+ */
+export function isShowDay(state: GameState, day: number): boolean {
+  return isSunday(day) && weekOf(day) % MODIFIERS.show.everyWeeks === 0 && state.cats.length > 0 && state.difficulty !== "ukro";
+}
 
 /**
  * Пари модифікаторів тижня (`DAY_MODIFIERS.md`) і коли вони можливі: робочі — з роботою; котячі — коли є кіт (рішення автора
@@ -148,8 +153,6 @@ function fits(state: GameState, day: number, when: When): boolean {
       return working;
     case "workday":
       return !weekend && working;
-    case "weekend-cat":
-      return weekend && cats;
     case "cats2":
       return state.cats.filter((c) => c.away === null && !isNewborn(c) && !isAdapting(state, c)).length >= 2;
     case "unemployed":
@@ -217,6 +220,8 @@ export function chooseDayModifier(state: GameState, day: number, rng: Rng): stri
   // лише в суботу) брала його за будь-якої складності, і частка важких була нижчою за 40/50/60% (перевірка модифікаторів 2026-10-28).
   const wantHard = rng.chance(MODIFIERS.hardShare[state.difficulty]);
   const order = shuffled(rng, DAY_CATALOG.length);
+  // Виставка — за календарем, а не з каталогу: кидки вже зроблено, тож решта днів від неї не залежить (§6.1).
+  if (isShowDay(state, day)) return "show";
   if (none) return null;
   const previous = state.modifiers.day;
   const week = state.modifiers.week;

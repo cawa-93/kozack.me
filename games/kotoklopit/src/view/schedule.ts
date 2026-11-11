@@ -3,6 +3,7 @@
 import { constructionDustHours } from "../sim/cleaner";
 import { MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES, WORK_END_MINUTE, WORK_START_MINUTE } from "../sim/config";
 import { dayGuestLetIn } from "../sim/door";
+import { isShowDay } from "../sim/modifiers";
 import { parcelsDue } from "../sim/parcels";
 import { absoluteMinute, formatClock } from "../sim/time";
 import type { GameState } from "../sim/types";
@@ -51,6 +52,10 @@ export function scheduleOf(state: GameState): string[] {
   // гостю», рішення автора 2026-11-03): у розкладі його вже немає. Чий це день, каже `GUEST_DAY`, а не збіг назв.
   const done = (state.modifiers.day === "office" && state.today.officeDone) || dayGuestLetIn(state);
   if (event && minute < event[0] && (!work || isWorkday(state)) && !done) important.push(event);
+  // Виставка котів (§4.1) — без часу: у її день — першим рядком, поки не взяли участі; напередодні — нагадування після подій дня.
+  if (state.modifiers.day === "show") {
+    if (state.today.showDone !== true) important.push([-Infinity, "виставка котів"]);
+  } else if (isShowDay(state, state.day + 1)) important.push([Infinity, "завтра виставка котів"]);
   // «Сусідські посилки» (§4.1): два візити дня — поки не прийшли, а не до свого часу: персонажа не було — прийдуть, щойно повернувся.
   const parcels = parcelsDue(state);
   if (parcels.courier) important.push(at(MODIFIERS.parcels.arrive, "посилки"));

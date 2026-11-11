@@ -3,6 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
+import { MODIFIERS } from "../src/sim/config";
 import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
@@ -35,6 +36,32 @@ describe("титулка дня (§4)", () => {
     const lines = dayTitle(state, night).flatMap((s) => s.blocks.flat());
     expect(lines.filter((l) => l === "Мурчик не давав спати вночі.")).toHaveLength(1);
     expect(lines).toContain("Мурка вимагала сніданку о 05:00.");
+  });
+
+  it("виставка котів (§4.1): у її день титулка називає її з текстом, напередодні — «Завтра виставка котів»; без кота й в інші дні — ні", () => {
+    const sunday = MODIFIERS.show.everyWeeks * 7 - 1;
+    const blocks = (day: number, modifier: string | null, cat = true): string[][] => {
+      const { current: state } = newGame({ address: "she", difficulty: "normal", seed: 3 });
+      if (cat) addCat(state, createCat(state, createRng(1), { source: "shelter", ageWeeks: 30 }));
+      state.day = day;
+      state.modifiers.day = modifier;
+      state.modifiers.week = null;
+      return dayTitle(state, null).flatMap((section) => section.blocks) as string[][];
+    };
+    const titles = (list: string[][]): string[] => list.map((block) => block[0] ?? "");
+    // Напередодні: окремий блок із текстом — і під модифікатором дня, якщо він є.
+    const eve = blocks(sunday - 1, null);
+    expect(titles(eve)).toEqual(["Завтра виставка котів"]);
+    expect(eve[0]?.[1]?.trim()).toBeTruthy();
+    expect(titles(blocks(sunday - 1, "rain"))).toEqual(["Дощ", "Завтра виставка котів"]);
+    // День виставки: назва й текст; про «завтра» вже не йдеться.
+    const show = blocks(sunday, "show");
+    expect(titles(show)).toEqual(["Виставка котів"]);
+    expect(show[0]?.[1]?.trim()).toBeTruthy();
+    expect(show[0]?.[1]).not.toBe(eve[0]?.[1]);
+    // Без кота чи не напередодні виставки — нічого.
+    expect(titles(blocks(sunday - 1, null, false))).toEqual([]);
+    for (const day of [sunday - 2, sunday - 8, sunday + 6]) expect(titles(blocks(day, null)), `день ${day}`).toEqual([]);
   });
 
   it("у понеділок — гроші за тиждень: заробили, витратили й категорії від найбільшої, без порожніх (рішення автора 2026-10-27, Е4)", () => {
