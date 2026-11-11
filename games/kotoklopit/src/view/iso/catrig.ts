@@ -70,7 +70,7 @@ function derive(rig: typeof CAT_RIG): IsoCatRigDef {
     if (bone.id === "head") {
       for (const ear of EAR_BONES) {
         const slot = slotOf(ear);
-        bones.push({ id: ear, parent: slot.bone, x: slot.x ?? 0, y: slot.y ?? 0, rot: 0, len: 0 });
+        bones.push({ id: ear, parent: slot.bone, x: slot.x ?? 0, y: slot.y ?? 0, rot: 0, len: 0, onFrame: true });
       }
     }
   }

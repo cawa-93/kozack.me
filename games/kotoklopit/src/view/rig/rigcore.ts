@@ -461,20 +461,58 @@ export interface Placement {
 }
 
 /**
- * Куди стає об'єкт у точці (x, y) кістки: місце — `world · (x, y)`, а поворот і масштаб — зміна кістки відносно вихідної
- * пози (`world · R(−кут вихідної пози)`), розкладена на кут і масштаб (перекіс, якого Phaser не вміє, відкидається; при
- * масштабі вздовж і впоперек кістки, кратній 90°, його немає).
+ * Намальована система кістки — її перетворення без перекосу: перша вісь як є, друга — перпендикулярна до неї, площа та сама.
+ * Саме так стоять кадри її слотів (`place`), тож усе, що має триматися кадру (точка слота, гніздо, якір, кістка-накладка),
+ * рахується в ній. Без перекосу (масштаб предків уздовж і впоперек кістки) збігається з `world`. `cos`, `sin` — кут вихідної пози.
+ */
+function drawnFrame(world: Affine, cos: number, sin: number, out: Affine): void {
+  const l00 = world.a * cos - world.c * sin;
+  const l10 = world.b * cos - world.d * sin;
+  const l01 = world.a * sin + world.c * cos;
+  const l11 = world.b * sin + world.d * cos;
+  const len = l00 * l00 + l10 * l10;
+  out.tx = world.tx;
+  out.ty = world.ty;
+  if (len <= 0) {
+    out.a = world.a;
+    out.b = world.b;
+    out.c = world.c;
+    out.d = world.d;
+    return;
+  }
+  const k = (l00 * l11 - l01 * l10) / len;
+  const m01 = -l10 * k;
+  const m11 = l00 * k;
+  out.a = l00 * cos + m01 * sin;
+  out.b = l10 * cos + m11 * sin;
+  out.c = -l00 * sin + m01 * cos;
+  out.d = -l10 * sin + m11 * cos;
+}
+
+/**
+ * Куди стає об'єкт у точці (x, y) кістки: поворот і масштаб — зміна кістки відносно вихідної пози (`world · R(−кут вихідної
+ * пози)`), розкладена на кут і масштаб (перекіс, якого Phaser не вміє, відкидається; при масштабі вздовж і впоперек кістки,
+ * кратній 90°, його немає), а місце — у тій самій системі без перекосу (`drawnFrame`): кадри однієї кістки не розходяться.
  */
 function place(world: Affine, cos: number, sin: number, x: number, y: number, extraRot: number, out: Placement): void {
-  out.x = world.a * x + world.c * y + world.tx;
-  out.y = world.b * x + world.d * y + world.ty;
   const l00 = world.a * cos - world.c * sin;
   const l10 = world.b * cos - world.d * sin;
   const l01 = world.a * sin + world.c * cos;
   const l11 = world.b * sin + world.d * cos;
   const sx = Math.hypot(l00, l10);
+  const sy = sx > 0 ? (l00 * l11 - l01 * l10) / sx : Math.hypot(l01, l11);
+  if (sx > 0 && (x !== 0 || y !== 0)) {
+    const u = x * cos - y * sin;
+    const v = x * sin + y * cos;
+    const k = sy / sx;
+    out.x = world.tx + l00 * u - l10 * k * v;
+    out.y = world.ty + l10 * u + l00 * k * v;
+  } else {
+    out.x = world.a * x + world.c * y + world.tx;
+    out.y = world.b * x + world.d * y + world.ty;
+  }
   out.sx = sx;
-  out.sy = sx > 0 ? (l00 * l11 - l01 * l10) / sx : Math.hypot(l01, l11);
+  out.sy = sy;
   out.rot = Math.atan2(l10, l00) / DEG + extraRot;
 }
 
@@ -684,6 +722,8 @@ export class Rig<B extends string, S extends string, K extends string> {
   private evaluatedView: RigFacing["view"] | null = null;
 
   private readonly tmpM = affine();
+  /** Намальована система кістки (`drawnFrame`) на час одного розрахунку. */
+  private readonly tmpF = affine();
   private readonly tmpV: Vec2 = { x: 0, y: 0 };
   private readonly tmpP: Vec2 = { x: 0, y: 0 };
 
@@ -916,7 +956,12 @@ export class Rig<B extends string, S extends string, K extends string> {
       const parent = this.boneRt[bone.parent];
       if (parent) {
         setTRS(this.tmpM, l.x, l.y, l.rot, l.sx, l.sy);
-        multiply(parent.world, this.tmpM, bone.world);
+        if (bone.def.onFrame) {
+          drawnFrame(parent.world, parent.setupCos, parent.setupSin, this.tmpF);
+          multiply(this.tmpF, this.tmpM, bone.world);
+        } else {
+          multiply(parent.world, this.tmpM, bone.world);
+        }
       } else {
         setTRS(bone.world, l.x, l.y, l.rot, l.sx, l.sy);
       }
@@ -991,7 +1036,9 @@ export class Rig<B extends string, S extends string, K extends string> {
   anchor(name: RigAnchor, out: Vec2 = { x: 0, y: 0 }, flip: boolean = this.facingNow.flip): Vec2 | null {
     const anchor = this.anchorByName.get(name);
     if (!anchor) return null;
-    apply(this.boneRt[anchor.bone]!.world, anchor.x, anchor.y, out);
+    const bone = this.boneRt[anchor.bone]!;
+    drawnFrame(bone.world, bone.setupCos, bone.setupSin, this.tmpF);
+    apply(this.tmpF, anchor.x, anchor.y, out);
     if (flip) out.x = -out.x;
     return out;
   }

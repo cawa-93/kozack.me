@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 
 import { artEntry } from "../src/view/art/manifest";
 import type { ArtEntry, ArtId } from "../src/view/art/types";
+import { ISO_CAT_FIT, ISO_CAT_RIG } from "../src/view/iso/catrig";
 import { CAT_FAR_SLOTS, CAT_FIT, CAT_RIG, CAT_VARIANTS, catProportions, catSkin } from "../src/view/rig/defs/cat";
 import { OVERLAY_WIDTH, PERSON_FAR_SLOTS, PERSON_FIT, PERSON_RIG, personProportions, personSkin, personVariants } from "../src/view/rig/defs/person";
 import {
@@ -91,6 +92,35 @@ const ARM_ANIMS = defineAnims(ARM, {
     bones: { body: { pos: [{ t: 0, v: { x: 0, y: 0 } }, { t: 300, v: { x: 6, y: 0 } }] } },
     slots: { badge: { visible: [{ t: 0, v: true }, { t: 150, v: false }] }, body: { z: [{ t: 0, v: 1 }, { t: 150, v: 5 }] } },
   },
+});
+
+/**
+ * Скелет для перекосу: тулуб, який сплющують упоперек, і голова на його кінці, яку повертають, — її перетворення з перекосом,
+ * якого кадр не має. На голові — кадр зі зсувом (брова), якір, гніздо й дві дочірні кістки: вухо-накладка (`onFrame`) і звичайна.
+ */
+const SKEW = defineRig({
+  id: "skew",
+  bones: [
+    { id: "root", parent: null, x: 0, y: 0, rot: 0, len: 0 },
+    { id: "body", parent: "root", x: 0, y: 0, rot: 0, len: 20 },
+    { id: "head", parent: "body", x: 20, y: 0, rot: 0, len: 10 },
+    { id: "ear", parent: "head", x: 4, y: -10, rot: 0, len: 0, onFrame: true },
+    { id: "free", parent: "head", x: 4, y: 10, rot: 0, len: 0 },
+  ],
+  slots: [
+    { id: "head", bone: "head", z: 1, frame: null },
+    { id: "brow", bone: "head", z: 2, frame: null, x: 6, y: -8 },
+    { id: "ear", bone: "ear", z: 3, frame: null },
+    { id: "free", bone: "free", z: 4, frame: null },
+  ],
+  views: { front: {}, back: {} },
+  anchors: { head: { bone: "head", x: 4, y: -20 } },
+  sockets: { teeth: { bone: "head", x: 8, y: 2, z: 5, cargo: ["toy"] } },
+  skin: { head: "cat/head/base", brow: "cat/eyes", ear: "cat/ear/large", free: "cat/muzzle/normal" },
+});
+
+const SKEW_ANIMS = defineAnims(SKEW, {
+  squash: { duration: 100, loop: false, bones: { body: { scale: [{ t: 0, v: { x: 1, y: 0.5 } }] }, head: { rot: [{ t: 0, v: 45 }] } } },
 });
 
 describe("визначення скелетів", () => {
@@ -366,6 +396,42 @@ describe("поза", () => {
     rig.evaluate(100);
     expect(rig.slot("arm").rot).toBeCloseTo(-45, 9);
     expect(rig.slot("arm").state).toBe("up");
+  });
+
+  it("під перекосом кадри, гніздо, якір і кістка-накладка стоять у намальованій системі кістки, а звичайна дочірня — у справжній", () => {
+    expect(rigProblems(SKEW as unknown as LooseRig)).toEqual([]);
+    const rig = new Rig(SKEW);
+    rig.play(SKEW_ANIMS.squash, 0, { blend: 0 });
+    rig.evaluate(0);
+    // Голова на кінці тулуба; її кадр повернуто на кут першої осі (сплющеної) і стиснуто — без перекосу.
+    const head = rig.slot("head");
+    expect([head.x, head.y]).toEqual([expect.closeTo(20, 9), expect.closeTo(0, 9)]);
+    expect(head.rot).toBeCloseTo((Math.atan2(0.5, 1) * 180) / Math.PI, 9);
+    expect(head.sx).toBeCloseTo(Math.hypot(Math.SQRT1_2, Math.SQRT1_2 / 2), 9);
+    expect(head.sx * head.sy).toBeCloseTo(0.5, 9);
+    // Точка системи голови там, де її показує намальований кадр голови.
+    const drawn = (x: number, y: number) => {
+      const r = (head.rot * Math.PI) / 180;
+      return { x: head.x + Math.cos(r) * head.sx * x - Math.sin(r) * head.sy * y, y: head.y + Math.sin(r) * head.sx * x + Math.cos(r) * head.sy * y };
+    };
+    const at = (point: { x: number; y: number }) => ({ x: expect.closeTo(point.x, 9), y: expect.closeTo(point.y, 9) });
+    expect({ x: rig.slot("brow").x, y: rig.slot("brow").y }).toEqual(at(drawn(6, -8)));
+    expect(rig.anchor("head")).toEqual(at(drawn(4, -20)));
+    const teeth = rig.socket("teeth")!;
+    expect({ x: teeth.x, y: teeth.y }).toEqual(at(drawn(8, 2)));
+    // Вухо-накладка — на тому самому місці намальованої голови, з її поворотом і масштабом.
+    const ear = rig.slot("ear");
+    expect({ x: ear.x, y: ear.y }).toEqual(at(drawn(4, -10)));
+    expect([ear.rot, ear.sx, ear.sy]).toEqual([expect.closeTo(head.rot, 9), expect.closeTo(head.sx, 9), expect.closeTo(head.sy, 9)]);
+    // Звичайна дочірня кістка — у справжньому перетворенні голови, з перекосом: S(1; 0,5) · R(45°) · (4, 10).
+    const free = rig.slot("free");
+    expect({ x: free.x, y: free.y }).toEqual(at({ x: 20 + Math.SQRT1_2 * (4 - 10), y: (Math.SQRT1_2 / 2) * (4 + 10) }));
+    // Без перекосу намальована система — це сама кістка: нічого не змінюється.
+    rig.play(null, 0, { blend: 0 });
+    rig.evaluate(0);
+    expect({ x: rig.slot("brow").x, y: rig.slot("brow").y }).toEqual(at({ x: 26, y: -8 }));
+    expect({ x: rig.slot("ear").x, y: rig.slot("ear").y }).toEqual(at({ x: 24, y: -10 }));
+    expect(rig.anchor("head")).toEqual(at({ x: 24, y: -20 }));
   });
 
   it("доріжка ракурсу замінює ту саму доріжку основної анімації", () => {
@@ -851,5 +917,33 @@ describe("змішування поз", () => {
     rig.evaluate(3000);
     rig.play(null, 3000);
     expect(rig.evaluate(2900).slot("arm").rot).toBeCloseTo(0, 9);
+  });
+});
+
+describe("голова кота — одне ціле (скелет гри)", () => {
+  it("у кожній анімації вуха, очі, морда й рот стоять на намальованій голові, обидва ракурси", () => {
+    const parts = ["ear-far", "ear-near", "muzzle", "eyes", "mouth"];
+    const off: string[] = [];
+    for (const view of ["front", "back"] as const) {
+      const rig = new Rig(ISO_CAT_RIG as unknown as LooseRig, { fit: ISO_CAT_FIT as never, lookup: artEntry, facing: { view } });
+      rig.evaluate(0);
+      // Де частини стоять від pivot голови у вихідній позі.
+      const rest = parts.map((id) => ({ id, x: rig.slot(id).x - rig.slot("head").x, y: rig.slot(id).y - rig.slot("head").y }));
+      for (const [name, anim] of animsOf("cat")) {
+        rig.play(anim as never, 0, { blend: 0, restart: true });
+        for (const t of [0, anim.duration / 3, (anim.duration * 2) / 3]) {
+          rig.evaluate(t);
+          const head = rig.slot("head");
+          const r = (head.rot * Math.PI) / 180;
+          for (const part of rest) {
+            const x = head.x + Math.cos(r) * head.sx * part.x - Math.sin(r) * head.sy * part.y;
+            const y = head.y + Math.sin(r) * head.sx * part.x + Math.cos(r) * head.sy * part.y;
+            const gap = Math.hypot(rig.slot(part.id).x - x, rig.slot(part.id).y - y);
+            if (gap > 0.01) off.push(`${view} ${name} t=${Math.round(t)} ${part.id}: ${gap.toFixed(2)}`);
+          }
+        }
+      }
+    }
+    expect(off).toEqual([]);
   });
 });
