@@ -29,6 +29,7 @@ import { PlaceMark } from "./placemark";
 import { BASKET_AT, floorAnchorAt, SOFA_PEEK, stashPoint } from "./geometry";
 import { IsoHighlight } from "./highlight";
 import { basketState, carriedThingFrame, carrierLocked, carrierOccupied, carrierShakes, carrierSlot, dockFrame, dustFrame, feederFrame, fountainFrame, itemFrame, litterSmells, messFrame, placedFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
+import { FLIGHT } from "./markslayout";
 import { PersonSwept } from "./swept";
 import { freshTuft, TUFT_APPEAR, tuftAppearLook, tuftRollFrom } from "./tuftappear";
 
@@ -137,6 +138,10 @@ export class IsoFloorView implements WorldPart {
   private readonly sucking: Suck[] = [];
   /** Що прибрав пилосос у руках з минулого кадру (події `vacuumed`): лише воно втягується в щітку. */
   private readonly swept = new PersonSwept();
+  /** Одяг щойно кинули в кошик (подія `clothes-tossed`): політ починається з наступного кадру. */
+  private tossed = false;
+  /** Доки одяг летить із душу в кошик (час кадру, мс): раніше кошик ще не наповнився (§8.7). */
+  private basketLandsAt = 0;
   /** Нові жмути шерсті, що зараз з'являються. */
   private readonly appearing: Appear[] = [];
   /**
@@ -314,6 +319,7 @@ export class IsoFloorView implements WorldPart {
 
   onEvent(event: GameEvent): void {
     this.swept.onEvent(event);
+    if (event.type === "clothes-tossed") this.tossed = true;
   }
 
   /**
@@ -334,7 +340,11 @@ export class IsoFloorView implements WorldPart {
       this.hideSingle("robot");
     }
     this.drawCarriers(state, time);
-    this.single("basket", { id: "env/laundry-basket", state: basketState(home.clothes) }, BASKET_AT, isoItemLook("basket").height, {
+    if (this.tossed) {
+      this.tossed = false;
+      this.basketLandsAt = time + FLIGHT.ms;
+    }
+    this.single("basket", { id: "env/laundry-basket", state: basketState(home.clothes, time < this.basketLandsAt) }, BASKET_AT, isoItemLook("basket").height, {
       id: "basket",
       half: isoItemLook("basket").half,
     });
@@ -574,6 +584,8 @@ export class IsoFloorView implements WorldPart {
     this.sucking.length = 0;
     this.appearing.length = 0;
     this.settled = false;
+    this.tossed = false;
+    this.basketLandsAt = 0;
     this.swept.clear();
     for (const spots of this.all()) for (const spot of spots) destroySpot(spot);
     this.items.clear();
@@ -590,10 +602,11 @@ export class IsoFloorView implements WorldPart {
     this.glow.destroy();
   }
 
-  /** Над річчю котячого кутка, безладом чи вертикальним пилососом на підлозі. */
+  /** Над річчю котячого кутка, безладом, вертикальним пилососом на підлозі чи кошиком білизни (туди летить зношений одяг, §8.7). */
   anchor(id: string): Point | null {
     const state = this.ctx.state();
     const home = state.home;
+    if (id === "basket") return floorAnchorAt(BASKET_AT, isoItemLook("basket").height);
     if (id === VACUUM_TARGET) return home.vacuumAt ? floorAnchorAt(home.vacuumAt, isoItemLook("vacuum").height) : null;
     if (id === CARRIER_TARGET) {
       if (home.carriers.length === 0) return null;

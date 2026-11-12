@@ -936,7 +936,7 @@ export const VET = {
   hideMinutes: 15,
   homeHideMinutes: 30,
 } as const;
-/** Чистого одягу на старті, дні (§8.7). */
+/** На скільки душів чистого одягу на старті (§8.7). */
 export const START_CLOTHES = 5;
 /** Побут (§8.7): `dirtyFur` — поріг видимої шерсті; `*Hygiene` — множники падіння гігієни; `difficulty` — поломки. */
 export const HOUSEHOLD = {
@@ -951,7 +951,7 @@ export const HOUSEHOLD = {
   /** Вище гігієна в брудному одязі не стає й після душу. */
   noClothesHygieneCeiling: 60,
   washMinutes: 60,
-  clothesDays: { cheap: 7, premium: 12 } as Record<Quality, number>,
+  clothesShowers: { cheap: 7, premium: 12 } as Record<Quality, number>,
   robotMinute: 12 * 60,
   robotMinutes: 64 * BODY_PACE,
   breakPerUse: 1 / 150,

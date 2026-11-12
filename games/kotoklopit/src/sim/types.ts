@@ -664,7 +664,7 @@ export interface Home {
    * `VACUUM_HOME`.
    */
   vacuumAt: Vec | null;
-  /** На скільки днів лишилося чистого одягу (§8.7). */
+  /** На скільки душів лишилося чистого одягу (§8.7): заходячи в душ, персонаж кидає зношене в кошик. */
   clothes: number;
   /** Пральна машина: стоїть, пере (хвилини до кінця) чи випрала — треба розвісити. */
   washer: { state: "idle" | "washing" | "done"; minutes: number; quality: Quality };

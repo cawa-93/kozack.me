@@ -109,6 +109,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `Душ${event.cold === true ? " холодний (без світла)" : ""}: гігієна ${signed(event.hygiene)} (${event.quality ?? "без засобів"}), лишилося ${event.left}`;
     case "coffee":
       return "Кава: «Недосип» знято";
+    case "clothes-tossed":
+      return "Одяг — у кошик білизни";
     case "work-started":
       return "Сів за комп'ютер";
     case "work-stopped":

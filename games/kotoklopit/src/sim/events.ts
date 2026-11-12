@@ -158,6 +158,8 @@ export type GameEvent =
   | { type: "showered"; hygiene: number; quality: Quality | null; left: number; cold?: true }
   /** Чашку кави випито (§8.7): «Недосип» знято. */
   | { type: "coffee" }
+  /** Персонаж зайшов у душ і кинув зношене в кошик білизни (§8.7): іконка одягу летить із кабіни в кошик. */
+  | { type: "clothes-tossed" }
   | { type: "work-started" }
   | { type: "work-stopped"; minutes: number; money: number; reputation: number; sanity: number }
   | { type: "patience"; level: PatienceLevel }

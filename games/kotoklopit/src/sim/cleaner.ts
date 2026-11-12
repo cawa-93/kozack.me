@@ -122,13 +122,13 @@ function laundry(state: GameState, visit: CleanerVisit): void {
   const home = state.home;
   const washer = home.washer;
   if (washer.state === "done") {
-    home.clothes = Math.max(home.clothes, HOUSEHOLD.clothesDays[washer.quality]);
+    home.clothes = Math.max(home.clothes, HOUSEHOLD.clothesShowers[washer.quality]);
     washer.state = "idle";
     visit.hung = true;
   }
   if (washer.state !== "idle" || powerOut(state) || catInWasher(state) !== null) return;
   const top = topQuality(state, "detergent");
-  if (top === null || home.clothes >= HOUSEHOLD.clothesDays[top]) return;
+  if (top === null || home.clothes >= HOUSEHOLD.clothesShowers[top]) return;
   const quality = takeSupply(state, "detergent");
   if (quality === null) return;
   home.washer = { state: "washing", minutes: HOUSEHOLD.washMinutes, quality };

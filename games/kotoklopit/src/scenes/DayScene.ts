@@ -1016,6 +1016,14 @@ export class DayScene extends Phaser.Scene {
         });
         break;
       }
+      case "clothes-tossed": {
+        // Зношений одяг летить із душової кабіни в кошик білизни (§8.7), як запаси з ящиків; кошик наповнюється, коли долетить
+        // (`iso/floor.ts`).
+        const from = this.world.objectAnchor("shower");
+        const to = this.world.anchor("basket");
+        if (from && to) this.flyIcon("laundry", from, to, 0);
+        break;
+      }
       case "supply-landed": {
         // Над сховищем, куди долетів запас, — вголос, скільки в ньому тепер (§6.4).
         const storage = STORAGES.find((s) => s.products.includes(event.product));

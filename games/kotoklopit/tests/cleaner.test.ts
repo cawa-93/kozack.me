@@ -277,7 +277,7 @@ describe("прибиральниця (§4.1)", () => {
     done.home.washer = { state: "done", minutes: 0, quality: "cheap" };
     stock(done, { detergent: 2 });
     expect(cleanHome(done)).toMatchObject({ hung: true, washing: false });
-    expect(done.home.clothes).toBe(HOUSEHOLD.clothesDays.cheap);
+    expect(done.home.clothes).toBe(HOUSEHOLD.clothesShowers.cheap);
     expect(done.home.washer.state).toBe("idle");
     expect(done.home.supplies.detergent.cheap).toBe(2);
 
@@ -291,7 +291,7 @@ describe("прибиральниця (§4.1)", () => {
 
     // Шафа повна — машина не запускається, засіб лишається, як і в гравця.
     const full = game().current;
-    full.home.clothes = HOUSEHOLD.clothesDays.cheap;
+    full.home.clothes = HOUSEHOLD.clothesShowers.cheap;
     stock(full, { detergent: 2 });
     expect(cleanHome(full).washing).toBe(false);
     expect(full.home.supplies.detergent.cheap).toBe(2);

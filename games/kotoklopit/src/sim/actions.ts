@@ -11,7 +11,7 @@ import { maybeFallIll } from "./diseases";
 import { sinkCare } from "./dressing";
 import { bathe } from "./care";
 import { canSeat, releaseCats, seatCat } from "./carriers";
-import { catInWasher, emptyFeeder, fillFountainTank, furPerHour, putVacuumDown, sameFood, takeVacuum, tapWasher } from "./household";
+import { catInWasher, emptyFeeder, fillFountainTank, furPerHour, putVacuumDown, sameFood, takeVacuum, tapWasher, tossClothes } from "./household";
 import { observe } from "./knowledge";
 import { cookFactor, onCall, powerOut } from "./modifiers";
 import { dropThing, putThing } from "./moving";
@@ -355,6 +355,8 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       // Увімкнули воду: «Жахається води» тікає з ванної — персонаж ще бачить це, заходячи в кабіну (§9.12).
       waterFright(state);
       character.activity = { kind: "use", target: target.id, progress: 0, inside: true };
+      // Зношене — у кошик білизни (§8.7).
+      tossClothes(state);
       return DONE;
     case "sink": {
       // Ліки, пластир і бинт — біля умивальника (§6.5). Кіт на умивальнику чекає крана — спершу відкрити воду йому (§9.12).

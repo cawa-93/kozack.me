@@ -504,10 +504,12 @@ export function dockFrame(state: GameState): IsoFrame {
 }
 
 /**
- * Кошик білизни (§8.7): скільки днів одягу вже брудні — від порожнього (5 і більше чистих днів) до гірки; чистого не
+ * Кошик білизни (§8.7): скільки одягу вже брудного — від порожнього (чистого на 5 душів і більше) до гірки; чистого не
  * лишилося — переповнений.
  */
-export function basketState(clothes: number): string {
+export function basketState(clothes: number, inFlight = false): string {
+  // Одяг, що ще летить із душу (`inFlight`), у кошику не лежить: кошик наповнюється, коли іконка долетіла.
+  if (inFlight) return basketState(clothes + 1);
   if (clothes <= 0) return "overflow";
   // Як у старому вигляді: почата купка брудного — уже ще одна річ у кошику.
   return `load-${Math.ceil(Math.max(0, Math.min(5, 5 - clothes)) - 1e-9)}`;

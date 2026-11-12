@@ -206,6 +206,16 @@ export function furPerHour(state: GameState, cat: Cat): number {
   return HOUSEHOLD.furPerCatHour * (long ? HOUSEHOLD.longFur : 1) * Math.max(0, 1 + HOUSEHOLD.sheddingStep * traitLevel(cat, "shedding")) * groomed * sheddingFactor(state);
 }
 
+/**
+ * Заходячи в душ, персонаж кидає зношене в кошик білизни (§8.7): чистого одягу на душ менше, а вигляд пускає іконку одягу з кабіни
+ * в кошик. Чистого вже немає — кошик повний, і нічого не летить.
+ */
+export function tossClothes(state: GameState): void {
+  if (state.home.clothes <= 0) return;
+  state.home.clothes = Math.max(0, state.home.clothes - 1);
+  emit(state, { type: "clothes-tossed" });
+}
+
 /** Кіт у барабані відчиненої пральної машини (§8.7). */
 export function catInWasher(state: GameState): Cat | null {
   const washer = objectById("washer");
@@ -223,7 +233,7 @@ export function tapWasher(state: GameState): "cat" | "started" | "hung" | "empty
   if (washer.state === "washing") return powerOut(state) ? "no-power" : "busy";
   if (washer.state === "done") {
     // Чистого одягу — не менше, ніж було: прання з повною шафою не зменшує запасу (перевірка побуту 2026-10-28).
-    state.home.clothes = Math.max(state.home.clothes, HOUSEHOLD.clothesDays[washer.quality]);
+    state.home.clothes = Math.max(state.home.clothes, HOUSEHOLD.clothesShowers[washer.quality]);
     washer.state = "idle";
     emit(state, { type: "laundry", stage: "hung" });
     return "hung";
@@ -243,7 +253,7 @@ export function tapWasher(state: GameState): "cat" | "started" | "hung" | "empty
   // запускається, засіб лишається, як і в душі на межі (§8.7; загальна ревізія 2026-10-29: засіб витрачався, а гучний віджим
   // даремно лякав і будив котів).
   const top = topQuality(state, "detergent");
-  if (top !== null && state.home.clothes >= HOUSEHOLD.clothesDays[top]) return "clean";
+  if (top !== null && state.home.clothes >= HOUSEHOLD.clothesShowers[top]) return "clean";
   const quality = useSupply(state, "detergent");
   if (quality === null) return "empty";
   state.home.washer = { state: "washing", minutes: HOUSEHOLD.washMinutes, quality };
@@ -824,7 +834,7 @@ export function stockBowl(state: GameState, bowl: BowlItem, upTo = BOWL_CAPACITY
 }
 
 /**
- * Ранок (§8.7): мінус день чистого одягу; дешева техніка може зламатися. Жмутів шерсті вранці стільки, скільки за шкалою: уночі
+ * Ранок (§8.7): дешева техніка може зламатися. Жмутів шерсті вранці стільки, скільки за шкалою: уночі
  * вони з'являються по одному (`shedTuft`), а якщо за коротку ніч не всі встигли — решта лягає зараз, поки гравець не бачить.
  */
 export function nightlyHousehold(state: GameState, rng: Rng): void {
@@ -832,7 +842,6 @@ export function nightlyHousehold(state: GameState, rng: Rng): void {
   // Речі гри, зсунуті з зайнятого місця, уранці знову на своєму, якщо воно звільнилося (§8.7, «Що ставить гра»).
   restoreThings(state);
   topUpTufts(state);
-  home.clothes = Math.max(0, home.clothes - 1);
   // Скинуті дрібнички вранці знову на столах, а розбитий кухоль — уже новий (§9.12, «Скидання речей»).
   delete home.trinkets;
   // Розмотаний рулон туалетного паперу вранці замінено новим (§9.12, «Мисливський інстинкт»).

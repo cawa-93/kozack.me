@@ -20,6 +20,7 @@ import { checkout, room, unavailable } from "../src/sim/shop";
 import type { BowlItem, Cat, Feeder, LitterItem, Quality, Save, TraitLevel } from "../src/sim/types";
 import { careCard, hasCareSupplies } from "../src/ui/cards";
 import { named } from "../src/ui/icons";
+import { basketState } from "../src/view/iso/looks";
 import { PRODUCT_ICONS } from "../src/view/symbols";
 import { bodyMinutes, holdUntilDone, hours, recordEvents, standAt, walkTo, withCatCorner } from "./helpers";
 
@@ -197,6 +198,56 @@ describe("прання (§8.7)", () => {
     expect(washed("cheap")).toBe(7);
     // Раніше — 8: за 2,5 ціни лише на день довше.
     expect(washed("premium")).toBe(12);
+  });
+});
+
+describe("чистий одяг і кошик білизни (§8.7)", () => {
+  it("ніч чистого одягу не забирає: він бруднішає лише з душем", () => {
+    const save = game();
+    save.current.home.clothes = 5;
+    nightlyHousehold(save.current, never());
+    expect(save.current.home.clothes).toBe(5);
+  });
+
+  it("заходячи в душ, персонаж кидає зношене в кошик: чистого на душ менше, одяг летить у кошик", () => {
+    const save = game();
+    save.current.home.clothes = 5;
+    standAt(save, "shower");
+    const { events, stop } = recordEvents();
+    interact(save);
+    stop();
+    expect(save.current.character.activity).toMatchObject({ kind: "use", target: "shower", inside: true });
+    expect(save.current.home.clothes).toBe(4);
+    expect(events.filter((e) => e.type === "clothes-tossed")).toEqual([{ type: "clothes-tossed" }]);
+  });
+
+  it("чистого вже немає — кошик повний, і в нього нічого не летить; купання кота одягу не бруднить", () => {
+    const save = game();
+    save.current.home.clothes = 0;
+    standAt(save, "shower");
+    const { events, stop } = recordEvents();
+    interact(save);
+    expect(save.current.character.activity).toMatchObject({ kind: "use", target: "shower" });
+    expect(save.current.home.clothes).toBe(0);
+
+    const bath = game();
+    bath.current.home.clothes = 5;
+    bath.current.home.supplies.shampoo.cheap = 1;
+    held(bath);
+    standAt(bath, "shower");
+    interact(bath);
+    stop();
+    expect(bath.current.character.activity).toMatchObject({ kind: "use", bath: true });
+    expect(bath.current.home.clothes).toBe(5);
+    expect(events.some((e) => e.type === "clothes-tossed")).toBe(false);
+  });
+
+  it("кошик наповнюється, коли одяг долетів: поки він летить, кошик — як до душу", () => {
+    expect(basketState(4, true)).toBe(basketState(5));
+    expect(basketState(2, true)).toBe(basketState(3));
+    expect(basketState(0, true)).toBe(basketState(1));
+    expect(basketState(0)).toBe("overflow");
+    expect(basketState(3)).not.toBe(basketState(4));
   });
 });
 
