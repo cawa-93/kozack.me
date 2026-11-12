@@ -115,6 +115,16 @@ describe("страва в руках на ніч (§8.7)", () => {
     goToSleep(save);
     expect(Object.values(state.home.surfaces).filter((i) => i?.kind === "meal")).toHaveLength(1);
   });
+
+  it("зіпсована на поверхні не лягає — і лишається в руках, а не зникає", () => {
+    const save = game("lark");
+    const state = save.current;
+    state.character.held = { kind: "spoiled", quality: "cheap" };
+    state.minute = hours(22);
+    goToSleep(save);
+    expect(state.character.held).toEqual({ kind: "spoiled", quality: "cheap" });
+    expect(Object.values(state.home.surfaces).some((i) => i?.kind === "spoiled")).toBe(false);
+  });
 });
 
 describe("показники уві сні (§8.8)", () => {

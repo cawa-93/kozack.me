@@ -1156,7 +1156,9 @@ export function dropEverything(state: GameState): void {
   // Пилосос — на підлогу поруч (§8.7): уночі він не гуде.
   if (held?.kind === "vacuum") putVacuumDown(state);
   dropThing(state);
-  // Страву з рук — на вільну поверхню кухні, а всі зайняті — лишається в руках: сама собою страва не зникає (§8.7).
+  // Страву з рук — на вільну поверхню кухні, а всі зайняті — лишається в руках: сама собою страва не зникає (§8.7). Зіпсовану
+  // на поверхні не кладуть — вона лишається в руках.
+  if (held?.kind === "spoiled") return;
   if (back === null && isDish(held)) {
     const surfaces = state.home.surfaces;
     const free = SURFACE_IDS.find((id) => surfaces[id] === null);
