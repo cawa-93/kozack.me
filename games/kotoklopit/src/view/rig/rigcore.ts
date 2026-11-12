@@ -743,15 +743,19 @@ export class Rig<B extends string, S extends string, K extends string> {
 
   constructor(def: RigDef<B, S, K>, opts: RigOptions<B, S, K> = {}) {
     const loose = def as unknown as LooseRig;
-    // Перевірка — раз на визначення й точки арту: котів у квартирі може бути два десятки.
-    let valid = VALID.get(def);
-    if (!valid || (opts.fit && !valid.has(opts.fit))) {
-      const problems = rigProblems(loose);
-      if (opts.fit) problems.push(...fitProblems(loose, opts.fit));
-      if (problems.length > 0) throw new Error(`Скелет:\n- ${problems.join("\n- ")}`);
-      valid ??= new WeakSet();
-      VALID.set(def, valid);
-      if (opts.fit) valid.add(opts.fit);
+    // Перевірка — лише з режимом розробки (продакшн-збірка викидає її разом із кодом перевірок: ті самі визначення вже
+    // перевірили тести й dev) і раз на визначення й точки арту: котів у квартирі може бути два десятки. `typeof` — бо
+    // конвеєри збирання (`runnerImport`) завантажують цей модуль без сталих `vite.config.ts`.
+    if (typeof __DEV_TOOLS__ === "undefined" || __DEV_TOOLS__) {
+      let valid = VALID.get(def);
+      if (!valid || (opts.fit && !valid.has(opts.fit))) {
+        const problems = rigProblems(loose);
+        if (opts.fit) problems.push(...fitProblems(loose, opts.fit));
+        if (problems.length > 0) throw new Error(`Скелет:\n- ${problems.join("\n- ")}`);
+        valid ??= new WeakSet();
+        VALID.set(def, valid);
+        if (opts.fit) valid.add(opts.fit);
+      }
     }
     this.def = def;
     this.fit = opts.fit ?? null;
