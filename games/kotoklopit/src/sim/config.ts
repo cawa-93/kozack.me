@@ -423,6 +423,8 @@ export const FURNITURE_COST = 3;
 export const ATTENTION_SATISFIED = 20;
 /** Тривалість дій кота на місці. */
 export const CAT_ACT_MINUTES = { eat: 3, drink: 1, toilet: 2, beg: 15, attention: 20, idle: 10, wander: 8, hide: 30 } as const;
+/** Скільки хвилин голодний кіт нявчить біля персонажа, перш ніж піти просити до миски (§9.12, «Похід по увагу»). */
+export const HUNGRY_ASK_MINUTES = 8;
 /** Скільки голоду знімає порція. */
 export const PORTION_HUNGER = 100;
 /** Кіт чує, як насипають корм: голод, з якого біжить. */

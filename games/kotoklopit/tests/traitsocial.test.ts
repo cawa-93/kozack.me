@@ -1357,7 +1357,7 @@ describe("сценарій «Гра й стосунки котів» (`scenarios
     const approaches: number[] = [];
     let begs = 0;
     let before = "";
-    for (let t = 0; t < 90; t += 0.25) {
+    for (let t = 0; t < 180; t += 0.25) {
       advance(save, 0.25);
       const now = `${cat.act.kind}:${cat.act.target}`;
       if (now !== before && cat.act.target === "no:kitchen") approaches.push(t);

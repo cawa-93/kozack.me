@@ -22,6 +22,7 @@ import {
   CARRY,
   CATNIP,
   CAT_ACT_MINUTES,
+  HUNGRY_ASK_MINUTES,
   CHEWING,
   CLIMBING,
   CAT_WALK_TILES_PER_MINUTE,
@@ -701,6 +702,15 @@ function urgent(state: GameState, cat: Cat): boolean {
   return n.toilet >= NEED_THRESHOLD.toilet || n.hunger >= hungerThreshold(cat) || n.thirst >= NEED_THRESHOLD.thirst || n.fatigue >= sleepThreshold(cat, state.minute);
 }
 
+/**
+ * Кіт у поході до персонажа по їжу (§9.12, «Похід по увагу»): голод і втома його не переривають — інакше він щокадру вирішував
+ * би заново, куди йти, перекидаючи шанси шафки й крадіжки, і не доходив би. Лоток, спрага й корм у мисці — переривають.
+ */
+function askingPerson(state: GameState, cat: Cat): boolean {
+  const n = cat.needs;
+  return cat.act.kind === "attention" && cat.act.forFood === true && wantsFood(state, cat) && n.toilet < NEED_THRESHOLD.toilet && n.thirst < NEED_THRESHOLD.thirst;
+}
+
 /** Точка сонячної плями цієї години (§8.9): там, де вигляд малює смуги сонця; смуг немає, зокрема в «Дощ», — null. */
 export function sunSpot(minute: number, rain = false): Vec | null {
   if (rain) return null;
@@ -985,15 +995,10 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
     }
     // «Чесний» сідає біля їжі на столі й не чіпає її (§9.12, рішення автора 2026-10-25).
     if (steal && thief < 0 && rng.chance(THIEF.waitChance)) return start(cat, "beg", besideObject(state, objectById(steal.id)), THIEF.waitMinutes, steal.id);
-    const empty = nearest(cat, itemsOf(state, "bowl"));
     // «Не випрошує» (−2) не йде просити до персонажа — чекає біля миски (§9.12, рішення автора 2026-10-25).
     // Біля персонажа ворог — до нього не йде (§9.4, рішення автора 2026-10-26).
     if (context.present && !aloof(cat) && !avoiding(state, cat) && traitLevel(cat, "begging") > -2 && !enemyAtPerson(state, cat) && rng.chance(0.5)) return startAttention(state, cat, true);
-    if (empty) return start(cat, "beg", itemTile(empty), CAT_ACT_MINUTES.beg, `item:${empty.id}`);
-    // Мисок немає зовсім (розбилася чи викинули): кіт просить їсти там, де вона стояла, як і з водою (перевірка побуту
-    // 2026-10-28: раніше голодний кіт щохвилини перебирав справи).
-    const slot = SLOTS.find((s) => s.kind === "bowl");
-    if (slot) return start(cat, "beg", { x: slot.x, y: slot.y }, CAT_ACT_MINUTES.beg, "bowl");
+    if (begAtBowl(state, cat)) return;
   }
   // Новий кіт, що звикає, і дуже слабкий (§9.5, Х4) сплять і, коли нічого не треба, сидять у схованці.
   const adapting = isAdapting(state, cat);
@@ -1055,6 +1060,22 @@ function startSnack(state: GameState, cat: Cat, rng: Rng): boolean {
   return true;
 }
 
+/**
+ * Голодний кіт просить їсти біля порожньої миски (§9.12); мисок немає зовсім (розбилася чи викинули) — там, де вона стояла, як і
+ * з водою: інакше він щохвилини перебирав би справи. false — просити ніде.
+ */
+function begAtBowl(state: GameState, cat: Cat): boolean {
+  const empty = nearest(cat, itemsOf(state, "bowl"));
+  if (empty) {
+    start(cat, "beg", itemTile(empty), CAT_ACT_MINUTES.beg, `item:${empty.id}`);
+    return true;
+  }
+  const slot = SLOTS.find((s) => s.kind === "bowl");
+  if (!slot) return false;
+  start(cat, "beg", { x: slot.x, y: slot.y }, CAT_ACT_MINUTES.beg, "bowl");
+  return true;
+}
+
 /** Кіт голодний, а корму в мисках немає: по увагу він іде через голод (§9.9, «Ласкавість»). */
 function wantsFood(state: GameState, cat: Cat): boolean {
   return cat.needs.hunger >= hungerThreshold(cat) && !itemsOf(state, "bowl").some((b) => b.food > 0);
@@ -1068,7 +1089,9 @@ function startAttention(state: GameState, cat: Cat, forFood = false): void {
   if (cat.act.kind === "attention" && cat.act.minutes > 0) return;
   // «Вимогливий» ходить слідом довше, «Тактовний» — менше (§9.9); «Хвостик» тривалості не змінює (2026-10-25).
   const demanding = Math.max(0.25, 1 + TRAIT_EFFECTS.demandingStep * traitLevel(cat, "demanding"));
-  start(cat, "attention", attentionGoal(state, cat), CAT_ACT_MINUTES.attention * demanding, "character");
+  // Хвилини походу спливають лише поруч із персонажем (дорогою в кота є ціль), тож по їжу він просить `HUNGRY_ASK_MINUTES`,
+  // уже дійшовши (§9.12, «Похід по увагу»).
+  start(cat, "attention", attentionGoal(state, cat), forFood ? HUNGRY_ASK_MINUTES : CAT_ACT_MINUTES.attention * demanding, "character");
   if (forFood) cat.act.forFood = true;
 }
 
@@ -2316,6 +2339,12 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
     case "attention": {
       // Прийшов, ходив слідом і нявчив, а ласки так і не дочекався — прояв «Вимогливості» (§9.9): довше за
       // звичайний похід — «+», пішов раніше — «−» (рішення автора 2026-10-25).
+      // Просив їсти біля персонажа й не дочекався — далі просить біля миски, без нового вибору (§9.12, «Похід по увагу»);
+      // тривалість такого походу — не прояв «Вимогливості».
+      if (act.forFood === true) {
+        if (wantsFood(state, cat)) begAtBowl(state, cat);
+        return;
+      }
       if (act.seen !== true || cat.needs.attention < ATTENTION_SATISFIED) return;
       const longer = act.elapsed - CAT_ACT_MINUTES.attention;
       if (Math.abs(longer) >= DEMANDING_SEEN_MINUTES) observe(state, cat, "demanding", longer > 0 ? 1 : -1);
@@ -2821,8 +2850,11 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       // хоч би персонаж цього й не бачив.
       if (act.kind === "beg" && act.target === "door") addTrace(state, "door");
       if (act.kind === "attention") {
-        if (cat.needs.attention < ATTENTION_SATISFIED) act.minutes = 0;
-        else if (act.target === "character" && context.present && isWorking(state)) arriveAtWork(state, cat, rng);
+        // По їжу кіт просить, хоч би скільки уваги мав, і на коліна чи клавіатуру не вмощується (§9.12, «Похід по увагу»).
+        if (act.forFood !== true) {
+          if (cat.needs.attention < ATTENTION_SATISFIED) act.minutes = 0;
+          else if (act.target === "character" && context.present && isWorking(state)) arriveAtWork(state, cat, rng);
+        }
         // Не дочекався ласки — «Скидання речей +» може скинути дрібничку на очах персонажа (§9.12).
         if (cat.act === act && act.minutes > 0 && context.present) showOffKnock(state, cat, rng);
       }
@@ -3260,7 +3292,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
     (cat.act.kind === "follow" && cat.act.target !== "food");
   // Кота під рукою — його пестять чи з ним грають — нагальне не перериває: інакше пестощі щокадру повертали б голодного кота на
   // місце, а він щокадру знову вирішував би, куди йти, витрачаючи rng (рішення автора 2026-10-26). Відпустили — вирішить сам.
-  if (calm && urgent(state, cat) && !getsAttention(state, cat)) decide(state, cat, rng, context);
+  if (calm && urgent(state, cat) && !getsAttention(state, cat) && !askingPerson(state, cat)) decide(state, cat, rng, context);
   if (cat.act.kind === "attention") {
     if (!context.present) cat.act.minutes = 0;
     else {
@@ -3269,8 +3301,11 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       const near = Math.hypot(body.x - cat.x, body.y - cat.y) <= ARRIVED + keepDistance(cat);
       // Похід «через голод» — поки кіт голодний, а миски порожні: зголоднів дорогою — тепер через голод, наївся — вже ні (рішення
       // автора 2026-10-26: раніше це вирішувалося лише на початку походу).
-      if (wantsFood(state, cat)) cat.act.forFood = true;
-      else delete cat.act.forFood;
+      if (!wantsFood(state, cat)) delete cat.act.forFood;
+      else if (cat.act.forFood !== true) {
+        cat.act.forFood = true;
+        cat.act.minutes = Math.min(cat.act.minutes, HUNGRY_ASK_MINUTES);
+      }
       // Прийшов і просить уваги — прояв, який персонаж бачить (§9.9), раз за похід. Поки персонаж кота не бачить (у душовій
       // кабіні), похід ще не «побачений»: інакше єдиний прояв за похід пропадав би (фінальна перевірка рис 2026-10-26).
       if (near && cat.act.seen !== true && witnesses(state, cat)) {
