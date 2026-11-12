@@ -3303,8 +3303,9 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       // Похід «через голод» — поки кіт голодний, а миски порожні: зголоднів дорогою — тепер через голод, наївся — вже ні (рішення
       // автора 2026-10-26: раніше це вирішувалося лише на початку походу).
       if (!wantsFood(state, cat)) delete cat.act.forFood;
-      else if (cat.act.forFood !== true) {
+      else {
         cat.act.forFood = true;
+        // Обрізаємо щоразу, а не лише коли кіт зголоднів: у старому збереженні похід по їжу буває довшим.
         cat.act.minutes = Math.min(cat.act.minutes, HUNGRY_ASK_MINUTES);
       }
       // Прийшов і просить уваги — прояв, який персонаж бачить (§9.9), раз за похід. Поки персонаж кота не бачить (у душовій

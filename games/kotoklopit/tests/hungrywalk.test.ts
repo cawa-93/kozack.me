@@ -229,6 +229,16 @@ describe("похід голодного кота до персонажа (§9.12
     expect(cat.act.target).toBe(`item:${bowl.id}`);
   });
 
+  it("похід по їжу зі старого збереження, довший за `HUNGRY_ASK_MINUTES`, теж закінчується вчасно", () => {
+    const save = game();
+    const cat = withCat(save);
+    const body = save.current.character.body;
+    cat.act = { kind: "attention", target: "character", goal: { x: Math.floor(body.x), y: Math.floor(body.y) }, minutes: CAT_ACT_MINUTES.attention * 1.5, elapsed: 0, forFood: true };
+    const walk = follow(save, cat, 60, 1 / 30, HUNGRY);
+    expect(walk.ended! - walk.arrived!).toBeLessThan(ASK + 1.5);
+    expect(walk.acts.slice(0, 2)).toEqual(["attention", "beg"]);
+  });
+
   it("ворог біля персонажа, «Не випрошує» й кіт, що не любить, до персонажа не йдуть — просять біля миски", () => {
     const never = (save: Save, cat: Cat): void => {
       for (let seed = 0; seed < 40; seed++) {
