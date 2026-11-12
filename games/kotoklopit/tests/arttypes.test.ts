@@ -95,7 +95,7 @@ describe("типи арту", () => {
 
   it("кадр index.json і рецепт тонування складаються", () => {
     const index: ArtIndex = {
-      version: 1,
+      version: 2,
       pages: [{ file: "page-0.3f9a2c1b.webp", w: 2048, h: 2048 }],
       frames: {
         "cat/head/normal/front": {
@@ -103,10 +103,9 @@ describe("типи арту", () => {
           res: 1,
           pivot: HEAD.pivot,
           points: { mouth: { x: 44, y: 40 } },
-          trim: { x: 2, y: 3 },
-          layers: { fill: { page: 0, x: 0, y: 0, w: 60, h: 56 }, ink: { page: 0, x: 62, y: 0, w: 60, h: 56 } },
+          layers: { fill: { page: 0, x: 0, y: 0, w: 52, h: 50, dx: 6, dy: 5 }, ink: { page: 0, x: 62, y: 0, w: 60, h: 56, dx: 2, dy: 3 } },
         },
-        "icon/thirst": { size: THIRST.size, res: 2, pivot: THIRST.pivot, trim: { x: 0, y: 0 }, layers: { all: { page: 0, x: 0, y: 60, w: 80, h: 80 } }, stub: true },
+        "icon/thirst": { size: THIRST.size, res: 2, pivot: THIRST.pivot, layers: { all: { page: 0, x: 0, y: 60, w: 80, h: 80, dx: 0, dy: 0 } }, stub: true },
       },
     };
     const recipe: TintRecipe = {

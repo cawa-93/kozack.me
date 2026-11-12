@@ -9,7 +9,7 @@ import {
   isArtLayer,
   type ArtIndex,
   type AtlasPage,
-  type AtlasRect,
+  type IndexLayer,
 } from "./types";
 
 /** Базова адреса гри з «/» наприкінці (`import.meta.env.BASE_URL`: «/» у dev, «/games/kotoklopit/» у збірці). */
@@ -54,7 +54,7 @@ const isPoint = (value: unknown): boolean => isObject(value) && isNumber(value["
 
 /** Скільки помилок перелічувати, щоб зламаний файл на тисячу кадрів не дав тисячу рядків. */
 const MAX_PROBLEMS = 20;
-/** Дробові розміри полотна (`size · res`) округлює конвеєр: на стільки пікселів рамка може вийти за полотно. */
+/** Дробові розміри полотна (`size · res`) округлює конвеєр: на стільки пікселів шар може вийти за полотно. */
 const ROUNDING_PX = 1;
 
 /** Що не так із розібраним `index.json`: по рядку на помилку (не більше `MAX_PROBLEMS`); порожньо — усе гаразд. */
@@ -91,26 +91,24 @@ function frameProblems(id: string, frame: unknown, pages: readonly AtlasPage[], 
   if (!isObject(size) || !isPositive(size["w"]) || !isPositive(size["h"])) return add(`${where}: розмір має бути додатним`);
   if (!isPositive(frame["res"])) return add(`${where}: res має бути додатною`);
   if (!isPoint(frame["pivot"])) return add(`${where}: pivot має бути точкою`);
-  if (!isPoint(frame["trim"])) return add(`${where}: trim має бути точкою`);
   const points = frame["points"];
   if (points !== undefined && (!isObject(points) || !Object.values(points).every(isPoint))) return add(`${where}: точки мають бути точками`);
   const layers = frame["layers"];
   if (!isObject(layers) || Object.keys(layers).length === 0) return add(`${where}: немає шарів`);
   const { w, h } = size as { w: number; h: number };
   const res = frame["res"] as number;
-  const trim = frame["trim"] as { x: number; y: number };
-  let rectSize: string | null = null;
   for (const [layer, rect] of Object.entries(layers)) {
     const at = `${where}, шар «${layer}»`;
     if (layer !== "all" && !isArtLayer(layer)) {
       if (!add(`${at}: невідомий шар`)) return false;
       continue;
     }
-    if (!isObject(rect) || !isNumber(rect["page"]) || !isNumber(rect["x"]) || !isNumber(rect["y"]) || !isPositive(rect["w"]) || !isPositive(rect["h"])) {
-      if (!add(`${at}: треба { page, x, y, w, h }`)) return false;
+    const fields = ["page", "x", "y", "dx", "dy"] as const;
+    if (!isObject(rect) || !fields.every((field) => isNumber(rect[field])) || !isPositive(rect["w"]) || !isPositive(rect["h"])) {
+      if (!add(`${at}: треба { page, x, y, w, h, dx, dy }`)) return false;
       continue;
     }
-    const r = rect as unknown as AtlasRect;
+    const r = rect as unknown as IndexLayer;
     const page = Number.isInteger(r.page) ? pages[r.page] : undefined;
     if (page === undefined) {
       if (!add(`${at}: немає сторінки ${r.page}`)) return false;
@@ -119,15 +117,10 @@ function frameProblems(id: string, frame: unknown, pages: readonly AtlasPage[], 
     if (r.x < 0 || r.y < 0 || r.x + r.w > page.w || r.y + r.h > page.h) {
       if (!add(`${at}: виходить за сторінку ${r.page} (${page.w} × ${page.h})`)) return false;
     }
-    if (trim.x < 0 || trim.y < 0 || trim.x + r.w > w * res + ROUNDING_PX || trim.y + r.h > h * res + ROUNDING_PX) {
-      if (!add(`${at}: рамка обрізки виходить за полотно ${w * res} × ${h * res}`)) return false;
+    // Кожен шар обрізано своєю рамкою: лягає на полотно кадру зі своїм зсувом і має в ньому вміститися.
+    if (r.dx < 0 || r.dy < 0 || r.dx + r.w > w * res + ROUNDING_PX || r.dy + r.h > h * res + ROUNDING_PX) {
+      if (!add(`${at}: виходить за полотно кадру ${w * res} × ${h * res}`)) return false;
     }
-    // Шари одного кадру обрізано спільною рамкою — вони однакового розміру й накладаються піксель у піксель.
-    const thisSize = `${r.w} × ${r.h}`;
-    if (rectSize !== null && rectSize !== thisSize) {
-      if (!add(`${at}: ${thisSize}, а інші шари кадру — ${rectSize}`)) return false;
-    }
-    rectSize ??= thisSize;
   }
   if (frame["stub"] !== undefined && frame["stub"] !== true) return add(`${where}: stub — лише true`);
   return true;

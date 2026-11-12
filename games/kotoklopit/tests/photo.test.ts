@@ -405,7 +405,7 @@ function fakeCanvas(width: number, height: number): { canvas: HTMLCanvasElement;
 
 /** Атлас, у якому є всі кадри фото (кожен шар — на сторінці 0). */
 function fakeAtlas(frames: readonly FrameId[]): void {
-  const entry = (): IndexFrame => ({ size: { w: 40, h: 40 }, res: 1, pivot: { x: 20, y: 36 }, trim: { x: 0, y: 0 }, layers: Object.fromEntries(["all", "fill", "shade", "ink"].map((l) => [l, { page: 0, x: 0, y: 0, w: 40, h: 40 }])) });
+  const entry = (): IndexFrame => ({ size: { w: 40, h: 40 }, res: 1, pivot: { x: 20, y: 36 }, layers: Object.fromEntries(["all", "fill", "shade", "ink"].map((l) => [l, { page: 0, x: 0, y: 0, w: 40, h: 40, dx: 0, dy: 0 }])) });
   const index: ArtIndex = { version: ART_INDEX_VERSION, pages: [{ file: "page-0.webp", w: 64, h: 64 }], frames: Object.fromEntries(frames.map((f) => [f, entry()])) };
   shareArtAtlas(index, [{ name: "сторінка" } as unknown as CanvasImageSource]);
 }

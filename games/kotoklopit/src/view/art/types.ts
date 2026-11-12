@@ -249,7 +249,7 @@ export function framesOf(entry: ArtEntry): ArtFrameRef[] {
 export const ART_DIR = "art";
 export const ART_INDEX_FILE = "index.json";
 /** Версія формату `index.json`: несумісна зміна формату — нова версія. */
-export const ART_INDEX_VERSION = 1;
+export const ART_INDEX_VERSION = 2;
 /** Ключ текстури Phaser з усіма сторінками атласу (сторінка — джерело текстури з тим самим номером). */
 export const ART_TEXTURE = "art";
 
@@ -285,9 +285,17 @@ export interface AtlasRect {
 }
 
 /**
- * Кадр у `index.json`. Шари одного кадру растеризуються окремо й обрізаються спільною рамкою, тож усі вони одного розміру
- * `w × h` і накладаються піксель у піксель.
+ * Шар кадру в `index.json`: прямокутник на сторінці й де він лягає на полотно кадру. Кожен шар обрізано своєю рамкою (за
+ * своєю альфою), тож шари одного кадру — різного розміру й з різним зсувом; на своїх зсувах вони накладаються піксель у
+ * піксель. Порожній шар — спільний прозорий піксель 1 × 1 у (0, 0): кадр і шар є, а місця на сторінці він не займає.
  */
+export interface IndexLayer extends AtlasRect {
+  /** Зсув шару від лівого верхнього кута полотна кадру, пікселі атласу (у Phaser — `setTrim`, `frame.x`, `frame.y`). */
+  dx: number;
+  dy: number;
+}
+
+/** Кадр у `index.json`: полотно `size · res` пікселів, на яке шари лягають кожен зі своїм зсувом. */
 export interface IndexFrame {
   /** Розмір полотна SVG, одиниці арту (з маніфесту). */
   size: ArtSize;
@@ -297,10 +305,8 @@ export interface IndexFrame {
   pivot: ArtPoint;
   /** Точки кріплення, одиниці арту від лівого верхнього кута полотна (з маніфесту). */
   points?: Readonly<Record<string, ArtPoint>>;
-  /** Де в полотні починається спільна рамка обрізки: зсув від лівого верхнього кута, пікселі атласу. */
-  trim: ArtPoint;
-  /** Шари кадру: де кожен лежить в атласі; запис без `layers` має єдиний шар `all`. */
-  layers: Readonly<Partial<Record<FrameLayer, AtlasRect>>>;
+  /** Шари кадру: де кожен лежить в атласі й на полотні кадру; запис без `layers` має єдиний шар `all`. */
+  layers: Readonly<Partial<Record<FrameLayer, IndexLayer>>>;
   /** SVG ще немає — кадр є маджентовою заглушкою потрібного розміру й pivot. */
   stub?: true;
 }
@@ -308,7 +314,7 @@ export interface IndexFrame {
 /** `public/art/index.json`: усе, що потрібно PreloadScene, галереї й компонувальнику. */
 export interface ArtIndex {
   version: typeof ART_INDEX_VERSION;
-  /** Сторінки атласу; `AtlasRect.page` — індекс тут. */
+  /** Сторінки атласу; `IndexLayer.page` — індекс тут. */
   pages: readonly AtlasPage[];
   /** Кадри за id. */
   frames: Readonly<Record<FrameId, IndexFrame>>;

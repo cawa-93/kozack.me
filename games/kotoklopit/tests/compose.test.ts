@@ -586,8 +586,7 @@ describe("поза браузером", () => {
           size: { w: 64, h: 70 },
           res: 2,
           pivot: { x: 32, y: 46 },
-          trim: { x: 3, y: 4 },
-          layers: { ink: { page: 1, x: 10, y: 20, w: 30, h: 40 } },
+          layers: { ink: { page: 1, x: 10, y: 20, w: 30, h: 40, dx: 3, dy: 4 } },
         },
       },
     };

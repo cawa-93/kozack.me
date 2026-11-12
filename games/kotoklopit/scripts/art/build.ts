@@ -19,10 +19,10 @@ import {
   type ArtEntry,
   type ArtIndex,
   type AtlasPage,
-  type AtlasRect,
   type FrameId,
   type FrameLayer,
   type IndexFrame,
+  type IndexLayer,
 } from "../../src/view/art/types";
 import { ArtCache, CACHE_SUBDIR, hashOf } from "./cache";
 import { composePage, pack, PACK_DEFAULTS, type PackOptions } from "./pack";
@@ -33,9 +33,9 @@ export { ART_DIR, ART_INDEX_FILE };
 
 /**
  * Версія конвеєра для ключів кешу: змінилося те, як SVG стає растром чи сторінкою, — нова версія, і старий кеш не
- * береться.
+ * береться. «2» — кожен шар обрізано своєю рамкою.
  */
-export const PIPELINE_VERSION = "1";
+export const PIPELINE_VERSION = "2";
 
 /** Бюджет усіх атласів разом (GRAPHICS_PLAN.md): більше — попередження в лозі. */
 export const ART_BUDGET_BYTES = 5 * 1024 * 1024;
@@ -145,7 +145,7 @@ async function stubRaster(entry: ArtEntry, res: number, cache: ArtCache): Promis
     trim: { x: 0, y: 0 },
     w: image.w,
     h: image.h,
-    layers: layers.map((layer) => ({ layer, ...crop(image, 0, 0, image.w, image.h) })),
+    layers: layers.map((layer) => ({ layer, x: 0, y: 0, ...crop(image, 0, 0, image.w, image.h) })),
   };
   cache.writeFrame(key, frame);
   return frame;
@@ -237,7 +237,7 @@ export async function buildArt(options: ArtBuildOptions): Promise<ArtBuild> {
   const frames = (await pool(jobs, concurrency, (job) => job())).filter((job): job is FrameJob => job !== null);
   frames.sort((a, b) => (a.frame < b.frame ? -1 : a.frame > b.frame ? 1 : 0));
 
-  // Однакові растри (заглушки однакового розміру, однакові стани) лежать на сторінці один раз.
+  // Однакові растри (заглушки однакового розміру, однакові стани, усі порожні шари) лежать на сторінці один раз.
   const images = new Map<string, Rgba>();
   const layerImage = new Map<string, string>();
   let layerCount = 0;
@@ -294,18 +294,17 @@ export async function buildArt(options: ArtBuildOptions): Promise<ArtBuild> {
   const indexFrames: Record<FrameId, IndexFrame> = {};
   let stubs = 0;
   for (const job of frames) {
-    const layers: Partial<Record<FrameLayer, AtlasRect>> = {};
+    const layers: Partial<Record<FrameLayer, IndexLayer>> = {};
     for (const layer of job.raster.layers) {
       const at = packed.placements.get(layerImage.get(`${job.frame}#${layer.layer}`) ?? "");
       if (!at) continue;
-      layers[layer.layer] = { page: at.page, x: at.x, y: at.y, w: layer.w, h: layer.h };
+      layers[layer.layer] = { page: at.page, x: at.x, y: at.y, w: layer.w, h: layer.h, dx: layer.x, dy: layer.y };
     }
     const frame: IndexFrame = {
       size: job.entry.size,
       res: job.res,
       pivot: job.entry.pivot,
       ...(job.entry.points ? { points: job.entry.points } : {}),
-      trim: job.raster.trim,
       layers,
       ...(job.stub ? { stub: true as const } : {}),
     };

@@ -179,7 +179,7 @@ function installAtlas(scene: Phaser.Scene, index: ArtIndex, images: readonly HTM
       if (!rect) continue;
       const added = texture.add(layerFrameName(id as FrameId, layer as FrameLayer), rect.page, rect.x, rect.y, rect.w, rect.h);
       if (!added) continue;
-      added.setTrim(frame.size.w * frame.res, frame.size.h * frame.res, frame.trim.x, frame.trim.y, rect.w, rect.h);
+      added.setTrim(frame.size.w * frame.res, frame.size.h * frame.res, rect.dx, rect.dy, rect.w, rect.h);
       // Pivot і точки для розміщення беруться з маніфесту (`atlas.ts`); тут — для того, хто дивиться на кадр сам по собі.
       Object.assign(added.customData, { pivot: frame.pivot, points: frame.points ?? {}, stub: frame.stub === true });
     }

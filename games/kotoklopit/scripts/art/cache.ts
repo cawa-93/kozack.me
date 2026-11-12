@@ -6,7 +6,7 @@
 //
 // Формати:
 // - `<ключ>.frame` — растри шарів кадру: deflate від [4 байти довжини заголовка (LE) | заголовок JSON | RGBA шарів підряд];
-//   заголовок — `FrameRasterHeader`;
+//   заголовок — `FrameRasterHeader`, кожен шар зі своєю рамкою; файл іншого формату читається як «немає в кеші»;
 // - `<ключ>.webp` — закодована сторінка атласу.
 
 import { createHash, randomBytes } from "node:crypto";
@@ -94,13 +94,25 @@ export class ArtCache {
   }
 }
 
-/** Заголовок `<ключ>.frame`: полотно, рамка обрізки й шари по порядку (дані — підряд, кожен `w · h · 4` байтів). */
+/** Шар у заголовку `<ключ>.frame`: назва й рамка — зсув у полотні й розмір. */
+interface LayerHeader {
+  layer: FrameLayer;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/**
+ * Заголовок `<ключ>.frame`: полотно, рамка вмісту й шари по порядку, кожен зі своєю рамкою (дані — підряд, кожен
+ * `w · h · 4` байтів свого шару).
+ */
 interface FrameRasterHeader {
   canvas: { w: number; h: number };
   trim: { x: number; y: number };
   w: number;
   h: number;
-  layers: FrameLayer[];
+  layers: LayerHeader[];
 }
 
 function encodeFrame(frame: FrameRaster): Buffer {
@@ -109,7 +121,7 @@ function encodeFrame(frame: FrameRaster): Buffer {
     trim: frame.trim,
     w: frame.w,
     h: frame.h,
-    layers: frame.layers.map((layer) => layer.layer),
+    layers: frame.layers.map(({ layer, x, y, w, h }) => ({ layer, x, y, w, h })),
   };
   const json = Buffer.from(JSON.stringify(header));
   const length = Buffer.alloc(4);
@@ -117,16 +129,23 @@ function encodeFrame(frame: FrameRaster): Buffer {
   return Buffer.concat([length, json, ...frame.layers.map((layer) => layer.data)]);
 }
 
+const isCount = (value: unknown): value is number => Number.isInteger(value) && (value as number) >= 0;
+
 function decodeFrame(buf: Buffer): FrameRaster {
   const length = buf.readUInt32LE(0);
   const header = JSON.parse(buf.subarray(4, 4 + length).toString()) as FrameRasterHeader;
-  const bytes = header.w * header.h * 4;
   let offset = 4 + length;
-  const layers = header.layers.map((layer) => {
+  const layers = header.layers.map((entry: unknown) => {
+    // Старий формат (рядок-назва, шари спільною рамкою кадру) — «немає в кеші», а не криві шари.
+    const l = entry as Partial<LayerHeader> | null;
+    if (typeof l !== "object" || l === null || typeof l.layer !== "string" || ![l.x, l.y, l.w, l.h].every(isCount)) throw new Error("не той формат кадру в кеші");
+    const { layer, x, y, w, h } = l as LayerHeader;
+    const bytes = w * h * 4;
     const data = Buffer.from(buf.subarray(offset, offset + bytes));
     offset += bytes;
     if (data.length !== bytes) throw new Error("обірваний кадр у кеші");
-    return { layer, w: header.w, h: header.h, data };
+    return { layer, x, y, w, h, data };
   });
+  if (offset !== buf.length) throw new Error("зайві байти в кадрі кешу");
   return { canvas: header.canvas, trim: header.trim, w: header.w, h: header.h, layers };
 }

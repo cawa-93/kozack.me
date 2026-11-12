@@ -22,8 +22,8 @@ import { frameId, type ArtId, type ArtLayer, type ArtPoint, type ArtSize, type A
 
 /**
  * Один шар кадру: прямокутник `sx, sy, sw, sh` зображення (сторінки атласу) і куди він лягає на полотні кадру, пікселі:
- * за замовчуванням у (0, 0) того самого розміру. Шари атласу обрізано спільною рамкою, тож `dx, dy` — зсув обрізки
- * (`IndexFrame.trim`, у Phaser — `frame.data.spriteSourceSize`).
+ * за замовчуванням у (0, 0) того самого розміру. Кожен шар атласу обрізано своєю рамкою, тож `dx, dy` — його зсув у
+ * полотні кадру (`IndexLayer.dx`, `dy`; у Phaser — `frame.x`, `frame.y`).
  */
 export interface LayerImage {
   image: CanvasImageSource;

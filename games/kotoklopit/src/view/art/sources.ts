@@ -143,7 +143,7 @@ export interface FrameLayers {
 
 /**
  * Шари кадру зі сторінок атласу, якщо індекс і сторінки вже завантажено (`artFrameState` — `ready`), інакше null.
- * Полотно кадру — `size · res` пікселів; шар лягає на нього зі зсувом обрізки `trim`.
+ * Полотно кадру — `size · res` пікселів; кожен шар лягає на нього зі своїм зсувом (`IndexLayer.dx`, `dy`).
  */
 export function artLayerSource(frame: FrameId): FrameLayers | null {
   const entry = index?.frames[frame];
@@ -153,7 +153,7 @@ export function artLayerSource(frame: FrameId): FrameLayers | null {
     const rect = entry.layers[layer];
     const image = rect ? pages.get(rect.page) : undefined;
     if (!rect || !image) return null;
-    return { image, sx: rect.x, sy: rect.y, sw: rect.w, sh: rect.h, dx: entry.trim.x, dy: entry.trim.y };
+    return { image, sx: rect.x, sy: rect.y, sw: rect.w, sh: rect.h, dx: rect.dx, dy: rect.dy };
   };
   return { source, w: Math.round(entry.size.w * entry.res), h: Math.round(entry.size.h * entry.res), frame: entry };
 }

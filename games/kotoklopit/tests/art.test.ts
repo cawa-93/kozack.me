@@ -2,10 +2,11 @@
 // палітри; перевірки SVG, растеризація шарів, обрізка, пакування, кеш і збирання атласу — на фікстурах
 // (`tests/fixtures/art/`), поки справжнього арту мало.
 
-import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { deflateSync } from "node:zlib";
 
 import sharp from "sharp";
 import { afterAll, describe, expect, it } from "vitest";
@@ -14,7 +15,7 @@ import { ALLOWED_COLORS, LINE } from "../art/palette";
 import { artChange, buildArt, isAtlasFile, listFiles, loadManifest, requireAllFromEnv, stubRes, STUB_ATLAS_RES } from "../scripts/art/build";
 import { ArtCache } from "../scripts/art/cache";
 import { composePage, pack, pow2, type PackItem } from "../scripts/art/pack";
-import { rasterFrame, unionBounds, type Rgba } from "../scripts/art/raster";
+import { densityFor, rasterFrame, rasterize, stylesheetsFor, unionBounds, type LayerRaster, type Rgba } from "../scripts/art/raster";
 import {
   colorProblems,
   drawnProblems,
@@ -351,38 +352,85 @@ const headJob = (view: "front" | "back", res = 2) => {
   return { svg: text, size: HEAD.size, res, layers: HEAD.layers ?? null, fileLayers: topLevelLayers(text), state: null, states: [] };
 };
 
+/** Шар на прозорому полотні кадру повного розміру — у своєму зсуві. */
+function onCanvas(canvas: { w: number; h: number }, layer: LayerRaster): Buffer {
+  const out = Buffer.alloc(canvas.w * canvas.h * 4);
+  for (let row = 0; row < layer.h; row++) layer.data.copy(out, ((layer.y + row) * canvas.w + layer.x) * 4, row * layer.w * 4, (row + 1) * layer.w * 4);
+  return out;
+}
+
+/** Чи рамка шару тісна: у крайніх рядках і стовпцях є непрозорий піксель. */
+function isTight(r: Rgba): boolean {
+  const alpha = (x: number, y: number): boolean => pixel(r, x, y)[3] !== 0;
+  const row = (y: number): boolean => Array.from({ length: r.w }, (_, x) => alpha(x, y)).some(Boolean);
+  const column = (x: number): boolean => Array.from({ length: r.h }, (_, y) => alpha(x, y)).some(Boolean);
+  return row(0) && row(r.h - 1) && column(0) && column(r.w - 1);
+}
+
 describe("растеризація шарів", () => {
-  it("шари — окремо, одного розміру, спільною рамкою обрізки, піксель у піксель", async () => {
-    const frame = await rasterFrame(headJob("front"));
+  it("шари — окремо, кожен обрізано своєю рамкою; у своєму зсуві — піксель у піксель растр повного полотна", async () => {
+    const job = headJob("front");
+    const frame = await rasterFrame(job);
     expect(frame.canvas).toEqual({ w: 128, h: 120 });
-    // Контур (коло r=20, лінія 6) — найбільший: рамка — його межі, (32 ± 23, 30 ± 23) одиниць × 2.
+    // Рамка вмісту — об'єднання шарів: контур (коло r=20, лінія 6) найбільший, (32 ± 23, 30 ± 23) одиниць × 2.
     expect(frame.trim).toEqual({ x: 18, y: 14 });
     expect([frame.w, frame.h]).toEqual([92, 92]);
-    expect(frame.layers.map((layer) => [layer.layer, layer.w, layer.h])).toEqual([
-      ["fill", 92, 92],
-      ["shade", 92, 92],
-      ["ink", 92, 92],
-    ]);
-    const [fill, shade, ink] = frame.layers as unknown as [Rgba, Rgba, Rgba];
-    // Заливка й контур — те саме коло: центри збігаються до сотої пікселя.
+    expect(frame.layers.map((layer) => layer.layer)).toEqual(["fill", "shade", "ink"]);
+    const [fill, shade, ink] = frame.layers as unknown as [LayerRaster, LayerRaster, LayerRaster];
+    expect([ink.x, ink.y, ink.w, ink.h]).toEqual([18, 14, 92, 92]);
+    // Тінь — еліпс 24 × 12 одиниць біля низу голови: її рамка — лише вона, а не рамка контуру.
+    expect(shade.w).toBeLessThanOrEqual(50);
+    expect(shade.h).toBeLessThanOrEqual(26);
+    expect(shade.y).toBeGreaterThan(60);
+    expect(fill.w).toBeLessThan(ink.w);
+    for (const layer of frame.layers) expect(isTight(layer), layer.layer).toBe(true);
+    // Кожен шар у своєму зсуві — той самий растр, що шар, растеризований на все полотно.
+    const svg = prepareSvg(job.svg, job.size);
+    for (const [i, sheet] of stylesheetsFor(job).entries()) {
+      const full = await rasterize(svg, densityFor(job.res), sheet.css);
+      expect(onCanvas(frame.canvas, frame.layers[i]!).equals(full.data), sheet.layer).toBe(true);
+    }
+    // Заливка й контур — те саме коло: центри (у полотні) збігаються до сотої пікселя.
     const c1 = centroid(fill);
     const c2 = centroid(ink);
-    expect(Math.abs(c1.x - c2.x)).toBeLessThan(0.01);
-    expect(Math.abs(c1.y - c2.y)).toBeLessThan(0.01);
-    expect(c1.x).toBeCloseTo(46, 1);
+    expect(Math.abs(c1.x + fill.x - (c2.x + ink.x))).toBeLessThan(0.01);
+    expect(Math.abs(c1.y + fill.y - (c2.y + ink.y))).toBeLessThan(0.01);
+    expect(c1.x + fill.x).toBeCloseTo(64, 1);
     // Кожен шар — лише своє: заливка біла, тінь сіра, контур чорнильний.
     expect(hasOtherColor(fill, [255, 255, 255])).toBe(false);
     expect(hasOtherColor(shade, [0xbd, 0xb3, 0xc2])).toBe(false);
     expect(hasOtherColor(ink, [0x1f, 0x1a, 0x24])).toBe(false);
-    // Край заливки (r=20 → 40 px від центру) прозорий там, де контур ще є (r до 23 → 46 px).
-    expect(pixel(fill, 46, 46 - 43)[3]).toBe(0);
-    expect(pixel(ink, 46, 46 - 43)[3]).toBeGreaterThan(200);
+  });
+
+  it("порожній шар — один прозорий піксель у (0, 0); кадр без нічого — так само кожен шар", async () => {
+    const text = svg('<g id="fill"><rect x="10" y="10" width="20" height="20" fill="#ffffff"/></g><g id="shade"/><g id="ink"/>');
+    const job = { svg: text, size: HEAD.size, res: 2, layers: HEAD.layers ?? null, fileLayers: topLevelLayers(text), state: null, states: [] };
+    const frame = await rasterFrame(job);
+    expect(frame.layers.map((l) => [l.layer, l.x, l.y, l.w, l.h])).toEqual([
+      ["fill", 20, 20, 40, 40],
+      ["shade", 0, 0, 1, 1],
+      ["ink", 0, 0, 1, 1],
+    ]);
+    expect([...frame.layers[1]!.data, ...frame.layers[2]!.data]).toEqual(new Array(8).fill(0));
+    // Рамка вмісту — лише непорожні шари.
+    expect([frame.trim.x, frame.trim.y, frame.w, frame.h]).toEqual([20, 20, 40, 40]);
+    const blankText = svg('<g id="fill"/><g id="shade"/><g id="ink"/>');
+    const blank = await rasterFrame({ ...job, svg: blankText, fileLayers: topLevelLayers(blankText) });
+    expect(blank.layers.map((l) => [l.x, l.y, l.w, l.h])).toEqual([
+      [0, 0, 1, 1],
+      [0, 0, 1, 1],
+      [0, 0, 1, 1],
+    ]);
+    expect([blank.trim.x, blank.trim.y, blank.w, blank.h]).toEqual([0, 0, 1, 1]);
   });
 
   it("роздільність — пікселів на одиницю; дробова теж (полотно округлено)", async () => {
     const frame = await rasterFrame(headJob("back", 1.5));
     expect(frame.canvas).toEqual({ w: 96, h: 90 });
-    for (const layer of frame.layers) expect([layer.w, layer.h]).toEqual([frame.w, frame.h]);
+    for (const layer of frame.layers) {
+      expect(layer.x + layer.w).toBeLessThanOrEqual(frame.canvas.w);
+      expect(layer.y + layer.h).toBeLessThanOrEqual(frame.canvas.h);
+    }
     const odd = await rasterFrame({ ...headJob("back", 1.3), layers: ["ink"] });
     expect(odd.canvas).toEqual({ w: Math.round(64 * 1.3), h: Math.round(60 * 1.3) });
   });
@@ -392,8 +440,8 @@ describe("растеризація шарів", () => {
     const job = (state: string) => ({ svg: text, size: BOX.size, res: 1, layers: null, fileLayers: [], state, states: BOX.states ?? [] });
     const [closed, half, open] = await Promise.all(["closed", "half", "open"].map((state) => rasterFrame(job(state))));
     const at = (frame: Awaited<ReturnType<typeof rasterFrame>>, x: number, y: number) => {
-      const layer = frame.layers[0] as Rgba;
-      return pixel(layer, x - frame.trim.x, y - frame.trim.y);
+      const layer = frame.layers[0]!;
+      return pixel(layer, x - layer.x, y - layer.y);
     };
     // Наліпка (st-half st-open) у (60, 63): папір у half і open, дерево в closed.
     expect(at(closed!, 60, 63).slice(0, 3)).toEqual([0x8b, 0x5e, 0x3c]);
@@ -517,7 +565,10 @@ describe("кеш", () => {
     cache.writeFrame("abc", frame);
     const back = cache.readFrame("abc");
     expect(back?.trim).toEqual(frame.trim);
-    expect(back?.layers.map((layer) => layer.layer)).toEqual(["fill", "shade", "ink"]);
+    expect([back?.w, back?.h]).toEqual([frame.w, frame.h]);
+    // Кожен шар — зі своєю рамкою.
+    expect(back?.layers.map((l) => [l.layer, l.x, l.y, l.w, l.h])).toEqual(frame.layers.map((l) => [l.layer, l.x, l.y, l.w, l.h]));
+    expect(new Set(frame.layers.map((l) => `${l.w}×${l.h}`)).size).toBeGreaterThan(1);
     for (let i = 0; i < frame.layers.length; i++) expect(back?.layers[i]?.data.equals(frame.layers[i]!.data)).toBe(true);
     // Тимчасових файлів не лишилося.
     const left = readdirSync(dir, { recursive: true }).map(String);
@@ -526,6 +577,16 @@ describe("кеш", () => {
     const off = new ArtCache(null);
     off.writeFrame("abc", frame);
     expect(off.readFrame("abc")).toBeNull();
+  });
+
+  it("кадр старого формату (шари спільною рамкою, без своїх) не береться: його растеризують заново", () => {
+    const cache = new ArtCache(tempDir());
+    const header = Buffer.from(JSON.stringify({ canvas: { w: 4, h: 4 }, trim: { x: 1, y: 1 }, w: 2, h: 2, layers: ["fill", "ink"] }));
+    const length = Buffer.alloc(4);
+    length.writeUInt32LE(header.length, 0);
+    cache.write("old", "frame", deflateSync(Buffer.concat([length, header, Buffer.alloc(2 * 2 * 4 * 2, 255)])));
+    expect(cache.read("old", "frame")).not.toBeNull();
+    expect(cache.readFrame("old")).toBeNull();
   });
 });
 
@@ -553,15 +614,21 @@ describe("збирання атласу на фікстурах", () => {
     ]);
     const head = index.frames["cat/head/front"]!;
     expect(Object.keys(head.layers)).toEqual(["fill", "shade", "ink"]);
-    expect(head).toMatchObject({ size: HEAD.size, res: 2, pivot: HEAD.pivot, trim: { x: 18, y: 14 } });
+    expect(head).toMatchObject({ size: HEAD.size, res: 2, pivot: HEAD.pivot });
     expect(head.stub).toBeUndefined();
+    // Кожен шар — зі своєю рамкою обрізки: зсув у полотні кадру й розмір; спільної рамки кадру немає.
+    expect(head).not.toHaveProperty("trim");
+    const frame = await rasterFrame(headJob("front"));
+    for (const layer of frame.layers) expect(head.layers[layer.layer]).toMatchObject({ dx: layer.x, dy: layer.y, w: layer.w, h: layer.h });
+    expect(head.layers.ink).toMatchObject({ dx: 18, dy: 14, w: 92, h: 92 });
+    expect(head.layers.shade!.w).toBeLessThan(92);
     expect(index.frames["env/box/open"]!.points).toEqual({ lid: { x: 60, y: 20 } });
     expect(Object.keys(index.frames["env/box/open"]!.layers)).toEqual(["all"]);
     // Заглушка: роздільність не більша за STUB_ATLAS_RES, без обрізки.
     const ghost = index.frames["item/ghost"]!;
-    expect(ghost).toMatchObject({ stub: true, res: stubRes(GHOST, 2), trim: { x: 0, y: 0 } });
+    expect(ghost).toMatchObject({ stub: true, res: stubRes(GHOST, 2) });
     expect(ghost.res).toBe(STUB_ATLAS_RES);
-    expect(ghost.layers.all).toMatchObject({ w: 40 * STUB_ATLAS_RES, h: 30 * STUB_ATLAS_RES });
+    expect(ghost.layers.all).toMatchObject({ dx: 0, dy: 0, w: 40 * STUB_ATLAS_RES, h: 30 * STUB_ATLAS_RES });
     // Два стани без класів st-* — той самий растр.
     expect(index.frames["item/ball/a"]!.layers.all).toEqual(index.frames["item/ball/b"]!.layers.all);
     expect(build.stats).toMatchObject({ entries: 4, frames: 8, stubs: 1, pages: 1 });
@@ -575,14 +642,17 @@ describe("збирання атласу на фікстурах", () => {
     const decoded = await sharp(build.files.get(page.file)!).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
     expect([decoded.info.width, decoded.info.height]).toEqual([page.w, page.h]);
     const pageRgba: Rgba = { w: decoded.info.width, h: decoded.info.height, data: decoded.data };
-    const frame = await rasterFrame(headJob("front"));
-    const ink = frame.layers[2]!;
-    const rect = head.layers.ink!;
-    for (const [x, y] of [[46, 3], [10, 46], [46, 46], [80, 50]] as const) {
-      const want = pixel(ink, x, y);
-      const got = pixel(pageRgba, rect.x + x, rect.y + y);
-      if (want[3] === 0) expect(got[3]).toBe(0);
-      else expect(got).toEqual(want);
+    for (const layer of frame.layers) {
+      const rect = head.layers[layer.layer]!;
+      let differ = 0;
+      for (let y = 0; y < layer.h; y++) {
+        for (let x = 0; x < layer.w; x++) {
+          const want = pixel(layer, x, y);
+          const got = pixel(pageRgba, rect.x + x, rect.y + y);
+          if (want[3] === 0 ? got[3] !== 0 : got.some((v, i) => v !== want[i])) differ++;
+        }
+      }
+      expect(differ, layer.layer).toBe(0);
     }
     // Усі прямокутники — у межах сторінки.
     for (const f of Object.values(index.frames)) {
@@ -591,6 +661,29 @@ describe("збирання атласу на фікстурах", () => {
         expect(r!.y + r!.h).toBeLessThanOrEqual(page.h);
       }
     }
+  });
+
+  it("порожній шар не займає місця на сторінці: усі порожні — один спільний прозорий піксель", async () => {
+    const dir = tempDir();
+    const write = (file: string, body: string): void => {
+      mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+      writeFileSync(path.join(dir, file), svg(body));
+    };
+    write("cat/part.svg", '<g id="fill"><rect x="10" y="10" width="20" height="20" fill="#ffffff"/></g><g id="shade"/><g id="ink"/>');
+    write("cat/other.svg", '<g id="fill"><circle cx="32" cy="30" r="12" fill="#ffffff"/></g><g id="shade"/><g id="ink"><circle cx="32" cy="30" r="12" fill="none" stroke="#1f1a24" stroke-width="4"/></g>');
+    const part: ArtEntry = { id: "cat/part", size: HEAD.size, pivot: HEAD.pivot, layers: ["fill", "shade", "ink"] };
+    const other: ArtEntry = { id: "cat/other", size: HEAD.size, pivot: HEAD.pivot, layers: ["fill", "shade", "ink"] };
+    const build = await buildArt({ artDir: dir, entries: [part, other], defaultRes: 2, cache: new ArtCache(null), requireAll: true });
+    expect(build.errors).toEqual([]);
+    const a = build.index.frames["cat/part"]!.layers;
+    const b = build.index.frames["cat/other"]!.layers;
+    const empty = { page: a.shade!.page, x: a.shade!.x, y: a.shade!.y, w: 1, h: 1, dx: 0, dy: 0 };
+    expect(a.shade).toEqual(empty);
+    expect(a.ink).toEqual(empty);
+    expect(b.shade).toEqual(empty);
+    expect(a.fill).toMatchObject({ dx: 20, dy: 20, w: 40, h: 40 });
+    // Дві заливки, контур і один порожній піксель.
+    expect(build.stats.images).toBe(4);
   });
 
   it("з кешем друге збирання нічого не растеризує й дає той самий атлас", async () => {
@@ -621,7 +714,7 @@ describe("збирання атласу на фікстурах", () => {
   it("порожній маніфест — порожній index.json без сторінок", async () => {
     const build = await run([]);
     expect(build.errors).toEqual([]);
-    expect(build.index).toEqual({ version: 1, pages: [], frames: {} });
+    expect(build.index).toEqual({ version: 2, pages: [], frames: {} });
     expect([...build.files.keys()]).toEqual(["index.json"]);
   });
 });

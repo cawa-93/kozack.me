@@ -1,6 +1,7 @@
 // Растеризація кадру арту (крок 16, GRAPHICS_PLAN.md: «Арт, маніфест і атласи»): кожен шар SVG — окремо, через опцію
 // `stylesheet` у sharp, що ховає всі інші шари й стани; той самий файл і та сама щільність — тож шари збігаються піксель
-// у піксель. Потім спільна рамка обрізки (за альфою об'єднання шарів) і вирізані шари однакового розміру.
+// у піксель. Потім кожен шар обрізається своєю рамкою (за своєю альфою) і пам'ятає свій зсув у полотні: маски й тінь
+// кота займають у атласі лише своє, а не рамку контуру.
 
 import sharp from "sharp";
 
@@ -14,18 +15,25 @@ export interface Rgba {
   data: Buffer;
 }
 
-/** Шар кадру після обрізки. */
+/**
+ * Шар кадру після обрізки: растр своєї рамки і її зсув `x, y` у полотні, пікселі. Порожній шар — один прозорий піксель у
+ * (0, 0): так усі порожні шари атласу — той самий растр, що лежить на сторінці один раз.
+ */
 export interface LayerRaster extends Rgba {
   layer: FrameLayer;
+  x: number;
+  y: number;
 }
 
-/** Кадр після растеризації й обрізки: полотно (пікселі), зсув рамки обрізки в ньому й шари розміру рамки. */
+/** Кадр після растеризації й обрізки: полотно (пікселі), рамка вмісту в ньому й шари, кожен — своєю рамкою. */
 export interface FrameRaster {
   /** Полотно в пікселях: `size · res`, округлене (як округлює librsvg). */
   canvas: ArtSize;
-  /** Де починається рамка обрізки в полотні, пікселі. */
+  /**
+   * Рамка вмісту кадру — об'єднання рамок шарів: де вона починається в полотні й розмір, пікселі; щонайменше 1 × 1
+   * (порожній кадр — один прозорий піксель у (0, 0)). В атлас не йде — для перевірок вмісту.
+   */
   trim: { x: number; y: number };
-  /** Розмір рамки, пікселі; щонайменше 1 × 1 (порожній кадр — один прозорий піксель). */
   w: number;
   h: number;
   layers: LayerRaster[];
@@ -110,9 +118,18 @@ export function crop(r: Rgba, x: number, y: number, w: number, h: number): Rgba 
   return { w, h, data: out };
 }
 
+/** Рамка порожнього растра: один прозорий піксель у (0, 0). */
+const EMPTY_BOUNDS = { x0: 0, y0: 0, x1: 1, y1: 1 };
+
+/** Рамка растра в полотні `canvas`, обтята ним (дробове полотно librsvg округлює), — щонайменше 1 × 1. */
+function boxOf(bounds: { x0: number; y0: number; x1: number; y1: number } | null, canvas: ArtSize): { x: number; y: number; w: number; h: number } {
+  const b = bounds ?? EMPTY_BOUNDS;
+  return { x: b.x0, y: b.y0, w: Math.min(b.x1, canvas.w) - b.x0, h: Math.min(b.y1, canvas.h) - b.y0 };
+}
+
 /**
- * Растеризувати кадр: кожен шар окремо (той самий SVG, та сама щільність), спільна рамка обрізки за альфою об'єднання й
- * шари, вирізані цією рамкою, — усі одного розміру.
+ * Растеризувати кадр: кожен шар окремо (той самий SVG, та сама щільність) і обрізаний своєю рамкою за своєю альфою, зі
+ * зсувом у полотні; рамка вмісту кадру — об'єднання рамок шарів.
  */
 export async function rasterFrame(job: RasterJob): Promise<FrameRaster> {
   const svg = prepareSvg(job.svg, job.size);
@@ -124,14 +141,22 @@ export async function rasterFrame(job: RasterJob): Promise<FrameRaster> {
   for (const r of rasters) {
     if (r.w !== first.w || r.h !== first.h) throw new Error(`шари різного розміру: ${first.w}×${first.h} і ${r.w}×${r.h}`);
   }
-  const bounds = unionBounds(rasters) ?? { x0: 0, y0: 0, x1: 1, y1: 1 };
-  const w = Math.min(bounds.x1, first.w) - bounds.x0;
-  const h = Math.min(bounds.y1, first.h) - bounds.y0;
+  const canvas = { w: first.w, h: first.h };
+  const bounds = rasters.map((r) => unionBounds([r]));
+  let union: { x0: number; y0: number; x1: number; y1: number } | null = null;
+  for (const b of bounds) {
+    if (!b) continue;
+    union = union ? { x0: Math.min(union.x0, b.x0), y0: Math.min(union.y0, b.y0), x1: Math.max(union.x1, b.x1), y1: Math.max(union.y1, b.y1) } : b;
+  }
+  const content = boxOf(union, canvas);
   return {
-    canvas: { w: first.w, h: first.h },
-    trim: { x: bounds.x0, y: bounds.y0 },
-    w,
-    h,
-    layers: rasters.map((r, i) => ({ layer: sheets[i]?.layer ?? "all", ...crop(r, bounds.x0, bounds.y0, w, h) })),
+    canvas,
+    trim: { x: content.x, y: content.y },
+    w: content.w,
+    h: content.h,
+    layers: rasters.map((r, i) => {
+      const box = boxOf(bounds[i] ?? null, canvas);
+      return { layer: sheets[i]?.layer ?? "all", x: box.x, y: box.y, ...crop(r, box.x, box.y, box.w, box.h) };
+    }),
   };
 }
