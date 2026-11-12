@@ -27,7 +27,7 @@ import { carAt, type RaceInput } from "../sim/race";
 import { formatClock, raceMinutes } from "../sim/time";
 import type { Destination, GameState, RaceCar, Save, Trip } from "../sim/types";
 import type { Session } from "../session";
-import { isRotateNoticeShown, onRotateNotice, safeArea, type Insets } from "../screen";
+import { isCoarsePointer, isRotateNoticeShown, onRotateNotice, safeArea, type Insets } from "../screen";
 import { RACE_START_HINT } from "../texts";
 import { asideCardRight } from "../ui/cardsize";
 import { DESTINATION_TITLES } from "../ui/titles";
@@ -57,6 +57,7 @@ import {
   lotScreenY,
   parkedCars,
   parkedFrame,
+  parkedKey,
   parkingLayout,
   parkingSpot,
   raceBarAlpha,
@@ -121,6 +122,8 @@ import { startHintShown } from "../view/starthint";
 import { DESTINATION_ICONS } from "../view/symbols";
 
 const MAX_FRAME_SECONDS = 0.1;
+/** Як часто перечитувати безпечну зону без зміни розміру екрана, мс (`RaceScene.safeCss`). */
+const SAFE_REFRESH_MS = 1000;
 /** Джойстик гонки: радіус, мертва зона й наскільки відхилити вбік, щоб перестроїтися. */
 const STICK_RADIUS = 70;
 const STICK_DEAD = 0.2;
@@ -205,6 +208,15 @@ export class RaceScene extends Phaser.Scene {
   private skipListening = false;
   /** Де парковка на місці зараз (`parkingLayout`): щокадру — розмір екрана й безпечна зона змінюються. */
   private place: ParkingLayout = { aside: false, pan: 0, strip: null };
+  /** Ключ кадру на місці, що вже намальований (`parkedKey`): кадр нерухомий, і за тим самим ключем його не перемальовують. */
+  private parkedDrawn: string | null = null;
+  /**
+   * Безпечна зона, px CSS (`safeArea`): читати її стиль щокадру дорого, тож — зі зміною розміру екрана й раз на `SAFE_REFRESH_MS`
+   * (телефон, перевернутий набік іншим боком, міняє бік вирізу, а розмір — ні).
+   */
+  private safeCss: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
+  /** Коли (час сцени, мс) перечитати безпечну зону. */
+  private safeAt = 0;
 
   constructor(private readonly session: Session) {
     super("race");
@@ -229,6 +241,13 @@ export class RaceScene extends Phaser.Scene {
     this.arrival = null;
     this.skipListening = false;
     this.place = { aside: false, pan: 0, strip: null };
+    this.parkedDrawn = null;
+    this.safeCss = safeArea();
+    const resized = (): void => {
+      this.safeCss = safeArea();
+    };
+    this.scale.on(Phaser.Scale.Events.RESIZE, resized);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, resized));
     this.home = data?.mode === "home" ? { ms: 0, save: this.session.save, skipped: false, from: "black" } : null;
     const trip = this.state.trip;
     this.parked = data?.mode === "parked" && trip?.phase === "visit" ? { save: this.session.save, ...parkedAt(trip) } : null;
@@ -369,7 +388,11 @@ export class RaceScene extends Phaser.Scene {
     return { steer, throttle: Math.max(-1, Math.min(1, throttle)) };
   }
 
-  override update(_time: number, delta: number): void {
+  override update(time: number, delta: number): void {
+    if (time >= this.safeAt) {
+      this.safeCss = safeArea();
+      this.safeAt = time + SAFE_REFRESH_MS;
+    }
     if (this.home) return this.updateHome(delta);
     if (this.crash) return this.updateCrash(delta);
     if (this.arrival) return this.updateArrival(delta);
@@ -435,6 +458,7 @@ export class RaceScene extends Phaser.Scene {
     const parked = this.parked;
     if (!parked || !this.sys.isActive()) return false;
     this.parked = null;
+    this.parkedDrawn = null;
     this.home = { ms: 0, save: this.session.save, skipped: false, from: "parked", at: { spot: parked.spot, destination: parked.destination } };
     sceneMoment("unparked");
     this.stick = null;
@@ -598,7 +622,15 @@ export class RaceScene extends Phaser.Scene {
       return;
     }
     if (this.session.save !== parked.save) this.parked = { save: this.session.save, ...parkedAt(trip) };
-    this.drawParked();
+    if (this.parkedKeyOf(parked) !== this.parkedDrawn) this.drawParked();
+  }
+
+  /** Від чого залежить кадр на місці зараз (`parkedKey`): розмір і щільність полотна, безпечна зона, місце, світло й годинник. */
+  private parkedKeyOf(parked: ParkedAt): string {
+    const game = this.scale.gameSize;
+    const fit = canvasNow();
+    const light = this.lightMinute();
+    return parkedKey({ width: game.width, height: game.height, ui: fit.ui, unit: fit.unit, safe: this.safeCss, spot: parked.spot, destination: parked.destination, light, clock: formatClock(this.state.minute) });
   }
 
   /** Кадр на місці (`parkedFrame`) і напис «пункт · час» угорі вільної смуги. */
@@ -612,6 +644,7 @@ export class RaceScene extends Phaser.Scene {
     art.drawFrame(parkingRoad(frame, parked.destination, PARKED_LIGHTS), this.panned(view, frame.pan));
     this.dark.setFillStyle(0x000000, 0);
     this.drawParkedLabel(parked.destination, view.safe.top);
+    this.parkedDrawn = this.parkedKeyOf(parked);
   }
 
   /**
@@ -711,7 +744,7 @@ export class RaceScene extends Phaser.Scene {
    */
   private layout(): RaceView {
     const { width, height } = fitUiCamera(this.cameras.main, this.scale.gameSize);
-    const css = safeArea();
+    const css = this.safeCss;
     const unit = canvasNow().unit;
     const safe = { top: css.top * unit, right: css.right * unit, bottom: css.bottom * unit, left: css.left * unit };
     const minute = this.lightMinute();
@@ -796,7 +829,7 @@ export class RaceScene extends Phaser.Scene {
    * будинку, `homeDepartureHud`).
    */
   private drawStartHint(g: Phaser.GameObjects.Graphics, shown: boolean, view: RaceView, car: { x: number; y: number }, fade = 1): void {
-    const touch = window.matchMedia("(pointer: coarse)").matches;
+    const touch = isCoarsePointer();
     const pulse = 0.5 + 0.5 * Math.sin(this.time.now / 300);
     this.hint.setVisible(shown && !touch);
     if (!shown) return;
@@ -1019,7 +1052,8 @@ class RaceArt {
     this.fit(this.player, k, k).setPosition(player.x, player.y).setRotation(player.rotation);
     if (view.night) lit.push(ownLit(player, DRIVING_LIGHTS, view.night, k));
 
-    const lot = { y: lotY, place: trip.destination, cars: parkedCars(trip.seed, lotY, height) };
+    // Запарковані машини — лише коли парковка вже в кадрі (`drawLot` іншої й не малює): до фінішу її здебільшого не видно.
+    const lot = { y: lotY, place: trip.destination, cars: lotInFrame(lotY, height) ? parkedCars(trip.seed, lotY, height) : NO_CARS };
     this.drawLot(lot, view);
     this.drawNight(view, race.done * ppu, lot.y, lit);
     this.drawBar(trip, view);
@@ -1293,6 +1327,8 @@ function homeRoad(frame: HomeRoadFrame, k: number): RoadFrame {
 
 /** Нічого не світить (день). */
 const NO_LIGHTS: NightLights = { pools: [], cars: [], sign: null };
+/** Парковки ще не видно — машин на ній не рахують. */
+const NO_CARS: readonly ParkingCar[] = [];
 
 /**
  * Машина потоку вночі на кадрі з `k` px на одиницю арту: фари й задні вогні — з її порога (`headlightsOn`), `fade` —

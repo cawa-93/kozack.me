@@ -148,10 +148,26 @@ const LOT_SALT = 0x10_7a_12;
 /** Що на парковці з цього зерна поїздки: своє місце й запарковані машини. */
 interface LotLayout {
   own: number;
-  cars: { slot: number; look: TrafficLook }[];
+  cars: readonly { slot: number; look: TrafficLook }[];
 }
 
+/**
+ * Парковки за зерном: кадр парковки питає її щокадру (свою, пункту й дому). Зерен у грі мало — поїздка й свій будинок, тож
+ * кеш маленький і просто чиститься, коли переповнився.
+ */
+const LOTS = new Map<number, LotLayout>();
+const LOTS_KEPT = 8;
+
 function lotLayout(seed: number): LotLayout {
+  const kept = LOTS.get(seed);
+  if (kept) return kept;
+  const made = makeLot(seed);
+  if (LOTS.size >= LOTS_KEPT) LOTS.clear();
+  LOTS.set(seed, made);
+  return made;
+}
+
+function makeLot(seed: number): LotLayout {
   const rng = createRng(deriveSeed(seed, LOT_SALT));
   const slots = RACE_LOT.slots.length;
   // Крайнє праве місце — ніколи не своє: задки з нього праворуч машина виїхала б за майданчик.
@@ -160,7 +176,7 @@ function lotLayout(seed: number): LotLayout {
   // Поруч «кілька запаркованих машин» (§8.5): дві чи три — з трьох вільних місць, тож порожньою парковка не буває.
   const count = rng.int(2, 3);
   const colors = TRAFFIC_COLORS.map((_, i) => i);
-  const cars: LotLayout["cars"] = [];
+  const cars: { slot: number; look: TrafficLook }[] = [];
   for (let n = 0; n < count && free.length > 0; n++) {
     const slot = free.splice(rng.int(0, free.length - 1), 1)[0] ?? 0;
     const color = colors.splice(rng.int(0, colors.length - 1), 1)[0] ?? 0;
@@ -1035,4 +1051,30 @@ export function lotFitPan(view: ParkingView): number {
   const right = view.width - view.safe.right - PARKING.margin * view.k;
   const lotRight = view.width / 2 + RACE_LOT.reach.right * view.k;
   return Math.min(0, right - lotRight);
+}
+
+/** Від чого залежить нерухомий кадр на місці (`parkedKey`). */
+export interface ParkedKeyInput {
+  /** Розмір полотна, px пристрою, і скільки px полотна в одиниці інтерфейсу та одиниць на px CSS (`CanvasFit`). */
+  width: number;
+  height: number;
+  ui: number;
+  unit: number;
+  /** Безпечна зона, px CSS (`safeArea`). */
+  safe: { readonly top: number; readonly right: number; readonly bottom: number; readonly left: number };
+  spot: ParkingSpot;
+  destination: Destination;
+  /** Хвилина світла доби на дорозі (`RaceScene.lightMinute`); null — без світла доби. */
+  light: number | null;
+  /** Годинник у написі над парковкою (`formatClock`). */
+  clock: string;
+}
+
+/**
+ * Ключ кадру на місці (§8.5 «На місці — кадр парковки»): кадр нерухомий, тож сцена дороги перемальовує його, лише коли ключ
+ * змінився, а не щокадру (§2.1 «Малювання й завантаження»).
+ */
+export function parkedKey(input: ParkedKeyInput): string {
+  const { safe, spot } = input;
+  return [input.width, input.height, input.ui, input.unit, safe.top, safe.right, safe.bottom, safe.left, spot.done, spot.seed, input.destination, input.light ?? "off", input.clock].join("|");
 }

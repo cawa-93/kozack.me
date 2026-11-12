@@ -82,6 +82,14 @@ export function onRotateNotice(listener: (shown: boolean) => void): () => void {
   return () => query.removeEventListener("change", handler);
 }
 
+let coarseMedia: MediaQueryList | null = null;
+
+/** Чи керують пальцем (сенсорний екран): запит до браузера — один на гру, а `matches` у нього живий. */
+export function isCoarsePointer(): boolean {
+  coarseMedia ??= window.matchMedia("(pointer: coarse)");
+  return coarseMedia.matches;
+}
+
 export interface Insets {
   top: number;
   right: number;
