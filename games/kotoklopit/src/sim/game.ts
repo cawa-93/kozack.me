@@ -21,7 +21,7 @@ import type { Address, Chronotype, Difficulty, GameState, Look, NightReport, Sav
 import { isWorking, newJob, tickWork } from "./work";
 import { momAtNight, tickModifiers } from "./modifiers";
 import { parcelsAtMorning } from "./parcels";
-import { migrate, SAVE_VERSION } from "./saves";
+import { checkSave, migrate, SAVE_VERSION } from "./saves";
 import { tickSpoilage } from "./spoilage";
 
 export { SAVE_VERSION } from "./saves";
@@ -365,7 +365,7 @@ export function serialize(save: Save): string {
 
 /** Збереження з браузера чи файлу: старішу випущену версію спершу мігруємо (§4.2). */
 export function deserialize(json: string): Save {
-  return migrate(JSON.parse(json));
+  return checkSave(migrate(JSON.parse(json)));
 }
 
 function clone<T>(value: T): T {

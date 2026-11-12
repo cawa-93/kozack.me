@@ -50,3 +50,23 @@ export function migrate(data: unknown, migrations: readonly Migration[] = MIGRAT
   }
   return save as unknown as Save;
 }
+
+const isObject = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
+
+/** Знімок стану хоча б основної форми: персонаж, коти й дім. */
+function isState(value: unknown): boolean {
+  return isObject(value) && isObject(value["character"]) && Array.isArray(value["cats"]) && isObject(value["home"]);
+}
+
+/**
+ * Основна форма збереження поточного формату (§4.2): кожен знімок — стан із персонажем, котами й домом. Не той файл чи зіпсоване
+ * збереження — помилка, як і непідтримувана версія: тоді «Не вдалося завантажити» й нечитабельне збереження, а не гра, що
+ * падає на першому кадрі.
+ */
+export function checkSave(save: Save): Save {
+  const { current, dayStart, weekStart, morning } = save as unknown as Record<string, unknown>;
+  if (!isState(current) || !isState(dayStart) || !isState(weekStart) || (morning !== null && !isState(morning))) {
+    throw new Error("Збереження не тієї форми");
+  }
+  return save;
+}
