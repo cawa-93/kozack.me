@@ -215,6 +215,8 @@ export function rewindAccident(save: Save): NightReport | null {
   if (home !== null) {
     const night = advance(save, home - state.minute);
     if (night || state.end !== null) return night;
+    // День триває: решта робочого часу — та сама попереджена відсутність (§8.6).
+    save.current.today.accident = true;
     arriveHome(save);
     return null;
   }

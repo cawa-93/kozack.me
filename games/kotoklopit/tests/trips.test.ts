@@ -773,6 +773,42 @@ describe("поїздки й робота (§8.6)", () => {
     expect(tripBlocker(crashed.current, "office")).toBe("office");
   });
 
+  it("після аварії решта робочого часу того дня — попереджена відсутність: терпіння не падає, «!» і «Х» немає", () => {
+    // Аварія на ×0 о 08:00 забирає кілька годин: удома персонаж ще в робочий час і за комп'ютер не сідає.
+    const save = game(8 * 60);
+    save.current.day = 8;
+    save.current.job.reputation = 50;
+    expect(startTrip(save.current, "shop")).toBe(true);
+    crashAt(save, 0);
+    rewindAccident(save);
+    expect(save.current.trip).toBeNull();
+    expect(save.current.minute).toBeLessThan(17 * 60);
+    const patience = save.current.job.patience;
+    const reputation = save.current.job.reputation;
+    const { events, stop } = recordEvents();
+    advance(save, 18 * 60 - save.current.minute);
+    stop();
+    expect(save.current.job.patience).toBe(patience);
+    expect(events).not.toContainEqual(expect.objectContaining({ type: "patience" }));
+    // Штраф — як за поїздку в робочий час: менший, ніж за «Х».
+    expect(save.current.job.reputation).toBeLessThan(reputation);
+  });
+
+  it("аварія дорогою в офіс — теж попереджена відсутність, як і дорогою деінде: збори цієї поїздки пропущено (§4.1)", () => {
+    const reputation = (destination: "office" | "shop"): number => {
+      const save = game(9 * 60 + 5);
+      save.current.day = 8;
+      save.current.modifiers.day = "office";
+      save.current.job.reputation = 50;
+      expect(startTrip(save.current, destination)).toBe(true);
+      crashAt(save, 0);
+      rewindAccident(save);
+      return save.current.job.reputation;
+    };
+    // Різниця — лише крок дороги до аварії: дорога в офіс — ще робота.
+    expect(reputation("office")).toBeCloseTo(reputation("shop"), 2);
+  });
+
   it("гості й ОСББ, поки персонаж у поїздці, не заходять: сором гостей після аварії не закінчує гру (перевірка поїздок 2026-10-28)", () => {
     // Гості о 19:00, а аварія на ×2 об 11:00 забирає 10 годин (рішення автора 2026-11-02): удома персонаж о 21:00, і день триває.
     const save = game(11 * 60);

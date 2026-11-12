@@ -170,11 +170,10 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
 
   if (state.trip !== null) {
     // Поїздка — попереджена відсутність (§8.6): терпіння не змінюється, у робочий час — штраф до репутації.
-    // Збори в офісі — це робота, а не відсутність (§8.5).
+    // Збори в офісі — це робота, а не відсутність (§8.5); аварія дорогою туди — ні (§4.1).
     const trip = state.trip;
-    // В обідню перерву (перевірка модифікаторів 2026-10-28) і весь день без світла («Планове відключення», рішення автора 2026-11-02)
-    // керівництво нічого не чекає — і поїздка тоді не штрафується.
-    if (workTime && trip.destination !== "office" && patienceDecayFactor(state) > 0) {
+    // В обідню перерву й весь день без світла («Планове відключення») керівництво нічого не чекає — і поїздка тоді не штрафується.
+    if (workTime && !toOffice(state) && patienceDecayFactor(state) > 0) {
       // Зараховується, щойно настає робочий час: і поїздка, що почалася до 09:00. Знайду, яку відносять у притулок, гравець не
       // обирав і не може відкласти: вона штрафується як перша поїздка тижня й до лічильника не додається (§8.6, загальна ревізія
       // 2026-10-29).
@@ -216,6 +215,9 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
     activity.money += money;
     activity.reputation += job.reputation - reputationBefore;
     job.patience = Math.min(PATIENCE_MAX, job.patience + position.patienceRecovery * hours);
+  } else if (workTime && state.today.accident === true) {
+    // Після аварії решта робочого часу того дня — попереджена відсутність, як і поїздка (§8.6): аварію вже зараховано поїздкою.
+    if (patienceDecayFactor(state) > 0) changeReputation(state, -recentWorkTrips(state) * (position.reputation / TRIP_REPUTATION_DIVIDER) * hours);
   } else if (workTime) {
     // «Х»: персонаж у робочий день кинув роботу, репутація падає щогодини — але не в обідню
     // перерву й не в день без світла: тоді й терпіння не падає (§4.1).
