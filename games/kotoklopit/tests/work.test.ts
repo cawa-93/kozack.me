@@ -237,6 +237,7 @@ describe("щоденна летючка о 10:00 (§8.6)", () => {
     state.character.stats.hygiene = 50;
     const clean = callImpression(state);
     state.home.clothes = 0;
+    state.home.dirtyClothes = true;
     expect(callImpression(state)).toBe(clean - 0.5);
     const { events, stop } = recordEvents();
     work(save, hours(9.9), 20);
@@ -252,6 +253,7 @@ describe("справедливість роботи (ревізія 2026-10-22)"
       save.current.day = 1;
       save.current.minute = hours(9.8);
       save.current.home.clothes = 0;
+      save.current.home.dirtyClothes = true;
       save.current.character.stats.hygiene = 20;
       const before = save.current.job.reputation;
       if (attend) work(save, hours(9.9), hours(0.5));

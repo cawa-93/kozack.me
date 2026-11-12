@@ -312,7 +312,7 @@ export const PERSON_RECIPE_LAYERS: readonly ArtLayer[] = [
 ];
 
 export interface PersonRecipeOptions {
-  /** Плями на одязі, коли чистого немає (§8.7, `home.clothes <= 0`): шар `extra-stain`. */
+  /** Плями на одязі, коли персонаж у брудному (§8.7, `wearsDirtyClothes`): шар `extra-stain`. */
   stained?: boolean;
 }
 

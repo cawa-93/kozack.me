@@ -617,6 +617,7 @@ describe("догляд персонажа (§9.12)", () => {
     const cat = withCat(save, { x: 4.5, y: 7.6 });
     cat.traits.push({ group: "litterPicky", level: 1, seen: 0, known: false });
     save.current.home.clothes = 0;
+    save.current.home.dirtyClothes = true;
     const { events, stop } = recordEvents();
     for (let i = 0; i < 10; i++) {
       Object.assign(cat, { x: 4.5, y: 7.6, act: { kind: "idle", target: null, goal: null, minutes: 100, elapsed: 0 } });
@@ -638,6 +639,7 @@ describe("догляд персонажа (§9.12)", () => {
     save.current.character.body.y = 8.2;
     save.current.character.body.facing = { x: 0, y: -1 };
     save.current.home.clothes = 0;
+    save.current.home.dirtyClothes = true;
     const { events, stop } = recordEvents();
     interact(save);
     stop();

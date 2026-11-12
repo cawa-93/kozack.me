@@ -15,7 +15,7 @@ import { catInWasher, emptyFeeder, fillFountainTank, furPerHour, putVacuumDown, 
 import { observe } from "./knowledge";
 import { cookFactor, onCall, powerOut } from "./modifiers";
 import { dropThing, putThing } from "./moving";
-import { changeStat, statCeiling, unpleasantTask } from "./character";
+import { changeStat, statCeiling, unpleasantTask, wearsDirtyClothes } from "./character";
 import { coffeeOn, drinkCoffee, wantsCoffee } from "./coffee";
 import {
   AFFECTION,
@@ -529,7 +529,7 @@ function take(state: GameState, object: HomeObject, item: Item): null {
 
 /** Чистюля не йде на руки до персонажа в брудному одязі (§9.12). */
 export function avoidsDirtyClothes(state: GameState, cat: Cat): boolean {
-  return state.home.clothes <= 0 && traitLevel(cat, "litterPicky") >= DIRTY_CLOTHES_CATS.picky;
+  return wearsDirtyClothes(state) && traitLevel(cat, "litterPicky") >= DIRTY_CLOTHES_CATS.picky;
 }
 
 /** Чи кіт зараз не хоче на руки: спить або не хоче уваги й не любить рук (§9.12). */

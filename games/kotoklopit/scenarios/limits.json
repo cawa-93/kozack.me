@@ -22,7 +22,8 @@
    "depressed": true
   },
   "home": {
-   "clothes": 0
+   "clothes": 0,
+   "dirtyClothes": true
   }
  }
 }

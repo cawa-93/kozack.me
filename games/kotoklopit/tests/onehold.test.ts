@@ -241,6 +241,7 @@ describe("натискання, що щось зробило, не змінив�
       "кіт-чистюля ухилився від брудного одягу",
       (save) => {
         save.current.home.clothes = 0;
+        save.current.home.dirtyClothes = true;
         const cat = catAhead(save);
         cat.traits = [{ group: "litterPicky", level: 2, seen: 0, known: false }];
       },

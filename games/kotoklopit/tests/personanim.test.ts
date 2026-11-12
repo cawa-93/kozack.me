@@ -178,6 +178,7 @@ describe("основна анімація персонажа (`personAnim`)", ()
   it("брудний одяг — плями й запах", () => {
     const save = game();
     save.current.home.clothes = 0;
+    save.current.home.dirtyClothes = true;
     expect(personAnim(save.current, still).params.dirty).toBe(true);
   });
 });

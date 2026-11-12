@@ -30,6 +30,7 @@
   },
   "home": {
    "clothes": 0,
+   "dirtyClothes": true,
    "supplies": {
     "detergent": {
      "cheap": 2,

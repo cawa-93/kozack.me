@@ -75,6 +75,7 @@ describe("бороди немає (рішення автора 2026-10-29, А4)"
       state.character.stats.hygiene = 75;
       expect(callImpression(state)).toBe(0.5);
       state.home.clothes = 0;
+      state.home.dirtyClothes = true;
       expect(callImpression(state)).toBe(0);
     }
   });

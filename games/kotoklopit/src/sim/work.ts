@@ -2,7 +2,7 @@
 
 import type { Input } from "./actions";
 import { isMoving } from "./body";
-import { earn, unpleasantTask } from "./character";
+import { earn, unpleasantTask, wearsDirtyClothes } from "./character";
 import {
   ABSENCE_REPUTATION,
   CAREER_PACE,
@@ -280,14 +280,14 @@ function resolveStandup(state: GameState): void {
 export function callImpression(state: GameState): number {
   const hygiene = state.character.stats.hygiene;
   const clean = hygiene < LOW_STAT ? -CALL_HYGIENE_REPUTATION : hygiene >= HIGH_HYGIENE ? CALL_HYGIENE_REPUTATION : 0;
-  const clothes = state.home.clothes <= 0 ? -CALL_DIRTY_CLOTHES.reputation : 0;
+  const clothes = wearsDirtyClothes(state) ? -CALL_DIRTY_CLOTHES.reputation : 0;
   return clean + clothes;
 }
 
 /** На відеодзвінку колеги помічають брудний одяг (§5.1): бабл над комп'ютером. */
 export function noticeCallLook(state: GameState, from: number, to: number, callStart: number): void {
   const at = callStart + CALL_DIRTY_CLOTHES.noticeMinute;
-  if (from < at && to >= at && isWorking(state) && state.home.clothes <= 0) emit(state, { type: "call-remark", issue: "clothes" });
+  if (from < at && to >= at && isWorking(state) && wearsDirtyClothes(state)) emit(state, { type: "call-remark", issue: "clothes" });
 }
 
 /**

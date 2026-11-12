@@ -1,7 +1,7 @@
 // Побут (§8.7): шерсть і пилосос, прання, техніка (автогодівниця, фонтанчик, робот-пилосос), поломки.
 
 import { asleep, traitLevel } from "./cat";
-import { changeStat, unpleasantTask } from "./character";
+import { changeStat, unpleasantTask, wearsDirtyClothes } from "./character";
 import { settleCoffee } from "./coffee";
 import { BOWL_CAPACITY, FOUNTAIN, HOUSEHOLD, MESS_ANNOYANCE, MINUTES_PER_HOUR, NOISE, ROBOT, SHEDDING, TOOL_REACH, VACUUM } from "./config";
 import { DUST_SPOTS, dustOf, floorDust, removeDust, tickDust } from "./dust";
@@ -171,10 +171,9 @@ export function shedTuft(state: GameState): void {
   home.tuftAt = now;
 }
 
-/** Множник падіння гігієни (§8.7): без чистого одягу й у шерсті вона падає швидше. */
+/** Множник падіння гігієни (§8.7): у брудному одязі й у шерсті вона падає швидше. */
 export function hygieneFactor(state: GameState): number {
-  const home = state.home;
-  return (home.clothes <= 0 ? HOUSEHOLD.noClothesHygiene : 1) * (furVisible(state) ? HOUSEHOLD.furHygiene : 1) * hygieneFactorMod(state);
+  return (wearsDirtyClothes(state) ? HOUSEHOLD.noClothesHygiene : 1) * (furVisible(state) ? HOUSEHOLD.furHygiene : 1) * hygieneFactorMod(state);
 }
 
 /**
@@ -208,11 +207,17 @@ export function furPerHour(state: GameState, cat: Cat): number {
 
 /**
  * Заходячи в душ, персонаж кидає зношене в кошик білизни (§8.7): чистого одягу на душ менше, а вигляд пускає іконку одягу з кабіни
- * в кошик. Чистого вже немає — кошик повний, і нічого не летить.
+ * в кошик. Чистого вже немає — кошик повний, і нічого не летить: після такого душу персонаж у брудному одязі
+ * (`wearsDirtyClothes`).
  */
 export function tossClothes(state: GameState): void {
-  if (state.home.clothes <= 0) return;
-  state.home.clothes = Math.max(0, state.home.clothes - 1);
+  const home = state.home;
+  if (home.clothes <= 0) {
+    home.dirtyClothes = true;
+    return;
+  }
+  delete home.dirtyClothes;
+  home.clothes = Math.max(0, home.clothes - 1);
   emit(state, { type: "clothes-tossed" });
 }
 

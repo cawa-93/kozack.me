@@ -4,6 +4,7 @@
 // спіткнувся… Плита готує сама (§8.7), тож готування — лише «поклав» і «взяв». Без Phaser.
 
 import { petDone } from "../../sim/actions";
+import { wearsDirtyClothes } from "../../sim/character";
 import type { GameEvent } from "../../sim/events";
 import { cleaningTool } from "../../sim/household";
 import { isIll } from "../../sim/illness";
@@ -127,7 +128,7 @@ export function personAnim(state: GameState, local: PersonLocal): PersonAnimChoi
     eyes: local.sleepiness > 0 ? local.sleepiness : isDrowsy(state) ? DROWSY_EYES : isIll(state, "exhaustion") ? EXHAUSTED_EYES : 0,
     target: activity?.kind === "use" ? activity.target : activity?.kind === "pet" || activity?.kind === "play" ? `cat:${activity.cat}` : null,
     hidden: state.trip !== null || (activity?.kind === "use" && activity.inside === true && activity.bath !== true),
-    dirty: state.home.clothes <= 0,
+    dirty: wearsDirtyClothes(state),
   };
   // Накладка рук: кіт на руках, пилосос (ближня рука на ручці, щітка на підлозі — `holdVacuum`), решта — несе перед собою.
   const tool: PersonAnimId = cleaningTool(state) === "vacuum" ? "holdVacuum" : "holdBroom";

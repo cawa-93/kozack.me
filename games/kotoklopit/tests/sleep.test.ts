@@ -145,6 +145,7 @@ describe("показники уві сні (§8.8)", () => {
     const { stats } = save.current.character;
     stats.hygiene = 50;
     save.current.home.clothes = 0;
+    save.current.home.dirtyClothes = true;
     save.current.minute = hours(22);
     goToSleep(save);
     expect(stats.hygiene).toBeCloseTo(50 - (3 * 8 * HOUSEHOLD.noClothesHygiene) / 4);

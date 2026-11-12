@@ -14,7 +14,8 @@ import { stun } from "../src/sim/body";
 import { tickModifiers } from "../src/sim/modifiers";
 import { addCat, giveStarterPack } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import { FEEDER_CAPACITY, HOUSEHOLD, STORAGE_LIMITS } from "../src/sim/config";
+import { wearsDirtyClothes } from "../src/sim/character";
+import { FEEDER_CAPACITY, HOUSEHOLD, SHOWER_MINUTES, STORAGE_LIMITS } from "../src/sim/config";
 import type { GameEvent } from "../src/sim/events";
 import { checkout, room, unavailable } from "../src/sim/shop";
 import type { BowlItem, Cat, Feeder, LitterItem, Quality, Save, TraitLevel } from "../src/sim/types";
@@ -179,6 +180,7 @@ describe("прання (§8.7)", () => {
     tickHousehold(save.current, 600, 61);
     expect(save.current.home.washer.state).toBe("done");
     save.current.home.clothes = 0;
+    save.current.home.dirtyClothes = true;
     expect(hygieneFactor(save.current)).toBeGreaterThan(1);
     expect(tapWasher(save.current)).toBe("hung");
     expect(save.current.home.clothes).toBe(7);
@@ -240,6 +242,41 @@ describe("чистий одяг і кошик білизни (§8.7)", () => {
     expect(bath.current.character.activity).toMatchObject({ kind: "use", bath: true });
     expect(bath.current.home.clothes).toBe(5);
     expect(events.some((e) => e.type === "clothes-tossed")).toBe(false);
+  });
+
+  it("повний кошик сам не шкодить: у брудному одязі персонаж лише після душу з повним кошиком — і доки не розвішено випране", () => {
+    const save = game();
+    const state = save.current;
+    const shower = (): void => {
+      standAt(save, "shower");
+      interact(save);
+      advance(save, bodyMinutes(SHOWER_MINUTES) + 1);
+      expect(state.character.activity).toBeNull();
+    };
+    state.home.clothes = 1;
+    const clean = hygieneFactor(state);
+    // Останній чистий комплект: кошик тепер повний, але на персонажі — чисте.
+    shower();
+    expect(state.home.clothes).toBe(0);
+    expect(wearsDirtyClothes(state)).toBe(false);
+    expect(hygieneFactor(state)).toBe(clean);
+    // Душ із повним кошиком: чистого немає — персонаж одягає брудне.
+    const { events, stop } = recordEvents();
+    shower();
+    stop();
+    expect(events.some((e) => e.type === "clothes-tossed")).toBe(false);
+    expect(state.home.clothes).toBe(0);
+    expect(wearsDirtyClothes(state)).toBe(true);
+    expect(hygieneFactor(state)).toBe(clean * HOUSEHOLD.noClothesHygiene);
+    // Розвісили випране — знову в чистому.
+    state.home.washer = { state: "done", minutes: 0, quality: "cheap" };
+    expect(tapWasher(state)).toBe("hung");
+    expect(wearsDirtyClothes(state)).toBe(false);
+    expect(hygieneFactor(state)).toBe(clean);
+    // І наступний душ знову кидає зношене в кошик.
+    shower();
+    expect(state.home.clothes).toBe(HOUSEHOLD.clothesShowers.cheap - 1);
+    expect(wearsDirtyClothes(state)).toBe(false);
   });
 
   it("кошик наповнюється, коли одяг долетів: поки він летить, кошик — як до душу", () => {

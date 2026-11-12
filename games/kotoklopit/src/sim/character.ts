@@ -47,12 +47,18 @@ export function hadCat(state: GameState): boolean {
 }
 
 /**
+ * Персонаж у брудному одязі (§8.7): помився, коли чистого вже не було, і досі не розвісив випраного. Повний кошик сам ще не
+ * шкодить.
+ */
+export const wearsDirtyClothes = (state: Pick<GameState, "home">): boolean => state.home.dirtyClothes === true && state.home.clothes <= 0;
+
+/**
  * Вище цієї межі показник зараз не росте: «Пригніченість» тримає здоровий глузд до 35% (§6.2),
  * брудний одяг — гігієну до 60 (§8.7).
  */
 export function statCeiling(state: GameState, stat: StatName): number {
   if (stat === "sanity" && state.character.depressed) return DEPRESSION_CEILING;
-  if (stat === "hygiene" && state.home.clothes <= 0) return HOUSEHOLD.noClothesHygieneCeiling;
+  if (stat === "hygiene" && wearsDirtyClothes(state)) return HOUSEHOLD.noClothesHygieneCeiling;
   return STAT_MAX;
 }
 
