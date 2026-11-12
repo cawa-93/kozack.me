@@ -105,6 +105,7 @@ export const ICON_NAMES = [
   "carrier",
   "fountain",
   "robot-vacuum",
+  "coffee-machine",
   "cat-high",
   "wire",
   "chew-wire",

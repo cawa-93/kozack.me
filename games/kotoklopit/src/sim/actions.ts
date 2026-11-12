@@ -16,6 +16,7 @@ import { observe } from "./knowledge";
 import { cookFactor, onCall, powerOut } from "./modifiers";
 import { dropThing, putThing } from "./moving";
 import { changeStat, statCeiling, unpleasantTask } from "./character";
+import { coffeeOn, drinkCoffee, wantsCoffee } from "./coffee";
 import {
   AFFECTION,
   BATH,
@@ -26,6 +27,7 @@ import {
   CLEAN_LITTER_MINUTES,
   CLIMBING,
   CLEAN_MESS_MINUTES,
+  COFFEE,
   COOK_MINUTES,
   DIFFICULTY,
   DIRTY_CLOTHES_CATS,
@@ -284,9 +286,12 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
     case "counter": {
       const surfaces = state.home.surfaces;
       const item = surfaces[target.id] ?? null;
+      // Стільницю з кавомашиною страва не займає; каву варять утриманням дії, а без світла машина не працює (§8.7).
+      const coffee = coffeeOn(state, target.id);
+      if (coffee && held === null) return powerOut(state) ? refuse(state, target.id, "no-power") : null;
       if (held !== null) {
         if (!isDish(held) || held.kind === "spoiled") return refuse(state, target.id, { reason: "not-here", item: held });
-        if (item !== null) return refuse(state, target.id, "occupied");
+        if (item !== null || coffee) return refuse(state, target.id, "occupied");
         surfaces[target.id] = held;
         character.held = null;
         emit(state, { type: "put", object: target.id, item: held });
@@ -607,6 +612,7 @@ function useMinutes(state: GameState, target: Target): number {
   if (target.type === "mess") return CLEAN_MESS_MINUTES;
   if (target.type === "object" && target.object.kind === "computer") return CHEWING.fixMinutes;
   if (target.type === "object" && target.object.kind === "shower") return SHOWER_MINUTES * (powerOut(state) ? MODIFIERS.outage.showerMinutes : 1);
+  if (target.type === "object" && target.object.kind === "counter") return COFFEE.minutes;
   return EAT_MINUTES;
 }
 
@@ -630,6 +636,8 @@ export function canUse(state: GameState, target: Target): boolean {
       // Перегризений дріт лагодять утриманням дії (§9.12, «Гризіння»).
       if (target.object.kind === "computer") return state.home.wireChewed === true && catOnComputer(state) === null;
       if (target.object.kind === "table") return state.home.surfaces[target.object.id]?.kind === "meal";
+      // Чашка кави (§8.7): лише коли є що знімати й є світло.
+      if (target.object.kind === "counter") return coffeeOn(state, target.object.id) && wantsCoffee(state) && !powerOut(state);
       return false;
     case "item":
       return target.item.kind === "litter" && (target.item.uses > 0 || (target.item.litter === null && supplyCount(state, "litter") > 0));
@@ -881,6 +889,10 @@ function finishUse(state: GameState, target: Target, activity: UseActivity): voi
     emit(state, { type: "showered", hygiene, quality, left: supplyCount(state, "hygiene"), ...(powerOut(state) ? { cold: true as const } : {}) });
     // Кабіна мокра: «Водолаз» приходить ловити краплі (§9.12).
     showerDrops(state);
+    return;
+  }
+  if (object.kind === "counter") {
+    drinkCoffee(state);
     return;
   }
   const meal = state.home.surfaces[object.id];
@@ -1161,7 +1173,7 @@ export function dropEverything(state: GameState): void {
   if (held?.kind === "spoiled") return;
   if (back === null && isDish(held)) {
     const surfaces = state.home.surfaces;
-    const free = SURFACE_IDS.find((id) => surfaces[id] === null);
+    const free = SURFACE_IDS.find((id) => surfaces[id] === null && !coffeeOn(state, id));
     if (free === undefined) return;
     surfaces[free] = held;
   }

@@ -156,6 +156,8 @@ export type GameEvent =
   | { type: "ate"; satiety: number; food: number }
   /** Душ закінчився (§8.7); `cold` — холодний, без світла («Планове відключення», §4.1, рішення автора 2026-11-02). */
   | { type: "showered"; hygiene: number; quality: Quality | null; left: number; cold?: true }
+  /** Чашку кави випито (§8.7): «Недосип» знято. */
+  | { type: "coffee" }
   | { type: "work-started" }
   | { type: "work-stopped"; minutes: number; money: number; reputation: number; sanity: number }
   | { type: "patience"; level: PatienceLevel }

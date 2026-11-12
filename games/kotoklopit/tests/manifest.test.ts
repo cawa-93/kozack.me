@@ -399,6 +399,12 @@ describe("маніфест: речі котів, у руках, бруд", () =>
         entry("item/vacuum");
         continue;
       }
+      // Кавомашина — один варіант (§8.7): без якості; чашка, поки вариться кава, — накладка в точці `cup`.
+      if (thing === "coffee") {
+        expect(entry("item/coffee").points?.["cup"]).toBeDefined();
+        entry("item/coffee/cup");
+        continue;
+      }
       for (const quality of Object.keys(THINGS[thing].price) as Quality[]) entry(`item/${kebab(thing)}/${quality}`);
     }
     const homeKinds: Record<HomeItem["kind"], true> = { bowl: true, water: true, litter: true, toy: true, house: true, scratcher: true };

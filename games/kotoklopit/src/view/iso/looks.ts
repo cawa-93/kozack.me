@@ -4,6 +4,7 @@
 
 import { cageStage, cagedCats, carrierOf } from "../../sim/carriers";
 import { bowlEaten, isDirty, trashTipped } from "../../sim/catai";
+import { coffeeSurface } from "../../sim/coffee";
 import { BOWL_CAPACITY, FEEDER_CAPACITY } from "../../sim/config";
 import { DUST_SPOTS } from "../../sim/dust";
 import type { GameEvent } from "../../sim/events";
@@ -120,6 +121,21 @@ export function dishFrame(dish: Dish): IsoFrame {
   if (dish.mom === true) return frame("item/dish/mom");
   if (dish.kind === "spoiled") return frame("item/dish/spoiled");
   return frame(`item/dish/${dish.kind}`, dish.quality);
+}
+
+/** Кавомашина й чашка під її носиком (§8.7): чашка — накладка в точці `cup` машини. */
+export const COFFEE_FRAME: IsoFrame = frame("item/coffee");
+export const COFFEE_CUP_FRAME: IsoFrame = frame("item/coffee/cup");
+
+/**
+ * Кавомашина (§8.7): на якій стільниці стоїть (у точці страви) і чи варить персонаж каву — тоді під носиком чашка. Машини немає
+ * чи вона ще чекає вільної стільниці — null.
+ */
+export function coffeeLook(state: GameState): { surface: string; brewing: boolean } | null {
+  const surface = coffeeSurface(state);
+  if (surface === null) return null;
+  const activity = state.character.activity;
+  return { surface, brewing: activity?.kind === "use" && activity.target === surface };
 }
 
 /** Над стравою хвилі запаху (§8.7): над зіпсованою, як над брудним лотком. */

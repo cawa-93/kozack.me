@@ -329,6 +329,11 @@ describe("пози персонажа й речі", () => {
     // Фонтанчик працює — вода в мисці є; годівниця повна, у мисці — корм.
     expect(thingPhotoParts("fountain", "cheap").map((p) => p.state)).toEqual(["full", "on"]);
     expect(thingPhotoParts("feeder", "premium")[1]?.state).not.toBe("empty");
+    // Кавомашина — один варіант: варить каву, чашка стоїть під носиком (точка `cup` машини).
+    const coffee = thingPhotoParts("coffee", "cheap");
+    expect(coffee.map((p) => p.id)).toEqual(["item/coffee", "item/coffee/cup"]);
+    expect(missing(coffee)).toEqual([]);
+    expect({ x: coffee[1]?.x, y: coffee[1]?.y }).toEqual({ x: expect.closeTo(-10.24), y: expect.closeTo(-1.88) });
   });
 });
 

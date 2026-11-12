@@ -49,6 +49,7 @@ export const THING_ICONS: Record<ThingKind, IconName> = {
   robot: "robot-vacuum",
   lock: "lock",
   vacuum: "vacuum",
+  coffee: "coffee-machine",
 };
 
 /**

@@ -368,8 +368,11 @@ export interface ScratcherItem {
 export type HomeItem = BowlItem | WaterItem | LitterItem | ToyItem | HouseItem | ScratcherItem;
 /** Речі, що стоять на клітинці (§8.7): усе, крім іграшки. */
 export type PlacedItem = Exclude<HomeItem, ToyItem>;
-/** Річ для котів, яку можна купити (§6.4); переноска не стоїть на місці в квартирі, замок — на шафці з кормом (§9.12). */
-export type ThingKind = HomeItem["kind"] | "carrier" | "feeder" | "lock" | Appliance;
+/**
+ * Річ, яку можна купити (§6.4); переноска не стоїть на місці в квартирі, замок — на шафці з кормом (§9.12), кавомашина — на
+ * стільниці кухні (§8.7).
+ */
+export type ThingKind = HomeItem["kind"] | "carrier" | "feeder" | "lock" | "coffee" | Appliance;
 /** Побутова техніка (§8.7): одна кожного виду, без місця в квартирі. Автогодівниці — окремо, на мисках. */
 export type Appliance = "fountain" | "robot" | "vacuum";
 /** Чим персонаж прибирає в руках (§8.7). */
@@ -612,6 +615,11 @@ export interface Home {
   caged?: number[];
   /** Техніка (§8.7): якість кожної, null — немає. */
   appliances: Record<Appliance, Quality | null>;
+  /**
+   * Кавомашина (§8.7): `surface` — стільниця, на якій вона стоїть (id речі квартири); null — ще чекає вільної стільниці. Немає
+   * поля — машини немає. Окремо від `appliances`: у збереженнях до неї такого ключа там немає.
+   */
+  coffee?: { surface: string | null };
   /** Де база робота-пилососа (§8.7, «Переставити річ»): центр клітинки; немає — на старому місці (`ROBOT_DOCK`). */
   robotDock?: Vec;
   /** Робота з базою несуть у руках (§8.7): у квартирі їх немає, і робот не прибирає. */
@@ -1351,7 +1359,7 @@ export interface GameState {
 }
 
 /** Техніка, перша поява якої — подія титрів життя (§4.2). */
-export type StoryThing = "robot" | "fountain" | "feeder";
+export type StoryThing = "robot" | "fountain" | "feeder" | "coffee";
 /** Дорожча річ, яку зламав кіт, — подія титрів життя (§4.2); у дивана якості немає. */
 export type StoryBroken = "carrier" | "house" | "scratcher" | "sofa";
 /** Призове місце на виставці котів (§4.1): перше — головний приз `MODIFIERS.show.prizes`, далі — за списком. */

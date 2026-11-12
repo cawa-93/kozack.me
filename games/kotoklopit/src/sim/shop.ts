@@ -140,7 +140,7 @@ export function unavailable(state: GameState, goods: Goods, cart: readonly CartL
   const { thing } = goods;
   // Автогодівниці — з урахуванням мисок у кошику (§9.12).
   if (thingRoom(state, cart, thing) > 0) return null;
-  if (thing === "lock" || isAppliance(thing)) return ownsThing(state, thing) ? "owned" : "ordered";
+  if (thing === "lock" || thing === "coffee" || isAppliance(thing)) return ownsThing(state, thing) ? "owned" : "ordered";
   // Автогодівниця — одна на миску (§9.12).
   return thing === "feeder" ? "no-bowl" : "no-room";
 }

@@ -191,7 +191,7 @@ export const UNSOLD: readonly Product[] = ["momMeal"];
 /** З одним варіантом (§9.10): магазин продає лише «дешевий». */
 export const SINGLE_VARIANT: readonly Product[] = ["collar"];
 /** Речі з одним варіантом: магазин теж продає лише «дешевий». */
-export const SINGLE_VARIANT_THINGS: readonly ThingKind[] = ["vacuum"];
+export const SINGLE_VARIANT_THINGS: readonly ThingKind[] = ["vacuum", "coffee"];
 /** Для себе (§11.3а): лише їх магазин показує, поки вдома не було кота. */
 export const SELF_PRODUCTS: readonly Product[] = ["food", "hygiene", "humanMeds", "dressing", "detergent"];
 export const START_SUPPLIES: Record<Product, Record<Quality, number>> = {
@@ -262,7 +262,14 @@ export const THINGS: Record<ThingKind, { price: Record<Quality, number>; utiliti
   lock: { price: { cheap: 30, premium: 120 }, utilities: 0 },
   // Замінює віник (§8.7). Новий запис — лише в кінець: місце в `GOODS` задає ціну магазину.
   vacuum: { price: { cheap: 1600, premium: 1600 }, utilities: 6 },
+  // Кавомашина (§8.7): один варіант, найдорожча річ.
+  coffee: { price: { cheap: 8000, premium: 8000 }, utilities: 12 },
 };
+/**
+ * Кавомашина (§8.7): `minutes` — скільки хвилин тіла вариться й п'ється чашка; `surfaces` — стільниці, на які вона стає, у порядку
+ * вибору (на лівій лежить телефон, тож спершу права).
+ */
+export const COFFEE = { minutes: 5, surfaces: ["counter-right", "counter-left"] } as const;
 /** Порції (§9.12). */
 export const FEEDER_CAPACITY: Record<Quality, number> = { cheap: 8, premium: 20 };
 /** Ремонт дивана до найближчого платежу. */

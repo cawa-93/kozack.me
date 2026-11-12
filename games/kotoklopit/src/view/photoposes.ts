@@ -574,6 +574,13 @@ export function thingPhotoParts(thing: StoryThing, quality: Quality): PortraitPa
       return [framePart(`item/water/${quality}`, "full"), framePart(`item/fountain/${quality}`, "on")];
     case "feeder":
       return [framePart(`item/feeder/${quality}`, `${quality}-full`), framePart(`item/bowl/${quality}`, `${quality}-2`)];
+    // Кавомашина — без якостей; варить каву: чашка під носиком, у точці `cup` машини.
+    case "coffee": {
+      const machine = artEntry("item/coffee");
+      const cup = machine?.points?.["cup"];
+      const at = machine && cup ? { x: cup.x - machine.pivot.x, y: cup.y - machine.pivot.y } : { x: 0, y: 0 };
+      return [framePart("item/coffee", null), { ...framePart("item/coffee/cup", null), ...at }];
+    }
   }
 }
 

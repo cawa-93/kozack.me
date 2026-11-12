@@ -589,6 +589,7 @@ size 40×44; pivot (20, 35) — суглоб з головою; основа (y 
 | Речі квартири | `env/<id OBJECTS>[/<стан>]`; наповнення — `env/<сховище>/<запас>` зі станами `full-0`…`full-4`; ще `env/toilet-roll`, `env/wire`, `env/laundry-basket` | точка підлоги під центром сліду; накладки — те саме полотно й pivot, що річ |
 | Котячі сліди | `env/trace/<CatTrace>[/<частина>]` | господаря: те саме полотно, pivot, `res` і стани |
 | Котячі речі й техніка | `item/<вид>/<cheap\|premium>[/<стан>]`, `item/robot-dock` | точка підлоги під центром |
+| Кавомашина | `item/coffee` (один варіант), чашка під носиком — `item/coffee/cup` | центр основи на стільниці (точка `dish` стільниці); чашка — центр дна, у точці `cup` машини |
 | У руках | `item/dish/<raw\|meal\|burnt\|mom>`, `item/scoop`; `item/vacuum`, `item/broom` — з ракурсами `front`, `back` | низ речі посередині (гніздо `held`); у пилососа й віника — хват ручки |
 | Бруд і дрібниці | `mess/<MessKind>`, `mess/fur-tuft`, `mess/trinket/<mug\|phone\|pen>`, `mess/sock` | точка підлоги під центром |
 | Пил і павутина | `mess/dust/<corner\|wall-x\|wall-y\|floor>`, `mess/cobweb` | точка підлоги під центром; у павутини — точка підлоги в куті під нею |

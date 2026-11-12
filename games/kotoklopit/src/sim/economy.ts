@@ -19,6 +19,7 @@ import {
   UNSOLD,
   UTILITIES_BASE,
 } from "./config";
+import { ownsCoffee, placeCoffee } from "./coffee";
 import { emit, endGame } from "./events";
 import { nearestFreePlace, SLOTS, slotTaken, SURFACE_IDS, VACUUM_HOME } from "./home";
 import { deliveryFree, deliveryHoursFactor, priceFactor, weekPriceFactor } from "./modifiers";
@@ -326,7 +327,7 @@ export function ownedItems(state: GameState): readonly HomeItem[] {
 export function freeSlots(state: GameState, thing: ThingKind): number {
   if (thing === "toy" || thing === "carrier") return Infinity;
   const home = state.home;
-  if (thing === "lock" || isAppliance(thing)) {
+  if (thing === "lock" || thing === "coffee" || isAppliance(thing)) {
     const ordered = [...home.deliveries, ...home.porch].some((d) => "thing" in d && d.thing === thing);
     return !ownsThing(state, thing) && !ordered ? 1 : 0;
   }
@@ -351,10 +352,11 @@ export function feederRoom(state: GameState, cartBowls = 0): number {
   return Math.max(0, bowlsWithoutFeeder(state).length + newBowls - packagesOf(state, "feeder"));
 }
 
-/** Річ без місця вже є вдома: замок на шафці чи техніка (§6.4). */
-export function ownsThing(state: GameState, thing: "lock" | Appliance): boolean {
+/** Річ без місця вже є вдома: замок на шафці, кавомашина чи техніка (§6.4). */
+export function ownsThing(state: GameState, thing: "lock" | "coffee" | Appliance): boolean {
   const home = state.home;
   if (thing === "lock") return home.lock !== undefined;
+  if (thing === "coffee") return ownsCoffee(state);
   return home.appliances[thing] !== null;
 }
 
@@ -434,6 +436,12 @@ export function place(state: GameState, thing: ThingKind, quality: Quality): Hom
   }
   if (thing === "feeder") {
     placeFeeder(state, quality);
+    return null;
+  }
+  // Кавомашина — на вільну стільницю кухні (§8.7).
+  if (thing === "coffee") {
+    placeCoffee(state);
+    remember(state, { kind: "thing", day: state.day, minute: state.minute, thing, quality });
     return null;
   }
   const id = state.nextId++;
@@ -536,6 +544,7 @@ export function utilitiesDue(state: GameState): number {
     ownedItems(state).reduce((sum, i) => sum + THINGS[i.kind].utilities, 0) +
     appliances.reduce((sum, a) => sum + THINGS[a].utilities, 0) +
     ((home.feeders?.length ?? 0) + (carried?.kind === "thing" && carried.feeder ? 1 : 0)) * THINGS.feeder.utilities +
+    (ownsCoffee(state) ? THINGS.coffee.utilities : 0) +
     home.repairs
   );
 }

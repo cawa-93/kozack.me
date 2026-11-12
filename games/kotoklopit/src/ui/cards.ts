@@ -6,6 +6,7 @@ import { MODIFIERS, NAME_MAX_LENGTH, WAKE_UP } from "../sim/config";
 import { supplyCount } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
 import { diseaseMedicine, dosedToday } from "../sim/diseases";
+import { ownsCoffee } from "../sim/coffee";
 import { canGiveAway, giveAwayBlocker } from "../sim/farewell";
 import { hasFurryCat, isShowDay, WEEK_PAIRS } from "../sim/modifiers";
 import { hasFertileFemale, inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
@@ -241,7 +242,7 @@ function catChips(state: GameState): HTMLElement | null {
 export type PhoneTab = "shop" | "home" | "cats" | "profile" | "game";
 
 /** Річ без місця в «Моїх речах» (§8.7): техніка, автогодівниця над місцем миски, переноска чи замок на шафку. */
-export type DiscardThing = { appliance: Appliance } | { feeder: string } | { carrier: number } | { owned: "lock" };
+export type DiscardThing = { appliance: Appliance } | { feeder: string } | { carrier: number } | { owned: "lock" | "coffee" };
 
 export interface PhoneHandlers {
   /** Оплатити кошик доставкою (§6.4). */
@@ -479,6 +480,8 @@ function myThings(state: GameState, handlers: PhoneHandlers): HTMLElement {
       return quality === null ? [] : [{ kind: a, quality, thing: { appliance: a } }];
     }),
     ...(state.home.feeders ?? []).map((f) => ({ kind: "feeder" as const, quality: f.quality, thing: { feeder: f.slot } })),
+    // Кавомашина — без якостей (§8.7); є і тоді, коли ще чекає вільної стільниці.
+    ...(ownsCoffee(state) ? [{ kind: "coffee" as const, quality: "cheap" as const, thing: { owned: "coffee" as const } }] : []),
   ];
   for (const { kind, quality, thing } of extra) {
     const row = element("div", "shop-row");

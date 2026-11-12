@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 94" width="80" height="94">
+<!-- item/coffee — кавомашина на стільниці кухні (GAME_DESIGN §8.7): червоний корпус профілем «С» — колона ззаду, «голова» з регулятором і кнопкою нависає над металевим піддоном; ніша відкрита з обох боків, лицем у кімнату (грань +y).
+size 80×94; pivot (41, 71) — центр основи на стільниці (точка dish стільниці, висота 62); points: cup (30.76, 69.12) — середина піддона під носиком, дно чашки item/coffee/cup.
+Слід 0,44 × 0,46 клітинки, висота 46: піддон до 7, «голова» від 30. Історія: паперова наліпка на правій грані колони.
+Без станів і шарів: один кадр у готових кольорах; чашку, поки персонаж варить каву, гра кладе накладкою item/coffee/cup.
+Контур LINE_SMALL (річ менша за 60): силует 4,5, низ 6, ребра 2,5, фактура 2.
+-->
+<g id="p-shadow">
+<path d="M43.7 55.1Q58.6 61.6 72.9 69.7Q75.6 71 72.9 72.3Q58 80.7 42.4 87.6Q39.7 88.9 37 87.6Q22.1 81 7.8 73Q5.2 71.6 7.8 70.3Q22.7 62 38.3 55.1Q41 53.7 43.7 55.1Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="p-niche">
+<path d="M21.8 59.5Q35.9 66.6 50 73.6Q50 62.1 50 50.6Q35.9 43.6 21.8 36.5Q21.8 48 21.8 59.5Z" fill="#4b4146"/>
+<path d="M21.8 59.5Q35.9 66.6 50 73.6Q44.8 76.2 39.7 78.7Q25.6 71.7 11.6 64.6Q16.7 62.1 21.8 59.5Z" fill="#cdc6be"/>
+<path d="M21.8 59.5Q35.9 66.6 50 73.6Q47.7 74.7 45.5 75.8Q31.4 68.8 17.3 61.8Q19.6 60.6 21.8 59.5Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M20.5 62.4Q32.5 68.1 44.2 74.2" fill="none" stroke="#716869" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17 64.2Q29 69.8 40.7 76" fill="none" stroke="#716869" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M27.6 44.1L34 44.1L33.4 55.3L28.2 55.3Z" fill="#a69f9b"/>
+<path d="M27.6 44.1L34 44.1L33.4 55.3L28.2 55.3Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-body">
+<path d="M69.2 71Q54.4 78.4 39.7 85.7Q39.7 82.2 39.7 78.7Q44.8 76.2 50 73.6Q50 62.1 50 50.6Q44.8 53.2 39.7 55.7Q39.7 47.7 39.7 39.7Q54.4 32.4 69.2 25Q69.2 48 69.2 71Z" fill="#c4524b"/>
+<path d="M69.2 71Q54.4 78.4 39.7 85.7Q39.7 82.2 39.7 78.7Q44.8 76.2 50 73.6Q50 71.1 50 68.6Q59.6 63.8 69.2 59Q69.2 65 69.2 71Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M11.6 71.6Q25.6 78.7 39.7 85.7Q39.7 82.2 39.7 78.7Q25.6 71.7 11.6 64.6Q11.6 68.1 11.6 71.6Z" fill="#c4524b"/>
+<path d="M11.6 41.6Q25.6 48.7 39.7 55.7Q39.7 47.7 39.7 39.7Q25.6 32.7 11.6 25.6Q11.6 33.6 11.6 41.6Z" fill="#c4524b"/>
+<path d="M41 10.9Q55.3 17.5 69.2 25Q54.7 32.8 39.7 39.7Q25.4 33.1 11.6 25.6Q26.1 17.8 41 10.9Z" fill="#dc7c69"/>
+<path d="M43.7 16.8Q50.7 19.9 57.5 23.6Q58.9 24.4 57.5 25.1Q53.6 27.3 49.5 29.1Q48 29.8 46.6 29.1Q39.6 25.9 32.8 22.2Q31.4 21.5 32.8 20.8Q36.7 18.5 40.8 16.8Q42.3 16 43.7 16.8Z" fill="none" stroke="#963b3a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M65.2 42Q61.9 43.9 58.4 45.4Q57.6 45.8 57.6 46.6Q57.9 50.5 57.6 54.5Q57.6 55.3 58.4 54.9Q61.7 52.9 65.2 51.5Q66 51.1 66 50.3Q65.7 46.3 66 42.4Q66 41.6 65.2 42Z" fill="#f2e7d0"/>
+<path d="M65.2 42Q61.9 43.9 58.4 45.4Q57.6 45.8 57.6 46.6Q57.9 50.5 57.6 54.5Q57.6 55.3 58.4 54.9Q61.7 52.9 65.2 51.5Q66 51.1 66 50.3Q65.7 46.3 66 42.4Q66 41.6 65.2 42Z" fill="none" stroke="#6b5263" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M16.8 38A3.4 3.6 0 0 0 23.6 38A3.4 3.6 0 0 0 16.8 38Z" fill="#cdc6be"/>
+<path d="M16.8 38A3.4 3.6 0 0 0 23.6 38A3.4 3.6 0 0 0 16.8 38Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M20.2 37.8L21.5 35.8" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M29.7 43.5A2.3 2.4 0 0 0 34.3 43.5A2.3 2.4 0 0 0 29.7 43.5Z" fill="#e0d4b9"/>
+<path d="M29.7 43.5A2.3 2.4 0 0 0 34.3 43.5A2.3 2.4 0 0 0 29.7 43.5Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-ink">
+<path d="M11.6 25.6Q25.4 33.2 39.7 39.7Q54.7 32.8 69.2 25" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M39.7 41.2Q40 48.5 39.7 55.7" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M12.8 42.3Q26.4 48.7 39.7 55.7Q44.8 53 50 50.6" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M50 50.6Q50.3 62.1 50 73.6Q44.9 76.3 39.7 78.7" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M12.8 65.3Q26.1 72.3 39.7 78.7" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M39.7 78.7Q39.9 81.5 39.7 84.2" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M23.1 60.2Q36.3 66.5 49.3 73.3" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M43.1 12Q55.4 17.2 67 23.9Q69.2 25 69.2 27.4Q69.9 49.2 69.2 71Q54.7 78.8 39.7 85.7Q25.4 79.1 11.6 71.6Q11.3 68.7 11.6 65.8Q11.6 64.6 12.6 64.1Q16.9 62 21.1 59.9Q21.8 59.5 21.8 58.7Q21.8 53.1 21.8 47.6Q21.8 46.8 21.1 46.4Q17 44.4 13 42.4Q11.6 41.6 11.6 40Q11.2 34 11.6 28Q11.6 25.6 13.7 24.6Q25.9 17.6 38.9 12Q41 10.9 43.1 12Z" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11.6 71.6Q25.9 78.2 39.7 85.7Q54.2 77.9 69.2 71" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

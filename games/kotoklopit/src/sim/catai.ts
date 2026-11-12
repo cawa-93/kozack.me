@@ -6,6 +6,7 @@ import { stun } from "./body";
 import { adaptsLonger, asleep, avoiding, changeLove, changeMood, forgive, grudgeAt, idleAct, isAdapting, isKitten, isOld, petResting, recordMood, sinceOffense, stress, sulking, traitLevel, upset } from "./cat";
 import { lastTileWithin, randomFloor, stepTo, tileAtDistance, tileOf, visibleFloorNear, walk } from "./catmove";
 import { changeStat, unpleasantTask } from "./character";
+import { coffeeOn } from "./coffee";
 import {
   ACTIVITY_BY_HOUR,
   ADAPTATION_HUNGER,
@@ -2737,9 +2738,12 @@ function knockOff(state: GameState, cat: Cat, id: string): Dish | null {
   return dish;
 }
 
-/** Дрібнички, що стоять на своїх місцях (§9.12, «Скидання речей»): скинуті лежать на підлозі до ранку. */
+/**
+ * Дрібнички, які кіт може скинути (§9.12, «Скидання речей»): стоять на своїх місцях (скинуті лежать на підлозі до ранку), і не на
+ * стільниці з кавомашиною — туди коти не вилазять (§8.7).
+ */
 export function standingTrinkets(state: GameState): (typeof TRINKETS)[number][] {
-  return TRINKETS.filter((t) => !state.home.trinkets?.[t.kind]);
+  return TRINKETS.filter((t) => !state.home.trinkets?.[t.kind] && !coffeeOn(state, t.object));
 }
 
 /**

@@ -73,6 +73,8 @@ export const VARIANT_TITLES: Record<string, Record<Quality, string>> = {
   "thing:robot": { cheap: "Простий робот-пилосос", premium: "Розумний робот-пилосос" },
   "thing:lock": { cheap: "Дитячий замочок на шафку", premium: "Магнітний замок на шафку" },
   "thing:vacuum": { cheap: "Вертикальний пилосос", premium: "Вертикальний пилосос" },
+  // Один варіант (`SINGLE_VARIANT_THINGS`, §8.7).
+  "thing:coffee": { cheap: "Кавомашина", premium: "Кавомашина" },
 };
 
 /** Два варіанти послуги на місці (§8.5): лікування, грумінг. */

@@ -7,6 +7,7 @@ import { meetCat, nextNewcomer } from "../sim/cat";
 import { inStandoff, isDirty } from "../sim/catai";
 import { LOW_STAT, MODIFIERS, SUPPLY_FLIGHT } from "../sim/config";
 import { carrierRoom, discardCarrier } from "../sim/carriers";
+import { discardCoffee } from "../sim/coffee";
 import { discard, discardAppliance, discardLock, payUtilities, seePhoneHints, supplyCount } from "../sim/economy";
 import { setDifficulty } from "../sim/difficulty";
 import { checkout } from "../sim/shop";
@@ -1501,6 +1502,7 @@ export class DayScene extends Phaser.Scene {
             if ("appliance" in thing) confirmDiscard(thing.appliance, quality, () => discardAppliance(this.state, thing.appliance));
             else if ("feeder" in thing) confirmDiscard("feeder", quality, () => discardFeeder(this.state, thing.feeder));
             else if ("carrier" in thing) confirmDiscard("carrier", quality, () => discardCarrier(this.state, thing.carrier));
+            else if (thing.owned === "coffee") confirmDiscard("coffee", quality, () => discardCoffee(this.state));
             else confirmDiscard(thing.owned, quality, () => discardLock(this.state));
           },
           // Віддати — назавжди: спершу картка-підтвердження (перевірка розмноження 2026-10-28: був один дотик без підтвердження);

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 29" width="30" height="29">
+<!-- item/coffee/cup — чашка кави під носиком кавомашини (GAME_DESIGN §8.7): накладка на item/coffee, поки персонаж варить каву.
+size 30×29; pivot (12, 20) — центр дна чашки на піддоні (точка cup кавомашини); points: —.
+Біла емальована чашка Ø ≈ 0,15 клітинки, висота 10,5, з кавою; ручка праворуч — штрих ink 5,4 з емаллю 2,2; тінь на піддоні.
+Контур — як у кавомашини, LINE_SMALL: ребра 2,5, фактура 2. Без станів і шарів.
+-->
+<defs>
+<clipPath id="item-coffee-cup-body"><path d="M5.4 9.5Q5.6 14.8 6.8 20A5.2 2.6 0 0 0 17.2 20Q18.4 14.8 18.6 9.5A6.6 3.3 0 0 0 5.4 9.5Z"/></clipPath>
+</defs>
+<g id="p-shadow">
+<path d="M5.2 20.6A7.4 3.8 0 0 0 20 20.6A7.4 3.8 0 0 0 5.2 20.6Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="p-cup">
+<path d="M18 12.5Q23 12.9 22 15.7Q21.2 18.1 17.6 17.7" fill="none" stroke="#2e1f29" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18 12.5Q23 12.9 22 15.7Q21.2 18.1 17.6 17.7" fill="none" stroke="#f2e9d4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M5.4 9.5Q5.6 14.8 6.8 20A5.2 2.6 0 0 0 17.2 20Q18.4 14.8 18.6 9.5A6.6 3.3 0 0 0 5.4 9.5Z" fill="#f2e9d4"/>
+<path d="M4.4 16.4Q12 18.6 19.6 16.4L19.6 24L4.4 24Z" fill="#3f2541" fill-opacity="0.16" clip-path="url(#item-coffee-cup-body)"/>
+<path d="M5.4 9.5A6.6 3.3 0 0 0 18.6 9.5A6.6 3.3 0 0 0 5.4 9.5Z" fill="#f2e9d4"/>
+<path d="M7.3 9.9A4.7 2.2 0 0 0 16.7 9.9A4.7 2.2 0 0 0 7.3 9.9Z" fill="#9c6237"/>
+<path d="M5.4 9.5A6.6 3.3 0 0 0 18.6 9.5A6.6 3.3 0 0 0 5.4 9.5Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M5.4 9.5Q5.6 14.8 6.8 20A5.2 2.6 0 0 0 17.2 20Q18.4 14.8 18.6 9.5A6.6 3.3 0 0 0 5.4 9.5Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>
