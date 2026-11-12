@@ -202,6 +202,9 @@ export function personEventAnim(event: GameEvent): PersonOneShot | null {
       return once("bowl");
     case "tap-opened":
       return once("tap");
+    // Кавомашина (§8.7): запустив — тягнеться до кнопки; випив готову чашку — підносить її до рота.
+    case "coffee":
+      return event.stage === "drunk" ? once("drink") : event.stage === "started" ? once("tap") : null;
     case "person-meds":
       return once("meds");
     case "person-dressing":

@@ -99,9 +99,10 @@ export const PERSON_ANIM_GROUPS = {
    * телефон (дзвонить мама; лише з порожніми руками — з річчю чи котом у руках персонаж тримає їх, а дзвінок показує бабл),
    * засинає в ліжку й падає від виснаження (за поступом), бере й кладе (разові: холодильник, плита, стіл, шафка з кормом —
    * плита готує сама), викидає в смітник (разова), лагодить дріт, купає кота в душі, відкриває кран котові (разова), доглядає
-   * кота на руках (`tend`, разова: дає ліки, надягає нашийник — кіт лишається на руках).
+   * кота на руках (`tend`, разова: дає ліки, надягає нашийник — кіт лишається на руках), п'є каву біля кавомашини (`drink`,
+   * разова: чашка в руці).
    */
-  chores: ["work", "meeting", "eat", "meds", "dress", "litter", "clean", "washer", "bowl", "unpack", "door", "phone", "fallAsleep", "collapse", "take", "put", "trash", "fix", "bath", "tap", "tend"],
+  chores: ["work", "meeting", "eat", "meds", "dress", "litter", "clean", "washer", "bowl", "unpack", "door", "phone", "fallAsleep", "collapse", "take", "put", "trash", "fix", "bath", "tap", "tend", "drink"],
 } as const;
 
 export type PersonAnimGroup = keyof typeof PERSON_ANIM_GROUPS;
@@ -132,6 +133,7 @@ export const PERSON_ONE_SHOT_MS = {
   trash: 500,
   tap: 500,
   tend: 900,
+  drink: 1500,
 } as const satisfies Partial<Record<PersonAnimId, number>>;
 
 export type PersonOneShotId = keyof typeof PERSON_ONE_SHOT_MS;

@@ -646,7 +646,7 @@ export class IsoApartmentView implements ApartmentPart {
   private drawSurfaces(state: GameState, decor: DecorLook, time: number): void {
     const { home } = state;
     const smell = DISH_SMELL[Math.floor(time / DISH_SMELL_MS) % DISH_SMELL.length] ?? null;
-    // Кавомашина займає місце страви своєї стільниці (§8.7); чашка під носиком — поки вариться кава.
+    // Кавомашина займає місце страви своєї стільниці (§8.7); чашка під носиком — поки кава вариться й поки готова чекає.
     const coffee = coffeeLook(state);
     for (const id of Object.keys(home.surfaces)) {
       const thing = this.things.get(id);
@@ -655,7 +655,7 @@ export class IsoApartmentView implements ApartmentPart {
       this.put(thing, "dish", dish ? dishFrame(dish) : null, ON.dish, "dish");
       const here = coffee?.surface === id;
       this.put(thing, "coffee", here ? COFFEE_FRAME : null, ON.dish, "dish");
-      this.put(thing, "coffee-cup", here && coffee.brewing ? COFFEE_CUP_FRAME : null, ON.dish + ON.step, here ? this.coffeeCupAt(id) : undefined);
+      this.put(thing, "coffee-cup", here && coffee.cup ? COFFEE_CUP_FRAME : null, ON.dish + ON.step, here ? this.coffeeCupAt(id) : undefined);
       this.put(thing, "dish-smell", dishSmells(dish) ? smell : null, ON.smell, this.dishSmellAt(id));
     }
     // Дрібнички стоять на своїх місцях, поки їх не скинули; скинуті лежать на підлозі (їх показує підлога).

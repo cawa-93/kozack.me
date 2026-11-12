@@ -2,29 +2,32 @@
 
 import { describe, expect, it } from "vitest";
 
-import { dropEverything, useProgress } from "../src/sim/actions";
-import { actionSpeed } from "../src/sim/body";
+import { dropEverything } from "../src/sim/actions";
 import { createCat } from "../src/sim/cat";
 import { standingTrinkets } from "../src/sim/catai";
-import { coffeeSurface, discardCoffee } from "../src/sim/coffee";
+import { coffeeStage, coffeeSurface, discardCoffee } from "../src/sim/coffee";
 import { COFFEE, THINGS } from "../src/sim/config";
 import { freeSlots, orderThing, place, receivePackages, utilitiesDue } from "../src/sim/economy";
+import type { GameEvent } from "../src/sim/events";
 import { advance, interact, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { catalog, unavailable, variants } from "../src/sim/shop";
 import { lifeStory } from "../src/sim/story";
 import { targetOf } from "../src/sim/targets";
-import type { Dish, GameState, Save } from "../src/sim/types";
-import { coffeeLook } from "../src/view/iso/looks";
+import type { Dish, Save } from "../src/sim/types";
+import { PERSON_ONE_SHOT_MS } from "../src/view/anim/ids";
+import { personEventAnim } from "../src/view/anim/personanim";
+import { COFFEE_CUP_FRAME, coffeeLook } from "../src/view/iso/looks";
+import { coffeeBar } from "../src/view/iso/markslayout";
+import { heldFrame } from "../src/view/iso/personlook";
+import { shotPlace } from "../src/view/iso/personspot";
 import { personStates } from "../src/view/personstates";
+import { coffeeIcon, THING_ICONS } from "../src/view/symbols";
 import { storyCaption } from "../src/texts";
-import { bodyMinutes, hours, recordEvents, standAt, withCatCorner } from "./helpers";
+import { hours, recordEvents, standAt, withCatCorner } from "./helpers";
 
 const MEAL: Dish = { kind: "meal", quality: "cheap" };
-
-/** Кроки тіла — частки ігрової хвилини: їхня сума на округлення менша за тривалість дії, тож дія закінчується на цьому кроці. */
-const LAST_STEP = 0.001;
 
 /** Гра з котом удома: речі в магазині вже є (§11.3а). */
 function game(): Save {
@@ -35,21 +38,17 @@ function game(): Save {
   return save;
 }
 
-/** Гра з кавомашиною на правій стільниці й «Недосипом». */
+/** Гра з кавомашиною на правій стільниці й «Недосипом»; персонаж стоїть біля машини. */
 function sleepy(debt = -0.2): Save {
   const save = game();
   place(save.current, "coffee", "cheap");
   save.current.character.sleepSpeed = debt;
+  standAt(save, "counter-right");
   return save;
 }
 
-/** Тримати дію стільки хвилин тіла. */
-const holdFor = (save: Save, minutes: number): void => {
-  advance(save, bodyMinutes(minutes), { move: { x: 0, y: 0 }, hold: true });
-};
-
-/** Скільки хвилин тіла вариться чашка зараз: «Недосип» сповільнює й каву (§8.8). */
-const cupMinutes = (state: GameState): number => COFFEE.minutes / actionSpeed(state);
+/** Події кавомашини. */
+const coffeeEvents = (events: readonly GameEvent[]): GameEvent[] => events.filter((e) => e.type === "coffee");
 
 describe("кавомашина в магазині (§6.4, §8.7)", () => {
   it("одна картка — найдорожча річ у грі; до першого кота її, як і решти речей, немає", () => {
@@ -169,125 +168,153 @@ describe("де стоїть кавомашина (§8.7)", () => {
     expect(standingTrinkets(left).map((t) => t.kind)).toContain("mug");
   });
 
-  it("вигляд: машина на своїй стільниці, поки вариться кава — з чашкою", () => {
+  it("вигляд: машина на своїй стільниці; чашка під носиком — поки кава вариться й коли готова; смуга — поки вариться; бабл — коли готова", () => {
     const save = sleepy();
     const state = save.current;
-    expect(coffeeLook(state)).toEqual({ surface: "counter-right", brewing: false });
-    standAt(save, "counter-right");
-    holdFor(save, 1);
-    expect(coffeeLook(state)).toEqual({ surface: "counter-right", brewing: true });
+    expect(coffeeLook(state)).toEqual({ surface: "counter-right", cup: false });
+    expect(coffeeBar(state)).toBeNull();
+    expect(coffeeIcon(state, "counter-right")).toBeNull();
+    interact(save);
+    advance(save, COFFEE.brewMinutes / 2);
+    expect(coffeeLook(state)).toEqual({ surface: "counter-right", cup: true });
+    expect(coffeeBar(state)).toEqual({ surface: "counter-right", value: expect.closeTo(0.5) });
+    expect(coffeeIcon(state, "counter-right")).toBeNull();
+    advance(save, COFFEE.brewMinutes);
+    expect(coffeeLook(state)).toEqual({ surface: "counter-right", cup: true });
+    expect(coffeeBar(state)).toBeNull();
+    // «Кава готова» — іконкою самої машини з чашкою під носиком, над її стільницею; над іншою — нічого.
+    expect(coffeeIcon(state, "counter-right")).toBe(THING_ICONS.coffee);
+    expect(coffeeIcon(state, "counter-left")).toBeNull();
     expect(coffeeLook(game().current)).toBeNull();
   });
 });
 
-describe("чашка кави (§8.7, §8.8)", () => {
-  it("утримання дії біля машини — і «Недосипу» немає до кінця дня", () => {
+describe("кава — як страва на плиті (§8.7, §8.8)", () => {
+  it("натиснули дію — машина варить сама, без персонажа; готова чашка чекає скільки завгодно", () => {
     const save = sleepy();
     const state = save.current;
-    expect(personStates(state)).toContain("sleepDebt");
-    standAt(save, "counter-right");
-    const total = cupMinutes(state);
+    expect(coffeeStage(state)).toBe("idle");
     const { events, stop } = recordEvents();
-    holdFor(save, total / 2);
-    expect(useProgress(state)).toBeCloseTo(0.5);
-    expect(state.character.sleepSpeed).toBe(-0.2);
-    holdFor(save, total / 2 + LAST_STEP);
-    stop();
-    expect(state.character.sleepSpeed).toBe(0);
+    interact(save);
+    expect(coffeeStage(state)).toBe("brewing");
+    // Персонаж вільний: нічого не тримає й ніде не зайнятий.
     expect(state.character.activity).toBeNull();
+    expect(state.character.held).toBeNull();
+    standAt(save, "bed");
+    advance(save, COFFEE.brewMinutes - 1);
+    expect(coffeeStage(state)).toBe("brewing");
+    advance(save, 1);
+    expect(coffeeStage(state)).toBe("ready");
+    advance(save, hours(3));
+    stop();
+    expect(coffeeStage(state)).toBe("ready");
+    expect(state.character.sleepSpeed).toBe(-0.2);
+    expect(coffeeEvents(events)).toEqual([
+      { type: "coffee", stage: "started", object: "counter-right" },
+      { type: "coffee", stage: "ready", object: "counter-right" },
+    ]);
+  });
+
+  it("натиснули біля готової чашки — персонаж її випив: «Недосипу» немає до кінця дня, машина знову вільна", () => {
+    const save = sleepy();
+    const state = save.current;
+    interact(save);
+    advance(save, COFFEE.brewMinutes);
+    expect(personStates(state)).toContain("sleepDebt");
+    expect(targetOf(state)?.id).toBe("counter-right");
+    const { events, stop } = recordEvents();
+    interact(save);
+    stop();
+    expect(coffeeEvents(events)).toEqual([{ type: "coffee", stage: "drunk", object: "counter-right" }]);
+    expect(state.character.sleepSpeed).toBe(0);
     expect(personStates(state)).not.toContain("sleepDebt");
-    expect(events.filter((e) => e.type === "coffee")).toEqual([{ type: "coffee" }]);
-    // До кінця дня: час іде, а «Недосип» не вертається.
+    expect(coffeeStage(state)).toBe("idle");
     advance(save, hours(3));
     expect(state.character.sleepSpeed).toBe(0);
   });
 
-  it("без «Недосипу» машина не ціль дії — ні звичайного дня, ні коли персонаж виспався", () => {
-    for (const speed of [0, 0.05]) {
-      const save = sleepy(speed);
-      standAt(save, "counter-right");
-      expect(targetOf(save.current)?.id, String(speed)).not.toBe("counter-right");
-      holdFor(save, COFFEE.minutes * 2);
-      expect(save.current.character.sleepSpeed, String(speed)).toBe(speed);
-    }
-    const save = sleepy();
-    standAt(save, "counter-right");
-    expect(targetOf(save.current)?.id).toBe("counter-right");
-  });
-
-  it("коротке натискання каву не варить і нічого не бере", () => {
+  it("поки кава вариться, машина не ціль дії: натискання її не чіпає", () => {
     const save = sleepy();
     const state = save.current;
-    standAt(save, "counter-right");
+    interact(save);
+    advance(save, 1);
+    expect(targetOf(state)?.id).not.toBe("counter-right");
     const { events, stop } = recordEvents();
     interact(save);
-    advance(save, 0.1);
     stop();
-    expect(state.character.held).toBeNull();
-    expect(state.character.activity).toBeNull();
-    expect(state.character.sleepSpeed).toBe(-0.2);
-    expect(events.filter((e) => e.type === "refused" || e.type === "coffee")).toEqual([]);
+    // Натискання дістається сусідній речі (плиті), а не машині: кава вариться далі.
+    expect(coffeeEvents(events)).toEqual([]);
+    expect(events.every((e) => e.type !== "refused" || e.object !== "counter-right")).toBe(true);
+    expect(coffeeStage(state)).toBe("brewing");
   });
 
-  it("одне утримання — одна чашка: друга не вариться, поки кнопку не відпустили", () => {
+  it("варити й пити можна й без «Недосипу»: бонус сну кава не чіпає", () => {
+    for (const speed of [0, 0.05]) {
+      const save = sleepy(speed);
+      const state = save.current;
+      expect(targetOf(state)?.id, String(speed)).toBe("counter-right");
+      interact(save);
+      advance(save, COFFEE.brewMinutes);
+      interact(save);
+      expect(coffeeStage(state), String(speed)).toBe("idle");
+      expect(state.character.sleepSpeed, String(speed)).toBe(speed);
+    }
+  });
+
+  it("утримання кнопки нічого не варить і не п'є вдруге: одне натискання — одна дія", () => {
     const save = sleepy();
     const state = save.current;
-    standAt(save, "counter-right");
-    const { events, stop } = recordEvents();
-    holdFor(save, cupMinutes(state) + LAST_STEP);
-    expect(state.character.sleepSpeed).toBe(0);
-    // Знову недоспаний (наче наступного ранку), а кнопку досі тримають.
-    state.character.sleepSpeed = -0.2;
-    holdFor(save, cupMinutes(state) * 2);
+    interact(save);
+    // Кнопку тримають далі, доки кава не звариться, і ще довго: чашку не випито.
+    advance(save, COFFEE.brewMinutes + 30, { move: { x: 0, y: 0 }, hold: true });
+    expect(coffeeStage(state)).toBe("ready");
     expect(state.character.sleepSpeed).toBe(-0.2);
-    expect(events.filter((e) => e.type === "coffee")).toHaveLength(1);
-    // Відпустили й затисли знову — друга чашка.
-    advance(save, 0.1);
-    holdFor(save, cupMinutes(state) + LAST_STEP);
-    stop();
-    expect(state.character.sleepSpeed).toBe(0);
-    expect(events.filter((e) => e.type === "coffee")).toHaveLength(2);
   });
 
-  it("рух перериває, і наступна чашка вариться спочатку", () => {
-    const save = sleepy();
-    const state = save.current;
-    standAt(save, "counter-right");
-    const total = cupMinutes(state);
-    holdFor(save, total / 2);
-    advance(save, 0.1, { move: { x: 0, y: 1 }, hold: true });
-    expect(state.character.activity).toBeNull();
-    expect(state.character.sleepSpeed).toBe(-0.2);
-    advance(save, 0.1);
-    standAt(save, "counter-right");
-    holdFor(save, total / 4);
-    expect(useProgress(state)).toBeCloseTo(0.25);
-  });
-
-  it("без світла машина не працює: відмова «немає світла», кава не вариться", () => {
+  it("без світла машина не варить: відмова «немає світла», почата кава чекає, а готову чашку випити можна", () => {
     const save = sleepy();
     const state = save.current;
     state.modifiers.day = "outage";
-    standAt(save, "counter-right");
-    expect(targetOf(state)?.id).toBe("counter-right");
     const { events, stop } = recordEvents();
     interact(save);
-    holdFor(save, cupMinutes(state) * 2);
-    stop();
     expect(events.filter((e) => e.type === "refused")).toEqual([{ type: "refused", object: "counter-right", reason: "no-power" }]);
-    expect(state.character.sleepSpeed).toBe(-0.2);
-    expect(state.character.activity).toBeNull();
+    expect(coffeeStage(state)).toBe("idle");
+    // Почата до відключення кава без світла не вариться далі.
+    state.home.coffee = { surface: "counter-right", brewing: 2 };
+    advance(save, COFFEE.brewMinutes * 3);
+    expect(state.home.coffee).toEqual({ surface: "counter-right", brewing: 2 });
+    // Готову чашку випити можна й без світла.
+    state.home.coffee = { surface: "counter-right", ready: true };
+    interact(save);
+    stop();
+    expect(coffeeEvents(events)).toEqual([{ type: "coffee", stage: "drunk", object: "counter-right" }]);
+    expect(state.character.sleepSpeed).toBe(0);
   });
 
-  it("час за кавою — «собі»", () => {
+  it("викинули машину з готовою чашкою — нова варить спочатку", () => {
     const save = sleepy();
     const state = save.current;
-    standAt(save, "counter-right");
-    // Категорію часу крок бере на своєму початку: перший крок дію лише починає.
-    holdFor(save, 0.01);
-    const self = state.stats.minutes.self;
-    holdFor(save, 2);
-    expect(state.stats.minutes.self).toBeCloseTo(self + bodyMinutes(2));
+    interact(save);
+    advance(save, COFFEE.brewMinutes);
+    discardCoffee(state);
+    place(state, "coffee", "cheap");
+    expect(coffeeStage(state)).toBe("idle");
+  });
+
+  it("разові анімації: запустив машину — тягнеться до кнопки; випив — підносить чашку до рота, і чашка в руці", () => {
+    const started = personEventAnim({ type: "coffee", stage: "started", object: "counter-right" });
+    expect(started?.anim).toBe("tap");
+    expect(personEventAnim({ type: "coffee", stage: "ready", object: "counter-right" })).toBeNull();
+    const drunk = personEventAnim({ type: "coffee", stage: "drunk", object: "counter-right" });
+    expect(drunk).toEqual({ anim: "drink", ms: PERSON_ONE_SHOT_MS.drink });
+    // Обидві — біля стільниці з машиною: персонаж повертається до неї.
+    expect(shotPlace({ type: "coffee", stage: "started", object: "counter-left" })).toEqual({ object: "counter-left" });
+    expect(shotPlace({ type: "coffee", stage: "drunk", object: "counter-right" })).toEqual({ object: "counter-right" });
+    expect(shotPlace({ type: "coffee", stage: "ready", object: "counter-right" })).toBeNull();
+    // Поки п'є, у руці — чашка (без тіні піддона); з річчю в руках каву не п'ють, тож руки порожні.
+    expect(heldFrame(null, "drink")).toMatchObject({ socket: "held", frame: { id: COFFEE_CUP_FRAME.id, state: "hand" } });
+    expect(COFFEE_CUP_FRAME.state).toBe("tray");
+    expect(heldFrame(null, "tap")).toBeNull();
   });
 });
 

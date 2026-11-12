@@ -156,8 +156,11 @@ export type GameEvent =
   | { type: "ate"; satiety: number; food: number }
   /** Душ закінчився (§8.7); `cold` — холодний, без світла («Планове відключення», §4.1, рішення автора 2026-11-02). */
   | { type: "showered"; hygiene: number; quality: Quality | null; left: number; cold?: true }
-  /** Чашку кави випито (§8.7): «Недосип» знято. */
-  | { type: "coffee" }
+  /**
+   * Кавомашина (§8.7) на стільниці `object`: персонаж її запустив (`started`), кава зварилася й чекає (`ready`), персонаж випив
+   * чашку — «Недосип» знято (`drunk`).
+   */
+  | { type: "coffee"; stage: "started" | "ready" | "drunk"; object: string }
   /** Персонаж зайшов у душ і кинув зношене в кошик білизни (§8.7): іконка одягу летить із кабіни в кошик. */
   | { type: "clothes-tossed" }
   | { type: "work-started" }

@@ -679,6 +679,34 @@ function meds(s: Space): readonly Beat[] {
 }
 
 /**
+ * П'є каву біля кавомашини (§8.7): бере чашку з піддона, підносить до рота, двома ковтками закидає голову й опускає руку. Чашка —
+ * у гнізді `held` (`heldFrame`, анімація `drink`), тож рука веде її, як таблетку в `meds`: у ¾ ззаду кулак — перед обличчям, у ¾
+ * спереду — під підборіддям.
+ */
+function drink(s: Space): readonly Beat[] {
+  const front = s.view === "front";
+  const mouth: Vec2 = front ? { x: 13, y: PELVIS_Y - 40 } : { x: 27, y: PELVIS_Y - 46 };
+  const sip: Vec2 = front ? { x: mouth.x + 1, y: mouth.y + 2 } : { x: mouth.x - 2, y: mouth.y - 4 };
+  // Дорогою до рота чашка йде коло грудей і вгору коло тіла, як таблетка (інакше рука на мить пряма вперед).
+  const chest: Vec2 = front ? { x: 4, y: PELVIS_Y - 24 } : { x: 18, y: PELVIS_Y - 26 };
+  const up: Vec2 = front ? { x: 7, y: PELVIS_Y - 33 } : { x: 20, y: PELVIS_Y - 38 };
+  const at = (tilt: number, to: Vec2, head: number): Pose => add(body(lean(tilt)), { "arm-near": s.point("near", lean(tilt), to), "arm-far": { rot: 5 } }, nod(head));
+  return [
+    [0, REST],
+    [170, add(body(lean(6)), { "arm-near": s.reach("near", lean(6), 24, 72, 6), "arm-far": { rot: 3 } }, nod(8))],
+    [330, at(2, chest, 5)],
+    [430, at(3, up, front ? 10 : 7)],
+    [540, at(4, mouth, front ? 14 : 8)],
+    [720, at(-5, sip, -18), "out"],
+    [900, at(-2, mouth, -6)],
+    [1080, at(-6, sip, -22), "out"],
+    [1260, at(-4, sip, -16)],
+    [1400, at(-1, chest, -3)],
+    [1500, REST],
+  ];
+}
+
+/**
  * Перев'язується біля умивальника (пластир чи бинт): дальню руку виносить перед собою, ближня кілька разів обводить її
  * передпліччя — намотує бинт чи розгладжує пластир, — голова схилена до руки. Ліктів немає, тож «передпліччя» — кінець прямої
  * дальньої руки, а ближня обводить його колом на екрані. Дальня рука завжди за тулубом, тож її кулак має вийти за силует
@@ -1165,6 +1193,7 @@ export const PERSON_CHORES = defineAnims(PERSON_RIG, {
   meeting: anim(2800, true, meeting, SIT_SLOTS),
   eat: anim(2000, true, eat, SIT_SLOTS),
   meds: anim(MS.meds, false, meds),
+  drink: anim(MS.drink, false, drink),
   dress: anim(MS.dress, false, dress),
   litter: anim(1800, true, litter),
   clean: anim(1600, true, clean),

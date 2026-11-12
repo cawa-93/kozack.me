@@ -1,6 +1,7 @@
 // Яка іконка в чого (§11.4): запаси, речі в руках і причини відмов. Без Phaser — щоб тести могли
 // перевірити, що кожна відмова має свою іконку.
 
+import { coffeeOn, coffeeStage } from "../sim/coffee";
 import type { GameEvent, HissCause, Need, Refusal } from "../sim/events";
 import type { CareerChange, StoryItem } from "../sim/story";
 import { movableThing } from "../sim/moving";
@@ -131,6 +132,8 @@ export const STATE_ICONS = {
   fight: "fight",
   /** Персонаж сонний — думка (§8.8). */
   drowsy: "zz",
+  /** Над кавомашиною: готова чашка чекає (§8.7) — іконкою самої машини: на малюнку чашка під носиком. */
+  coffeeReady: "coffee-machine",
 } as const satisfies Record<string, IconName | Record<string, IconName>>;
 
 /**
@@ -143,6 +146,11 @@ export const STATE_ICONS = {
 export function showerIcon(activity: GameState["character"]["activity"], power: boolean): IconName | null {
   if (activity?.kind !== "use" || activity.inside !== true) return null;
   return !power && activity.bath !== true ? STATE_ICONS.coldShower : STATE_ICONS.shower;
+}
+
+/** Що каже кавомашина над стільницею `surface` (§8.7): готова чашка чекає — «кава готова»; інакше нічого. */
+export function coffeeIcon(state: Pick<GameState, "home">, surface: string): IconName | null {
+  return coffeeOn(state, surface) && coffeeStage(state) === "ready" ? STATE_ICONS.coffeeReady : null;
 }
 
 /** Іконка на кнопці перестановки (§10): річ у руках чи та, яку візьмуть; null — кнопки немає. */

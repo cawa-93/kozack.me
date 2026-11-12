@@ -579,7 +579,7 @@ export function thingPhotoParts(thing: StoryThing, quality: Quality): PortraitPa
       const machine = artEntry("item/coffee");
       const cup = machine?.points?.["cup"];
       const at = machine && cup ? { x: cup.x - machine.pivot.x, y: cup.y - machine.pivot.y } : { x: 0, y: 0 };
-      return [framePart("item/coffee", null), { ...framePart("item/coffee/cup", null), ...at }];
+      return [framePart("item/coffee", null), { ...framePart("item/coffee/cup", "tray"), ...at }];
     }
   }
 }

@@ -266,10 +266,10 @@ export const THINGS: Record<ThingKind, { price: Record<Quality, number>; utiliti
   coffee: { price: { cheap: 8000, premium: 8000 }, utilities: 12 },
 };
 /**
- * Кавомашина (§8.7): `minutes` — скільки хвилин тіла вариться й п'ється чашка; `surfaces` — стільниці, на які вона стає, у порядку
- * вибору (на лівій лежить телефон, тож спершу права).
+ * Кавомашина (§8.7): `brewMinutes` — скільки ігрових хвилин вона варить чашку сама, як плита — страву; `surfaces` — стільниці, на
+ * які вона стає, у порядку вибору (на лівій лежить телефон, тож спершу права).
  */
-export const COFFEE = { minutes: 5, surfaces: ["counter-right", "counter-left"] } as const;
+export const COFFEE = { brewMinutes: 6, surfaces: ["counter-right", "counter-left"] } as const;
 /** Порції (§9.12). */
 export const FEEDER_CAPACITY: Record<Quality, number> = { cheap: 8, premium: 20 };
 /** Ремонт дивана до найближчого платежу. */

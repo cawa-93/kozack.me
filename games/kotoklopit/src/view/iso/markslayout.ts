@@ -4,7 +4,7 @@
 
 import { useProgress } from "../../sim/actions";
 import { catOnComputer } from "../../sim/catai";
-import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH, SUPPLY_FLIGHT } from "../../sim/config";
+import { BURN_MINUTES, COFFEE, COOK_MINUTES, JOB_SEARCH, SUPPLY_FLIGHT } from "../../sim/config";
 import { objectById, SURFACE_IDS, WIRE_TILE } from "../../sim/home";
 import { targetOf, type Target } from "../../sim/targets";
 import type { GameState } from "../../sim/types";
@@ -367,6 +367,16 @@ export function stoveBar(state: GameState): { value: number; danger: boolean } |
   const cooking = stove.item.kind === "raw";
   const value = cooking ? stove.minutes / COOK_MINUTES : (stove.minutes - COOK_MINUTES) / (BURN_MINUTES[state.difficulty] - COOK_MINUTES);
   return { value: clamp01(value), danger: !cooking };
+}
+
+/**
+ * Смуга кавомашини (§8.7): поки кава вариться — скільки зварилося; на лицьовій грані стільниці під машиною, як смуга плити
+ * (`stoveFaceBar`). Машина вільна чи чашка вже готова — смуги немає.
+ */
+export function coffeeBar(state: GameState): { surface: string; value: number } | null {
+  const coffee = state.home.coffee;
+  if (!coffee || coffee.surface === null || coffee.brewing === undefined) return null;
+  return { surface: coffee.surface, value: clamp01(coffee.brewing / COFFEE.brewMinutes) };
 }
 
 /** Остання відмова в пошуку роботи: коли (мс сцени) і на якому місці смужки (0–1). */

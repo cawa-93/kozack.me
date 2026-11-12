@@ -210,6 +210,8 @@ export function shotPlace(event: GameEvent): ShotPlace | null {
       return { object: "sink" };
     case "laundry":
       return event.stage === "started" || event.stage === "hung" || event.stage === "cat" ? { object: "washer" } : null;
+    case "coffee":
+      return event.stage === "ready" ? null : { object: event.object };
     case "unpacked":
       return { object: "boxes" };
     case "received":

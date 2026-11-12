@@ -14,7 +14,7 @@ import type { PERSON_RIG } from "../rig/defs/person";
 import type { AnimOf } from "../rig/types";
 import type { Point } from "../world/part";
 import { ISO_DEPTH_SLOT } from "./depth";
-import { dishFrame, feederFrame, foodLook, placedFrame, type IsoFrame } from "./looks";
+import { COFFEE_CUP_HELD, dishFrame, feederFrame, foodLook, placedFrame, type IsoFrame } from "./looks";
 import { NO_EXTRAS, type MixExtras } from "./personmix";
 
 type PersonAnim = AnimOf<typeof PERSON_RIG>;
@@ -203,11 +203,13 @@ export interface HeldFrame {
  * корму (`held`, `item/scoop` з видом корму), вудочка (`rod`, `item/toy/<якість>` у стані «в руці»), вертикальний пилосос
  * чи віник (`held`, `VACUUM_HELD`, `BROOM_HELD` за `tool`; кадр — з ракурсом персонажа, `heldView`), річ котячого кутка (`held`,
  * миска з годівницею — кадром годівниці); з порожніми руками в анімації телефону (`anim` — `phone`) —
- * телефон біля вуха (`PHONE_HELD`). Кіт і порожні руки — null: кота малює частина котів (у точці `hands`).
+ * телефон біля вуха (`PHONE_HELD`), в анімації `drink` — чашка кави. Кіт і порожні руки — null: кота малює частина котів (у точці `hands`).
  */
 export function heldFrame(item: Item | null, anim: PersonAnimId | null = null, tool: CleaningTool = "broom", thing: IsoFrame | null = null): HeldFrame | null {
   if (item === null) {
     if (anim === "phone") return { socket: "held", frame: PHONE_HELD.frame, scale: PHONE_HELD.scale, shift: PHONE_HELD.shift };
+    // П'є каву (§8.7): у руці — чашка, яку щойно взяв з піддона кавомашини.
+    if (anim === "drink") return { socket: "held", frame: COFFEE_CUP_HELD, scale: 1 };
     return null;
   }
   if (heldThing(item) === "cat") return null;

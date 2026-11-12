@@ -2,7 +2,7 @@
 // і передусім та, на яку дивиться персонаж.
 
 import { highPlaceOf, inStandoff, isCarried } from "./catai";
-import { coffeeOn, wantsCoffee } from "./coffee";
+import { coffeeOn, coffeeStage } from "./coffee";
 import { FACING_PRIORITY, MOVING, REACH } from "./config";
 import { fridgeSupply, isDish } from "./dish";
 import { CARRIER_SPOT, centerOf, thingPresent, distanceToRect, hasPurchases, isSolid, isWall, itemPoint, objectAt, objectsOf, slotById, withThing, type HomeObject } from "./home";
@@ -70,11 +70,12 @@ function catOnWardrobe(state: GameState, object: HomeObject): boolean {
 
 /**
  * Порожній стіл чи стільниця без страви в руках — не ціль (§10): дія там лише відмовила б, а плиту між ними й поруч зі столом
- * було б важко обрати. Стільниця з кавомашиною — ціль, лише коли каві є що знімати (§8.7).
+ * було б важко обрати. Стільниця з кавомашиною — ціль, коли машину можна запустити чи випити готову чашку; поки кава вариться —
+ * ні (§8.7).
  */
 function idleSurface(state: GameState, object: HomeObject): boolean {
   if ((object.kind !== "table" && object.kind !== "counter") || isDish(state.character.held)) return false;
-  if (coffeeOn(state, object.id)) return !wantsCoffee(state);
+  if (coffeeOn(state, object.id)) return coffeeStage(state) === "brewing";
   return (state.home.surfaces[object.id] ?? null) === null;
 }
 

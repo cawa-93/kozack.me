@@ -2,7 +2,7 @@
 
 import { asleep, traitLevel } from "./cat";
 import { changeStat, unpleasantTask, wearsDirtyClothes } from "./character";
-import { settleCoffee } from "./coffee";
+import { settleCoffee, tickCoffee } from "./coffee";
 import { BOWL_CAPACITY, FOUNTAIN, HOUSEHOLD, MESS_ANNOYANCE, MINUTES_PER_HOUR, NOISE, ROBOT, SHEDDING, TOOL_REACH, VACUUM } from "./config";
 import { DUST_SPOTS, dustOf, floorDust, removeDust, tickDust } from "./dust";
 import { inView, observe } from "./knowledge";
@@ -508,6 +508,7 @@ export function tickHousehold(state: GameState, from: number, minutes: number): 
   const crossed = (minute: number): boolean => from % 1440 < minute && (from + minutes) % 1440 >= minute && minutes < 1440;
   settleFeeders(state);
   settleCoffee(state);
+  tickCoffee(state, minutes, !powerOut(state));
   const fed = feed(state);
   if (fed.length > 0) emit(state, { type: "feeder", bowls: fed });
   topUpWater(state);

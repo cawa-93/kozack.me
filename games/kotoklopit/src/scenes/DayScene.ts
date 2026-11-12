@@ -5,7 +5,7 @@ import { canDash, dash, isMoving } from "../sim/body";
 import { changeLook } from "../sim/character";
 import { meetCat, nextNewcomer } from "../sim/cat";
 import { inStandoff, isDirty } from "../sim/catai";
-import { LOW_STAT, MODIFIERS, SUPPLY_FLIGHT } from "../sim/config";
+import { COFFEE, LOW_STAT, MODIFIERS, SUPPLY_FLIGHT } from "../sim/config";
 import { carrierRoom, discardCarrier } from "../sim/carriers";
 import { discardCoffee } from "../sim/coffee";
 import { discard, discardAppliance, discardLock, payUtilities, seePhoneHints, supplyCount } from "../sim/economy";
@@ -52,7 +52,7 @@ import { showsFightBubble } from "../view/pose";
 import { Hud } from "../view/hud";
 import type { BubbleKind, IconName } from "../view/iconnames";
 import { createIconTextures } from "../view/icons";
-import { carryIcon, catAsk, eventBubbles, itemIcon, PRODUCT_ICONS, showerIcon, STATE_ICONS, stoveIcon } from "../view/symbols";
+import { carryIcon, catAsk, coffeeIcon, eventBubbles, itemIcon, PRODUCT_ICONS, showerIcon, STATE_ICONS, stoveIcon } from "../view/symbols";
 import { ThoughtClock } from "../view/thoughts";
 import { type TraitNews, traitNews } from "../ui/traits";
 import { discardFeeder } from "../sim/household";
@@ -916,6 +916,8 @@ export class DayScene extends Phaser.Scene {
     const activity = state.character.activity;
     set("shower", showerIcon(activity, !powerOut(state)));
     set("stove", stoveIcon(state.home.stove.item));
+    // Над кавомашиною — «кава готова», поки чашка чекає (§8.7).
+    for (const surface of COFFEE.surfaces) set(surface, coffeeIcon(state, surface));
     // Кіт на сходах важливіший за пакунок (§9.12).
     set("door", state.cats.some((c) => c.away === "stairs") ? STATE_ICONS.door.stairs : state.home.porch.length > 0 ? STATE_ICONS.door.porch : null);
     const table = objectById("table");
