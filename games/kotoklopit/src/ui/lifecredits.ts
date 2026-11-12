@@ -22,12 +22,16 @@ function photoSide(scale = 1): number {
 /** Фото вихід на пенсію — більше за решту: це головна подія шляху. */
 const RETIREMENT_PHOTO = 1.3;
 
-/** Фото малюється один раз, коли полароїд підходить до екрана: до 60 фото одразу дали б паузу на старті. */
+/**
+ * Фото малюється один раз, коли полароїд підходить до екрана: до 60 фото одразу дали б паузу на старті. Спостерігач — щодо
+ * самого екрана титрів: він обрізає стрічку (`overflow: hidden`), тож щодо вікна запас `rootMargin` не діяв би й фото
+ * малювалося б у мить появи. Намальовано всі — спостерігач відключається.
+ */
 class PhotoQueue {
   private readonly pending = new Map<Element, () => void>();
   private readonly watcher: IntersectionObserver | null;
 
-  constructor() {
+  constructor(root: HTMLElement) {
     this.watcher =
       typeof IntersectionObserver === "undefined"
         ? null
@@ -35,7 +39,7 @@ class PhotoQueue {
             (entries) => {
               for (const entry of entries) if (entry.isIntersecting) this.take(entry.target);
             },
-            { rootMargin: "100% 0px" },
+            { root, rootMargin: "100% 0px" },
           );
   }
 
@@ -57,6 +61,7 @@ class PhotoQueue {
     this.pending.delete(target);
     this.watcher?.unobserve(target);
     draw();
+    if (this.pending.size === 0) this.watcher?.disconnect();
   }
 }
 
@@ -129,18 +134,20 @@ function block(item: CreditsBlock, index: number, photos: PhotoQueue, state: Gam
 
 /**
  * Розмітка в такт (§4.2): титул — рівно на екран, кожен блок шляху й живих котів — ціле число долей. Висоти тексту залежать від
- * шрифту й ширини, тож розмітку повторюють, коли шрифти завантажились і коли змінився розмір вікна.
+ * шрифту й ширини, тож розмітку повторюють, коли шрифти завантажились і коли змінився розмір вікна. Спершу всі заміри, потім
+ * усі записи: запис посеред замірів змусив би браузер перераховувати розмітку на кожен блок. Відступ блоку на його висоту не
+ * впливає (`offsetHeight` — без нього).
  */
 function layOut(screen: HTMLElement, title: HTMLElement | null, lists: readonly HTMLElement[]): void {
   const viewport = screen.clientHeight;
   if (viewport <= 0) return;
+  const blocks = lists.flatMap((list) => Array.from(list.children) as HTMLElement[]);
+  const heights = blocks.map((block) => block.offsetHeight);
   if (title) title.style.height = `${viewport}px`;
-  for (const list of lists) {
-    for (const child of Array.from(list.children) as HTMLElement[]) {
-      child.style.marginBottom = "0px";
-      child.style.marginBottom = `${slotHeight(child.offsetHeight, viewport) - child.offsetHeight}px`;
-    }
-  }
+  blocks.forEach((block, i) => {
+    const height = heights[i]!;
+    block.style.marginBottom = `${slotHeight(height, viewport) - height}px`;
+  });
 }
 
 /**
@@ -211,7 +218,7 @@ export function lifeCredits(state: GameState, newGame: () => void): { screen: HT
   const screen = element("div", "credits-screen");
   const track = element("div", "credits-track");
   screen.append(track);
-  const photos = new PhotoQueue();
+  const photos = new PhotoQueue(screen);
   const path = element("ol", "credits-path");
   const living = element("ol", "credits-path credits-path-living");
   let title: HTMLElement | null = null;
@@ -228,7 +235,8 @@ export function lifeCredits(state: GameState, newGame: () => void): { screen: HT
   if (living.childElementCount > 0) track.append(living);
 
   let done = false;
-  // Зупинилася — далі звичайна прокрутка, а прискорення вже нема чого ловити.
+  // Зупинилася — далі звичайна прокрутка: прискорення вже нема чого ловити, а розмітка в такт не потрібна. Ненамальовані фото
+  // ще малюються, поки гравець гортає (`PhotoQueue`); слухачів на `window` не лишається, тож після закриття нічого не тримає стрічку.
   const finish = (): void => {
     if (done) return;
     done = true;
@@ -236,6 +244,7 @@ export function lifeCredits(state: GameState, newGame: () => void): { screen: HT
     track.style.transform = "";
     screen.scrollTop = offset;
     release();
+    window.removeEventListener("resize", onResize);
   };
   const choose = (): void => {
     if (done) newGame();
@@ -277,6 +286,16 @@ export function lifeCredits(state: GameState, newGame: () => void): { screen: HT
   // Коліщатко — гравець узяв стрічку в свої руки: далі звичайна прокрутка.
   const onWheel = (): void => finish();
   const relayOut = (): void => layOut(screen, title, [path, living]);
+  // Зміна розміру вікна приходить пачкою подій: розмітка — раз за кадр.
+  let resizing = false;
+  const onResize = (): void => {
+    if (resizing) return;
+    resizing = true;
+    requestAnimationFrame(() => {
+      resizing = false;
+      relayOut();
+    });
+  };
   const release = (): void => {
     window.removeEventListener("keydown", onKeyDown, true);
     window.removeEventListener("keyup", onKeyUp, true);
@@ -299,14 +318,14 @@ export function lifeCredits(state: GameState, newGame: () => void): { screen: HT
       else {
         release();
         photos.stop();
-        window.removeEventListener("resize", relayOut);
+        window.removeEventListener("resize", onResize);
       }
       return;
     }
     if (!attached) {
       attached = true;
       relayOut();
-      window.addEventListener("resize", relayOut);
+      window.addEventListener("resize", onResize);
       void document.fonts?.ready.then(relayOut);
     }
     if (still) finish();

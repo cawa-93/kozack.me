@@ -146,6 +146,8 @@ function show({ view = 800, track = 4000 } = {}): { screen: El; track: El; canva
   return { screen: el, track: trackEl, canvases: el.all("canvas"), observer: FakeObserver.all.at(-1)! };
 }
 
+const resizeListeners = (): unknown[] => windowListeners.filter((l) => l.type === "resize").map((l) => l.fn);
+
 beforeEach(() => {
   log = [];
   queue = [];
@@ -172,6 +174,83 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
+});
+
+describe("титри життя: фото (§4.2)", () => {
+  it("фото малюється, коли полароїд підходить до екрана титрів: спостерігач дивиться на сам екран, тож запас діє", () => {
+    const { screen, canvases, observer } = show();
+    expect(observer.options.root).toBe(screen);
+    expect(observer.options.rootMargin).toBe("100% 0px");
+    expect(canvases).toHaveLength(3);
+    expect(drawPhoto).not.toHaveBeenCalled();
+    observer.show([canvases[0]!]);
+    expect(drawPhoto).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("титри життя: розмітка в такт (§4.2)", () => {
+  it("спершу читає всі висоти, потім пише відступи: один перерахунок розмітки, а не по одному на блок", () => {
+    show();
+    log = [];
+    frames(1000, 1000);
+    const firstWrite = log.findIndex((entry) => entry.startsWith("write"));
+    expect(firstWrite).toBeGreaterThan(0);
+    expect(log.slice(firstWrite).filter((entry) => entry === "read")).toEqual([]);
+    expect(log.filter((entry) => entry === "write marginBottom")).toHaveLength(4);
+  });
+
+  it("зміну розміру вікна перераховує раз за кадр, хоч би скільки подій прийшло", () => {
+    show();
+    frames(1000, 1000);
+    const [resize] = resizeListeners() as (() => void)[];
+    expect(resize).toBeDefined();
+    log = [];
+    for (let i = 0; i < 5; i++) resize!();
+    expect(log).toEqual([]);
+    frames(1016, 1016);
+    expect(log.filter((entry) => entry === "write marginBottom")).toHaveLength(4);
+  });
+});
+
+describe("титри життя: після кінця стрічки нічого не лишається (§4.2)", () => {
+  it("стрічка доїхала: слухач розміру прибрано, спостерігач фото — щойно намальоване останнє", () => {
+    const { canvases, observer } = show({ track: 810 });
+    frames(1000, 1000);
+    observer.show(canvases);
+    expect(observer.disconnected).toBe(true);
+    frames(1016, 1000 + CREDITS_INTRO.endMs + 1000);
+    expect(resizeListeners()).toEqual([]);
+  });
+
+  it("стрічка не їде (менше руху) — гортається: ненамальовані фото ще малюються, далі спостерігач відключається", () => {
+    reduced = true;
+    const { canvases, observer } = show();
+    frames(1000, 1000);
+    expect(resizeListeners()).toEqual([]);
+    expect(observer.disconnected).toBe(false);
+    observer.show([canvases[0]!, canvases[1]!]);
+    expect(observer.disconnected).toBe(false);
+    observer.show([canvases[2]!]);
+    expect(drawPhoto).toHaveBeenCalledTimes(3);
+    expect(observer.disconnected).toBe(true);
+  });
+
+  it("гравець крутнув коліщатко — те саме: слухач розміру прибрано", () => {
+    const { screen } = show();
+    frames(1000, 1100);
+    for (const wheel of screen.listeners.get("wheel") ?? []) wheel({});
+    expect(resizeListeners()).toEqual([]);
+  });
+
+  it("екран прибрали посеред руху — прибрано все", () => {
+    const { screen, observer } = show();
+    frames(1000, 1100);
+    screen.isConnected = false;
+    frames(1116, 1116);
+    expect(resizeListeners()).toEqual([]);
+    expect(observer.disconnected).toBe(true);
+    expect(windowListeners).toEqual([]);
+  });
 });
 
 describe("титри життя: долі — від миті, коли музику справді стало чути (§4.2)", () => {
