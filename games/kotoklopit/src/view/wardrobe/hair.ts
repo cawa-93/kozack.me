@@ -42,7 +42,7 @@ export const HAIR_STYLES: readonly HairStyle[] = [
   { name: "хвиляста кучма", group: "хвилясте", back: "person/hair-back/mop", front: "person/hair-front/mop" },
   { name: "короткі кучері", group: "кучеряве", back: "person/hair-back/curls-short", front: "person/hair-front/curls-short" },
   { name: "маллет", group: "кудлате", back: "person/hair-back/mullet", front: "person/hair-front/shaggy" },
-  { name: "кукурудзяні кіски", group: "дреди й коси", back: "person/hair-back/cornrows", front: "person/hair-front/cornrows" },
+  { name: "афрокіски", group: "дреди й коси", back: "person/hair-back/cornrows", front: "person/hair-front/cornrows" },
   { name: "під машинку", group: "коротко", back: "person/hair-back/buzz", front: "person/hair-front/buzz" },
   { name: "їжачок", group: "коротко", back: "person/hair-back/spiky", front: "person/hair-front/spiky" },
   { name: "вінчик", group: "коротко", back: "person/hair-back/horseshoe", front: "person/hair-front/horseshoe", weight: RARE },

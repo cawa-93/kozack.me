@@ -1,4 +1,4 @@
-// Модифікатори потреб котів (§4.1, `DAY_MODIFIERS.md`): «Коти-липучки ↔ Котячі справи», «Осінній жор ↔ Котяча дієта»,
+// Модифікатори потреб котів (§4.1, `DAY_MODIFIERS.md`): «Коти-липучки ↔ Котячі справи», «Осінній апетит ↔ Котяча дієта»,
 // «Линька ↔ Зимове хутро».
 
 import { describe, expect, it } from "vitest";
@@ -84,7 +84,7 @@ describe("«Коти-липучки ↔ Котячі справи» (§4.1)", ()
   });
 });
 
-describe("«Осінній жор ↔ Котяча дієта» (§4.1)", () => {
+describe("«Осінній апетит ↔ Котяча дієта» (§4.1)", () => {
   it("голод котів росте × `MODIFIERS.week.appetite`", () => {
     const usual = growth("hunger", null, null);
     expect(usual).toBeCloseTo(NEED_PER_HOUR.hunger);
@@ -94,7 +94,7 @@ describe("«Осінній жор ↔ Котяча дієта» (§4.1)", () => 
     expect(growth("hunger", "clingy-cats", null)).toBeCloseTo(usual);
   });
 
-  it("у «Котячу дієту» зайва вага йде × `MODIFIERS.week.dietWeight`, в «Осінній жор» — як завжди", () => {
+  it("у «Котячу дієту» зайва вага йде × `MODIFIERS.week.dietWeight`, в «Осінній апетит» — як завжди", () => {
     const loss = (week: string | null): number => {
       const save = game(null, week);
       const cat = withCat(save);

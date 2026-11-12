@@ -30,7 +30,7 @@ describe("стани персонажа (§8.4)", () => {
     expect(personStates(state)).toEqual(["jobSearch", "cold", "injury"]);
   });
 
-  it("недосип і «виспався» — за швидкістю після сну; «добре виспався» — та сама подушка з ✓", () => {
+  it("недосип і «виспався» — за швидкістю після сну; «чудово виспався» — та сама подушка з ✓", () => {
     const state = game();
     state.character.sleepSpeed = -0.1;
     expect(personStates(state)).toContain("sleepDebt");

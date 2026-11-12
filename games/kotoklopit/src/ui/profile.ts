@@ -78,7 +78,7 @@ function medsTaken(state: GameState, id: IllnessId): boolean {
   return state.character.illnesses.find((i) => i.id === id)?.lastDose === state.day;
 }
 
-/** Іконка стану на паперовому кружечку, з позначкою поверх (✓ «добре виспався»), як на панелі. */
+/** Іконка стану на паперовому кружечку, з позначкою поверх (✓ «чудово виспався»), як на панелі. */
 function stateIcon(icon: IconName, mark: Mark | undefined): HTMLElement {
   const box = element("span", "profile-state-icon");
   const img = iconImage(icon);

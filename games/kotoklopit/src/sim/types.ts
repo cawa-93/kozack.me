@@ -248,7 +248,7 @@ export interface Character {
   meowNoise?: { hour: number; lost: number };
   /** Хвороби персонажа (§6.5). */
   illnesses: Illness[];
-  /** Скільки ночей поспіль персонаж недоспав, і скільки — добре виспався (§6.5). */
+  /** Скільки ночей поспіль персонаж недоспав, і скільки — чудово виспався (§6.5). */
   shortNights: number;
   restedNights: number;
 }

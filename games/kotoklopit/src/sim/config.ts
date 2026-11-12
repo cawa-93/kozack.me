@@ -397,7 +397,7 @@ export const DEMANDING_SEEN_MINUTES = 0.5;
 export const APPETITE_STEP = 0.15;
 /** «Апетит» (§9.12). Стелі шансів — бо породи вже мають «Апетит» +1. */
 export const APPETITE = { thresholdStep: 10, secondStep: 0.1, secondMax: 0.4, halfStep: 0.3, halfMax: 0.8, snackHunger: 30, snackStep: 0.07 } as const;
-/** «Швидкість їжі» (§9.12): час порції — `CAT_ACT_MINUTES.eat` × `factor`^рівень, від `min` до `max`. */
+/** «Швидкість їди» (§9.12): час порції — `CAT_ACT_MINUTES.eat` × `factor`^рівень, від `min` до `max`. */
 export const GULPING = { factor: 0.7, min: 1.5, max: 6, crowded: 1.5, near: 3, slowBowl: 0.5 } as const;
 export const SLEEP_TRAIT_STEP = 0.15;
 
@@ -1172,7 +1172,7 @@ export const MODIFIERS = {
     humanFlu: 0.1,
     /** «Линька» / «Зимове хутро»: шерсть від кота × (§8.7). */
     shedding: { molting: 1.6, "winter-coat": 0.5 } as Record<string, number>,
-    /** «Осінній жор» / «Котяча дієта»: ріст голоду котів ×; у дієту зайва вага йде × швидше. */
+    /** «Осінній апетит» / «Котяча дієта»: ріст голоду котів ×; у дієту зайва вага йде × швидше. */
     appetite: { "autumn-appetite": 1.25, "cat-diet": 0.8 } as Record<string, number>,
     dietWeight: 1.5,
     /** «Нові ціни у ветклініці» — усі послуги ветеринара; «Програма стерилізації» — огляд і стерилізація. */
@@ -1367,7 +1367,7 @@ export const SHOO = { mood: -3, love: -2 } as const;
 export const HAIRBALL = { perHour: 1 / 72, night: 2, longHair: 2, step: 0.5, sheddingStep: 0.25, coughMinutes: 1, wakeBedroom: 0.2, wakeElsewhere: 0.05 } as const;
 /** «Мітки» (§9.8, §9.12): `mood`, `crowd`, `newCatDays` — тригери. */
 export const MARKING = { triggerPerHour: 1 / 48, calmPerHour: 1 / 144, mood: 50, newCatDays: 3, crowd: 4, minutes: 1 } as const;
-/** Шанс блювоти за одиницю «Швидкості їжі». */
+/** Шанс блювоти за одиницю «Швидкості їди». */
 export const VOMIT_STEP = 0.2;
 /** Оглушення персонажа (§9.12). */
 export const STUN_MINUTES = 0.5;

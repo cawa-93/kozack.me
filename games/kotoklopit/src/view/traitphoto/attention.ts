@@ -61,7 +61,7 @@ const BITTEN_FRAME: { w: number; h: number } = { w: 184, h: 100 };
 /** Ви простягаєте долоню назустріч котові, що йде до вас: перед його лобом; `_LOW` — над головою понурого. */
 const OFFERED_HAND: TraitPerson = { pose: "pet", x: 68, y: -22, flip: true };
 const OFFERED_HAND_LOW: TraitPerson = { pose: "pet", x: 64, y: -16, flip: true };
-/** Ваша долоня там, куди кіт бодається лобом; `_LOW` — над головою кота, що лежить. */
+/** Ваша долоня там, куди кіт буцається лобом; `_LOW` — над головою кота, що лежить. */
 const NUDGED_HAND: TraitPerson = { pose: "pet", x: 60, y: -22, flip: true };
 const NUDGED_HAND_LOW: TraitPerson = { pose: "pet", x: 46, y: -18, flip: true };
 /** Рамка, у яку ви, нахилившись до кота, вміщаєтеся з головою. */
@@ -93,7 +93,7 @@ export const SHOTS: TraitPhotoShots = {
   affection: {
     plus: {
       content: {
-        idea: "Хвіст трубою, бодається лобом у вашу простягнуту долоню, заплющивши очі від блаженства, а над спиною — рожеві сердечка: ласкавий сам приходить по ласку.",
+        idea: "Хвіст трубою, буцається лобом у вашу простягнуту долоню, заплющивши очі від блаженства, а над спиною — рожеві сердечка: ласкавий сам приходить по ласку.",
         still: { base: "nudge", at: 320 },
         person: NUDGED_HAND,
         props: [under(NUDGED_HAND), icon("pleasant", -26, -72, 0.3)],
@@ -107,7 +107,7 @@ export const SHOTS: TraitPhotoShots = {
         frame: BENT,
       },
       sulk: {
-        idea: "Насуплений, хвіст опущений, а однаково підійшов і бодається лобом у вашу простягнуту долоню, над спиною — сердечка: ображений, та по ласку приходить сам.",
+        idea: "Насуплений, хвіст опущений, а однаково підійшов і буцається лобом у вашу простягнуту долоню, над спиною — сердечка: ображений, та по ласку приходить сам.",
         still: { base: "nudge", at: 320, bones: { head: 10, tail: -45 } },
         person: NUDGED_HAND,
         props: [under(NUDGED_HAND), icon("pleasant", -26, -68, 0.26)],

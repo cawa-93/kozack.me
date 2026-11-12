@@ -669,7 +669,7 @@ function refusesLitter(state: GameState, cat: Cat, rng: Rng): boolean {
   return rng.chance(SURPRISE_CHANCE.base + SURPRISE_CHANCE.step * picky);
 }
 
-/** Скільки хвилин кіт їсть порцію (§9.12, «Швидкість їжі»): 3 × 0,7^рівень, від 1,5 до 6. */
+/** Скільки хвилин кіт їсть порцію (§9.12, «Швидкість їди»): 3 × 0,7^рівень, від 1,5 до 6. */
 export function eatMinutes(cat: Cat): number {
   // Гінгівіт — жує одним боком, довше (рішення автора 2026-10-28, Д1).
   return clamp(CAT_ACT_MINUTES.eat * GULPING.factor ** traitLevel(cat, "gulping"), GULPING.min, GULPING.max) * eatFactor(cat);
@@ -1233,14 +1233,14 @@ export function bellyUp(state: GameState, cat: Cat): boolean {
   return cat.act.kind === "idle" && traitLevel(cat, "petting") <= -2 && besidePerson(state, cat, PETTING.bellyDistance);
 }
 
-/** Ласкавий кіт, що прийшов по увагу й сидить поруч, бодається головою в руку (§9.12) — лише анімація. */
+/** Ласкавий кіт, що прийшов по увагу й сидить поруч, буцається головою в руку (§9.12) — лише анімація. */
 export function headNudges(state: GameState, cat: Cat): boolean {
   return cat.act.kind === "attention" && cat.act.seen === true && traitLevel(cat, "affection") > 0 && besidePerson(state, cat, MOOD_LOOK.nudgeDistance);
 }
 
 /**
  * Кіт повільно моргає до персонажа (§11.4, правка автора 2026-10-25): щасливий (настрій від 70) і любить його, сидить
- * поруч (до 4 клітинок) на його очах, не грається, не на руках і не дметься. Хто лежить животом догори чи бодається
+ * поруч (до 4 клітинок) на його очах, не грається, не на руках і не дметься. Хто лежить животом догори чи буцається
  * головою, не моргає — сцена показує саме це (перевірка етапу 2026-10-25: інакше «Відданість» відкривалася морганням,
  * якого не було видно).
  */
@@ -2267,7 +2267,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       }
       // Спустошив дві порції за раз — прояв «Апетиту +».
       if (act.second === true) observe(state, cat, "appetite");
-      // Як довго кіт їв — прояв «Швидкості їжі» (§9.9): «Пилосос» ковтає порцію за мить, «Їсть по зернятку» довго
+      // Як довго кіт їв — прояв «Швидкості їди» (§9.9): «Пилосос» ковтає порцію за мить, «Їсть по зернятку» довго
       // сидить над мискою. Раз на годину: дві порції поспіль — одна трапеза.
       const gulping = traitLevel(cat, "gulping");
       if (gulping !== 0) observe(state, cat, "gulping", gulping > 0 ? 1 : -1, false, MINUTES_PER_HOUR);

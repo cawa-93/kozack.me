@@ -496,7 +496,7 @@ export const weekPriceFactor = (state: GameState): number => MODIFIERS.week.pric
 /** Ріст потреби уваги котів (§9.12): «Коти-липучки» / «Котячі справи». */
 export const attentionFactor = (state: GameState): number => MODIFIERS.attention[state.modifiers.day ?? ""] ?? 1;
 
-/** Ріст голоду котів (§9.3): «Осінній жор» / «Котяча дієта». */
+/** Ріст голоду котів (§9.3): «Осінній апетит» / «Котяча дієта». */
 export const appetiteFactor = (state: GameState): number => MODIFIERS.week.appetite[state.modifiers.week ?? ""] ?? 1;
 
 /** Як швидко йде зайва вага котів (§9.12): у «Котячу дієту» — швидше. */

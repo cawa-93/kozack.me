@@ -14,8 +14,8 @@ export interface HairAccent extends WardrobeEntry {
 export const HAIR_ACCENTS: readonly HairAccent[] = [
   { name: "немає", color: null },
   { name: "рожевий", color: 0xff4fc4 },
-  { name: "ціан", color: 0x3fe3f0 },
-  { name: "лайм", color: 0xa8f03a },
+  { name: "бірюзовий", color: 0x3fe3f0 },
+  { name: "салатовий", color: 0xa8f03a },
   { name: "фіолетовий", color: 0xa35cff },
   { name: "помаранчевий", color: 0xff8a1f },
 ];

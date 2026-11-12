@@ -7,8 +7,8 @@ import { createCat } from "../src/sim/cat";
 import { createRng } from "../src/sim/rng";
 import type { Cat } from "../src/sim/types";
 import { breedAbout, breedText } from "../src/ui/cards";
-import { DISEASES, POSITIONS } from "../src/sim/config";
-import { BREED_ABOUT, BREED_HALF, endingText, fill, HOME_VET_NOBODY, homeVetText, KITTEN_MESSAGE, POSITION_TITLES, TRAIT_ABOUT, TRAIT_HINTS, traitAbout, VET_ADVICE } from "../src/texts";
+import { CAREER_AXIS, DISEASES, HAPPY_LIFE, POSITIONS, SUFFERED_LIFE } from "../src/sim/config";
+import { BREED_ABOUT, BREED_HALF, endingText, fill, HOME_VET_NOBODY, homeVetText, KITTEN_MESSAGE, PERSON_STATE_ABOUT, personStateTitle, POSITION_TITLES, TRAIT_ABOUT, TRAIT_HINTS, traitAbout, UNREADABLE_SAVE, VET_ADVICE } from "../src/texts";
 
 describe("тексти (TEXTS.md)", () => {
   it("підставляє значення й обирає форму за статтю", () => {
@@ -48,7 +48,7 @@ describe("тексти (TEXTS.md)", () => {
     expect(endingText(state, "retirement").text).not.toMatch(/підвищень не було|ні кар'єри/iu);
   });
 
-  it("загальна ревізія 2026-10-29: без котів текст кінця гри котів не згадує, з котом — звичайний текст; заголовок «Поповнення в зграї» без котів — свій", () => {
+  it("без котів текст кінця гри котів не згадує, з кількома котами — звичайний текст; заголовок «Поповнення в зграї» без котів — свій (§4.2)", () => {
     const state = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
     expect(state.cats).toHaveLength(0);
     const ends = ["health", "satiety", "hygiene", "sanity", "eviction"] as const;
@@ -59,15 +59,73 @@ describe("тексти (TEXTS.md)", () => {
       expect(text, ends[i]).not.toMatch(/[{}[\]|]/);
     }
     expect(lonely[1]?.text).toContain("забула нагодувати себе");
-    state.cats.push(createCat(state, createRng(1), { source: "shelter", ageWeeks: 3 }));
+    // Кілька котів: текст для одного — свій (тест нижче).
+    const rng = createRng(1);
+    state.cats.push(createCat(state, rng, { source: "shelter", ageWeeks: 3 }), createCat(state, rng, { source: "shelter", ageWeeks: 3 }));
     for (const [i, end] of ends.entries()) {
       const { title, text } = endingText(state, end);
-      // Заголовок той самий, крім «Поповнення в зграї»: без котів «зграї» немає (загальна ревізія 2026-10-29).
+      // Заголовок той самий, крім «Поповнення в зграї»: без котів «зграї» немає.
       if (end === "sanity") expect([lonely[i]?.title, title]).toEqual(["Нявкіт без відповіді", "Поповнення в зграї"]);
       else expect(title).toBe(lonely[i]?.title);
       expect(text, end).toMatch(/кот/iu);
     }
     expect(endingText(state, "eviction").text).toContain("Котів забрали до притулку");
+  });
+
+  it("з одним котом текст кінця гри — про нього, а не про «котів»; з двома — у множині (§4.2)", () => {
+    const state = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
+    const rng = createRng(1);
+    const cat = createCat(state, rng, { source: "shelter", ageWeeks: 3 });
+    state.cats.push(cat);
+    const ends = ["health", "satiety", "hygiene", "sanity", "eviction"] as const;
+    const plural = /(?<![а-яіїєґ'])(коти|котів|котам|котячі)(?![а-яіїєґ'])/iu;
+    for (const end of ends) {
+      const { text } = endingText(state, end);
+      expect(text, end).not.toMatch(plural);
+      expect(text, end).not.toMatch(/[{}[\]|]/);
+      // Про кота — на ім'я (у називному відмінку) або про його миску.
+      if (end === "satiety") expect(text).toContain("Котяча миска повна");
+      else expect(text, end).toContain(cat.name);
+    }
+    state.cats.push(createCat(state, rng, { source: "shelter", ageWeeks: 3 }));
+    for (const end of ends) expect(endingText(state, end).text, end).toMatch(plural);
+  });
+
+  it("на пенсії без жодного кота тексти «звичайного життя» котів не згадують; з котом — згадують (§4.2)", () => {
+    const state = newGame({ address: "he", difficulty: "normal", seed: 1 }).current;
+    const positions = [0, CAREER_AXIS.middle - 1, POSITIONS.length - 1];
+    const lonely = positions.map((position) => {
+      state.job.position = position;
+      return endingText(state, "retirement");
+    });
+    expect(lonely.map((e) => e.title)).toEqual(["Тихе життя", "Звичайне життя", "Кар'єрист"]);
+    for (const { title, text } of lonely) {
+      expect(text, title).not.toMatch(/кот|кіт/iu);
+      expect(text, title).not.toMatch(/[{}[\]|]/);
+    }
+    // Кіт зі звичайним життям: ті самі назви фіналів, але тексти — з котами.
+    const cat = createCat(state, createRng(1), { source: "shelter", ageWeeks: 3 });
+    cat.moodHistory = [(HAPPY_LIFE + SUFFERED_LIFE) / 2];
+    state.cats.push(cat);
+    for (const [i, position] of positions.entries()) {
+      state.job.position = position;
+      const { title, text } = endingText(state, "retirement");
+      expect(title).toBe(lonely[i]?.title);
+      expect(text, title).toMatch(/кот/iu);
+    }
+  });
+
+  it("картка нечитабельного збереження: «її» в тексті — про гру із заголовка (§4.2)", () => {
+    expect(UNREADABLE_SAVE.title).toMatch(/гру/u);
+    expect(UNREADABLE_SAVE.body).toMatch(/^Її /u);
+  });
+
+  it("назва стану в «Профілі» збігається з його описом: «Чудово виспався» (§8.4)", () => {
+    for (const address of ["he", "she"] as const) {
+      const title = personStateTitle("wellRested", address);
+      expect(fill(PERSON_STATE_ABOUT.wellRested, address).startsWith(title)).toBe(true);
+      expect(fill(PERSON_STATE_ABOUT.rested, address).startsWith(personStateTitle("rested", address))).toBe(true);
+    }
   });
 });
 

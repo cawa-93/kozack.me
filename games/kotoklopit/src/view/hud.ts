@@ -152,7 +152,7 @@ export class Hud {
   /** Несплачений рахунок за комунальні (§6.4): квитанція на червоному кружечку одразу за сумою; натиснути — «Дім» у телефоні. */
   private readonly bill: { ring: Phaser.GameObjects.Image; icon: Phaser.GameObjects.Image };
   private billShown = false;
-  /** Стани персонажа (§8.4): іконки на паперових кружечках у другому ряду, під грошима; `mark` — ✓ «добре виспався». */
+  /** Стани персонажа (§8.4): іконки на паперових кружечках у другому ряду, під грошима; `mark` — ✓ «чудово виспався». */
   private readonly states: { ring: Phaser.GameObjects.Image; icon: Phaser.GameObjects.Image; mark: Phaser.GameObjects.Image }[];
   /** Які стани показано зараз (`personStates` через кому): іконки міняються, лише коли змінилися. */
   private statesShown = "";

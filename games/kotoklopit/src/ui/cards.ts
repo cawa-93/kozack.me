@@ -582,7 +582,7 @@ export function callCard(cats: boolean, onAnswer: () => void, onIgnore: () => vo
   };
 }
 
-const LOOK_TITLE = "Як ви виглядаєте?";
+const LOOK_TITLE = "Який у вас вигляд?";
 
 /** Меню на старті (§4.2): продовжити збережену гру чи почати нову. */
 export function titleCard(state: GameState, onContinue: () => void, onNew: () => void): Card {
