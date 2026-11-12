@@ -7,7 +7,7 @@
 // бабл зменшено в `ISO_BUBBLE_SCALE` разів — так він на екрані такий самий, як старий (мовна хмаринка ≈ 46 px CSS на
 // телефоні, іконка ≈ 35 px), а не більший за кота: див. коментар до сталої.
 
-import type { ArtPoint } from "../art/types";
+import type { ArtId, ArtPoint } from "../art/types";
 import { bubbleArt, type BubbleKind, type Mark } from "../iconnames";
 import { uiEntry } from "./uilook";
 
@@ -21,6 +21,9 @@ export const ISO_BUBBLE_SCALE = 0.75;
 
 /** Полотно іконки й позначки в атласі, одиниці арту (`ICON` маніфесту: 64 × 64, pivot — центр). */
 export const ICON_ART_SIZE = 64;
+
+/** Кадр плашки кількості «трьома частинами» (`slice3.ts`): намальований числами `BUBBLE_COUNT` (`tests/uishapes.test.ts`). */
+export const COUNT_ART: ArtId = "ui/count";
 
 /**
  * Кількість у баблі (`EventBubble.count`): темна заокруглена плашка з паперовою обвідкою — у правому верхньому куті іконки

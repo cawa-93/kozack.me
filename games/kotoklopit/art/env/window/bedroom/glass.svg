@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 38 102" width="38" height="102">
+<!-- env/window/bedroom/glass — маска видимого скла вікна env/window/bedroom: світло доби (src/view/iso/light.ts) тонує її кольором скла й
+кладе над вікном множенням і додаванням. size 38×102; pivot (0, 0) — лівий верхній кут; де він відносно pivot вікна —
+glassMask (src/view/art/manifest/a27-window-glass.ts). Біла, без контуру; не малюється руками: генерується з Pane.glass
+(src/view/decor.ts) — GLASS_RECORD=1 npx vitest run tests/glassmask.test.ts.
+-->
+<g id="p-glass">
+<polygon points="4.56,82.43 20.944,90.622 20.944,35.972 4.56,27.78" fill="#ffffff"/>
+<polygon points="27.856,94.128 33.872,97.136 33.872,42.486 27.856,39.478 27.856,57.528 31.76,59.48 31.76,77.48 27.856,75.528" fill="#ffffff"/>
+<polygon points="6.992,15.296 17.104,20.352 17.104,9.452 6.992,4.396" fill="#ffffff"/>
+<polygon points="27.856,29.628 33.872,32.636 33.872,15.536 27.856,12.528" fill="#ffffff"/>
+</g>
+</svg>

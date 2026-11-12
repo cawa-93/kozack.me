@@ -10,7 +10,7 @@
 //   зараз, і тон хвилини, наперед цього не запекти;
 // - скло вікон (лише видиме скло стулок, `paneGlass`) — просто над вікнами (`BACKDROP.window`), під усім, що стоїть: множенням
 //   темніє, де скло темніше за тон, і додаванням світлішає, де тепле скло світліше за тон (`glassLayers`), — а кіт перед ним
-//   ні;
+//   ні; у WebGL — білі маски з атласу з tint, у Canvas — `Graphics` (`glassLayer`);
 // - смуги сонця — додаванням на підлозі (`BACKDROP.sun`), під стінами й меблями;
 // - конуси від невидимих стельових світильників — додаванням, точки реєстру глибини під світильником: ближчі меблі, стіни, коти
 //   й персонаж їх закривають;
@@ -20,13 +20,15 @@
 // Удень (`daylight` → null) і коли світло доби вимкнене (`WorldFrame.lightMinute` = null, режим розробки `?light=off`) усе
 // сховано, а до першої ночі нічого й не створено: удень квартира до пікселя така, як без світла доби. Режими змішування
 // MULTIPLY і ADD однаково працюють у WebGL і в запасному Canvas (`multiply`, `lighter`); tint, фільтри й Lights — ні, тож
-// колір світла запечено в текстури (`lighttex.ts`).
+// колір світла запечено в текстури (`lighttex.ts`), а tint — лише там, де для Canvas є свій шлях (скло).
 
 import Phaser from "phaser";
 
 import { active, powerOut } from "../../sim/modifiers";
 import type { GameState } from "../../sim/types";
+import { addArt, artFrameName, hasArtFrame } from "../art/atlas";
 import { artEntry } from "../art/manifest";
+import { glassMask } from "../art/manifest/a27-window-glass";
 import { CEILING_HEIGHT, CEILING_LAMPS, PANES, type Pane } from "../decor";
 import { daylight, overcast, type Daylight } from "../light/daylight";
 import {
@@ -118,14 +120,21 @@ interface Cone {
   readonly point: IsoPointHandle;
 }
 
+/** Скло всіх вікон одного режиму змішування: залити кольором, показати, прибрати. */
+interface GlassLayer {
+  paint(color: number): void;
+  setVisible(visible: boolean): void;
+  destroy(): void;
+}
+
 /** Що створено з першою ніччю. */
 interface Parts {
   readonly map: Phaser.Textures.CanvasTexture;
   readonly mapImage: Phaser.GameObjects.Image;
   readonly sun: Phaser.Textures.CanvasTexture;
   readonly sunImage: Phaser.GameObjects.Image;
-  readonly glass: Phaser.GameObjects.Graphics;
-  readonly glassAdd: Phaser.GameObjects.Graphics;
+  readonly glass: GlassLayer;
+  readonly glassAdd: GlassLayer;
   readonly cones: readonly Cone[];
 }
 
@@ -208,10 +217,8 @@ export class IsoLightView implements LightPart {
     };
     const map = canvas(this.keys.map);
     const sun = canvas(this.keys.sun);
-    const glassLayer = (blend: Phaser.BlendModes, depth: number): Phaser.GameObjects.Graphics =>
-      scene.add.graphics().addToDisplayList(layer).setBlendMode(blend).setDepth(depth).setVisible(false);
-    const glass = glassLayer(Phaser.BlendModes.MULTIPLY, GLASS_DEPTH);
-    const glassAdd = glassLayer(Phaser.BlendModes.ADD, GLASS_ADD_DEPTH);
+    const glass = this.glassLayer(Phaser.BlendModes.MULTIPLY, GLASS_DEPTH);
+    const glassAdd = this.glassLayer(Phaser.BlendModes.ADD, GLASS_ADD_DEPTH);
     const coneKey = softTexture(scene, "cone", CONE.color);
     const cones = CEILING_LAMPS.map((lamp, i): Cone => {
       const img = new Phaser.GameObjects.Image(scene, 0, 0, coneKey).setOrigin(0.5, 0).setBlendMode(Phaser.BlendModes.ADD).setVisible(false);
@@ -302,24 +309,47 @@ export class IsoLightView implements LightPart {
     const key = `${mul}|${add}`;
     if (key !== this.glassKey) {
       this.glassKey = key;
-      this.fillGlass(parts.glass, mul);
-      this.fillGlass(parts.glassAdd, add);
+      parts.glass.paint(mul);
+      parts.glassAdd.paint(add);
     }
     const any = this.panes.length > 0;
     parts.glass.setVisible(any && mul !== 0xffffff);
     parts.glassAdd.setVisible(any && add !== 0);
   }
 
-  /** Залити видиме скло всіх вікон кольором `color`. */
-  private fillGlass(g: Phaser.GameObjects.Graphics, color: number): void {
-    g.clear();
-    g.fillStyle(color, 1);
-    for (const poly of this.glassPolys) {
-      g.beginPath();
-      poly.forEach((p, i) => (i === 0 ? g.moveTo(p.x, p.y) : g.lineTo(p.x, p.y)));
-      g.closePath();
-      g.fillPath();
+  /**
+   * Шар скла всіх вікон з режимом змішування `blend`. У WebGL — білі маски скла з атласу (`a27-window-glass.ts`, ті самі
+   * многокутники), колір — tint: `Graphics` Phaser розбивав би многокутники на трикутники щокадру всю ніч. У запасному Canvas
+   * tint не діє, тож там (і поки масок в атласі немає) скло заливає `Graphics`.
+   */
+  private glassLayer(blend: Phaser.BlendModes, depth: number): GlassLayer {
+    const { scene, layer } = this.ctx;
+    const masks = this.panes.map((pane) => ({ mask: glassMask(pane), at: ISO.toScreen(pane.wall) }));
+    if (scene.sys.game.renderer.type === Phaser.WEBGL &&masks.every(({ mask }) => hasArtFrame(scene, artFrameName(mask.id)))) {
+      const images = masks.map(({ mask, at }) =>
+        addArt(scene, layer, mask.id).setPosition(at.x + mask.origin.x, at.y + mask.origin.y).setBlendMode(blend).setDepth(depth).setVisible(false),
+      );
+      return {
+        paint: (color) => images.forEach((image) => image.setTint(color)),
+        setVisible: (visible) => images.forEach((image) => image.setVisible(visible)),
+        destroy: () => images.forEach((image) => image.destroy()),
+      };
     }
+    const g = scene.add.graphics().addToDisplayList(layer).setBlendMode(blend).setDepth(depth).setVisible(false);
+    return {
+      paint: (color) => {
+        g.clear();
+        g.fillStyle(color, 1);
+        for (const poly of this.glassPolys) {
+          g.beginPath();
+          poly.forEach((p, i) => (i === 0 ? g.moveTo(p.x, p.y) : g.lineTo(p.x, p.y)));
+          g.closePath();
+          g.fillPath();
+        }
+      },
+      setVisible: (visible) => g.setVisible(visible),
+      destroy: () => g.destroy(),
+    };
   }
 
   /** Смуги сонця на підлозі: градієнт від вікна вглиб кімнати, м'які краї. */

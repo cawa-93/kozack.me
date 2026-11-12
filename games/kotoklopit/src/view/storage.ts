@@ -10,15 +10,24 @@ import type Phaser from "phaser";
 
 import { PALETTE, SHADE } from "../../art/palette";
 import type { StorageLine } from "../sim/storage";
+import type { ArtId } from "./art/types";
 import { iconTexture } from "./iconnames";
 import { ANCHOR_GAP, PERSON_FIGURE } from "./iso/geometry";
 import { BUBBLE_ROOM } from "./iso/markslayout";
+import { Slice3Art } from "./slice3art";
 import { PRODUCT_ICONS } from "./symbols";
+import { withMetrics } from "./textmetrics";
 import type { Point } from "./world/part";
 import { WORLD_LAYERS } from "./world/layers";
 
 const DEPTH = WORLD_LAYERS.storage;
 const FONT = "system-ui, sans-serif";
+
+/**
+ * Плашка індикатора — кадр атласу «трьома частинами» (`slice3.ts`): тло, рамку й тінь намальовано числами й кольорами
+ * `STORAGE_LOOK` (`tests/uishapes.test.ts`), тож зміна їх тут — це й правка `art/ui/storage.svg`.
+ */
+export const STORAGE_PLATE_ART: ArtId = "ui/storage";
 
 /** Як виглядає індикатор: розміри (px світу) і кольори. */
 export interface StorageLook {
@@ -188,7 +197,7 @@ export class StorageIndicators {
     const texts = lines.map((line) => {
       const widest = line.limit === undefined ? String(line.count) : `${line.limit}/${line.limit}`;
       const text = this.scene.add
-        .text(0, 0, widest, { fontFamily: FONT, fontSize: `${look.fontSize}px`, fontStyle: "bold", color: line.count === 0 ? look.zero : look.text, resolution: 2 })
+        .text(0, 0, widest, withMetrics({ fontFamily: FONT, fontSize: `${look.fontSize}px`, fontStyle: "bold", color: line.count === 0 ? look.zero : look.text, resolution: 2 }))
         .setOrigin(0, 0.5);
       const measured = text.width;
       text.setText(lineText(line));
@@ -197,11 +206,8 @@ export class StorageIndicators {
     const chips = lines.map((line, i) => storageChipWidth(look, line.limit !== undefined, texts[i]?.measured ?? 0));
     const width = chips.reduce((sum, w) => sum + w, 0) + look.pad;
     const height = look.icon + look.pad * 2;
-    const bg = this.scene.add.graphics();
-    if (look.drop > 0) bg.fillStyle(look.dropColor, look.dropAlpha).fillRoundedRect(-width / 2, -height + look.drop, width, height, look.radius);
-    bg.fillStyle(look.fill, look.fillAlpha).fillRoundedRect(-width / 2, -height, width, height, look.radius);
-    bg.lineStyle(look.line, look.lineColor, look.lineAlpha).strokeRoundedRect(-width / 2, -height, width, height, look.radius);
-    const parts: Phaser.GameObjects.GameObject[] = [bg];
+    const plate = new Slice3Art(this.scene, STORAGE_PLATE_ART).place({ x: -width / 2, y: -height, w: width, h: height });
+    const parts: Phaser.GameObjects.GameObject[] = [...plate.images];
     let left = -width / 2 + look.pad;
     lines.forEach((line, i) => {
       parts.push(this.scene.add.image(left + look.icon / 2, -height / 2, iconTexture(PRODUCT_ICONS[line.product])).setDisplaySize(look.icon, look.icon));
