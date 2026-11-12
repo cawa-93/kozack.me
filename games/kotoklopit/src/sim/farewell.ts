@@ -2,7 +2,7 @@
 
 import { ageDue, lifeMood, traitLevel } from "./cat";
 import { changeStat } from "./character";
-import { CAT_AGE_LIMIT, DEATH, DIFFICULTY, GIVE_AWAY_GRACE_DAYS, MINUTES_PER_DAY, SANITY_FLOOR } from "./config";
+import { CAT_AGE_LIMIT, DEATH, DIFFICULTY, GIVE_AWAY_DIFFICULTIES, GIVE_AWAY_GRACE_DAYS, MINUTES_PER_DAY, SANITY_FLOOR } from "./config";
 import { emit } from "./events";
 import { forgetRelations } from "./relations";
 import { isNewborn } from "./reproduction";
@@ -73,6 +73,9 @@ export function removeCat(state: GameState, cat: Cat, cause: FarewellCause, day:
   return entry;
 }
 
+/** Чи можна на цій складності віддавати котів (§9.8): на важчих оголошення не дати. */
+export const canGiveAway = (state: Pick<GameState, "difficulty">): boolean => GIVE_AWAY_DIFFICULTIES.includes(state.difficulty);
+
 /** Чому кота зараз не віддати (§9.8): новонароджений чи мати, що годує новонароджених; null — можна. */
 export function giveAwayBlocker(state: GameState, cat: Cat): "newborn" | "nursing" | null {
   if (cat.ageWeeks < 1) return "newborn";
@@ -104,9 +107,9 @@ export function giveAway(state: GameState, cat: Cat, day: number): AlbumEntry | 
   return removeCat(state, cat, { kind: "given" }, day, state.minute - (day - state.day) * MINUTES_PER_DAY);
 }
 
-/** Дати оголошення (§9.8): нові господарі заберуть кота завтра вранці. */
+/** Дати оголошення (§9.8): нові господарі заберуть кота завтра вранці. Дане раніше лишається й після зміни складності. */
 export function advertise(state: GameState, cat: Cat): boolean {
-  if (giveAwayBlocker(state, cat) !== null || state.ads.includes(cat.id)) return false;
+  if (!canGiveAway(state) || giveAwayBlocker(state, cat) !== null || state.ads.includes(cat.id)) return false;
   state.ads.push(cat.id);
   return true;
 }

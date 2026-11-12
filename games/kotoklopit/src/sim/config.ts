@@ -131,6 +131,8 @@ export const DIFFICULTY: Record<
 export const LOST_CAT_REPEAT = 0.75;
 /** Віддати кота раніше — втратити весь бонус за нього (§9.8). */
 export const GIVE_AWAY_GRACE_DAYS = 7;
+/** Складності, на яких кота можна віддати в добрі руки (§9.8). */
+export const GIVE_AWAY_DIFFICULTIES: readonly Difficulty[] = ["easy", "normal"];
 
 /** «Пригніченість»: без котів здоровий глузд не вище цього. */
 export const DEPRESSION_CEILING = KITTEN_SANITY_THRESHOLD;

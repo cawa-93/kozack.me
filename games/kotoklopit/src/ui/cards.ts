@@ -6,7 +6,7 @@ import { MODIFIERS, NAME_MAX_LENGTH, WAKE_UP } from "../sim/config";
 import { supplyCount } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
 import { diseaseMedicine, dosedToday } from "../sim/diseases";
-import { giveAwayBlocker } from "../sim/farewell";
+import { canGiveAway, giveAwayBlocker } from "../sim/farewell";
 import { hasFurryCat, isShowDay, WEEK_PAIRS } from "../sim/modifiers";
 import { hasFertileFemale, inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
 import { DEFAULT_NAME } from "../sim/game";
@@ -417,8 +417,9 @@ export function catFacts(state: GameState, cat: Cat): CatFacts {
 function catCards(state: GameState, handlers: PhoneHandlers): (string | HTMLElement)[] {
   return state.cats.map((cat) => {
     const card = element("div", "cat-profile-extra");
-    // Оголошення (§9.8): з підтвердженням (картку показує сцена) і можна зняти; новонародженого й матір новонароджених — ні.
-    const blocker = giveAwayBlocker(state, cat);
+    // Оголошення (§9.8): з підтвердженням (картку показує сцена) і можна зняти; новонародженого й матір новонароджених — ні,
+    // а на важчих складностях кнопки немає зовсім.
+    const blocker = canGiveAway(state) ? giveAwayBlocker(state, cat) : "difficulty";
     let action: HTMLElement | undefined;
     if (state.ads.includes(cat.id)) {
       card.append(note(`Завтра вранці ${cat.name} поїде до нових господарів.`));

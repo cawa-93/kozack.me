@@ -179,6 +179,17 @@ describe("картка кота у вкладці «Коти» (§9.7, §9.8)", 
     expect(profile(state).textContent).toContain("Зняти оголошення");
   });
 
+  it("«Віддати в добрі руки» є лише на легкій і середній складності; дане раніше оголошення можна зняти й на важчій", () => {
+    for (const [difficulty, shown] of [["easy", true], ["normal", true], ["hard", false], ["ukro", false]] as const) {
+      const state = fullPhone();
+      state.difficulty = difficulty;
+      expect(profile(state).find("give-away") !== undefined, difficulty).toBe(shown);
+      expect(profile(state).textContent, difficulty).not.toContain("Зняти оголошення");
+      state.ads.push(state.cats[0]!.id);
+      expect(profile(state).textContent, difficulty).toContain("Зняти оголошення");
+    }
+  });
+
   it("вік, порода й стерилізація — одним рядком, без знака статі; невідоме — без нього", () => {
     const state = fullPhone();
     const cat = state.cats[0]!;

@@ -11,7 +11,8 @@ import { highPlaceOf, tickCats } from "../src/sim/catai";
 import { breederCats, canSterilize, shelterCats, sterilizeBlocker, vetSterilize } from "../src/sim/destinations";
 import { objectById } from "../src/sim/home";
 import { startTrip, tripBlocker } from "../src/sim/trips";
-import { advertise, cancelAd, collectAds, giveAway } from "../src/sim/farewell";
+import { setDifficulty } from "../src/sim/difficulty";
+import { advertise, cancelAd, canGiveAway, collectAds, giveAway } from "../src/sim/farewell";
 import { goToSleep, newGame } from "../src/sim/game";
 import { coatOf, fitBreedForms, inheritGenes } from "../src/sim/genetics";
 import { addCat } from "../src/sim/night";
@@ -487,6 +488,24 @@ describe("віддати кота (§9.8)", () => {
     const baby = createCat(save.current, createRng(1), { source: "born", ageWeeks: 0 });
     addCat(save.current, baby);
     expect(advertise(save.current, baby)).toBe(false);
+  });
+
+  it("оголошення дають лише на легкій і середній складності; дане раніше лишається чинним і на важчій", () => {
+    for (const [difficulty, allowed] of [["easy", true], ["normal", true], ["hard", false], ["ukro", false]] as const) {
+      const save = game();
+      setDifficulty(save.current, difficulty);
+      const cat = withCat(save, "female");
+      expect(canGiveAway(save.current), difficulty).toBe(allowed);
+      expect(advertise(save.current, cat), difficulty).toBe(allowed);
+      expect(save.current.ads, difficulty).toEqual(allowed ? [cat.id] : []);
+    }
+    // Оголошення дали на середній, а тоді перемкнули на важку: воно вже є — кота забирають уранці.
+    const save = game();
+    const cat = withCat(save, "male");
+    expect(advertise(save.current, cat)).toBe(true);
+    setDifficulty(save.current, "hard");
+    expect(save.current.ads).toEqual([cat.id]);
+    expect(collectAds(save.current).map((e) => e.id)).toEqual([cat.id]);
   });
 
   it("матір новонароджених не віддають; оголошення можна зняти; «тиждень після появи» — від ранку, коли забирають (перевірка розмноження 2026-10-28)", () => {
