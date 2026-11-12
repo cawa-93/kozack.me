@@ -43,7 +43,7 @@ import { giveMedicine, medicineCat } from "../sim/diseases";
 import { stateRng } from "../sim/rng";
 import { Overlay, type Card } from "../ui/overlay";
 import { CAREER_MESSAGES, carrierDeathNews, CLEANER_TITLE, cleanerText, DIFFICULTY_TITLES, fill, GIVE_AWAY_LATER, GIVE_AWAY_RECENT, guestsText, homeVetText, IMPORT_SAVE, MOM_FOOD_TEXTS, PARCELS_TEXTS, parcelsCourierText, parcelsPickupText, POSITION_TITLES, UNREADABLE_SAVE } from "../texts";
-import { canUse, setRadioOn } from "../sim/actions";
+import { canEat, canUse, setRadioOn } from "../sim/actions";
 import { moveThing } from "../sim/moving";
 import { type Anchor, Bubbles, THOUGHT_HOLD_MS } from "../view/bubbles";
 import { StorageIndicators } from "../view/storage";
@@ -64,6 +64,7 @@ import { Viewport } from "../view/viewport";
 import { UI_LAYERS } from "../view/world/layers";
 import { createWorld, WORLD_BUILDERS } from "../view/world/factory";
 import { flyIsoIcon } from "../view/iso/marksflight";
+import { mealHold } from "../view/mealpress";
 import { personBubbleAnchor } from "../view/iso/markslayout";
 import type { WorldFrame } from "../view/world/part";
 import { dayShow, REVEAL_SECONDS, type DayShow } from "../view/dayshow";
@@ -156,6 +157,8 @@ export class DayScene extends Phaser.Scene {
    * (пестощі), стає ясно лише після відпускання. Час натискання в мс або null.
    */
   private catPress: number | null = null;
+  /** Коли натискання поставило страву на стіл (мс сцени): кнопку тримають далі — персонаж сяде їсти (`mealpress.ts`). */
+  private mealServedAt: number | null = null;
   private readonly cleanup: (() => void)[] = [];
 
   constructor(
@@ -382,6 +385,8 @@ export class DayScene extends Phaser.Scene {
       return;
     }
     interact(this.session.save);
+    // Натискання поставило страву на стіл: якщо кнопку триматимуть далі, персонаж сяде їсти (§8.7, `mealpress.ts`).
+    this.mealServedAt = held?.kind === "meal" && canEat(this.state) ? this.time.now : null;
   }
 
   /** Почати засинання: очі заплющуються, екран темніє, потім ніч (§8.8). */
@@ -767,6 +772,10 @@ export class DayScene extends Phaser.Scene {
       // погладити — сплячого будили пестощами й брали на руки без образи, а «Відлюдник» устигав піти з-під руки).
       const pending = this.catPress !== null && this.time.now - this.catPress < CAT_TAP_MS;
       const simInput: Input = pending ? { ...input, hold: false } : input;
+      // Страву поставили, а кнопку тримають далі — це ще одне натискання: сісти їсти (§8.7).
+      const meal = mealHold(this.mealServedAt, this.time.now, input.hold);
+      if (meal !== "wait") this.mealServedAt = null;
+      if (meal === "sit" && canEat(this.state)) interact(this.session.save);
       this.moving = this.state.character.activity === null && this.state.character.body.stun <= 0 && isMoving(input.move);
       const minutes = this.tickClock(seconds, true, simInput);
       // Пора падати без сил (§8.8): зупинитися перед межею й засинати анімацією, а не миттєво.
@@ -785,6 +794,7 @@ export class DayScene extends Phaser.Scene {
       }
     } else {
       this.moving = false;
+      this.mealServedAt = null;
       this.tickClock(seconds, false);
     }
     this.render(time, seconds);

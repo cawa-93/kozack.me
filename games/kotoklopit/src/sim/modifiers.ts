@@ -5,7 +5,7 @@ import { knownBreedHalves } from "./breeds";
 import { asleep, changeMood, createCat, isAdapting, markNewcomer, traitLevel } from "./cat";
 import { clearGuest, openDoor, ringBell, takeGuest } from "./door";
 import { addCat, applyMorningSanity } from "./night";
-import { putDownCat, stopBath } from "./actions";
+import { leaveTable, putDownCat, stopBath } from "./actions";
 import { hideSpot, isCarried, isDirty, startAct } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { hasFertileFemale, isNewborn } from "./reproduction";
@@ -355,7 +355,9 @@ export function answerCall(state: GameState): boolean {
   delete state.today.callPending;
   state.today.callUntil = state.minute + MODIFIERS.call.minutes;
   stopWork(state);
-  // Пестощі й гра закінчуються; почата тривала дія (прибирання, їжа) лише чекає, як і без кнопки, а душ, що йде й без кнопки, —
+  // З-за столу персонаж устає: їжа йде сама, а за столом без їжі не сидять (§8.7).
+  leaveTable(state);
+  // Пестощі й гра закінчуються; почата тривала дія (прибирання) лише чекає, як і без кнопки, а душ, що йде й без кнопки, —
   // поки триває розмова (`onCall`).
   const kind = state.character.activity?.kind;
   if (kind === "pet" || kind === "play") state.character.activity = null;

@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { useProgress } from "../src/sim/actions";
+import { canEat, useProgress } from "../src/sim/actions";
 import { createCat } from "../src/sim/cat";
 import { onEvent } from "../src/sim/events";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
+import { answerCall } from "../src/sim/modifiers";
 import { targetOf } from "../src/sim/targets";
+import { MEAL_HOLD_MS, mealHold } from "../src/view/mealpress";
 import { dash } from "../src/sim/body";
 import { BURN_MINUTES, COOK_MINUTES, EAT_MINUTES, HOUSEHOLD, HYGIENE_PER_HOUR, MEAL_SATIETY, MINUTES_PER_HOUR, SATIETY_PER_HOUR, SHOWER_HYGIENE, SHOWER_MINUTES } from "../src/sim/config";
 import { supplyCount } from "../src/sim/economy";
@@ -193,42 +195,64 @@ describe("плита (§8.7)", () => {
 });
 
 describe("їжа за столом (§8.7)", () => {
-  it("страву їдять утриманням дії 10 хвилин тіла", () => {
+  /** Час іде без кнопки й без руху. */
+  const wait = (save: Save, minutes: number): void => {
+    advance(save, bodyMinutes(minutes));
+  };
+
+  it("натиснули дію біля страви — персонаж сідає й їсть сам, без утримання, 10 хвилин тіла", () => {
     const save = game();
     serveMeal(save);
     expect(save.current.home.surfaces["table"]?.kind).toBe("meal");
+    expect(canEat(save.current)).toBe(true);
     // Голодний персонаж: порція не впирається в стелю 100.
     save.current.character.stats.satiety = 30;
     const satiety = save.current.character.stats.satiety;
     const { events, stop } = recordEvents();
-    holdFor(save, 5);
+    interact(save);
+    expect(save.current.character.activity).toMatchObject({ kind: "use", target: "table" });
+    wait(save, 5);
     expect(useProgress(save.current)).toBeCloseTo(0.5);
-    holdFor(save, 5 + LAST_STEP);
+    wait(save, 5 + LAST_STEP);
     stop();
     expect(save.current.home.surfaces["table"]).toBeNull();
+    expect(save.current.character.activity).toBeNull();
+    expect(canEat(save.current)).toBe(false);
     // Ситість за час їжі трохи спала, але порція додала свою частку.
     expect(save.current.character.stats.satiety).toBeCloseTo(satiety + MEAL_SATIETY.cheap + (SATIETY_PER_HOUR * bodyMinutes(EAT_MINUTES)) / MINUTES_PER_HOUR);
     expect(events).toContainEqual({ type: "ate", satiety: MEAL_SATIETY.cheap, food: 5 });
   });
 
-  it("ситість приходить разом зі смугою: перервали на половині — пів порції, решта лишається на столі й доїдається за решту часу", () => {
+  it("тримати кнопку біля страви — теж сісти й їсти; відпущена кнопка їжі не спиняє", () => {
+    const save = game();
+    serveMeal(save);
+    holdFor(save, 4);
+    expect(useProgress(save.current)).toBeCloseTo(0.4);
+    wait(save, 3);
+    expect(save.current.character.activity).toMatchObject({ kind: "use", target: "table" });
+    expect(useProgress(save.current)).toBeCloseTo(0.7);
+  });
+
+  it("ситість приходить разом зі смугою: устали на половині — пів порції, решта лишається на столі й доїдається за решту часу", () => {
     const save = game();
     serveMeal(save);
     save.current.character.stats.satiety = 30;
     const decay = (minutes: number): number => (SATIETY_PER_HOUR * bodyMinutes(minutes)) / MINUTES_PER_HOUR;
-    holdFor(save, 5);
+    interact(save);
+    wait(save, 5);
     expect(save.current.character.stats.satiety).toBeCloseTo(30 + MEAL_SATIETY.cheap / 2 + decay(5));
-    advance(save, 0.1, { move: { x: 1, y: 0 }, hold: true });
+    // Рух піднімає з-за столу.
+    advance(save, 0.1, { move: { x: 1, y: 0 }, hold: false });
     expect(save.current.character.activity).toBeNull();
     expect(save.current.home.surfaces["table"]).toMatchObject({ kind: "meal", eaten: expect.closeTo(0.5) });
-    // Кнопку відпустили, персонаж знову за столом: смуга продовжується з половини, а не з нуля.
-    advance(save, 0.1);
+    // Персонаж знову за столом: смуга продовжується з половини, а не з нуля.
     standAt(save, "table");
     const satiety = save.current.character.stats.satiety;
     const { events, stop } = recordEvents();
-    holdFor(save, 1);
+    interact(save);
+    wait(save, 1);
     expect(useProgress(save.current)).toBeCloseTo(0.6);
-    holdFor(save, 4 + LAST_STEP);
+    wait(save, 4 + LAST_STEP);
     stop();
     expect(save.current.home.surfaces["table"]).toBeNull();
     expect(save.current.character.stats.satiety).toBeCloseTo(satiety + MEAL_SATIETY.cheap / 2 + decay(5));
@@ -243,14 +267,51 @@ describe("їжа за столом (§8.7)", () => {
     expect(save.current.home.surfaces["table"]?.kind).toBe("meal");
   });
 
-  it("відпущена кнопка ставить їжу на паузу, рух перериває", () => {
+  it("натиснули дію ще раз — устали з-за столу; та сама кнопка, яку ще тримають, назад не садить", () => {
     const save = game();
     serveMeal(save);
-    holdFor(save, 4);
-    advance(save, 3);
-    expect(useProgress(save.current)).toBeCloseTo(0.4);
-    advance(save, 0.1, { move: { x: 1, y: 0 }, hold: true });
+    interact(save);
+    wait(save, 2);
+    interact(save);
     expect(save.current.character.activity).toBeNull();
+    expect(save.current.home.surfaces["table"]).toMatchObject({ kind: "meal", eaten: expect.closeTo(0.2) });
+    holdFor(save, 3);
+    expect(save.current.character.activity).toBeNull();
+    // Відпустили — і можна сісти знову.
+    advance(save, 0.1);
+    interact(save);
+    expect(save.current.character.activity).toMatchObject({ kind: "use", target: "table" });
+  });
+
+  it("напрям, затиснутий, коли сідали, не піднімає; відпустили й рушили — піднімає", () => {
+    const save = game();
+    serveMeal(save);
+    interact(save);
+    advance(save, bodyMinutes(1), { move: { x: 1, y: 0 }, hold: false });
+    expect(save.current.character.activity).toMatchObject({ kind: "use", target: "table" });
+    expect(useProgress(save.current)).toBeCloseTo(0.1);
+    wait(save, 1);
+    advance(save, 0.1, { move: { x: 1, y: 0 }, hold: false });
+    expect(save.current.character.activity).toBeNull();
+  });
+
+  it("за столом без їжі персонаж не сидить: страву вкрали — устав; відповів мамі — устав", () => {
+    const stolen = game();
+    serveMeal(stolen);
+    interact(stolen);
+    wait(stolen, 2);
+    stolen.current.home.surfaces["table"] = null;
+    wait(stolen, 0.1);
+    expect(stolen.current.character.activity).toBeNull();
+
+    const called = game();
+    serveMeal(called);
+    interact(called);
+    wait(called, 2);
+    called.current.today.callPending = true;
+    expect(answerCall(called.current)).toBe(true);
+    expect(called.current.character.activity).toBeNull();
+    expect(called.current.home.surfaces["table"]).toMatchObject({ kind: "meal", eaten: expect.closeTo(0.2) });
   });
 
   it("ривок перериває їжу, як рух, і нова дія не почнеться, поки кнопку не відпустили (§10, загальна ревізія 2026-10-29)", () => {
@@ -272,6 +333,38 @@ describe("їжа за столом (§8.7)", () => {
     // Відпустили кнопку — і знову можна діяти.
     advance(save, 0.1);
     expect(save.current.character.holdSpent).toBe(false);
+  });
+});
+
+describe("страву поставили й тримають кнопку далі (§8.7, §10)", () => {
+  it("кнопку тримають MEAL_HOLD_MS після того, як поставили страву, — це ще одне натискання: сісти їсти; відпустили раніше — лише поставили", () => {
+    expect(mealHold(null, 1000, true)).toBe("idle");
+    expect(mealHold(1000, 1000 + MEAL_HOLD_MS - 1, true)).toBe("wait");
+    expect(mealHold(1000, 1000 + MEAL_HOLD_MS, true)).toBe("sit");
+    expect(mealHold(1000, 1000 + 50, false)).toBe("idle");
+    expect(mealHold(1000, 1000 + MEAL_HOLD_MS * 2, false)).toBe("idle");
+    // Довше за звичайне коротке натискання, але не чекати довго.
+    expect(MEAL_HOLD_MS).toBeGreaterThanOrEqual(200);
+    expect(MEAL_HOLD_MS).toBeLessThanOrEqual(500);
+  });
+
+  it("щойно поставлену страву можна їсти: сцена знає, що натискання її поставило", () => {
+    const save = game();
+    standAt(save, "fridge");
+    interact(save);
+    standAt(save, "stove");
+    interact(save);
+    advance(save, COOK_MINUTES);
+    interact(save);
+    standAt(save, "table");
+    expect(canEat(save.current)).toBe(false);
+    interact(save);
+    expect(canEat(save.current)).toBe(true);
+    // Те саме натискання, що поставило страву, їсти не починає — доки сцена не натисне ще раз.
+    holdFor(save, 2);
+    expect(save.current.character.activity).toBeNull();
+    interact(save);
+    expect(save.current.character.activity).toMatchObject({ kind: "use", target: "table" });
   });
 });
 

@@ -59,7 +59,7 @@ import {
 } from "./config";
 import { feederAt, receivePackages, returnSupply, supplyCount, topQuality, unpack, useSupplies, useSupply } from "./economy";
 import { emit, type Refusal } from "./events";
-import { isSolid, SURFACE_IDS, type HomeObject } from "./home";
+import { isSolid, SURFACE_IDS, TABLE_IDS, type HomeObject } from "./home";
 import { isNewborn } from "./reproduction";
 import { petHandOf, secondToPet } from "./petpair";
 import { waterCapacity } from "./resources";
@@ -124,7 +124,12 @@ function tapAction(state: GameState): TapOutcome {
     stopWork(state);
     return DONE;
   }
-  // Під час тривалої дії натискання її не перериває: інакше можна випадково взяти страву зі столу.
+  // З-за столу, як і з-за комп'ютера, встають ще одним натисканням (§10); почата страва лишається на столі.
+  if (isMeal(character.activity)) {
+    character.activity = null;
+    return DONE;
+  }
+  // Іншу тривалу дію натискання не перериває.
   if (character.activity !== null) return null;
   const held = character.held;
   // З річчю в руках ціль — лише те, з чим вона щось робить (§10); такої поруч немає — найближча річ відмовить, чому тут ні.
@@ -298,8 +303,11 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
         return null;
       }
       if (item === null) return refuse(state, target.id, { reason: "need", need: "dish" });
-      // Страву на столі їдять утриманням дії, а не беруть назад.
-      if (target.kind === "table" && item.kind === "meal") return null;
+      // Страву на столі не беруть назад: персонаж сідає й їсть сам, без утримання (§8.7), — з того місця, де її лишили.
+      if (target.kind === "table" && item.kind === "meal") {
+        character.activity = { kind: "use", target: target.id, progress: (item.eaten ?? 0) * EAT_MINUTES };
+        return DONE;
+      }
       surfaces[target.id] = null;
       return take(state, target, item);
     }
@@ -733,6 +741,11 @@ export function tickActivity(state: GameState, input: Input, minutes: number): v
     }
     return;
   }
+  // Їжа за столом іде сама, без кнопки (§8.7).
+  if (activity?.kind === "use" && isMeal(activity)) {
+    tickMeal(state, activity, input, minutes);
+    return;
+  }
   if (isMoving(input.move)) {
     // Напрям, затиснутий, коли сідали, не піднімає (§10): інакше дія на ходу саджала за комп'ютер і наступний же крок піднімав.
     if (activity?.kind === "work") {
@@ -755,6 +768,51 @@ export function tickActivity(state: GameState, input: Input, minutes: number): v
   if (activity === null && character.holdSpent) return;
   // Дія була й закінчилася, а кнопку ще тримають — наступна чекає, поки її відпустять.
   if (holdTick(state, minutes) && character.activity === null) character.holdSpent = true;
+}
+
+/** Персонаж сидить за столом і їсть (§8.7). */
+function isMeal(activity: GameState["character"]["activity"]): boolean {
+  return activity?.kind === "use" && TABLE_IDS.has(activity.target);
+}
+
+/** Устати з-за столу (§8.7): почата страва лишається на столі. */
+export function leaveTable(state: GameState): void {
+  if (isMeal(state.character.activity)) state.character.activity = null;
+}
+
+/** Натискання дії зараз посадить персонажа їсти (§8.7): перед ним стіл зі стравою, руки порожні. */
+export function canEat(state: GameState): boolean {
+  const target = targetOf(state);
+  return state.character.activity === null && target?.type === "object" && target.object.kind === "table" && canUse(state, target);
+}
+
+/**
+ * Їжа за столом (§8.7): іде сама, доки страву не доїли. Устати — рушити з місця, але напрям, затиснутий, коли сідали, не піднімає
+ * (§10), як і за комп'ютером. За столом без їжі не сидять: страви вже немає (вкрав кіт, зіпсувалася) — персонаж устає.
+ */
+function tickMeal(state: GameState, activity: UseActivity, input: Input, minutes: number): void {
+  const character = state.character;
+  if (!isMoving(input.move)) activity.settled = true;
+  else if (activity.settled === true) {
+    if (input.hold) character.holdSpent = true;
+    character.activity = null;
+    return;
+  }
+  const target = targetById(state, activity.target);
+  if (target === null || target.type !== "object" || !canUse(state, target)) {
+    character.activity = null;
+    return;
+  }
+  const total = useMinutes(state, target);
+  const step = minutes * actionSpeed(state);
+  eat(state, target.object, stepShare(activity.progress, step, total));
+  activity.progress += step;
+  if (activity.progress >= total) {
+    character.activity = null;
+    finishUse(state, target, activity);
+    // Кнопку ще тримають — нова дія не почнеться, поки її не відпустили (§10).
+    if (input.hold) character.holdSpent = true;
+  }
 }
 
 /** Утримання дії: почати тривалу дію біля цілі чи продовжити поточну. false — дії не було. */

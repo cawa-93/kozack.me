@@ -170,6 +170,9 @@ export const SURFACE_IDS: readonly string[] = OBJECTS.filter(
   (o) => o.kind === "table" || o.kind === "counter",
 ).map((o) => o.id);
 
+/** Столи, за якими їдять (§8.7): страву на столі персонаж їсть сидячи. */
+export const TABLE_IDS: ReadonlySet<string> = new Set(OBJECTS.filter((o) => o.kind === "table").map((o) => o.id));
+
 /**
  * Дрібнички на столах (§9.12, «Скидання речей»): кухоль на кухонному столі, телефон на кухонній поверхні, ручка на
  * комп'ютерному столі. `at` — де саме на речі: частка її ширини (страва лежить посередині, дрібничка — збоку). `fall` — куди
