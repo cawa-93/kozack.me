@@ -1340,6 +1340,38 @@ describe("коти на тій самій речі (`perchPlace`, `perchCrowds`)
     expect(screenGap(ea.at, eb.at)).toBeCloseTo(PERCH.head, 6);
   });
 
+  it("будиночок переставили (чи нова гра з тим самим id речі) — двоє в ньому розсуваються вздовж входу на новому місці", () => {
+    // Місце будиночка кешується за ключем: якщо ключ — лише id речі, поверхня лишається на старому місці.
+    const save = game();
+    const house = { id: 901, kind: "house", quality: "premium", slot: "house-1" } as const;
+    save.current.home.items.push({ ...house });
+    const a = withCat(save, { x: 1.5, y: 9.5 });
+    const b = withCat(save, { x: 1.5, y: 9.5 });
+    a.act = act("sleep", { target: "item:901", minutes: 300 });
+    b.act = act("sleep", { target: "item:901", minutes: 300 });
+    placed(save);
+    const moved = save.current.home.items.find((i) => i.id === 901)!;
+    if (moved.kind !== "house") throw new Error("будиночок");
+    moved.slot = "house-2";
+    for (const cat of [a, b]) {
+      cat.x = 18.5;
+      cat.y = 9.5;
+    }
+    const spots = placed(save);
+    const pa = spots.get(a.id)!.at;
+    const pb = spots.get(b.id)!.at;
+    expect(spots.get(a.id)!.kind).toBe("house");
+    expect(pa.x).toBeCloseTo(pb.x, 9);
+    expect(screenGap(pa, pb)).toBeCloseTo(PERCH.eyes, 6);
+    for (const p of [pa, pb]) {
+      expect(p.x).toBeCloseTo(18.5, 9);
+      expect(Math.abs(p.y - 9.5)).toBeLessThanOrEqual(PERCH.door + 1e-9);
+    }
+    const spot = catSpot(save.current, a, "sleep", null, SPOT);
+    const area = perchPlace(spot)!.area;
+    expect([area.x0, area.x1]).toEqual([18.5, 18.5]);
+  });
+
   it("на столі з комп'ютером: на клавіатурі — лише той, хто заважає роботі; решта — поруч, рядком обабіч неї, не на ній", () => {
     const save = game();
     const pen = TRINKETS.find((t) => t.kind === "pen")!;

@@ -675,7 +675,8 @@ export function perchPlace(spot: CatSpot, state?: Pick<GameState, "home" | "modi
   }
   if (spot.kind === "house" && spot.item) {
     const { x, y } = spot.at;
-    return perchPlaceOf(spot.item, () => ({ x0: x, x1: x, y0: y - PERCH.door, y1: y + PERCH.door, margin: 0, step: PERCH.eyes }));
+    // Ключ — з місцем: будиночок переставляють (§8.7), а нова гра дає речам ті самі id.
+    return perchPlaceOf(`${spot.item}@${x},${y}`, () => ({ x0: x, x1: x, y0: y - PERCH.door, y1: y + PERCH.door, margin: 0, step: PERCH.eyes }));
   }
   if (spot.kind !== "under" || !box) return null;
   if (box === "sofa") {
