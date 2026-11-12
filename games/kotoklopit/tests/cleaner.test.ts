@@ -19,7 +19,7 @@ import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { BowlItem, Cat, GameState, LitterItem, Save, WaterItem } from "../src/sim/types";
 import { CLEANER_TITLE, cleanerText, DAY_MODIFIER_TEXTS } from "../src/texts";
-import { opensDoor } from "../src/view/iso/looks";
+import { basketClothes, basketState, opensDoor } from "../src/view/iso/looks";
 import { scheduleOf } from "../src/view/schedule";
 import { recordEvents } from "./helpers";
 
@@ -286,8 +286,11 @@ describe("прибиральниця (§4.1)", () => {
     dirtyClothes.home.clothes = 2;
     stock(dirtyClothes, { detergent: 2 });
     expect(cleanHome(dirtyClothes)).toMatchObject({ hung: false, washing: true });
-    expect(dirtyClothes.home.washer).toEqual({ state: "washing", minutes: HOUSEHOLD.washMinutes, quality: "cheap" });
+    expect(dirtyClothes.home.washer).toMatchObject({ state: "washing", minutes: HOUSEHOLD.washMinutes, quality: "cheap" });
     expect(dirtyClothes.home.supplies.detergent.cheap).toBe(1);
+    // Брудне пішло в машину: кошик порожній одразу, як і в прання, що запустив гравець.
+    expect(dirtyClothes.home.clothes).toBe(2);
+    expect(basketState(basketClothes(dirtyClothes.home))).toBe("load-0");
 
     // Шафа повна — машина не запускається, засіб лишається, як і в гравця.
     const full = game().current;

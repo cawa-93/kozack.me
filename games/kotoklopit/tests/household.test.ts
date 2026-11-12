@@ -21,7 +21,7 @@ import { checkout, room, unavailable } from "../src/sim/shop";
 import type { BowlItem, Cat, Feeder, LitterItem, Quality, Save, TraitLevel } from "../src/sim/types";
 import { careCard, hasCareSupplies } from "../src/ui/cards";
 import { named } from "../src/ui/icons";
-import { basketState } from "../src/view/iso/looks";
+import { basketClothes, basketState } from "../src/view/iso/looks";
 import { PRODUCT_ICONS } from "../src/view/symbols";
 import { bodyMinutes, holdUntilDone, hours, recordEvents, standAt, walkTo, withCatCorner } from "./helpers";
 
@@ -285,6 +285,53 @@ describe("чистий одяг і кошик білизни (§8.7)", () => {
     expect(basketState(0, true)).toBe(basketState(1));
     expect(basketState(0)).toBe("overflow");
     expect(basketState(3)).not.toBe(basketState(4));
+  });
+
+  it("кошик порожніє, щойно прання запущено, а не коли випране розвісили", () => {
+    const save = game();
+    const home = save.current.home;
+    home.clothes = 0;
+    home.supplies.detergent.cheap = 1;
+    expect(basketState(basketClothes(home))).toBe("overflow");
+    expect(tapWasher(save.current)).toBe("started");
+    // Чистого ще не додалося, а брудне вже в машині.
+    expect(home.clothes).toBe(0);
+    expect(basketState(basketClothes(home))).toBe("load-0");
+    tickHousehold(save.current, 600, 61);
+    expect(home.washer.state).toBe("done");
+    expect(basketState(basketClothes(home))).toBe("load-0");
+    expect(tapWasher(save.current)).toBe("hung");
+    expect(home.clothes).toBe(HOUSEHOLD.clothesShowers.cheap);
+    expect(basketState(basketClothes(home))).toBe("load-0");
+  });
+
+  it("зношене, кинуте після запуску прання, лягає в порожній кошик", () => {
+    const save = game();
+    const home = save.current.home;
+    home.clothes = 3;
+    home.supplies.detergent.cheap = 1;
+    expect(basketState(basketClothes(home))).toBe("load-2");
+    expect(tapWasher(save.current)).toBe("started");
+    expect(basketState(basketClothes(home))).toBe("load-0");
+    standAt(save, "shower");
+    interact(save);
+    expect(home.clothes).toBe(2);
+    expect(basketState(basketClothes(home))).toBe("load-1");
+    // Поки одяг летить, кошик — як до душу.
+    expect(basketState(basketClothes(home), true)).toBe("load-0");
+  });
+
+  it("прання зі збереження, де кошик порожнів лише з розвішуванням, — кошик як був, доки не розвісили", () => {
+    const save = game();
+    const home = save.current.home;
+    home.clothes = 0;
+    home.washer = { state: "washing", minutes: 20, quality: "cheap" };
+    expect(basketState(basketClothes(home))).toBe("overflow");
+    tickHousehold(save.current, 600, 21);
+    expect(home.washer.state).toBe("done");
+    expect(basketState(basketClothes(home))).toBe("overflow");
+    expect(tapWasher(save.current)).toBe("hung");
+    expect(basketState(basketClothes(home))).toBe("load-0");
   });
 });
 

@@ -8,7 +8,7 @@ import { addDust, dustOf } from "./dust";
 import { takeSupply, topQuality } from "./economy";
 import { emit, type CleanerVisit } from "./events";
 import type { RoomId } from "./home";
-import { catInWasher, fillFountainTank, stockBowl, tuftsOf } from "./household";
+import { catInWasher, fillFountainTank, hangLaundry, startWash, stockBowl, tuftsOf } from "./household";
 import { powerOut } from "./modifiers";
 import { litterCapacity, waterCapacity } from "./resources";
 import type { BowlItem, GameState, HomeItem, LitterItem } from "./types";
@@ -113,7 +113,7 @@ export function litterOrder(items: readonly HomeItem[]): LitterItem[] {
 }
 
 /**
- * Пральна машина (§8.7, §4.1): випране розвішує (чистого одягу — не менше, ніж дає прання, як у `tapWasher`), а тоді, як і
+ * Пральна машина (§8.7, §4.1): випране розвішує (`hangLaundry`), а тоді, як і
  * гравець, запускає прання, якщо воно щось додасть: засіб, що візьметься першим, дасть більше днів чистого одягу, ніж є. Засіб —
  * із запасу; немає — не запускає. Без світла («Планове відключення») машина не працює, кота в барабані вона не виганяє й не пере
  * (рішення виконавця 2026-11-03), прання, що вже йде, не чіпає.
@@ -122,8 +122,7 @@ function laundry(state: GameState, visit: CleanerVisit): void {
   const home = state.home;
   const washer = home.washer;
   if (washer.state === "done") {
-    home.clothes = Math.max(home.clothes, HOUSEHOLD.clothesShowers[washer.quality]);
-    washer.state = "idle";
+    hangLaundry(home);
     visit.hung = true;
   }
   if (washer.state !== "idle" || powerOut(state) || catInWasher(state) !== null) return;
@@ -131,7 +130,7 @@ function laundry(state: GameState, visit: CleanerVisit): void {
   if (top === null || home.clothes >= HOUSEHOLD.clothesShowers[top]) return;
   const quality = takeSupply(state, "detergent");
   if (quality === null) return;
-  home.washer = { state: "washing", minutes: HOUSEHOLD.washMinutes, quality };
+  startWash(home, quality);
   visit.washing = true;
 }
 

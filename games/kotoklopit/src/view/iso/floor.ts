@@ -28,7 +28,7 @@ import { isoDepth, type IsoDepth, type IsoPointHandle, type IsoPointOptions } fr
 import { PlaceMark } from "./placemark";
 import { BASKET_AT, floorAnchorAt, SOFA_PEEK, stashPoint } from "./geometry";
 import { IsoHighlight } from "./highlight";
-import { basketState, carriedThingFrame, carrierLocked, carrierOccupied, carrierShakes, carrierSlot, dockFrame, dustFrame, feederFrame, fountainFrame, itemFrame, litterSmells, MESS_SMELL_LIFT, messFrame, messSmells, placedFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
+import { basketClothes, basketState, carriedThingFrame, carrierLocked, carrierOccupied, carrierShakes, carrierSlot, dockFrame, dustFrame, feederFrame, fountainFrame, itemFrame, litterSmells, MESS_SMELL_LIFT, messFrame, messSmells, placedFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
 import { FLIGHT } from "./markslayout";
 import { PersonSwept } from "./swept";
 import { freshTuft, TUFT_APPEAR, tuftAppearLook, tuftRollFrom } from "./tuftappear";
@@ -362,7 +362,7 @@ export class IsoFloorView implements WorldPart {
       this.tossed = false;
       this.basketLandsAt = time + FLIGHT.ms;
     }
-    this.single("basket", { id: "env/laundry-basket", state: basketState(home.clothes, time < this.basketLandsAt) }, BASKET_AT, isoItemLook("basket").height, {
+    this.single("basket", { id: "env/laundry-basket", state: basketState(basketClothes(home), time < this.basketLandsAt) }, BASKET_AT, isoItemLook("basket").height, {
       id: "basket",
       half: isoItemLook("basket").half,
     });

@@ -14,7 +14,7 @@ import { powerOut } from "../../sim/modifiers";
 import { fountainWorks, waterCapacity } from "../../sim/resources";
 import { boxesShown, STORAGES, storageStages, type FillStage } from "../../sim/storage";
 import { CAT_TRACES, hasTrace } from "../../sim/traces";
-import type { BowlItem, CarryThing, CatTrace, Dish, Feeder, GameState, HomeItem, LitterItem, Mess, PlacedItem, Quality, TrinketKind, Vec, WaterItem } from "../../sim/types";
+import type { BowlItem, CarryThing, CatTrace, Dish, Feeder, GameState, Home, HomeItem, LitterItem, Mess, PlacedItem, Quality, TrinketKind, Vec, WaterItem } from "../../sim/types";
 import { isWorking } from "../../sim/work";
 import { cobwebState, type CobwebState } from "../art/manifest/a20-dust";
 import { wallKind } from "../art/manifest/lib/geometry";
@@ -502,16 +502,30 @@ export function dockFrame(state: GameState): IsoFrame {
   return frame("item/robot-dock", powerOut(state) ? "off" : "on");
 }
 
+/** Скільки зношеного вміщує малюнок кошика: чистого на стільки душів і більше — кошик порожній. */
+const BASKET_ROOM = 5;
+
 /**
- * Кошик білизни (§8.7): скільки одягу вже брудного — від порожнього (чистого на 5 душів і більше) до гірки; чистого не
- * лишилося — переповнений.
+ * Кошик білизни (§8.7): скільки одягу вже брудного — від порожнього (чистого на `BASKET_ROOM` душів і більше) до гірки;
+ * чистого не лишилося — переповнений. `clothes` — чистий одяг, яким його бачить кошик (`basketClothes`).
  */
 export function basketState(clothes: number, inFlight = false): string {
   // Одяг, що ще летить із душу (`inFlight`), у кошику не лежить: кошик наповнюється, коли іконка долетіла.
   if (inFlight) return basketState(clothes + 1);
   if (clothes <= 0) return "overflow";
   // Як у старому вигляді: почата купка брудного — уже ще одна річ у кошику.
-  return `load-${Math.ceil(Math.max(0, Math.min(5, 5 - clothes)) - 1e-9)}`;
+  return `load-${Math.ceil(Math.max(0, Math.min(BASKET_ROOM, BASKET_ROOM - clothes)) - 1e-9)}`;
+}
+
+/**
+ * Чистий одяг, яким його бачить кошик білизни (§8.7), — для `basketState`: із запуском прання брудне пішло з кошика в машину,
+ * тож кошик порожній і наповнюється заново, хоч чистого додасться, лише коли випране розвісять. Прання без `clothesAtStart`
+ * (зі старого збереження) — кошик як був.
+ */
+export function basketClothes(home: Pick<Home, "clothes" | "washer">): number {
+  const { clothes, washer } = home;
+  if (washer.state === "idle" || washer.clothesAtStart === undefined) return clothes;
+  return clothes + Math.max(0, BASKET_ROOM - washer.clothesAtStart);
 }
 
 /** Кіт спить у переносці (§9.12, «Пасажир першого класу»): поверх нього — дверцята з ґратками. */

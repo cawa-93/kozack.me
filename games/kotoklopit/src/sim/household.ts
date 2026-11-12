@@ -17,7 +17,7 @@ import { loudNoise, quietRobot } from "./noise";
 import { waterCapacity } from "./resources";
 import type { Rng } from "./rng";
 import { absoluteMinute } from "./time";
-import type { BowlItem, Cat, CleaningTool, Feeder, GameState, HomeItem, Mess, MessKind, Product, Quality, Vec } from "./types";
+import type { BowlItem, Cat, CleaningTool, Feeder, GameState, Home, HomeItem, Mess, MessKind, Product, Quality, Vec } from "./types";
 
 /** Шкала шерсті квартири (§8.7): 0–100. */
 const FUR_MAX = 100;
@@ -237,9 +237,7 @@ export function tapWasher(state: GameState): "cat" | "started" | "hung" | "empty
   const washer = state.home.washer;
   if (washer.state === "washing") return powerOut(state) ? "no-power" : "busy";
   if (washer.state === "done") {
-    // Чистого одягу — не менше, ніж було: прання з повною шафою не зменшує запасу (перевірка побуту 2026-10-28).
-    state.home.clothes = Math.max(state.home.clothes, HOUSEHOLD.clothesShowers[washer.quality]);
-    washer.state = "idle";
+    hangLaundry(state.home);
     emit(state, { type: "laundry", stage: "hung" });
     return "hung";
   }
@@ -261,9 +259,21 @@ export function tapWasher(state: GameState): "cat" | "started" | "hung" | "empty
   if (top !== null && state.home.clothes >= HOUSEHOLD.clothesShowers[top]) return "clean";
   const quality = useSupply(state, "detergent");
   if (quality === null) return "empty";
-  state.home.washer = { state: "washing", minutes: HOUSEHOLD.washMinutes, quality };
+  startWash(state.home, quality);
   emit(state, { type: "laundry", stage: "started" });
   return "started";
+}
+
+/** Запустити прання із засобом `quality` (§8.7): брудне з кошика йде в машину — кошик порожніє з цієї миті (`clothesAtStart`). */
+export function startWash(home: Home, quality: Quality): void {
+  home.washer = { state: "washing", minutes: HOUSEHOLD.washMinutes, quality, clothesAtStart: home.clothes };
+}
+
+/** Розвісити випране (§8.7). Чистого одягу — не менше, ніж було: прання з повною шафою не зменшує запасу. */
+export function hangLaundry(home: Home): void {
+  home.clothes = Math.max(home.clothes, HOUSEHOLD.clothesShowers[home.washer.quality]);
+  home.washer.state = "idle";
+  delete home.washer.clothesAtStart;
 }
 
 /**

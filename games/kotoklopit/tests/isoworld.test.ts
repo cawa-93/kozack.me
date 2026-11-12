@@ -19,6 +19,7 @@ import { decorLook } from "../src/view/iso/decorlook";
 import { IsoDepth } from "../src/view/iso/depth";
 import { ANCHOR_GAP, artOffset, boxCovers, floorAnchorAt, footprintCorners, objectAnchorAt, objectScreen, PERSON_FIGURE, wallsToFade } from "../src/view/iso/geometry";
 import {
+  basketClothes,
   basketState,
   bedState,
   bowlFrame,
@@ -85,7 +86,7 @@ function framesOf(state: GameState): IsoFrame[] {
     { id: "env/sink", state: sinkState(state) },
     { id: "env/litter-bag", state: shapedState(state, "litter-bag") },
     { id: "env/sterile-bin", state: shapedState(state, "sterile-bin") },
-    { id: "env/laundry-basket", state: basketState(state.home.clothes) },
+    { id: "env/laundry-basket", state: basketState(basketClothes(state.home)) },
     { id: "env/wire", state: wireState(state) },
   );
   for (const id of ["shower", "sink", "washer"] as const) for (const overlay of storageOverlays(state, id)) if (overlay) frames.push(overlay);
