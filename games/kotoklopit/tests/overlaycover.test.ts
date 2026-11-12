@@ -110,6 +110,32 @@ describe("непрозора картка закриває гру (§2.1)", () =
     expect(overlay.covers).toBe(false);
   });
 
+  it("титулка: тиждень з ефектами, день з ефектами й решта — три групи з більшим відступом між ними (.section-start)", () => {
+    const { overlay, root } = setup();
+    overlay.title(
+      [
+        { heading: "Тиждень 2", blocks: [["Чорна п'ятниця", "Усе дешевше"]] },
+        { heading: "Вівторок", blocks: [["Планове відключення", "Світла немає"], ["Завтра виставка"]] },
+        { blocks: [["Мурка будила вночі"], ["Прийшов рахунок"]] },
+      ],
+      () => {},
+    );
+    const screen = root.children[0] as FakeElement;
+    const starts = screen.children.map((child) => (child as FakeElement).classList.contains("section-start"));
+    // Заголовок тижня, його блок; заголовок дня — початок групи, два його блоки; перша подія — початок групи, друга; підказка.
+    expect(starts).toEqual([false, false, true, false, false, true, false, false]);
+    // Відступ групи більший за звичайний відступ заголовка (1.5vh) і замінює його.
+    expect(css).toMatch(/\.title-heading \{\s*margin: 1\.5vh 0 0;/);
+    expect(css).toMatch(/\.title-screen > \.section-start \{\s*margin-top: 3vh;/);
+  });
+
+  it("титулка: тиждень без модифікатора — лише заголовок; день однаково починає нову групу", () => {
+    const { overlay, root } = setup();
+    overlay.title([{ heading: "Тиждень 1", blocks: [] }, { heading: "Понеділок", blocks: [] }], () => {});
+    const screen = root.children[0] as FakeElement;
+    expect(screen.children.map((child) => (child as FakeElement).classList.contains("section-start"))).toEqual([false, true, false]);
+  });
+
   it("титулка закриває гру одразу, а з початком світанку (.dawn) — уже ні: квартира проступає", () => {
     const { overlay, root } = setup();
     const done = vi.fn();

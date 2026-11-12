@@ -888,6 +888,11 @@
   animation-duration: 1.6s;
 }
 
+/* Титулка дня — три групи: тиждень з ефектами, день з ефектами, решта; між групами відступ більший, ніж між рядками групи. */
+.title-screen > .section-start {
+  margin-top: 3vh;
+}
+
 .title-block {
   max-width: 620px;
 }

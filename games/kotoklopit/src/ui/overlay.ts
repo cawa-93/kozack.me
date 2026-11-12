@@ -155,19 +155,27 @@ export class Overlay {
       node.style.animationDelay = `${after}s`;
       screen.append(node);
     };
-    for (const section of sections) {
+    sections.forEach((section, index) => {
+      // Розділи — групи: тиждень з ефектами, день з ефектами, решта. Перший рядок кожного наступного — з більшим відступом
+      // (`.section-start`); обгортки на розділ немає, бо проявляється кожен рядок окремо.
+      let start = index > 0;
+      const add = (node: HTMLElement): void => {
+        if (start) node.classList.add("section-start");
+        start = false;
+        reveal(node, delay);
+      };
       if (section.heading) {
-        reveal(element("h2", "title-heading", section.heading), delay);
+        add(element("h2", "title-heading", section.heading));
         delay += TITLE_TIMING.heading;
       }
       for (const block of section.blocks) {
         const box = element("div", block.length > 1 ? "title-block" : "title-block single");
         block.forEach((line, i) => box.append(typeof line === "string" ? element("p", i === 0 ? "title-line main" : "title-line", line) : line));
-        reveal(box, delay);
+        add(box);
         delay += TITLE_TIMING.line * block.length;
       }
       delay += TITLE_TIMING.section;
-    }
+    });
     const prompt = element("p", "title-prompt", "Натисніть, щоб почати день");
     reveal(prompt, delay);
     const shownAt = performance.now() + delay * 1000;
