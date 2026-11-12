@@ -287,6 +287,31 @@ export function stripsOf(d: Daylight, panes: readonly Pane[], color: Rgb, alpha:
   return out;
 }
 
+/** Прямокутник на екрані, px світу. */
+export interface ScreenBox {
+  readonly x0: number;
+  readonly y0: number;
+  readonly x1: number;
+  readonly y1: number;
+}
+
+/** Межі смуг `strips` (px світу), ширші на `margin` з кожного боку; смуг немає — null. */
+export function stripsBounds(strips: readonly PolyPaint[], margin: number): ScreenBox | null {
+  let x0 = Infinity;
+  let y0 = Infinity;
+  let x1 = -Infinity;
+  let y1 = -Infinity;
+  for (const strip of strips) {
+    for (const p of strip.points) {
+      x0 = Math.min(x0, p.x);
+      y0 = Math.min(y0, p.y);
+      x1 = Math.max(x1, p.x);
+      y1 = Math.max(y1, p.y);
+    }
+  }
+  return x0 > x1 ? null : { x0: x0 - margin, y0: y0 - margin, x1: x1 + margin, y1: y1 + margin };
+}
+
 /** Колір смуги сонця на підлозі (ADD): уранці — золотавий, увечері — помаранчевий. */
 export function sunColor(d: Daylight): Rgb {
   return rgb(d.phase === "morning" ? SUN.morning : SUN.evening);

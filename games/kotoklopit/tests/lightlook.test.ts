@@ -26,6 +26,9 @@ import {
   paneQuad,
   poolAlphaAt,
   sourceLevel,
+  stripsBounds,
+  stripsOf,
+  sunColor,
   toneOf,
   whitened,
 } from "../src/view/light/lightmap";
@@ -366,6 +369,34 @@ describe("вигляд світла доби", () => {
       expect(Math.min(...ys)).toBeCloseTo(-1);
       expect(Math.max(...ys)).toBeCloseTo(3);
     }
+  });
+
+  it("межі смуг сонця (`stripsBounds`): усі вершини смуг усередині з полем `margin`, і це менше за пів квартири; смуг немає — null", () => {
+    // Полотно смуг сонця — на весь світ, а малюється додаванням: показують лише його частину в цих межах.
+    for (const minute of [7 * 60 + 30, 19 * 60 + 30]) {
+      const light = d(minute);
+      const strips = stripsOf(light, PANES, sunColor(light), SUN.add);
+      expect(strips.length, `${minute}`).toBeGreaterThan(0);
+      const box = stripsBounds(strips, 30);
+      if (!box) throw new Error(`${minute}: смуги є`);
+      for (const strip of strips) {
+        for (const p of strip.points) {
+          expect(p.x - box.x0).toBeGreaterThanOrEqual(30 - 1e-9);
+          expect(box.x1 - p.x).toBeGreaterThanOrEqual(30 - 1e-9);
+          expect(p.y - box.y0).toBeGreaterThanOrEqual(30 - 1e-9);
+          expect(box.y1 - p.y).toBeGreaterThanOrEqual(30 - 1e-9);
+        }
+      }
+      const tight = stripsBounds(strips, 0)!;
+      const xs = strips.flatMap((strip) => strip.points.map((p) => p.x));
+      const ys = strips.flatMap((strip) => strip.points.map((p) => p.y));
+      expect(tight).toEqual({ x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys) });
+      const outline = apartmentOutline();
+      const width = Math.max(...outline.map((p) => p.x)) - Math.min(...outline.map((p) => p.x));
+      const height = Math.max(...outline.map((p) => p.y)) - Math.min(...outline.map((p) => p.y));
+      expect((box.x1 - box.x0) * (box.y1 - box.y0), `${minute}`).toBeLessThan((width * height) / 2);
+    }
+    expect(stripsBounds([], 30)).toBeNull();
   });
 
   it("ключ карти: той самий кадр — той самий ключ; свічки мерехтять сяйвом, а карта за сталих джерел з часом не змінюється", () => {

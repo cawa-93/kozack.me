@@ -41,11 +41,13 @@ import {
   paneGlass,
   POOL_FALLOFF,
   sourceLevel,
+  stripsBounds,
   stripsOf,
   sunColor,
   sunKey,
   toneOf,
   type LightmapPlan,
+  type PolyPaint,
   type PoolPaint,
 } from "../light/lightmap";
 import { BOILER_LIGHT, CANDLE_LIGHT, CONE, DESK_LAMP_LIGHT, GAS_LIGHT, LIGHTMAP, luma, SCONCE_LIGHT, SCREEN_LIGHT, STATION_LIGHT, SUN, toHex } from "../light/lightlook";
@@ -149,6 +151,8 @@ export class IsoLightView implements LightPart {
    */
   private painted: LightmapPlan | null = null;
   private sunKeyShown = "";
+  /** Чи на полотні смуг сонця щось є (`cropToStrips`). */
+  private sunBox = false;
   private glassKey = "";
   /** Смуги сонця карти (`stripsLayer`) і ключ того, що на них намальовано. */
   private strips: HTMLCanvasElement | null = null;
@@ -333,7 +337,8 @@ export class IsoLightView implements LightPart {
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, texture.width, texture.height);
       ctx.setTransform(s, 0, 0, s, 0, 0);
-      for (const strip of stripsOf(d, this.panes, sunColor(d), SUN.add)) {
+      const strips = stripsOf(d, this.panes, sunColor(d), SUN.add);
+      for (const strip of strips) {
         const shift = SHADOW_SHIFT / s;
         const gradient = ctx.createLinearGradient(strip.near.x - shift, strip.near.y, strip.far.x - shift, strip.far.y);
         gradient.addColorStop(0, `rgba(255, 255, 255, ${strip.alpha})`);
@@ -342,8 +347,9 @@ export class IsoLightView implements LightPart {
         softFill(ctx, strip.points, gradient, cssColor(strip.color), SUN.blur * s, s);
       }
       texture.refresh();
+      this.sunBox = cropToStrips(parts.sunImage, texture, strips);
     }
-    parts.sunImage.setVisible(true);
+    parts.sunImage.setVisible(this.sunBox);
   }
 
   /** Конуси невидимих стельових світильників: прозорість — за лампою кімнати, глибина — точка під світильником. */
@@ -429,6 +435,7 @@ export class IsoLightView implements LightPart {
     this.mapKey = "";
     this.mapAt = Number.NEGATIVE_INFINITY;
     this.sunKeyShown = "";
+    this.sunBox = false;
     this.glassKey = "";
     this.stripsKey = "";
   }
@@ -469,6 +476,29 @@ export class IsoLightView implements LightPart {
     const plan = this.painted;
     return plan && this.parts?.mapImage.visible ? luma(lightAt(plan, p)) : 1;
   }
+}
+
+/**
+ * На скільки px світу розмита смуга виходить за свій многокутник: `shadowBlur` B px полотна — гаусіан із σ = B / 2, а Skia
+ * обрізає його на 3σ; тут — 6σ із запасом.
+ */
+const SUN_REACH = 3 * SUN.blur;
+
+/**
+ * Показувати з полотна смуг сонця (на весь світ) лише прямокутник смуг (`stripsBounds`): воно лягає додаванням, і на весь
+ * екран це зайвий прохід. Поза смугами полотно прозоре, тож зображення те саме. Смуг немає — false.
+ */
+function cropToStrips(image: Phaser.GameObjects.Image, texture: Phaser.Textures.CanvasTexture, strips: readonly PolyPaint[]): boolean {
+  const box = stripsBounds(strips, SUN_REACH);
+  if (!box) return false;
+  const s = LIGHTMAP.scale;
+  const x0 = Math.max(0, Math.floor(box.x0 * s));
+  const y0 = Math.max(0, Math.floor(box.y0 * s));
+  const x1 = Math.min(texture.width, Math.ceil(box.x1 * s));
+  const y1 = Math.min(texture.height, Math.ceil(box.y1 * s));
+  if (x1 <= x0 || y1 <= y0) return false;
+  image.setCrop(x0, y0, x1 - x0, y1 - y0);
+  return true;
 }
 
 /** Шлях многокутника (без заливки). */
