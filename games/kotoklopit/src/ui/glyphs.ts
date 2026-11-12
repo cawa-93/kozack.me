@@ -3,25 +3,28 @@
 //
 // Гліф — `<img>` із SVG пакета A12 `art/ui/glyph/<назва>.svg` (назва — `GLYPH_ART` маніфесту, крок 16), а не кадр атласу:
 // браузер малює SVG сам, тож гліф чіткий на будь-якій щільності екрана. Файли бере Vite (`?url`); що SVG є для кожного
-// гліфа, перевіряють тести арту (як і для решти записів маніфесту).
+// гліфа, перевіряють тести арту (як і для решти записів маніфесту). Коли прийшов пакет іконок (`artpack.ts`, §2.1), адреса —
+// з нього.
 
 import { GLYPH_ART } from "../view/art/manifest/a12-icons";
+import { artUrl } from "./artpack";
 
 /** SVG гліфів A12 (`art/ui/glyph/<назва>.svg`) → адреса файлу. */
 const GLYPH_FILES = import.meta.glob<string>("../../art/ui/glyph/*.svg", { query: "?url", import: "default", eager: true });
 
 /**
- * Адреса SVG, яким замінити символ: файл `ui/glyph/<назва>` серед `files` (шлях → адреса, як дає `import.meta.glob`); не
- * гліф чи файлу немає — null (символ лишається як є). Чистий розрахунок без DOM.
+ * Адреса SVG, яким замінити символ: з пакета іконок, якщо він уже прийшов, інакше — файлу `ui/glyph/<назва>` серед `files`
+ * (шлях → адреса, як дає `import.meta.glob`); не гліф чи файлу немає — null (символ лишається як є).
  */
 export function glyphUrl(symbol: string, files: Readonly<Record<string, string>> = GLYPH_FILES): string | null {
   const name = GLYPH_ART[symbol];
   if (name === undefined) return null;
-  return Object.entries(files).find(([path]) => path.endsWith(`/${name}.svg`))?.[1] ?? null;
+  const path = Object.keys(files).find((file) => file.endsWith(`/${name}.svg`));
+  return path === undefined ? null : artUrl(path, files);
 }
 
-/** Усі файли гліфів. */
-export const glyphUrls = (): string[] => Object.values(GLYPH_FILES);
+/** Адреси всіх гліфів. */
+export const glyphUrls = (): string[] => Object.keys(GLYPH_FILES).flatMap((path) => artUrl(path, GLYPH_FILES) ?? []);
 
 const PATTERN = new RegExp(`(${Object.keys(GLYPH_ART).join("|")})`, "u");
 

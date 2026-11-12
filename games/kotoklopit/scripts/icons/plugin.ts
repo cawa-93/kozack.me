@@ -5,6 +5,9 @@
 // Імпорт SVG плагін віддає сам, не доходячи до Vite: той читає файл із диска, і підмінити вміст перед ним нічим. Тому й
 // назву файлу з хешем (з мініфікованого вмісту) та адресу `data:` малого файлу складає плагін (`assets.ts`).
 //
+// Іконки, позначки й гліфи карток плагін ще й складає в один файл-пакет (`pack.ts`): гра бере його одним запитом, а окремі
+// файли лишаються запасним шляхом. Адресу пакета гра отримує константою збирання, тож пакет складається ще до збирання коду.
+//
 // Цей файл Node завантажує сам (vite.config.ts імпортує його за адресою): тут лише вбудовані модулі Node, `vite` і сусідні
 // файли без імпортів коду гри.
 
@@ -15,6 +18,7 @@ import type { Plugin, ResolvedConfig } from "vite";
 
 import { hashedName, svgDataUrl, svgImport } from "./assets.ts";
 import { minifySvg } from "./minify.ts";
+import { PACK_DEFINE, packJson, packSvgs } from "./pack.ts";
 
 /** Межа Vite, якщо в конфігу вона не число: файл, менший за неї, імпорт `?url` вбудовує в код адресою `data:`. */
 const INLINE_LIMIT = 4096;
@@ -22,11 +26,18 @@ const INLINE_LIMIT = 4096;
 export function iconsPlugin(): Plugin {
   let config: ResolvedConfig | null = null;
   const emitted = new Set<string>();
+  let pack: { fileName: string; source: string } | null = null;
   return {
     name: "kotoklopit-icons",
     enforce: "pre",
     // Vitest бере vite.config.ts гри: тести читають SVG як є.
     apply: (_, env) => env.command === "build" && !process.env["VITEST"],
+
+    config(user) {
+      const source = packJson(packSvgs(path.resolve(user.root ?? process.cwd(), "art"), minifySvg));
+      pack = { fileName: path.posix.join(user.build?.assetsDir ?? "assets", hashedName("card-art", "json", source)), source };
+      return { define: { [PACK_DEFINE]: JSON.stringify(pack.fileName) } };
+    },
 
     configResolved(resolved) {
       config = resolved;
@@ -51,6 +62,10 @@ export function iconsPlugin(): Plugin {
         this.emitFile({ type: "asset", fileName, source: svg });
       }
       return `export default ${JSON.stringify(config.base + fileName)}`;
+    },
+
+    generateBundle() {
+      if (pack) this.emitFile({ type: "asset", fileName: pack.fileName, source: pack.source });
     },
   };
 }

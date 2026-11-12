@@ -4,7 +4,8 @@
 //
 // Іконка — `<img>` із SVG `art/icon/<назва>.svg`: з того самого файлу конвеєр арту робить кадр атласу `icon/<назва>`, а в
 // картці браузер малює SVG сам, тож іконка чітка на будь-якій щільності екрана. Файли бере Vite: `?no-inline` — окремим
-// файлом, а не адресою data: у коді гри (іконок понад сотню, а картка показує кілька за раз).
+// файлом, а не адресою data: у коді гри (іконок понад сотню, а картка показує кілька за раз). Коли прийшов пакет іконок
+// (`artpack.ts`, §2.1), адреса — з нього, і картка запиту не робить.
 //
 // У тексті картки іконку ставить позначка `iconMark` (`named` — назва з іконкою перед нею): `drawIcons` (Overlay — у кожній
 // картці, на титулці й на екрані кінця гри) замінює позначку малюнком, як `drawGlyphs` — символи-позначки. Тож назва з
@@ -15,6 +16,7 @@ import { ILLNESS_TITLES, diseaseTitle } from "../texts";
 import type { Destination, IllnessId, Product } from "../sim/types";
 import { ICON_NAMES, type IconName, type Mark } from "../view/iconnames";
 import { DESTINATION_ICONS, DISEASE_ICONS, ILLNESS_ICONS, PRODUCT_ICONS } from "../view/symbols";
+import { artUrl } from "./artpack";
 import { DESTINATION_TITLES, PRODUCT_TITLES } from "./titles";
 
 /** Тека SVG іконок (`art/icon/`) — так, як її ключі дає `import.meta.glob` із цього файлу. */
@@ -26,15 +28,15 @@ const ICON_FILES = import.meta.glob<string>("../../art/icon/*.svg", { query: "?n
 const MARK_FILES = import.meta.glob<string>("../../art/icon/mark/*.svg", { query: "?no-inline", import: "default", eager: true });
 
 /**
- * Адреса SVG іконки: файл `icon/<назва>` серед `files` (шлях → адреса, як дає `import.meta.glob`); файлу немає — null.
- * Чистий розрахунок без DOM.
+ * Адреса SVG іконки: з пакета іконок, якщо він уже прийшов, інакше — файлу `icon/<назва>` серед `files` (шлях → адреса, як
+ * дає `import.meta.glob`); файлу немає — null.
  */
 export function iconUrl(name: IconName, files: Readonly<Record<string, string>> = ICON_FILES): string | null {
-  return files[`${ICON_DIR}${name}.svg`] ?? null;
+  return artUrl(`${ICON_DIR}${name}.svg`, files);
 }
 
-/** Усі файли іконок. */
-export const iconUrls = (): string[] => Object.values(ICON_FILES);
+/** Адреси всіх іконок. */
+export const iconUrls = (): string[] => Object.keys(ICON_FILES).flatMap((path) => artUrl(path, ICON_FILES) ?? []);
 
 const OPEN = "\u{E000}";
 const CLOSE = "\u{E001}";
@@ -124,8 +126,8 @@ export function iconImage(icon: IconName): HTMLImageElement | null {
 
 /** `<img>` позначки (✗, ?, ✓) поверх іконки — тим самим полотном 64 × 64, тож лягає на неї рівно (`.icon-mark` у CSS). */
 export function markImage(mark: Mark): HTMLImageElement | null {
-  const url = MARK_FILES[`${ICON_DIR}mark/${mark}.svg`];
-  if (url === undefined) return null;
+  const url = artUrl(`${ICON_DIR}mark/${mark}.svg`, MARK_FILES);
+  if (url === null) return null;
   const img = document.createElement("img");
   img.className = "icon-mark";
   img.src = url;
