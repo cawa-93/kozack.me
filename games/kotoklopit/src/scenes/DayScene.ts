@@ -68,6 +68,7 @@ import type { WorldFrame } from "../view/world/part";
 import { dayShow, REVEAL_SECONDS, type DayShow } from "../view/dayshow";
 import type { World } from "../view/world/world";
 import { markDeparture, takeDeparture } from "../view/departing";
+import { onFocusLost } from "../view/focuslost";
 import type { RaceScene, RoadEnd, RoadStart } from "./RaceScene";
 
 /** Звідки міряти, чи персонаж поруч із радіо (§8.10). */
@@ -210,6 +211,15 @@ export class DayScene extends Phaser.Scene {
     this.cleanup.push(
       onRotateNotice((shown) => {
         if (!shown) return;
+        this.touch.reset();
+        this.catPress = null;
+      }),
+    );
+    // Вікно втратило фокус чи вкладка пішла у фон — так само (`focuslost.ts`): і клавіші, бо скидання самого Phaser знімає
+    // зупинка сцени дороги.
+    this.cleanup.push(
+      onFocusLost(this.game.events, () => {
+        this.input.keyboard?.resetKeys();
         this.touch.reset();
         this.catPress = null;
       }),

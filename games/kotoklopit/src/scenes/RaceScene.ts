@@ -120,6 +120,7 @@ import {
 } from "../view/racelook";
 import { LaneSteer } from "../view/racesteer";
 import { startHintShown } from "../view/starthint";
+import { onFocusLost } from "../view/focuslost";
 import { DESTINATION_ICONS } from "../view/symbols";
 
 const MAX_FRAME_SECONDS = 0.1;
@@ -311,6 +312,12 @@ export class RaceScene extends Phaser.Scene {
       if (shown) this.stick = null;
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, stop);
+    // Вікно втратило фокус чи вкладка пішла у фон — так само, і клавіші (`focuslost.ts`).
+    const lost = onFocusLost(this.game.events, () => {
+      this.input.keyboard?.resetKeys();
+      this.stick = null;
+    });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, lost);
     // Перший кадр — уже чорний кадр від'їзду: сцена не блимне тим, що стоїть на місцях за замовчуванням.
     if (this.leave) this.drawLeave();
   }
