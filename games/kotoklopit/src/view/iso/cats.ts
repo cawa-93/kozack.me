@@ -27,6 +27,7 @@ import { PERSON_PICKUP_GRAB_MS, PERSON_PUTDOWN_RELEASE_MS } from "../rig/anims/p
 import { CAT_BRAWL_PHASE_MS } from "../rig/anims/cat/behavior";
 import { catCrowds, catPairs, crowdMemory, perchCrowds, perchMemory, towardPerson, type CrowdMember, type PairPlacement, type PerchMember } from "../anim/pairs";
 import { addArt, setArt } from "../art/atlas";
+import { CAT_GLOW_FILTER, TARGET_GLOW } from "../art/glowmap";
 import { COAT_WHITE, PIGMENT_LOOK } from "../art/recipes";
 import { COLORS } from "../colors";
 import { highlightBoost, whitened } from "../light/lightmap";
@@ -96,10 +97,11 @@ const TOYS: Readonly<Record<Quality, { kind: "toy"; quality: Quality }>> = {
 };
 
 /**
- * Підсвітка кота-цілі (§8.2): сяйво (як у речей квартири, `iso/highlight.ts`; у темряві — сильніше й світліше, `HIGHLIGHT_DARK`);
- * без WebGL — кільце на підлозі (над картою світла, тож ніч його не гасить).
+ * Підсвітка кота-цілі (§8.2): сяйво тієї самої сили, що в речей квартири (`iso/highlight.ts`; у темряві — сильніше й світліше,
+ * `HIGHLIGHT_DARK`), але фільтром Phaser Glow — кіт анімований, і запекти йому ореол, як речам, не можна; фільтр — зі
+ * зниженою якістю (`CAT_GLOW_FILTER`). Без WebGL — кільце на підлозі (над картою світла, тож ніч його не гасить).
  */
-const GLOW = { min: 2, pulse: 4, quality: 8, distance: 10 } as const;
+const GLOW = { min: TARGET_GLOW.min, pulse: TARGET_GLOW.pulse, ...CAT_GLOW_FILTER } as const;
 const RING = { w: 58, h: 24, line: 4 } as const;
 
 /** Що частина пам'ятає про кота між кадрами (де намальований щодо свого місця — `PlaceMemory`). */

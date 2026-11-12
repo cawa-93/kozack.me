@@ -1,9 +1,12 @@
-// Підсвітка цілі дії в ізометричному світі (§8.2, крок 16): сяйво (Glow, фільтр Phaser 4) довкола малюнка цілі — лише на
-// одній цілі за раз. Фільтри Phaser 4 є лише у WebGL; у режимі Canvas (`Phaser.AUTO` без WebGL) — запасний варіант: кутик
+// Підсвітка цілі дії в ізометричному світі (§8.2, крок 16): сяйво довкола малюнка цілі — лише на одній цілі за раз. Ореол
+// кадру речі пораховано під час збирання атласу (карта сяйва, `art/glowmap.ts`), тож тут він — звичайні зображення під
+// річчю, без фільтра: пульс і підсилення в темряві — кількістю й прозорістю шарів карти (`glowLayerAlpha`), колір — тоном.
+// Річ, накладаючись на карту, сама лишає від неї лише ореол довкола силуету (і трохи — крізь напівпрозоре, як скло душу).
+// Без WebGL чи без карти кадру (атласу немає, кадр — заглушка) — запасний варіант: кутик
 // сліду цілі на підлозі — два передні ребра (T4), смуга кольору підсвітки в чорнильній облямівці, щоб читалася і на світлій
 // підлозі, і на темній. Каркаса на висоті цілі немає: висота — найвища точка (монітор, узголів'я, кран), і коробка на ній
-// над усім слідом обводила б порожнечу, а задні ребра сліду йшли б крізь саму річ. Кутик лежить на глибині цілі, як сяйво
-// на її малюнку: той, хто стоїть перед ціллю (персонаж за столом), його закриває. Колір — токен `highlight` палітри арту
+// над усім слідом обводила б порожнечу, а задні ребра сліду йшли б крізь саму річ. Сяйво й кутик лежать на глибині цілі:
+// той, хто стоїть перед ціллю (персонаж за столом), їх закриває. Колір — токен `highlight` палітри арту
 // (`art/STYLE.md`: лише для інтерфейсу). Сяйво й кутик — під картою світла доби, тож у темряві вони сильніші й світліші
 // (`HIGHLIGHT_DARK`, за яскравістю карти на цілі — `WorldQuery.lightLevel`): інакше множення гасить їх до ледь помітної лінії.
 //
@@ -14,17 +17,19 @@
 import Phaser from "phaser";
 
 import { PALETTE } from "../../../art/palette";
+import { loadedArtIndex } from "../art/atlasload";
+import { GLOW_LAYERS, GLOW_MAP, TARGET_GLOW, glowFrameName, glowLayerAlpha, glowPlacement } from "../art/glowmap";
+import { ART_TEXTURE } from "../art/types";
 import { highlightBoost, whitened, type HighlightBoost } from "../light/lightmap";
 import type { IsoFootprint } from "../world/objects";
 import type { Point, WorldQuery } from "../world/part";
 import { footprintCorners } from "./geometry";
 
-/** Сила сяйва: від слабкого до сильного за пульсом позначок (`alpha` 0–1). */
-const GLOW_MIN = 2;
-const GLOW_PULSE = 4;
-/** Скільки вибірок і на яку відстань (px текстури): досить для чіткого обрису, не дорого для однієї цілі. */
-const GLOW_QUALITY = 8;
-const GLOW_DISTANCE = 10;
+/**
+ * Шари сяйва — одразу під малюнком цілі: нижче за нього, але вище за все, що за ціллю (сусідній елемент реєстру глибини
+ * закінчується щонайменше за `ISO_DEPTH_SLOT` до неї).
+ */
+const GLOW_UNDER = 0.0001;
 /**
  * Контур Canvas — над малюнком цілі, у її проміжку глибини (`ISO_DEPTH_SLOT` 0,01), нижче за те, що лежить на ній: кутик на
  * підлозі перед ціллю закриває лише те, що стоїть перед нею.
@@ -46,9 +51,20 @@ interface Request {
   alpha: number;
 }
 
+/** Карта сяйва кадру: назва її кадру в текстурі атласу й те, як вона лягає на зображення речі (`glowPlacement`). */
+interface GlowLook {
+  name: string;
+  originX: number;
+  originY: number;
+  scale: number;
+}
+
 export class IsoHighlight {
   private wanted: Request | null = null;
-  private glowing: { image: Phaser.GameObjects.Image; glow: Phaser.Filters.Glow } | null = null;
+  /** Шари карти сяйва: створюються, коли вперше потрібні, і живуть до кінця сцени. */
+  private readonly layers: Phaser.GameObjects.Image[] = [];
+  /** Карта кадру, який ціль показувала востаннє (null — карти немає): шукаємо її лише тоді, коли кадр змінився. */
+  private look: { frame: Phaser.Textures.Frame; originX: number; originY: number; glow: GlowLook | null } | null = null;
   /** Запасний контур (лише без WebGL). */
   private outline: Phaser.GameObjects.Graphics | null = null;
   private readonly webgl: boolean;
@@ -74,33 +90,69 @@ export class IsoHighlight {
     this.wanted = { image, footprint, height, alpha };
   }
 
-  /** Кінець кадру: сяйво (чи контур) — лише на тій цілі, яку цього кадру просили. */
+  /** Кінець кадру: сяйво (чи контур) — лише на тій цілі, яку цього кадру просили, і лише поки її видно. */
   apply(): void {
-    const wanted = this.wanted;
-    if (this.webgl) this.glow(wanted);
-    else this.drawOutline(wanted);
+    const wanted = this.wanted && this.wanted.image.visible ? this.wanted : null;
+    const glow = wanted && this.webgl ? this.glowOf(wanted.image) : null;
+    this.drawGlow(wanted, glow);
+    const outlined = glow ? null : wanted;
+    if (outlined || this.outline) this.drawOutline(outlined);
   }
 
-  private glow(wanted: Request | null): void {
-    const current = this.glowing;
-    if (current && (current.image !== wanted?.image || !current.image.active)) {
-      // Зображення, яке знищили разом із фільтрами, вже без сяйва.
-      if (current.image.active) current.image.filters?.internal.remove(current.glow);
-      this.glowing = null;
+  /** Карта сяйва кадру, який зараз показує `image`; null — її немає (кадр не з атласу, заглушка, старий `index.json`). */
+  private glowOf(image: Phaser.GameObjects.Image): GlowLook | null {
+    const frame = image.frame;
+    const look = this.look;
+    if (look && look.frame === frame && look.originX === image.originX && look.originY === image.originY) return look.glow;
+    this.look = { frame, originX: image.originX, originY: image.originY, glow: this.findGlow(image) };
+    return this.look.glow;
+  }
+
+  private findGlow(image: Phaser.GameObjects.Image): GlowLook | null {
+    const frame = image.frame;
+    if (frame.texture.key !== ART_TEXTURE) return null;
+    const index = loadedArtIndex(this.scene);
+    const rect = index && Object.hasOwn(index.frames, frame.name) ? index.frames[frame.name as keyof typeof index.frames]?.glow : undefined;
+    if (!rect) return null;
+    const name = glowFrameName(frame.name);
+    // Кадр карти додаємо в текстуру атласу при першій підсвітці: карти потрібні лише тут.
+    if (!frame.texture.has(name) && !frame.texture.add(name, rect.page, rect.x, rect.y, rect.w, rect.h)) return null;
+    return { name, ...glowPlacement(rect, { w: frame.realWidth, h: frame.realHeight }, { x: image.originX, y: image.originY }) };
+  }
+
+  /** Шари карти під ціллю: скільки й наскільки прозорі — за силою сяйва (пульс × підсилення в темряві), тон — за темрявою. */
+  private drawGlow(wanted: Request | null, glow: GlowLook | null): void {
+    if (!wanted || !glow) {
+      for (const layer of this.layers) if (layer.visible) layer.setVisible(false);
+      return;
     }
-    if (!wanted || !wanted.image.visible) return;
-    if (!this.glowing) {
-      const image = wanted.image;
-      if (!image.filters) image.enableFilters();
-      const filters = image.filters;
-      if (!filters) return;
-      this.glowing = { image, glow: filters.internal.addGlow(HIGHLIGHT, GLOW_MIN, 0, 1, false, GLOW_QUALITY, GLOW_DISTANCE) };
-    }
-    const boost = this.boost(wanted.image);
-    const glow = this.glowing.glow;
-    glow.outerStrength = (GLOW_MIN + GLOW_PULSE * wanted.alpha) * boost.strength;
+    const image = wanted.image;
+    const boost = this.boost(image);
+    const strength = ((TARGET_GLOW.min + TARGET_GLOW.pulse * wanted.alpha) * boost.strength) / GLOW_MAP.gain;
     const color = whitened(HIGHLIGHT, boost.whiten);
-    if (glow.color !== color) glow.color = color;
+    const depth = image.depth - GLOW_UNDER;
+    for (let k = 0; k < GLOW_LAYERS; k++) {
+      const alpha = glowLayerAlpha(strength, k) * image.alpha;
+      let layer = this.layers[k];
+      if (alpha <= 0) {
+        if (layer?.visible) layer.setVisible(false);
+        continue;
+      }
+      if (!layer) {
+        layer = new Phaser.GameObjects.Image(this.scene, 0, 0, ART_TEXTURE, glow.name);
+        this.layer.add(layer);
+        this.layers[k] = layer;
+      }
+      if (layer.frame.name !== glow.name) layer.setFrame(glow.name);
+      layer.setOrigin(glow.originX, glow.originY);
+      layer.setScale(image.scaleX * glow.scale, image.scaleY * glow.scale);
+      layer.setPosition(image.x, image.y);
+      layer.setAlpha(alpha);
+      if (layer.tintTopLeft !== color) layer.setTint(color);
+      // Глибину ставимо лише нову: кожне присвоєння змушує шар світу сортуватися заново.
+      if (layer.depth !== depth) layer.setDepth(depth);
+      if (!layer.visible) layer.setVisible(true);
+    }
   }
 
   /** Підсилення підсвітки за яскравістю карти світла посередині малюнка цілі (`HIGHLIGHT_DARK`). */
@@ -114,7 +166,7 @@ export class IsoHighlight {
   private drawOutline(wanted: Request | null): void {
     const g = (this.outline ??= this.scene.add.graphics().addToDisplayList(this.layer));
     g.clear();
-    if (!wanted || !wanted.image.visible) return;
+    if (!wanted) return;
     g.setDepth(wanted.image.depth + OUTLINE_ABOVE);
     const corners = footprintCorners(wanted.footprint);
     const front = FRONT_CORNERS.map((i) => new Phaser.Math.Vector2(corners[i]!.x, corners[i]!.y));
@@ -129,9 +181,9 @@ export class IsoHighlight {
   }
 
   destroy(): void {
-    const current = this.glowing;
-    if (current?.image.active) current.image.filters?.internal.remove(current.glow);
-    this.glowing = null;
+    for (const layer of this.layers) layer.destroy();
+    this.layers.length = 0;
+    this.look = null;
     this.outline?.destroy();
     this.outline = null;
   }
