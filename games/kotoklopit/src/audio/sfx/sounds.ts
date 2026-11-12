@@ -80,7 +80,7 @@ export class Sounds {
     current = this;
     onEvent((event, state) => this.onGameEvent(event, state));
     this.engine.onRunning(() => {
-      this.applyVolume();
+      this.applyVolume(false);
       const { fetch, warm } = startupFiles(GROUPS);
       void this.player.preload(fetch).then(() => this.player.keep(warm));
     });
@@ -256,12 +256,12 @@ export class Sounds {
     }
   }
 
-  private applyVolume(): void {
+  private applyVolume(smooth = true): void {
     const buses = this.engine.buses;
     const context = this.engine.context;
     if (!buses || !context) return;
-    glide(buses.world.gain, this.volume * SFX.worldLevel, context);
-    glide(buses.ui.gain, this.volume * SFX.uiLevel, context);
+    glide(buses.world.gain, this.volume * SFX.worldLevel, context, smooth);
+    glide(buses.ui.gain, this.volume * SFX.uiLevel, context, smooth);
   }
 }
 

@@ -68,9 +68,16 @@ export class AudioEngine {
   }
 }
 
-/** Гучність шини з повзунка — плавно (`VOLUME_GLIDE`). */
-export function glide(param: AudioParam, value: number, context: BaseAudioContext): void {
-  param.setTargetAtTime(value, context.currentTime, VOLUME_GLIDE);
+/**
+ * Гучність шини з повзунка — плавно (`VOLUME_GLIDE`). `smooth: false` — щойно звук запустився: шина починає з повної, і
+ * ковзання від неї дало б першому звуку гучність, вищу за повзунок (вимкненим звукам — чутну).
+ */
+export function glide(param: AudioParam, value: number, context: BaseAudioContext, smooth = true): void {
+  if (smooth) param.setTargetAtTime(value, context.currentTime, VOLUME_GLIDE);
+  else {
+    param.cancelScheduledValues(context.currentTime);
+    param.value = value;
+  }
 }
 
 /**

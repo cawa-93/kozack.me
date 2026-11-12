@@ -33,6 +33,20 @@ describe("повзунки гучності: плавно (§8.10, §11.4а)", (
     expect(audio.buses.world.gain.value).toBe(1);
   });
 
+  it("звук щойно запустився — гучність одразу така, як у повзунку: перший звук не гучніший, хоч шина й починає з повної", () => {
+    vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>(() => undefined)));
+    vi.stubGlobal("window", { addEventListener: () => undefined, setInterval: () => 0 });
+    const audio = fakeAudio();
+    (audio.engine as { onRunning(listener: () => void): void }).onRunning = (listener) => listener();
+    const prefs = new AudioPrefs(null, IDS);
+    prefs.update({ effects: 0, volume: 0 });
+    new Sounds(audio.engine, prefs).start();
+    new Radio(audio.engine, prefs).start();
+    expect(audio.buses.world.gain.value).toBe(0);
+    expect(audio.buses.ui.gain.value).toBe(0);
+    expect(audio.buses.music.gain.value).toBe(0);
+  });
+
   it("радіо: шина музики — так само", () => {
     const audio = fakeAudio();
     audio.context.currentTime = 2;

@@ -40,7 +40,7 @@ export class Radio {
   /** Викликати один раз під час запуску гри. */
   start(): void {
     this.engine.onRunning(() => {
-      this.applyVolume();
+      this.applyVolume(false);
       this.broadcast.tune(this.playing());
     });
     setRadioLit(this.on);
@@ -122,10 +122,10 @@ export class Radio {
     setRadioLit(this.on);
   }
 
-  private applyVolume(): void {
+  private applyVolume(smooth = true): void {
     const music = this.engine.music;
     const context = this.engine.context;
-    if (music && context) glide(music.gain, this.volume, context);
+    if (music && context) glide(music.gain, this.volume, context, smooth);
   }
 
   private tick(): void {
