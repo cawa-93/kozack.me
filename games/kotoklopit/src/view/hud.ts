@@ -14,6 +14,7 @@ import { absoluteMinute, formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from ".
 import type { GameState, Product, StatName } from "../sim/types";
 import { DeskCalendar } from "./deskcalendar";
 import { DeskClock } from "./deskclock";
+import { barDraw, barsKey, type BarDraw } from "./hudbars";
 import { newsHitArea } from "./hudnews";
 import { iconArt, markArt, type IconName } from "./iconnames";
 import { personStates } from "./personstates";
@@ -139,6 +140,9 @@ export class Hud {
   /** Де заливка шкал і як її малювати (за розкладом панелі, `arrange`). */
   private barRects: BarRect[] = [];
   private readonly barLook: BarLook = { ...BAR_LOOK, radius: 0 };
+  /** Що шкали показують цього кадру (`barDraw`, той самий масив) і ключ того, що вже намальовано (`barsKey`; null — малювати). */
+  private readonly barShown: BarDraw[] = [];
+  private barsDrawn: string | null = null;
   /** Розклад панелі зараз: десктоп чи низький екран (`hudLayout`); null — ще не розкладено. */
   private shape: HudLayout | null = null;
   /** Ширина панелі зараз і колонки за нею (`hudColumns`). */
@@ -339,6 +343,7 @@ export class Hud {
     });
     // Заливка — під рамкою арту, тож її кінці — півкола.
     this.barLook.radius = (this.barRects[0]?.h ?? 0) / 2;
+    this.barsDrawn = null;
     const radius = layout.disc.outer / 2;
     this.wallet.ring.setPosition(columns.money + radius, layout.rows[0]).setDisplaySize(ring, ring);
     this.wallet.icon.setPosition(columns.money + radius, layout.rows[0]).setDisplaySize(icon, icon);
@@ -515,7 +520,7 @@ export class Hud {
   update(state: GameState, time: number): void {
     this.drawFullscreen();
     if (this.newsUntil !== null && time >= this.newsUntil) this.hideNews();
-    const { stats, money } = state.character;
+    const { money } = state.character;
     this.clock.blink(time);
     const shownAt = absoluteMinute(state.day, Math.floor(state.minute));
     if (shownAt !== this.shownAt) {
@@ -523,19 +528,7 @@ export class Hud {
       this.showMinute(state);
     }
 
-    const g = this.bars.clear();
-    const look = this.barLook;
-    STATS.forEach((stat, i) => {
-      const bar = this.barRects[i];
-      if (!bar) return;
-      const value = stats[stat.name];
-      const blink = value < LOW_STAT && Math.floor(time / 400) % 2 === 0;
-      g.fillStyle(look.trough).fillRoundedRect(bar.x, bar.y, bar.w, bar.h, look.radius);
-      g.fillStyle(blink ? look.blink : STAT_FILL[stat.name]).fillRoundedRect(bar.x, bar.y, Math.max(0, (bar.w * value) / 100), bar.h, look.radius);
-      // Вище межі показник зараз не росте (брудний одяг, «Пригніченість»): цю частину шкали заштриховано.
-      const ceiling = Math.max(value, statCeiling(state, stat.name));
-      if (ceiling < 100) hatch(g, bar, bar.x + (bar.w * ceiling) / 100, bar.x + bar.w, look.hatch);
-    });
+    this.drawBars(state, time);
     // Гаманець уже каже, що це гроші (§11.4): без символу гривні.
     const cash = String(Math.floor(money));
     if (cash !== this.money.text) {
@@ -551,6 +544,34 @@ export class Hud {
     if (product !== this.hinted) this.showHint(product);
     if (product !== undefined) this.phone.setScale(this.buttonScale * (1 + 0.1 * (0.5 + 0.5 * Math.sin(time / 160))));
     else this.phone.setScale(this.buttonScale);
+  }
+
+  /**
+   * Шкали показників (`barDraw`): заливка, блимання низького показника й штрихування над межею — показник вище неї зараз не росте
+   * (брудний одяг, «Пригніченість»). Перемальовуються, лише коли змінилося видиме (`barsKey`), а не щокадру.
+   */
+  private drawBars(state: GameState, time: number): void {
+    const ui = canvasNow().ui;
+    const stats = state.character.stats;
+    const shown = this.barShown;
+    STATS.forEach((stat, i) => {
+      const value = stats[stat.name];
+      const blink = value < LOW_STAT && Math.floor(time / 400) % 2 === 0;
+      shown[i] = barDraw(this.barRects[i]?.w ?? 0, value, Math.max(value, statCeiling(state, stat.name)), blink, ui);
+    });
+    const key = barsKey(shown);
+    if (key === this.barsDrawn) return;
+    this.barsDrawn = key;
+    const g = this.bars.clear();
+    const look = this.barLook;
+    STATS.forEach((stat, i) => {
+      const bar = this.barRects[i];
+      const draw = shown[i];
+      if (!bar || !draw) return;
+      g.fillStyle(look.trough).fillRoundedRect(bar.x, bar.y, bar.w, bar.h, look.radius);
+      g.fillStyle(draw.blink ? look.blink : STAT_FILL[stat.name]).fillRoundedRect(bar.x, bar.y, draw.fill, bar.h, look.radius);
+      if (draw.hatch !== null) hatch(g, bar, bar.x + draw.hatch, bar.x + bar.w, look.hatch);
+    });
   }
 
   /** Те, що змінюється не частіше за хвилину гри: годинник, календарик і розклад. */
