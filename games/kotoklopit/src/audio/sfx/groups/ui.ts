@@ -17,6 +17,8 @@ const BOUGHT = cue("bought");
 const MORNING = cue("morning");
 const END = cue("end");
 const LOW = cue("low-stat");
+const CREDITS: readonly string[] = ["credits"];
+const NO_SOUNDS: readonly string[] = [];
 
 /** Відмова — тихий «бум»; порожній запас чи аптечка — свій звук, стук по порожньому (§12.3 «Звук»: частим відмовам — свій). */
 function refusalCues(reason: Refusal["reason"]): readonly Cue[] {
@@ -41,10 +43,11 @@ export const group: SoundGroup = {
     ordered: { files: ["ordered"], gain: 0.5, voices: 1, ui: true },
     bought: { files: ["bought"], gain: 0.72, pitch: 0.03, ui: true },
     morning: { files: ["morning-1", "morning-2", "morning-3"], gain: 0.5, voices: 1, ui: true },
-    end: { files: ["end"], gain: 0.5, voices: 1, ui: true },
+    end: { files: ["end"], gain: 0.5, voices: 1, ui: true, warm: true },
     // Музика титрів життя (§4.2): вмикає й гасить сама стрічка (`sceneLoop`). Шина музики й рівень треків радіо (−16 LUFS) — тож
-    // звучить, як радіо, під його повзунком; пауза картки її не приглушує.
-    credits: { files: ["credits"], loop: true, music: true },
+    // звучить, як радіо, під його повзунком; пауза картки її не приглушує. Найбільший файл, тож його тягнуть лише на екрані кінця
+    // гри, коли це пенсія (`prepare`): поки звучить кінець гри, він встигає.
+    credits: { files: ["credits"], loop: true, music: true, lazy: true },
     "low-stat": { files: ["low-stat"], gain: 0.4, cooldownMs: 5000, voices: 1, ui: true },
   },
 
@@ -72,6 +75,10 @@ export const group: SoundGroup = {
     }
     if (moment === "end") return END;
     return NONE;
+  },
+
+  prepare(moment: SceneMoment, state: GameState): readonly string[] {
+    return moment === "end" && state.end === "retirement" ? CREDITS : NO_SOUNDS;
   },
 
   tick(state: GameState): readonly Cue[] {

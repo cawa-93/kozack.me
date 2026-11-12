@@ -1,14 +1,18 @@
-// Програвач звуків (§11.4а, `audio/SOUND.md`, «Ефекти»): запити з тайм-аутом, голоси — лише звукам, що справді звучать.
+// Програвач звуків (§11.4а, `audio/SOUND.md`, «Ефекти»): запити з тайм-аутом, голоси — лише звукам, що справді звучать; що
+// вантажити на старті, а що — лише коли знадобиться.
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { SFX } from "../src/audio/config";
 import { timeoutSignal } from "../src/audio/net";
-import { soundFile, type SoundFile } from "../src/audio/sfx/files";
+import { soundBus, type SoundBus } from "../src/audio/sfx/bus";
+import { allSoundFiles, soundFile, type SoundFile } from "../src/audio/sfx/files";
 import { Player } from "../src/audio/sfx/player";
 import { GROUPS } from "../src/audio/sfx/registry";
 import { Sounds } from "../src/audio/sfx/sounds";
+import { startupFiles } from "../src/audio/sfx/startup";
 import { AudioPrefs } from "../src/audio/settings";
+import { newGame } from "../src/sim/game";
 import { fakeAudio, settle } from "./fakeaudio";
 
 const prefs = (): AudioPrefs => new AudioPrefs(null, ["retro"]);
@@ -153,5 +157,65 @@ describe("петлі: в унісон не звучать, ритмічна — 
     await settle();
     expect(voice?.startedAt()).toBeCloseTo(7000);
     now.mockRestore();
+  });
+});
+
+describe("звуки на старті: інтерфейс першим, музика титрів — коли знадобиться (П12)", () => {
+  const plan = startupFiles(GROUPS);
+  const busOf = new Map<string, SoundBus>(GROUPS.flatMap((group) => Object.values(group.sounds).flatMap((def) => def.files.map((name) => [`${group.id}/${name}`, soundBus(def)] as const))));
+
+  it("спершу звуки шини інтерфейсу: картки й кнопки звучать із першого дотику", () => {
+    const buses = plan.fetch.map((file) => busOf.get(file.key));
+    const lastUi = buses.lastIndexOf("ui");
+    expect(buses.indexOf("ui")).toBe(0);
+    expect(buses.slice(0, lastUi + 1).every((bus) => bus === "ui")).toBe(true);
+  });
+
+  it("музики титрів на старті немає (найбільший файл, потрібен раз на гру); решта — вся й без повторів", () => {
+    const keys = plan.fetch.map((file) => file.key);
+    expect(keys).not.toContain("ui/credits");
+    expect(new Set(keys).size).toBe(keys.length);
+    expect([...keys, "ui/credits"].sort()).toEqual(allSoundFiles().map((file) => file.key).sort());
+  });
+
+  it("кінець гри декодується заздалегідь: звучить раз на гру, і запізнілий звук пропав би", () => {
+    expect(plan.warm.map((file) => file.key)).toEqual(["ui/end"]);
+  });
+
+  it("розкодований заздалегідь звук не витісняється, хоч скільки звуків декодовано потім", async () => {
+    vi.stubGlobal("fetch", vi.fn(bytes));
+    const audio = fakeAudio({ seconds: 1 });
+    // Межа — на два розкодовані звуки.
+    const player = new Player(audio.engine, 2 * 48_000 * 4);
+    const end = soundFile("ui", "end")!;
+    await player.keep([end]);
+    const voice = { take: () => true, free: () => undefined };
+    for (const name of ["open", "close", "tab", "notify", "bought"]) player.play(soundFile("ui", name)!, { bus: "ui", gain: 1, pan: 0, rate: 1, delay: 0 }, voice);
+    await settle();
+    const before = audio.started().length;
+    // Готовий звук звучить одразу, у ту саму мить, без декодування.
+    player.play(end, { bus: "ui", gain: 1, pan: 0, rate: 1, delay: 0 }, voice);
+    expect(audio.started().length).toBe(before + 1);
+  });
+
+  it("на екрані кінця гри, коли це пенсія, музику титрів уже тягнуть і декодують", async () => {
+    const fetch = vi.fn((_url: string) => bytes());
+    vi.stubGlobal("fetch", fetch);
+    const audio = fakeAudio({ hold: true });
+    const sounds = new Sounds(audio.engine, prefs());
+    const state = newGame({ address: "he", difficulty: "normal", seed: 2 }).current;
+    sounds.attach({ mode: () => "live", state: () => state });
+    const credits = soundFile("ui", "credits")!.url;
+    state.end = "health";
+    sounds.moment("end");
+    await settle();
+    expect(fetch.mock.calls.map((call) => call[0])).not.toContain(credits);
+    const decoding = audio.decodes.length;
+    state.end = "retirement";
+    sounds.moment("end");
+    await settle();
+    expect(fetch.mock.calls.map((call) => call[0])).toContain(credits);
+    // Кінець гри вже декодується з першого разу; тепер — ще й музика.
+    expect(audio.decodes.length).toBe(decoding + 1);
   });
 });

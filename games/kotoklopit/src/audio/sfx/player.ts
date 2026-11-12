@@ -52,9 +52,14 @@ export class Player {
   private readonly bytes = new Map<string, Promise<ArrayBuffer | null>>();
   private readonly decoded = new Map<string, Decoded>();
   private readonly decoding = new Map<string, Promise<Decoded | null>>();
+  /** Що тримати розкодованим завжди (`keep`): межа пам'яті їх не витісняє. */
+  private readonly kept = new Set<string>();
   private decodedBytes = 0;
 
-  constructor(private readonly engine: AudioEngine) {}
+  constructor(
+    private readonly engine: AudioEngine,
+    private readonly limit: number = DECODED_LIMIT,
+  ) {}
 
   /** Стягнути стиснені файли наперед, по кілька водночас: потім перший звук чекатиме лише декодування. */
   async preload(files: readonly SoundFile[]): Promise<void> {
@@ -63,6 +68,19 @@ export class Player {
       for (let file = queue.shift(); file; file = queue.shift()) await this.fetchBytes(file);
     };
     await Promise.all(Array.from({ length: SFX.parallelLoads }, worker));
+  }
+
+  /** Декодувати по одному й тримати розкодованими завжди: рідкісний звук, якому не можна запізнитися (`SoundDef.warm`). */
+  async keep(files: readonly SoundFile[]): Promise<void> {
+    for (const file of files) {
+      this.kept.add(file.key);
+      await this.decode(file);
+    }
+  }
+
+  /** Стягнути й декодувати наперед: звук от-от знадобиться (`SoundGroup.prepare`). */
+  prepare(file: SoundFile): void {
+    void this.decode(file);
   }
 
   /** Разовий звук; false — звуку зараз немає взагалі. Файл ще не декодовано — зіграє, щойно буде, якщо не запізнився. */
@@ -216,7 +234,8 @@ export class Player {
     this.decoded.set(key, decoded);
     this.decodedBytes += decoded.bytes;
     for (const [old, entry] of this.decoded) {
-      if (this.decodedBytes <= DECODED_LIMIT || old === key) break;
+      if (this.decodedBytes <= this.limit || old === key) break;
+      if (this.kept.has(old)) continue;
       this.decoded.delete(old);
       this.decodedBytes -= entry.bytes;
     }

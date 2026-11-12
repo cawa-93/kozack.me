@@ -7,10 +7,11 @@ import { SFX } from "../config";
 import type { AudioEngine } from "../engine";
 import type { AudioPrefs } from "../settings";
 import { soundBus } from "./bus";
-import { allSoundFiles, soundFile } from "./files";
+import { soundFile } from "./files";
 import { placement, soundPoint } from "./place";
 import { Player, type LoopVoice } from "./player";
 import { GROUPS } from "./registry";
+import { startupFiles } from "./startup";
 import type { Cue, LoopCue, SceneMoment, SoundDef, SoundGroup } from "./types";
 
 /**
@@ -80,7 +81,8 @@ export class Sounds {
     onEvent((event, state) => this.onGameEvent(event, state));
     this.engine.onRunning(() => {
       this.applyVolume();
-      void this.player.preload(allSoundFiles());
+      const { fetch, warm } = startupFiles(GROUPS);
+      void this.player.preload(fetch).then(() => this.player.keep(warm));
     });
   }
 
@@ -122,6 +124,10 @@ export class Sounds {
     for (const group of GROUPS) {
       const cues = group.onScene?.(moment, state);
       if (cues) for (const cue of cues) this.fire(group, cue, state);
+      for (const sound of group.prepare?.(moment, state) ?? []) {
+        const file = soundFile(group.id, group.sounds[sound]?.files[0] ?? "");
+        if (file) this.player.prepare(file);
+      }
     }
   }
 

@@ -267,3 +267,20 @@ describe("картки звучать (§11.4а): відкрилась, закр
     for (const sound of ["open", "close", "click", "tab"]) expectPlayable(sound);
   });
 });
+
+describe("музика титрів — наперед лише перед титрами (§4.2, П12)", () => {
+  it("на екрані кінця гри група просить музику титрів, лише коли це пенсія", () => {
+    const s = fresh();
+    s.end = "retirement";
+    expect(group.prepare?.("end", s)).toEqual(["credits"]);
+    s.end = "health";
+    expect(group.prepare?.("end", s) ?? []).toEqual([]);
+    s.end = "retirement";
+    expect(group.prepare?.("morning", s) ?? []).toEqual([]);
+  });
+
+  it("музика титрів — не на старті, кінець гри — декодується заздалегідь", () => {
+    expect(group.sounds["credits"]?.lazy).toBe(true);
+    expect(group.sounds["end"]?.warm).toBe(true);
+  });
+});
