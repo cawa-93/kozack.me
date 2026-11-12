@@ -158,7 +158,8 @@ export class RigSprite<B extends string, S extends string, K extends string> ext
 
   /**
    * Грати анімацію від часу останнього `update` (null — вихідна поза); `loop`, `from` (з якого моменту анімації, мс),
-   * `blend` (мс змішування), `restart` — як у `Rig.play`.
+   * `blend` (мс змішування), `restart` — як у `Rig.play`. Пастка: скелетові, якому `update` якийсь час не кличуть (кіт за
+   * краєм камери), цей час застарів — і разова, почата тоді, при появі вже скінчена; такому — `rig.play` зі своїм годинником.
    */
   play(anim: RigAnim<B, S> | null, opts: PlayOptions = {}): this {
     this.rig.play(anim, this.now, opts);

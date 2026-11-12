@@ -10,7 +10,7 @@
 import Phaser from "phaser";
 
 import type { Cat, Quality, Shape } from "../../sim/types";
-import type { CatEars, CatFace } from "../anim/catface";
+import type { CatFace } from "../anim/catface";
 import type { CatAnimId } from "../anim/ids";
 import { addArt, setArt } from "../art/atlas";
 import { addBakedArt, bakedFrame, catOwner, releaseBaked, setBakedArt } from "../art/bake";
@@ -22,7 +22,7 @@ import { catPetPoint } from "../rig/anims/cat/basic";
 import { RigSprite, type RigBaked, type SocketWorld } from "../rig/rigsprite";
 import type { RigAnim, RigFacing, Vec2 } from "../rig/types";
 import type { Point } from "../world/part";
-import { composeCatAnim, playBlend } from "./catanim";
+import { CatPlayer } from "./catanim";
 import { bonePoint, brawlTop, CAT_FAR_SLOTS, fatStep, ISO_CAT_FIT, ISO_CAT_RIG, isoCatSkin, proportionsOf, type IsoCatBone, type IsoCatSlot, type IsoCatSocket } from "./catrig";
 import { CAT_PIECE, type CatShow } from "./catspot";
 import { ISO_DEPTH_SLOT, type IsoPointHandle } from "./depth";
@@ -60,18 +60,6 @@ function petPointOf(anim: CatAnimId): Vec2 | null {
     PET_POINTS.set(anim, point);
   }
   return point;
-}
-
-/** Що зараз показує кіт: анімація (основна й накладка — до складання з обличчям) і звідки рахується її час. */
-interface Playing {
-  base: CatRigAnim;
-  overlay: CatRigAnim | null;
-  eyes: string;
-  mouth: string;
-  ears: CatEars;
-  anim: CatRigAnim;
-  /** Годинник кота, коли почалася основна: від нього — фаза складеної анімації. */
-  start: number;
 }
 
 /** Що кадр каже котові. Частина котів тримає один такий об'єкт і переписує його щокадру. */
@@ -146,7 +134,7 @@ export class IsoCatView {
   private skin: SkinInputs | null = null;
   /** З чого зібрано пропорції: крок повноти, вага кошеняти, статура й лапи (−1 — ще не збирали). */
   private props = { fat: -1, kitten: -1, build: "", legs: "" };
-  private playing: Playing | null = null;
+  private readonly player = new CatPlayer();
   /** Власний годинник кота, мс: іде зі швидкістю анімації (хода кульгавого повільніша). */
   private clock = 0;
   private lastTime: number | null = null;
@@ -301,35 +289,13 @@ export class IsoCatView {
   }
 
   /**
-   * Грати складену анімацію (основна, накладка, обличчя). Та сама основна й накладка, інше лише обличчя — фаза та сама й
-   * без змішування (кліпання міняє очі кілька разів на секунду), лише вуха — з коротким змішуванням; інша основна — від
-   * початку зі змішуванням поз, а на спину й зі спини — одним кадром (`playBlend`).
+   * Грати складену анімацію (основна, накладка, обличчя; `CatPlayer`) від годинника кота: `RigSprite.play` узяв би час
+   * останнього `update`, а невидимому котові його не кличуть.
    */
   private play(f: CatFrame): void {
     const base = CAT_ANIMS[f.anim] as CatRigAnim;
     const overlay = f.overlay ? (CAT_ANIMS[f.overlay] as CatRigAnim) : null;
-    const face = f.face;
-    const prev = this.playing;
-    if (prev && !f.restart && prev.base === base && prev.overlay === overlay && prev.eyes === face.eyes && prev.mouth === face.mouth && prev.ears === face.ears) return;
-    const anim = composeCatAnim(base, overlay, face) as CatRigAnim;
-    const sameBase = prev !== null && !f.restart && prev.base === base;
-    const start = sameBase ? prev.start : this.clock - f.phase;
-    const elapsed = this.clock - start;
-    const from = anim.loop ? elapsed % anim.duration : Math.min(anim.duration, elapsed);
-    const sameMotion = sameBase && prev.overlay === overlay;
-    const blend = f.blendMs !== null && !sameBase ? f.blendMs : playBlend(prev, { base, overlay, ears: face.ears }, f.restart);
-    this.sprite.play(anim, { from, blend, restart: f.restart || !sameMotion });
-    if (prev) {
-      prev.base = base;
-      prev.overlay = overlay;
-      prev.eyes = face.eyes;
-      prev.mouth = face.mouth;
-      prev.ears = face.ears;
-      prev.anim = anim;
-      prev.start = start;
-    } else {
-      this.playing = { base, overlay, eyes: face.eyes, mouth: face.mouth, ears: face.ears, anim, start };
-    }
+    this.player.play(this.sprite.rig, base, overlay, f, this.clock);
   }
 
   /** Іграшка чи шкарпетка в зубах (§9.12, «Схованки»): кадр у гнізді `teeth`. */

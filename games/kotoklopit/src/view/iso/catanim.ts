@@ -1,5 +1,6 @@
 // Що грає скелет кота ізометричного вигляду (крок 16, T1): основна анімація, накладка й обличчя — в одній анімації скелета,
-// бо `Rig` грає одну (`rigcore.ts`). Чисті розрахунки без Phaser (`tests/isocats.test.ts`).
+// бо `Rig` грає одну (`rigcore.ts`), і коли її починати (`CatPlayer`). Чисті розрахунки без Phaser (`tests/isocats.test.ts`,
+// `tests/catplayer.test.ts`).
 //
 // - Накладка (`CAT_OVERLAYS`, `anim/ids.ts`), спершу підігнана під основу (`catOverlayOn`, N3), додається до основної:
 //   `rot` і `pos` — сумою, `scale` — добутком, доріжки слотів накладки замінюють доріжки основної. Доріжка, яку має лише одна
@@ -16,7 +17,7 @@ import type { CatEars } from "../anim/catface";
 import { ART_VIEWS, type ArtView } from "../art/types";
 import { catBlendMs } from "../rig/anims/cat/basic";
 import { catOverlayOn } from "../rig/anims/cat/feelings";
-import { animTime, BLEND_MS, sampleNumber, sampleVec } from "../rig/rigcore";
+import { animTime, BLEND_MS, sampleNumber, sampleVec, type PlayOptions } from "../rig/rigcore";
 import type { BoneTracks, Key, RigAnim, RigTracks, SlotTracks, StepKey, Vec2 } from "../rig/types";
 import { BELLY_ABOVE, EAR_BONES, EAR_POSES } from "./catrig";
 
@@ -216,6 +217,65 @@ export interface PlayKey {
 export function playBlend(prev: PlayKey | null, next: PlayKey, restart = false): number {
   if (!restart && prev !== null && prev.base === next.base && prev.overlay === next.overlay) return prev.ears !== next.ears ? BLEND_MS : 0;
   return catBlendMs(prev?.base ?? null, next.base, BLEND_MS);
+}
+
+/** Що кадр каже про анімацію кота (частина `CatFrame`, `catview.ts`). */
+export interface CatPlayFrame {
+  readonly face: FaceFrames;
+  /** Почати основну заново (разова щойно почалася). */
+  readonly restart: boolean;
+  /** На скільки мс зсунути фазу основної, коли вона починається. */
+  readonly phase: number;
+  /** Змішування поз (мс), коли основна змінилася, — замість звичайного (`playBlend`); null — звичайне. */
+  readonly blendMs: number | null;
+}
+
+/** Скелет, що грає анімацію з моменту `now` (`Rig.play`). */
+export interface CatAnimTarget {
+  play(anim: Loose | null, now: number, opts?: PlayOptions): boolean;
+}
+
+/** Що грає кіт: основна й накладка (до складання з обличчям), обличчя й мить годинника кота, коли почалася основна. */
+interface CatPlaying {
+  base: Loose;
+  overlay: Loose | null;
+  eyes: string;
+  mouth: string;
+  ears: string;
+  start: number;
+}
+
+/**
+ * Що грає скелет кота (`catview.ts`): складена анімація (`composeCatAnim`). Та сама основна й накладка, інше лише обличчя —
+ * фаза та сама; інша основна — від початку; змішування — `playBlend`. Час — годинник кота, а не мить останнього розрахунку
+ * пози: кота за краєм камери не рахують, і разова, почата там (стрибок, чхання), при появі була б уже скінчена.
+ */
+export class CatPlayer {
+  private playing: CatPlaying | null = null;
+
+  play(rig: CatAnimTarget, base: Loose, overlay: Loose | null, f: CatPlayFrame, clock: number): void {
+    const face = f.face;
+    const prev = this.playing;
+    if (prev && !f.restart && prev.base === base && prev.overlay === overlay && prev.eyes === face.eyes && prev.mouth === face.mouth && prev.ears === face.ears) return;
+    const anim = composeCatAnim(base, overlay, face);
+    const sameBase = prev !== null && !f.restart && prev.base === base;
+    const start = sameBase ? prev.start : clock - f.phase;
+    const elapsed = clock - start;
+    const from = anim.loop ? elapsed % anim.duration : Math.min(anim.duration, elapsed);
+    const sameMotion = sameBase && prev.overlay === overlay;
+    const blend = f.blendMs !== null && !sameBase ? f.blendMs : playBlend(prev, { base, overlay, ears: face.ears }, f.restart);
+    rig.play(anim, clock, { from, blend, restart: f.restart || !sameMotion });
+    if (prev) {
+      prev.base = base;
+      prev.overlay = overlay;
+      prev.eyes = face.eyes;
+      prev.mouth = face.mouth;
+      prev.ears = face.ears;
+      prev.start = start;
+    } else {
+      this.playing = { base, overlay, eyes: face.eyes, mouth: face.mouth, ears: face.ears, start };
+    }
+  }
 }
 
 // --- Усередині ----------------------------------------------------------------------------------
