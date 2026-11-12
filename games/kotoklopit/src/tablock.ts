@@ -47,9 +47,10 @@ function claim(page: TabPage, save: () => void): Promise<void> {
       hide = null;
       granted();
     };
-    // Колбек замка не закінчується, доки вкладка жива: так замок і тримається.
+    // Колбек замка не закінчується, доки вкладка жива: так замок і тримається. Сторінка, що вже в кеші, його не тримає —
+    // `ifAvailable` знімати нічим, і замок міг прийти вже після `pagehide`.
     const hold = (lock: Lock | null): Promise<void> | undefined => {
-      if (lock === null) return undefined;
+      if (lock === null || leave.signal.aborted) return undefined;
       go();
       return new Promise((free) => (release = free));
     };

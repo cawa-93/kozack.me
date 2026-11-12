@@ -230,6 +230,20 @@ describe("одна вкладка (§4.2)", () => {
     expect(locks.held(GAME_LOCK)).toBe(false);
   });
 
+  it("сторінка пішла в кеш ще до відповіді Web Locks — замка не бере: інакше він висів би в кеші, а інші вкладки чекали б", async () => {
+    const locks = new FakeLocks();
+    const tab = fakeTab(locks);
+    let opened = false;
+    void openGame(tab.page, () => {
+      opened = true;
+      return fakeGame();
+    });
+    tab.fire("pagehide", true);
+    await settle();
+    expect(opened).toBe(false);
+    expect(locks.held(GAME_LOCK)).toBe(false);
+  });
+
   it("Web Locks відмовили (помилка браузера) — гра відкривається, як без замка", async () => {
     const broken = {
       request: () => Promise.reject(new DOMException("Немає доступу", "SecurityError")),
