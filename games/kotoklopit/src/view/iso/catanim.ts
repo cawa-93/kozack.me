@@ -247,7 +247,7 @@ interface CatPlaying {
 
 /**
  * Що грає скелет кота (`catview.ts`): складена анімація (`composeCatAnim`). Та сама основна й накладка, інше лише обличчя —
- * фаза та сама; інша основна — від початку; змішування — `playBlend`. Час — годинник кота, а не мить останнього розрахунку
+ * фаза та сама, а змішування поз, що вже йде, не обривається; інша основна — від початку; змішування — `playBlend`. Час — годинник кота, а не мить останнього розрахунку
  * пози: кота за краєм камери не рахують, і разова, почата там (стрибок, чхання), при появі була б уже скінчена.
  */
 export class CatPlayer {
@@ -264,7 +264,9 @@ export class CatPlayer {
     const from = anim.loop ? elapsed % anim.duration : Math.min(anim.duration, elapsed);
     const sameMotion = sameBase && prev.overlay === overlay;
     const blend = f.blendMs !== null && !sameBase ? f.blendMs : playBlend(prev, { base, overlay, ears: face.ears }, f.restart);
-    rig.play(anim, clock, { from, blend, restart: f.restart || !sameMotion });
+    // Той самий рух, інші лише очі чи рот: змішування поз, що вже йде (кіт щойно ліг), — далі як було.
+    const keepBlend = sameMotion && prev.ears === face.ears;
+    rig.play(anim, clock, { from, blend, restart: f.restart || !sameMotion, keepBlend });
     if (prev) {
       prev.base = base;
       prev.overlay = overlay;

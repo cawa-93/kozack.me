@@ -582,6 +582,11 @@ export interface PlayOptions {
   from?: number | undefined;
   /** Змішування з попередньою позою, мс; за замовчуванням `BLEND_MS`, 0 — одразу. */
   blend?: number | undefined;
+  /**
+   * Змішування, що вже йде, не чіпати (`blend` тоді не діє): той самий рух з іншим лише кадром слота (очі, рот кота) — інакше
+   * поза посеред змішування стрибнула б до кінцевої.
+   */
+  keepBlend?: boolean | undefined;
   /** Та сама анімація вже грає — почати знову (інакше `play` нічого не робить). */
   restart?: boolean | undefined;
 }
@@ -893,12 +898,14 @@ export class Rig<B extends string, S extends string, K extends string> {
     const next = anim as LooseAnim | null;
     const loop = next ? (opts.loop ?? next.loop) : false;
     if (next === this.current && loop === this.loopNow && !opts.restart) return false;
-    this.blendMs = Math.max(0, opts.blend ?? BLEND_MS);
-    if (this.evaluatedView === this.facingNow.view && this.blendMs > 0) {
-      for (const bone of this.boneRt) Object.assign(bone.from, bone.local);
-      this.blendStart = now;
-    } else {
-      this.blendStart = -Infinity;
+    if (!opts.keepBlend) {
+      this.blendMs = Math.max(0, opts.blend ?? BLEND_MS);
+      if (this.evaluatedView === this.facingNow.view && this.blendMs > 0) {
+        for (const bone of this.boneRt) Object.assign(bone.from, bone.local);
+        this.blendStart = now;
+      } else {
+        this.blendStart = -Infinity;
+      }
     }
     this.current = next;
     this.loopNow = loop;
