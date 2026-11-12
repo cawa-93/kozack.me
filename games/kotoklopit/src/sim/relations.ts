@@ -8,7 +8,26 @@ import type { Cat, GameState } from "./types";
 
 const clamp = (value: number): number => Math.min(100, Math.max(-100, value));
 
-const key = (a: number, b: number): string => (a < b ? `${a}-${b}` : `${b}-${a}`);
+/** Номери котів, для яких ключ пари пам'ятається: у грі їх стільки не буває, а більші не збігаються з меншими. */
+const KEY_SPAN = 2 ** 26;
+const keys = new Map<number, string>();
+
+/**
+ * Ключ пари в `relations`. Рядок пам'ятаємо: стосунки пар котів читаються щокадру (П13), а свіжозібраний рядок щоразу ще й
+ * хешується заново для пошуку.
+ */
+function key(a: number, b: number): string {
+  const lo = a < b ? a : b;
+  const hi = a < b ? b : a;
+  if (!Number.isInteger(lo) || lo < 0 || hi >= KEY_SPAN) return `${lo}-${hi}`;
+  const n = lo * KEY_SPAN + hi;
+  let k = keys.get(n);
+  if (k === undefined) {
+    k = `${lo}-${hi}`;
+    keys.set(n, k);
+  }
+  return k;
+}
 
 export function relation(state: GameState, a: Cat, b: Cat): number {
   return state.relations[key(a.id, b.id)] ?? 0;
@@ -31,8 +50,8 @@ export const isEnemy = (state: GameState, a: Cat, b: Cat): boolean => relation(s
  * кіт не старшає: вік росте раз на 7 днів від дня появи (§9.1, рішення автора 2026-10-27), тож вік зараз — і вік у день появи.
  */
 export function isNewcomer(state: GameState, cat: Cat): boolean {
-  if (cat.source === "born" || daysAtHome(state, cat) >= RELATIONS.newcomer.days) return false;
-  return cat.ageWeeks > KITTEN_MAX_AGE;
+  if (cat.source === "born" || cat.ageWeeks <= KITTEN_MAX_AGE) return false;
+  return daysAtHome(state, cat) < RELATIONS.newcomer.days;
 }
 
 /** Початкові стосунки нового кота з кожним, хто вже живе вдома (§9.4). */
