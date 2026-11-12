@@ -113,9 +113,16 @@ export class AtlasLoadProgress {
 }
 
 /**
+ * Скільки чекати `decode`, мс. Пастка: його проміс може не закінчитися довго чи взагалі (браузер відкладає розпакування
+ * зображень поза документом, поки вкладку сховано), а завантаження без нього стояло б. Із запасом на велику сторінку на
+ * повільному телефоні.
+ */
+export const DECODE_WAIT_MS = 3000;
+
+/**
  * `done` — рівно раз, коли зображення розпаковано (`decode`): так сторінки атласу розпаковуються поза головним потоком, поки
- * приходять інші, а не всі разом синхронно, коли атлас уперше малюють. Без `decode` (старий браузер) чи з його помилкою —
- * одразу: зображення однаково придатне, лише розпакується тоді, коли його вперше намалюють.
+ * приходять інші, а не всі разом синхронно, коли атлас уперше малюють. Без `decode` (старий браузер), з його помилкою чи
+ * через `DECODE_WAIT_MS` без відповіді — однаково: зображення придатне, лише розпакується тоді, коли його вперше намалюють.
  */
 export function afterDecode(image: { decode?: (() => Promise<void>) | undefined }, done: () => void): void {
   let decoding: Promise<void> | undefined;
@@ -124,8 +131,19 @@ export function afterDecode(image: { decode?: (() => Promise<void>) | undefined 
   } catch {
     decoding = undefined;
   }
-  if (decoding) decoding.then(done, done);
-  else done();
+  if (!decoding) {
+    done();
+    return;
+  }
+  let called = false;
+  const once = (): void => {
+    if (called) return;
+    called = true;
+    clearTimeout(timer);
+    done();
+  };
+  const timer = setTimeout(once, DECODE_WAIT_MS);
+  decoding.then(once, once);
 }
 
 function clamp01(value: number): number {
