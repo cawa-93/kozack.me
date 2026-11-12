@@ -366,13 +366,29 @@ export function recoveryMultiplier(cat: Cat): number {
   return age * Math.max(0, 1 + RECOVERY_TRAIT_STEP * traitLevel(cat, "hardiness"));
 }
 
-/** Змінити здоров'я; втрати записуються з джерелом для причини смерті (§9.7). */
+/**
+ * Змінити здоров'я; втрати записуються з джерелом для причини смерті (§9.7). Втрата того самого дня з того самого джерела
+ * додається до його запису: кіт у переносці втрачає здоров'я щокадру (§8.7), і окремі записи роздували б збереження.
+ */
 export function changeHealth(state: GameState, cat: Cat, delta: number, source: string): void {
   const before = cat.health;
   cat.health = clamp(cat.health + delta);
   const lost = before - cat.health;
-  if (lost > 0) cat.healthLog.push({ day: state.day, source, amount: lost });
+  if (lost > 0) logHealthLoss(state, cat, source, lost);
   cat.healthLog = cat.healthLog.filter((entry) => state.day - entry.day < HEALTH_LOG_DAYS);
+}
+
+function logHealthLoss(state: GameState, cat: Cat, source: string, amount: number): void {
+  // Записи йдуть за днями, тож сьогоднішні — у кінці.
+  for (let i = cat.healthLog.length - 1; i >= 0; i--) {
+    const entry = cat.healthLog[i];
+    if (!entry || entry.day !== state.day) break;
+    if (entry.source === source) {
+      entry.amount += amount;
+      return;
+    }
+  }
+  cat.healthLog.push({ day: state.day, source, amount });
 }
 
 export interface CatDay {
