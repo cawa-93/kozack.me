@@ -2,6 +2,7 @@
 
 import { RADIO } from "../config";
 import type { AudioEngine } from "../engine";
+import { timeoutSignal } from "../net";
 import type { AudioPrefs } from "../settings";
 import { Broadcast } from "./broadcast";
 import { ChunkStore } from "./chunks";
@@ -17,7 +18,7 @@ const clock = (): number => Date.now() / 1000;
 /** Шматки: пам'ять (`ChunkStore`), далі сховище між сесіями, далі мережа з HTTP-кешем браузера. */
 const fetchBytes = persistentFetch(
   () => (typeof caches === "undefined" ? Promise.resolve(null) : caches.open(RADIO_CACHE)),
-  (url) => fetch(url),
+  (url) => fetch(url, { signal: timeoutSignal(RADIO.requestTimeoutMs) }),
 );
 
 export class Radio {

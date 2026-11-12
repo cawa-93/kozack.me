@@ -1,9 +1,13 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { RADIO, SAMPLE_RATE } from "../src/audio/config";
+import type { AudioEngine } from "../src/audio/engine";
 import { ChunkStore } from "../src/audio/radio/chunks";
+import { STATIONS as REAL_STATIONS } from "../src/audio/radio/playlist";
 import { wantedChunks } from "../src/audio/radio/prefetch";
+import { Radio } from "../src/audio/radio/radio";
 import { chunkKey, type ChunkRef, type RadioTrack, type Station } from "../src/audio/radio/schedule";
+import { AudioPrefs } from "../src/audio/settings";
 
 const track = (id: string, seconds: number): RadioTrack => ({ id, artist: "a", title: id, frames: Math.round((seconds * SAMPLE_RATE) / RADIO.frameSamples) });
 const station = (id: string): Station => ({ id, frequency: "90,0", tracks: [track(`${id}-a`, 180), track(`${id}-b`, 200), track(`${id}-c`, 220)] });
@@ -85,6 +89,42 @@ describe("шматки в пам'яті (§8.10)", () => {
     expect(chunks.copy(ref("a", 0))).not.toBe(chunks.copy(ref("a", 0)));
   });
 
+  it("завислий запит за `RADIO.requestTimeoutMs` звільняє місце: решта шматків не чекає вічно (Н4)", () => {
+    let now = 0;
+    const { chunks, fetchBytes } = store(vi.fn(() => new Promise<ArrayBuffer>(() => {})), 1000, () => now);
+    const refs = Array.from({ length: 10 }, (_, i) => ref("a", i));
+    chunks.want(refs);
+    expect(fetchBytes).toHaveBeenCalledTimes(RADIO.parallelRequests);
+    now = RADIO.requestTimeoutMs - 1;
+    chunks.want(refs);
+    expect(fetchBytes).toHaveBeenCalledTimes(RADIO.parallelRequests);
+    now = RADIO.requestTimeoutMs + 1;
+    chunks.want(refs);
+    // Завислі вважаються невдалими: їх попросять знову лише через `retryMs`, а місця дістаються наступним.
+    expect(fetchBytes).toHaveBeenCalledTimes(RADIO.parallelRequests * 2);
+    expect(fetchBytes.mock.calls.slice(RADIO.parallelRequests).map((call) => call.at(0))).toEqual(["a/3", "a/4", "a/5"]);
+  });
+
+  it("запізнілий шматок після тайм-ауту не ламає нового запиту того самого шматка", async () => {
+    let now = 0;
+    const late: ((data: ArrayBuffer) => void)[] = [];
+    const fetchBytes = vi.fn(() => new Promise<ArrayBuffer>((resolve) => late.push(resolve)));
+    const { chunks } = store(fetchBytes, 1000, () => now);
+    chunks.want([ref("a", 0)]);
+    now = RADIO.requestTimeoutMs + RADIO.retryMs + 2;
+    chunks.want([ref("a", 0)]);
+    expect(fetchBytes).toHaveBeenCalledTimes(2);
+    late[0]?.(new ArrayBuffer(100));
+    await settle();
+    expect(chunks.copy(ref("a", 0))?.byteLength).toBe(100);
+    // Новий запит ще йде: той самий шматок удруге не просять, а його відповідь не рахується двічі.
+    chunks.want([ref("a", 0)]);
+    expect(fetchBytes).toHaveBeenCalledTimes(2);
+    late[1]?.(new ArrayBuffer(100));
+    await settle();
+    expect(chunks.size).toBe(100);
+  });
+
   it("шматок, що не прийшов, просить знову лише згодом", async () => {
     let now = 0;
     const fetchBytes = vi.fn(async () => {
@@ -98,5 +138,21 @@ describe("шматки в пам'яті (§8.10)", () => {
     now = RADIO.retryMs + 1;
     chunks.want([ref("a", 0)]);
     expect(fetchBytes).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("запит шматка з мережі (Н4)", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("радіо просить шматок із тайм-аутом: завислий запит не тримає місце вічно", async () => {
+    const fetch = vi.fn((_url: string, _init?: RequestInit) => new Promise<Response>(() => undefined));
+    vi.stubGlobal("fetch", fetch);
+    const silent = { context: null, music: null, onRunning: () => undefined } as unknown as AudioEngine;
+    const prefs = new AudioPrefs(null, REAL_STATIONS.map((s) => s.id));
+    prefs.update({ radioOn: true });
+    new Radio(silent, prefs).standby();
+    await settle();
+    expect(fetch).toHaveBeenCalled();
+    for (const call of fetch.mock.calls) expect(call[1]?.signal).toBeInstanceOf(AbortSignal);
   });
 });

@@ -4,6 +4,7 @@
 import type { SoundBus } from "./bus";
 import { SFX } from "../config";
 import type { AudioEngine } from "../engine";
+import { timeoutSignal } from "../net";
 import type { SoundFile } from "./files";
 
 /** Скільки розкодованого звуку тримати, байт; найдавніше використане витісняється. */
@@ -25,6 +26,15 @@ export interface PlayOptions {
   rate: number;
   /** Затримка від цієї миті, с. */
   delay: number;
+}
+
+/**
+ * Голос разового звуку: `take` — у мить, коли звук справді починає звучати (зайняти голос, якщо є вільний); `free` — коли
+ * він скінчився. Звук, чий файл ще не готовий, голосу не займає: завислі запити не глушать решту звуків.
+ */
+export interface Voice {
+  take(): boolean;
+  free(): void;
 }
 
 /** Петля, що звучить: гучність, зсув і висота (`rate`, мотор у гонці) змінюються плавно. */
@@ -50,21 +60,20 @@ export class Player {
     await Promise.all(Array.from({ length: SFX.parallelLoads }, worker));
   }
 
-  /** Разовий звук. Файл ще не декодовано — зіграє, щойно буде, якщо не запізнився. */
-  play(file: SoundFile, options: PlayOptions, onEnd: () => void): boolean {
+  /** Разовий звук; false — звуку зараз немає взагалі. Файл ще не декодовано — зіграє, щойно буде, якщо не запізнився. */
+  play(file: SoundFile, options: PlayOptions, voice: Voice): boolean {
     const context = this.engine.context;
     const bus = this.engine.buses?.[options.bus];
     if (!context || !bus || context.state !== "running") return false;
     const ready = this.decoded.get(file.key);
     if (ready) {
       this.touch(file.key, ready);
-      this.start(context, bus, ready, options, onEnd);
+      if (voice.take()) this.start(context, bus, ready, options, voice);
       return true;
     }
     const asked = performance.now();
     void this.decode(file).then((decoded) => {
-      if (decoded && performance.now() - asked < LATE_MS) this.start(context, bus, decoded, options, onEnd);
-      else onEnd();
+      if (decoded && performance.now() - asked < LATE_MS && voice.take()) this.start(context, bus, decoded, options, voice);
     });
     return true;
   }
@@ -97,9 +106,17 @@ export class Player {
       source.start(context.currentTime, range.start + Math.random() * (range.end - range.start));
       gain.gain.setTargetAtTime(target, context.currentTime, SFX.loopFade / 3);
     };
+    // Файл не прийшов (збій мережі, тайм-аут) — знову, поки петля потрібна: інакше вона мовчала б, доки її не ввімкнуть наново.
+    const load = (): void => {
+      if (stopped) return;
+      void this.decode(file).then((decoded) => {
+        if (decoded) begin(decoded);
+        else if (!stopped) setTimeout(load, SFX.retryMs);
+      });
+    };
     const ready = this.decoded.get(file.key);
     if (ready) begin(ready);
-    else void this.decode(file).then((decoded) => decoded && begin(decoded));
+    else load();
     return {
       set: (next, pan, nextRate) => {
         if (nextRate !== undefined && Math.abs(nextRate - rate) > 0.005) {
@@ -119,12 +136,12 @@ export class Player {
         gain.gain.setTargetAtTime(0, now, SFX.loopFade / 3);
         const end = now + SFX.loopFade * 2;
         if (source) source.stop(end);
-        window.setTimeout(() => gain.disconnect(), (SFX.loopFade * 2 + 0.1) * 1000);
+        setTimeout(() => gain.disconnect(), (SFX.loopFade * 2 + 0.1) * 1000);
       },
     };
   }
 
-  private start(context: AudioContext, bus: GainNode, decoded: Decoded, options: PlayOptions, onEnd: () => void): void {
+  private start(context: AudioContext, bus: GainNode, decoded: Decoded, options: PlayOptions, voice: Voice): void {
     const source = context.createBufferSource();
     source.buffer = decoded.buffer;
     source.playbackRate.value = options.rate;
@@ -141,7 +158,7 @@ export class Player {
     tail.connect(bus);
     source.onended = () => {
       tail.disconnect();
-      onEnd();
+      voice.free();
     };
     source.start(context.currentTime + options.delay, decoded.lead);
   }
@@ -149,7 +166,7 @@ export class Player {
   private fetchBytes(file: SoundFile): Promise<ArrayBuffer | null> {
     let bytes = this.bytes.get(file.key);
     if (!bytes) {
-      bytes = fetch(file.url)
+      bytes = fetch(file.url, { signal: timeoutSignal(SFX.requestTimeoutMs) })
         .then((response) => (response.ok ? response.arrayBuffer() : null))
         .catch(() => null);
       this.bytes.set(file.key, bytes);

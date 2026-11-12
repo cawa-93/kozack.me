@@ -179,20 +179,30 @@ export class Sounds {
     // Пауза між повторами — за миттю звучання: той самий звук із затримкою в одній події не відкидається.
     const at = performance.now() + (cue.delayMs ?? 0);
     if (Math.abs(at - (this.last.get(key) ?? -Infinity)) < (def.cooldownMs ?? SFX.cooldownMs)) return;
-    if ((this.active.get(key) ?? 0) >= (def.voices ?? SFX.soundVoices) || this.voices >= SFX.voices) return;
+    if (!this.hasVoice(key, def)) return;
     const file = soundFile(group.id, this.pick(key, def));
     if (!file) return;
     const place = state ? placement(state.trip ? null : state.character.body, soundPoint(state, cue.at)) : { gain: 1, pan: 0 };
     const gain = (def.gain ?? 1) * (cue.gain ?? 1) * place.gain * jitter(def.spread);
     const rate = (cue.rate ?? 1) * jitter(def.pitch);
-    const started = this.player.play(file, { bus: soundBus(def), gain, pan: place.pan, rate, delay: (cue.delayMs ?? 0) / 1000 }, () => {
-      this.voices--;
-      this.active.set(key, (this.active.get(key) ?? 1) - 1);
-    });
-    if (!started) return;
-    this.last.set(key, at);
-    this.voices++;
-    this.active.set(key, (this.active.get(key) ?? 0) + 1);
+    // Голос займає лише звук, що справді зазвучав: поки файл іде мережею, межі перевіряються знову в мить звучання.
+    const voice = {
+      take: (): boolean => {
+        if (!this.hasVoice(key, def)) return false;
+        this.voices++;
+        this.active.set(key, (this.active.get(key) ?? 0) + 1);
+        return true;
+      },
+      free: (): void => {
+        this.voices--;
+        this.active.set(key, (this.active.get(key) ?? 1) - 1);
+      },
+    };
+    if (this.player.play(file, { bus: soundBus(def), gain, pan: place.pan, rate, delay: (cue.delayMs ?? 0) / 1000 }, voice)) this.last.set(key, at);
+  }
+
+  private hasVoice(key: string, def: SoundDef): boolean {
+    return (this.active.get(key) ?? 0) < (def.voices ?? SFX.soundVoices) && this.voices < SFX.voices;
   }
 
   /** Випадковий варіант, не той самий, що минулого разу. */
