@@ -70,6 +70,7 @@ import {
   trashState,
   trinketFrame,
   wireState,
+  type CobwebLook,
   type IsoFrame,
   type TraceHost,
   type TraceOverlay,
@@ -234,6 +235,7 @@ export class IsoApartmentView implements ApartmentPart {
   private readonly backdrop: Phaser.GameObjects.Image[] = [];
   /** Павутина за місцем `DUST_SPOTS` (§8.7): зображення з першою появою, далі лише ховається й показується. */
   private readonly cobwebs = new Map<number, Phaser.GameObjects.Image>();
+  private readonly cobwebLooks = new Map<number, CobwebLook | null>();
   private readonly toiletRoll: Piece;
   /** Бра й бойлер на задніх стінах (тло, як рулон паперу): стан — за світлом доби й електрикою (`decorLook`). */
   private readonly sconces: Piece[] = [];
@@ -697,14 +699,15 @@ export class IsoApartmentView implements ApartmentPart {
    * напрямку за кутом (`cobwebLook`). Прибрали — ховається.
    */
   private drawCobwebs(state: GameState): void {
-    const shown = new Set(dustOf(state));
-    DUST_SPOTS.forEach((spot, index) => {
-      if (spot.kind !== "cobweb") return;
-      const look = shown.has(index) ? cobwebLook(spot) : null;
+    const dust = dustOf(state);
+    for (let index = 0; index < DUST_SPOTS.length; index++) {
+      const spot = DUST_SPOTS[index]!;
+      if (spot.kind !== "cobweb") continue;
+      const look = dust.includes(index) ? this.cobwebAt(index, spot) : null;
       let image = this.cobwebs.get(index);
       if (!look) {
         image?.setVisible(false);
-        return;
+        continue;
       }
       if (!image) {
         image = this.art(look.frame.id, ISO.toScreen(spot), BACKDROP.cobweb);
@@ -715,7 +718,17 @@ export class IsoApartmentView implements ApartmentPart {
       // Віддзеркалення — знаком масштабу довкола pivot (кута на підлозі); `setArt` масштаб відносно базового зберігає.
       if (image.scaleX < 0 !== look.flip) image.setScale(-image.scaleX, image.scaleY);
       image.setVisible(true);
-    });
+    }
+  }
+
+  /** Вигляд павутини місця `index` (`cobwebLook`): кут сталий, тож рахується раз. */
+  private cobwebAt(index: number, spot: Vec): CobwebLook | null {
+    let look = this.cobwebLooks.get(index);
+    if (look === undefined) {
+      look = cobwebLook(spot);
+      this.cobwebLooks.set(index, look);
+    }
+    return look;
   }
 
   /**
