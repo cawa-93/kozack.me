@@ -32,6 +32,11 @@ export interface PackItem {
    * в прогалини її ранніх сторінок. Так растри, які беруть разом, лежать на якомога менше сторінок.
    */
   group?: number;
+  /**
+   * Набір сторінок (за замовчуванням 0): растри різних наборів не лягають на одну сторінку. Набори — по черзі за номером,
+   * кожен зі своєї нової сторінки; групи — у межах набору.
+   */
+  sheet?: number;
 }
 
 /** Де растр на сторінці: номер сторінки й лівий верхній кут самого растра (без краю). */
@@ -42,7 +47,8 @@ export interface Placement {
 }
 
 export interface PackResult {
-  pages: { w: number; h: number }[];
+  /** Сторінки: розмір і набір (`PackItem.sheet`), растри якого на ній лежать. */
+  pages: { w: number; h: number; sheet: number }[];
   placements: Map<string, Placement>;
 }
 
@@ -121,16 +127,23 @@ class Skyline {
 }
 
 /**
- * Розкласти растри по сторінках: група за групою (`PackItem.group`), у групі — від найвищих (і найширших) до найнижчих,
- * кожен — на першу сторінку групи, де є місце, інакше — на нову. Растр, що з краєм не влазить у сторінку, — помилка
- * (такому запису — меншу `res` чи поділ на частини).
+ * Розкласти растри по сторінках: набір за набором (`PackItem.sheet`), у наборі — група за групою (`PackItem.group`), у групі
+ * — від найвищих (і найширших) до найнижчих, кожен — на першу сторінку групи, де є місце, інакше — на нову. Растр, що з краєм
+ * не влазить у сторінку, — помилка (такому запису — меншу `res` чи поділ на частини).
  */
 export function pack(items: readonly PackItem[], options: PackOptions = PACK_DEFAULTS): PackResult {
   const pad = options.extrude * 2 + options.gap;
-  const sorted = [...items].sort((a, b) => (a.group ?? 0) - (b.group ?? 0) || b.h - a.h || b.w - a.w || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+  const sorted = [...items].sort(
+    (a, b) => (a.sheet ?? 0) - (b.sheet ?? 0) || (a.group ?? 0) - (b.group ?? 0) || b.h - a.h || b.w - a.w || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0),
+  );
   const pages: Skyline[] = [];
+  const sheets: number[] = [];
   const placements = new Map<string, Placement>();
-  /** Група, що пакується, і перша сторінка, на яку їй можна: остання сторінка попередньої групи. */
+  /**
+   * Набір і група, що пакуються, і перша сторінка, на яку їм можна: групі — остання сторінка попередньої групи набору,
+   * наборові — нова.
+   */
+  let sheet = sorted[0]?.sheet ?? 0;
   let group = sorted[0]?.group ?? 0;
   let from = 0;
   for (const item of sorted) {
@@ -141,9 +154,13 @@ export function pack(items: readonly PackItem[], options: PackOptions = PACK_DEF
         `«${item.key}»: ${item.w}×${item.h} px з краєм не влазить у сторінку ${options.maxSize}² — меншу res чи поділити на частини`,
       );
     }
-    if ((item.group ?? 0) !== group) {
+    if ((item.sheet ?? 0) !== sheet) {
+      sheet = item.sheet ?? 0;
       group = item.group ?? 0;
-      from = Math.max(0, pages.length - 1);
+      from = pages.length;
+    } else if ((item.group ?? 0) !== group) {
+      group = item.group ?? 0;
+      from = Math.max(from, pages.length - 1);
     }
     let placed = false;
     for (let p = from; p < pages.length && !placed; p++) {
@@ -162,9 +179,10 @@ export function pack(items: readonly PackItem[], options: PackOptions = PACK_DEF
       page.place(spot, w, h);
       placements.set(item.key, { page: pages.length, x: spot.x + options.extrude, y: spot.y + options.extrude });
       pages.push(page);
+      sheets.push(sheet);
     }
   }
-  return { pages: pages.map((page) => ({ w: pow2(page.usedW), h: pow2(page.usedH) })), placements };
+  return { pages: pages.map((page, i) => ({ w: pow2(page.usedW), h: pow2(page.usedH), sheet: sheets[i] ?? 0 })), placements };
 }
 
 /**

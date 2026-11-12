@@ -75,6 +75,11 @@ export function artIndexProblems(data: unknown): string[] {
       add(`сторінка ${i}: треба { file, w, h }`);
     } else if (page["bytes"] !== undefined && !isPositive(page["bytes"])) {
       add(`сторінка ${i}: bytes має бути додатним`);
+    } else if (page["compose"] !== undefined && page["compose"] !== true) {
+      add(`сторінка ${i}: compose — лише true`);
+    } else if (page["compose"] !== true && pages.slice(0, i).some((before: unknown) => isObject(before) && before["compose"] === true)) {
+      // Номер сторінки для Phaser — номер джерела його текстури (кадри, карти сяйва `highlight.ts`).
+      add(`сторінка ${i}: сторінки компонувальника (compose) мають бути останніми`);
     }
   });
   const frames = data["frames"];
@@ -129,6 +134,9 @@ function frameProblems(id: string, frame: unknown, pages: readonly AtlasPage[], 
     if (r.x < 0 || r.y < 0 || r.x + r.w > page.w || r.y + r.h > page.h) {
       if (!add(`${at}: виходить за сторінку ${r.page} (${page.w} × ${page.h})`)) return false;
     }
+    if (layer === "all" && page.compose === true) {
+      if (!add(`${at}: кадр без шарів — на сторінці компонувальника ${r.page}`)) return false;
+    }
     // Кожен шар обрізано своєю рамкою: лягає на полотно кадру зі своїм зсувом і має в ньому вміститися.
     if (r.dx < 0 || r.dy < 0 || r.dx + r.w > w * res + ROUNDING_PX || r.dy + r.h > h * res + ROUNDING_PX) {
       if (!add(`${at}: виходить за полотно кадру ${w * res} × ${h * res}`)) return false;
@@ -151,8 +159,21 @@ function frameProblems(id: string, frame: unknown, pages: readonly AtlasPage[], 
     const page = Number.isInteger(g.page) ? pages[g.page] : undefined;
     if (page === undefined) return add(`${at}: немає сторінки ${g.page}`);
     if (g.x < 0 || g.y < 0 || g.x + g.w > page.w || g.y + g.h > page.h) return add(`${at}: виходить за сторінку ${g.page} (${page.w} × ${page.h})`);
+    if (page.compose === true) return add(`${at}: на сторінці компонувальника ${g.page}`);
   }
   return true;
+}
+
+/**
+ * Номери сторінок, які стають джерелами текстури Phaser: усі, крім сторінок компонувальника (`AtlasPage.compose`) — їх
+ * читає лише Canvas2D. `withCompose` — разом із ними: галерея показує окремі шари кадрами Phaser.
+ */
+export function phaserPages(index: Pick<ArtIndex, "pages">, withCompose = false): number[] {
+  const out: number[] = [];
+  index.pages.forEach((page, i) => {
+    if (withCompose || page.compose !== true) out.push(i);
+  });
+  return out;
 }
 
 /** Чи кадр намальовано: він є в атласі й це не заглушка конвеєра. Без атласу (null) — ні. */

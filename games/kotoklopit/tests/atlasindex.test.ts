@@ -3,7 +3,7 @@
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { artIndexProblems, artIndexUrl, artPageUrl, isFrameReady, parseArtIndex } from "../src/view/art/atlasindex";
+import { artIndexProblems, artIndexUrl, artPageUrl, isFrameReady, parseArtIndex, phaserPages } from "../src/view/art/atlasindex";
 import { artLayerSource, resetArtSources, shareArtAtlas } from "../src/view/art/sources";
 import { ART_INDEX_VERSION, type ArtIndex, type FrameId } from "../src/view/art/types";
 
@@ -93,6 +93,41 @@ describe("index.json атласу", () => {
     expect(artIndexProblems(index({ x: 3.5, y: 4, w: 10, h: 8 }))).toEqual(["кадр «cat/a»: рамка вмісту (box) — { x, y, w, h } цілими пікселями"]);
     expect(artIndexProblems(index({ x: 3, y: 4, w: 20, h: 8 }))).toEqual(["кадр «cat/a»: рамка вмісту (box) виходить за полотно кадру 20 × 20"]);
     expect(artIndexProblems(index({ x: 4, y: 4, w: 9, h: 8 }))).toEqual(["кадр «cat/a», шар «ink»: виходить за рамку вмісту кадру (box)"]);
+  });
+
+  describe("сторінки компонувальника (`AtlasPage.compose`)", () => {
+    const rect = { x: 0, y: 0, w: 4, h: 4, dx: 0, dy: 0 };
+    const frame = (layers: Record<string, unknown>, more: Record<string, unknown> = {}): unknown => ({ size: { w: 10, h: 10 }, res: 2, pivot: { x: 5, y: 5 }, layers, ...more });
+    const page = (compose?: unknown): unknown => ({ file: "p.webp", w: 64, h: 64, ...(compose === undefined ? {} : { compose }) });
+    const index = (pages: unknown[], frames: Record<string, unknown>): unknown => ({ version: ART_INDEX_VERSION, pages, frames });
+
+    it("шари записів із layers — на сторінках компонувальника, решта й карти сяйва — на сторінках для Phaser", () => {
+      const ok = index([page(), page(), page(true)], {
+        "env/a": frame({ all: { ...rect, page: 0 } }, { glow: { ...rect, page: 1, scale: 4 } }),
+        "cat/a": frame({ fill: { ...rect, page: 2 }, ink: { ...rect, page: 2 } }),
+      });
+      expect(artIndexProblems(ok)).toEqual([]);
+      expect(phaserPages(ok as ArtIndex)).toEqual([0, 1]);
+      // Для галереї, яка показує шари окремо кадрами Phaser, — усі сторінки.
+      expect(phaserPages(ok as ArtIndex, true)).toEqual([0, 1, 2]);
+    });
+
+    it("атлас без сторінок компонувальника — усі сторінки для Phaser", () => {
+      const flat = index([page(), page()], { "cat/a": frame({ fill: { ...rect, page: 1 } }) });
+      expect(artIndexProblems(flat)).toEqual([]);
+      expect(phaserPages(flat as ArtIndex)).toEqual([0, 1]);
+    });
+
+    it("зламане: позначка — лише true; сторінки компонувальника — останні; на них немає кадрів без шарів і карт сяйва", () => {
+      expect(artIndexProblems(index([page(false)], {}))).toEqual(["сторінка 0: compose — лише true"]);
+      expect(artIndexProblems(index([page(true), page()], {}))).toEqual(["сторінка 1: сторінки компонувальника (compose) мають бути останніми"]);
+      expect(artIndexProblems(index([page(), page(true)], { "env/a": frame({ all: { ...rect, page: 1 } }) }))).toEqual([
+        "кадр «env/a», шар «all»: кадр без шарів — на сторінці компонувальника 1",
+      ]);
+      expect(artIndexProblems(index([page(), page(true)], { "env/a": frame({ all: { ...rect, page: 0 } }, { glow: { ...rect, page: 1, scale: 4 } }) }))).toEqual([
+        "кадр «env/a», сяйво: на сторінці компонувальника 1",
+      ]);
+    });
   });
 
   it("кадр готовий, якщо він є в атласі й це не заглушка", () => {

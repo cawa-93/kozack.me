@@ -28,6 +28,7 @@ import {
   svgProblems,
   topLevelLayers,
 } from "../scripts/art/svg";
+import { artIndexProblems, phaserPages } from "../src/view/art/atlasindex";
 import { artEntries } from "../src/view/art/manifest";
 import { framesOf, type ArtEntry, type ArtIndex } from "../src/view/art/types";
 
@@ -547,9 +548,32 @@ describe("пакування", () => {
     expect(flat.placements.get("c")?.page).toBe(0);
   });
 
+  it("набори сторінок: растри різних наборів не лягають на одну сторінку, хоч би скільки на ній було місця", () => {
+    const opts = { maxSize: 64, extrude: 0, gap: 0 };
+    const list: PackItem[] = [
+      { key: "layer-a", w: 10, h: 10, sheet: 1 },
+      { key: "plain", w: 20, h: 20 },
+      { key: "glow", w: 10, h: 10, group: 1 },
+      { key: "layer-b", w: 60, h: 60, sheet: 1 },
+      { key: "layer-c", w: 10, h: 10, sheet: 1, group: 1 },
+    ];
+    const result = pack(list, opts);
+    const page = (key: string): number | undefined => result.placements.get(key)?.page;
+    // Набір 0: кадр і карта сяйва (наступна група) — на тій самій сторінці.
+    expect([page("plain"), page("glow")]).toEqual([0, 0]);
+    // Набір 1 — з нової сторінки, хоча на сторінці 0 вільно; його групи — як завжди, з останньої його сторінки.
+    expect([page("layer-b"), page("layer-a"), page("layer-c")]).toEqual([1, 2, 2]);
+    expect(result.pages.map((p) => p.sheet)).toEqual([0, 1, 1]);
+    // Сторінки набору йдуть підряд, набори — за номером; детерміновано.
+    const again = pack([...list].reverse(), opts);
+    expect([...again.placements].sort()).toEqual([...result.placements].sort());
+    // Жодна сторінка не має растрів двох наборів.
+    for (const item of list) expect(result.pages[page(item.key)!]!.sheet, item.key).toBe(item.sheet ?? 0);
+  });
+
   it("растр, ширший за сторінку, — помилка з ключем", () => {
     expect(() => pack([{ key: "env/slab#all", w: 2046, h: 10 }])).toThrow(/«env\/slab#all»: 2046×10 px/);
-    expect(pack([{ key: "a", w: 2042, h: 2042 }]).pages).toEqual([{ w: 2048, h: 2048 }]);
+    expect(pack([{ key: "a", w: 2042, h: 2042 }]).pages).toEqual([{ w: 2048, h: 2048, sheet: 0 }]);
   });
 
   it("сторінка: растр на місці, край продубльовано, решта прозора", () => {
@@ -664,12 +688,17 @@ describe("збирання атласу на фікстурах", () => {
     expect(ghost.layers.all).toMatchObject({ dx: 0, dy: 0, w: 40 * STUB_ATLAS_RES, h: 30 * STUB_ATLAS_RES });
     // Два стани без класів st-* — той самий растр.
     expect(index.frames["item/ball/a"]!.layers.all).toEqual(index.frames["item/ball/b"]!.layers.all);
-    expect(build.stats).toMatchObject({ entries: 4, frames: 8, stubs: 1, pages: 1 });
+    // Шари голови — на своїй сторінці компонувальника, решта — на сторінці для Phaser.
+    expect(build.stats).toMatchObject({ entries: 4, frames: 8, stubs: 1, pages: 2 });
     expect(build.stats.images).toBe(build.stats.layers - 1);
+    expect(index.pages.map((p) => p.compose === true)).toEqual([false, true]);
+    expect(index.pages[0]).not.toHaveProperty("compose");
+    // Те, що зібрано, гра приймає (`atlasindex.ts`).
+    expect(artIndexProblems(index)).toEqual([]);
 
     // Сторінка — webp розміру з index.json; пікселі шару — без втрат ті самі, що в растрі.
-    const page = index.pages[0]!;
-    expect(page.file).toMatch(/^page-0\.[0-9a-f]{10}\.webp$/);
+    const page = index.pages[head.layers.ink!.page]!;
+    expect(page.file).toMatch(/^page-1\.[0-9a-f]{10}\.webp$/);
     // Розмір файлу — для смуги заставки (поступ за байтами, `loadprogress.ts`).
     expect(page.bytes).toBe(build.files.get(page.file)!.length);
     const decoded = await sharp(build.files.get(page.file)!).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
@@ -687,11 +716,11 @@ describe("збирання атласу на фікстурах", () => {
       }
       expect(differ, layer.layer).toBe(0);
     }
-    // Усі прямокутники — у межах сторінки.
+    // Усі прямокутники — у межах своєї сторінки.
     for (const f of Object.values(index.frames)) {
       for (const r of Object.values(f.layers)) {
-        expect(r!.x + r!.w).toBeLessThanOrEqual(page.w);
-        expect(r!.y + r!.h).toBeLessThanOrEqual(page.h);
+        expect(r!.x + r!.w).toBeLessThanOrEqual(index.pages[r!.page]!.w);
+        expect(r!.y + r!.h).toBeLessThanOrEqual(index.pages[r!.page]!.h);
       }
     }
   });
@@ -721,17 +750,31 @@ describe("збирання атласу на фікстурах", () => {
     expect(build.stats.images).toBe(4);
   });
 
-  it("шари записів із layers — групою після решти: кадр бере шари з якомога менше сторінок", async () => {
-    // Сторінки 256²: стани коробки — кожен на свою, у прогалинах лишається місце для шарів голови.
-    const build = await buildArt({ artDir: FIXTURES, entries: FIXTURE_ENTRIES, defaultRes: 2, cache: new ArtCache(null), requireAll: false, pack: { maxSize: 256, extrude: 2, gap: 2 } });
+  it("шари записів із layers — на своїх сторінках компонувальника: там немає нічого, що Phaser малює напряму", async () => {
+    // Сторінки 256²: стани коробки — кожен на свою, у прогалинах лишається місце для шарів голови й карт сяйва.
+    const entries = FIXTURE_ENTRIES.map((entry) => (entry === BOX || entry === BALL ? { ...entry, glow: true as const } : entry));
+    const build = await buildArt({ artDir: FIXTURES, entries, defaultRes: 2, cache: new ArtCache(null), requireAll: false, pack: { maxSize: 256, extrude: 2, gap: 2 } });
     expect(build.errors).toEqual([]);
-    const pagesOf = (layered: boolean): number[] =>
-      Object.entries(build.index.frames)
-        .filter(([id]) => id.startsWith("cat/") === layered)
-        .flatMap(([, f]) => Object.values(f.layers).map((r) => r!.page));
-    expect(build.index.pages.length).toBeGreaterThan(2);
-    // Жоден шар не лежить на сторінці, ранішій за останню сторінку кадрів без шарів.
-    expect(Math.min(...pagesOf(true))).toBeGreaterThanOrEqual(Math.max(...pagesOf(false)));
+    const { pages, frames } = build.index;
+    const layered = new Set<number>();
+    const direct = new Set<number>();
+    let glows = 0;
+    for (const frame of Object.values(frames)) {
+      for (const [layer, r] of Object.entries(frame.layers)) (layer === "all" ? direct : layered).add(r!.page);
+      if (frame.glow) {
+        direct.add(frame.glow.page);
+        glows++;
+      }
+    }
+    expect(glows).toBeGreaterThan(0);
+    expect(pages.length).toBeGreaterThan(2);
+    // Сторінка — або для компонувальника, або для Phaser, і позначка в `index.json` каже яка.
+    for (const page of layered) expect(direct.has(page), `сторінка ${page}`).toBe(false);
+    pages.forEach((page, i) => expect(page.compose === true, `сторінка ${i}`).toBe(layered.has(i)));
+    // Сторінки компонувальника — останні: номер сторінки для Phaser — номер джерела його текстури.
+    expect(Math.min(...layered)).toBeGreaterThan(Math.max(...direct));
+    expect(artIndexProblems(build.index)).toEqual([]);
+    expect(phaserPages(build.index)).toEqual([...direct].sort((a, b) => a - b));
   });
 
   it("порожній кадр без шарів і порожній шар — різні растри: шар не тягне сторінку групи без шарів", async () => {
