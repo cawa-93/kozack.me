@@ -19,7 +19,9 @@ export interface LoopRange {
 
 export type EncodedGroup = Record<string, EncodedFile>;
 
-const URLS = import.meta.glob<string>("/audio/sfx/*/*.mp3", { query: "?url", import: "default", eager: true });
+// Окремими файлами й малі (`?no-inline`): вбудовані, вони тягнулися б разом із кодом гри до першого кадру, а звучать лише
+// після дотику.
+const URLS = import.meta.glob<string>("/audio/sfx/*/*.mp3", { query: "?no-inline", import: "default", eager: true });
 const ENCODED = import.meta.glob<EncodedGroup>("/audio/sfx/*/encoded.json", { import: "default", eager: true });
 
 export interface SoundFile {

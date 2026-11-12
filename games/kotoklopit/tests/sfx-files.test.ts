@@ -11,6 +11,14 @@ const SOUNDS = path.resolve(import.meta.dirname, "../audio/sfx");
 const groupDirs = existsSync(SOUNDS) ? readdirSync(SOUNDS, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name) : [];
 const read = <T>(file: string): T => JSON.parse(readFileSync(file, "utf8")) as T;
 
+describe("звуки в збірці (§2.1 «Малювання й завантаження»)", () => {
+  it("кожен звук — окремим файлом, і малий теж: вбудований у код гри, він тягнувся б разом із ним до першого кадру, хоч звучить лише після дотику", () => {
+    const source = readFileSync(path.resolve(import.meta.dirname, "../src/audio/sfx/files.ts"), "utf8");
+    const glob = /import\.meta\.glob<string>\("\/audio\/sfx\/\*\/\*\.mp3", \{ query: "([^"]+)"/.exec(source);
+    expect(glob?.[1]).toBe("?no-inline");
+  });
+});
+
 describe("звуки: групи, файли й ліцензії (§2.1, §11.4а)", () => {
   it("назва файлу групи — її id, і в кожної групи є тека з файлами", () => {
     expect(GROUPS.map((g) => g.id)).toEqual(GROUP_FILES);
