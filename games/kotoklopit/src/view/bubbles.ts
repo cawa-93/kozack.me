@@ -27,6 +27,7 @@ import {
 import { isoPopColor, UI_FILL, UI_FONT, UI_TEXT } from "./iso/uilook";
 import type { EventBubble, Thinker } from "./symbols";
 import { WORLD_LAYERS } from "./world/layers";
+import { withMetrics } from "./textmetrics";
 import { textResolution } from "./zoom";
 
 const BUBBLE_DEPTH = WORLD_LAYERS.bubbles;
@@ -156,7 +157,7 @@ export class Bubbles {
       // Кількість — чорнильна плашка з паперовою обвідкою й паперовими цифрами: видно і на світлій підлозі, і на темній стіні.
       const c = BUBBLE_COUNT;
       const label = scene.add
-        .text(0, 0, String(count), { fontFamily: UI_FONT, fontSize: `${c.font}px`, fontStyle: "bold", color: UI_TEXT.main, resolution: this.resolution(look.scale) })
+        .text(0, 0, String(count), withMetrics({ fontFamily: UI_FONT, fontSize: `${c.font}px`, fontStyle: "bold", color: UI_TEXT.main, resolution: this.resolution(look.scale) }))
         .setOrigin(0.5);
       const h = c.height;
       const w = countPillWidth(label.width);
@@ -276,7 +277,7 @@ export class Bubbles {
       if (item.label.style.resolution !== resolution) item.label.setResolution(resolution);
       item.container.setPosition(start.x, start.y - 4).setAlpha(1).setVisible(true);
     } else {
-      const style = { fontFamily: UI_FONT, fontSize: "22px", fontStyle: "bold", color: isoPopColor(color), stroke: UI_TEXT.stroke, strokeThickness: 4, resolution };
+      const style = withMetrics({ fontFamily: UI_FONT, fontSize: "22px", fontStyle: "bold", color: isoPopColor(color), stroke: UI_TEXT.stroke, strokeThickness: 4, resolution });
       const label = this.scene.add
         .text(0, 0, text, style)
         .setOrigin(0.5, 1)

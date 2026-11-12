@@ -6,7 +6,8 @@ import { addArt } from "./art/atlas";
 import { CALENDAR_TEXT, HUD_ART } from "./iso/hudlook";
 import { UI_TEXT, uiEntry } from "./iso/uilook";
 
-type Label = (size: number, color: string) => Phaser.GameObjects.Text;
+/** Напис панелі; `plain` — без обвідки. */
+type Label = (size: number, color: string, plain?: boolean) => Phaser.GameObjects.Text;
 
 export class DeskCalendar {
   /** Кадр із написами: кладуть цілком, усередині все стоїть на точках запису. */
@@ -24,7 +25,7 @@ export class DeskCalendar {
     };
     this.week = place(label(CALENDAR_TEXT.week, UI_TEXT.main), "week");
     // На папері обвідка панелі не потрібна: чорнило й так читається.
-    this.day = place(label(CALENDAR_TEXT.day, UI_TEXT.onPaper).setStroke(UI_TEXT.onPaper, 0), "day");
+    this.day = place(label(CALENDAR_TEXT.day, UI_TEXT.onPaper, true), "day");
     this.root = scene.add.container(0, 0, [addArt(scene, null, HUD_ART.calendar), this.week, this.day]);
   }
 

@@ -14,6 +14,7 @@ import { iconTexture } from "./iconnames";
 import { ANCHOR_GAP, PERSON_FIGURE } from "./iso/geometry";
 import { BUBBLE_ROOM } from "./iso/markslayout";
 import { PRODUCT_ICONS } from "./symbols";
+import { withMetrics } from "./textmetrics";
 import type { Point } from "./world/part";
 import { WORLD_LAYERS } from "./world/layers";
 
@@ -188,7 +189,7 @@ export class StorageIndicators {
     const texts = lines.map((line) => {
       const widest = line.limit === undefined ? String(line.count) : `${line.limit}/${line.limit}`;
       const text = this.scene.add
-        .text(0, 0, widest, { fontFamily: FONT, fontSize: `${look.fontSize}px`, fontStyle: "bold", color: line.count === 0 ? look.zero : look.text, resolution: 2 })
+        .text(0, 0, widest, withMetrics({ fontFamily: FONT, fontSize: `${look.fontSize}px`, fontStyle: "bold", color: line.count === 0 ? look.zero : look.text, resolution: 2 }))
         .setOrigin(0, 0.5);
       const measured = text.width;
       text.setText(lineText(line));

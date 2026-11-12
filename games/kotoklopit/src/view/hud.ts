@@ -39,6 +39,7 @@ import {
 import { UI_FILL, UI_FONT, UI_TEXT, uiEntry } from "./iso/uilook";
 import { scheduleOf } from "./schedule";
 import { PERSON_STATE_ICONS, PRODUCT_ICONS, STAT_ICONS, UTILITIES_ICON } from "./symbols";
+import { setFontSize, withMetrics } from "./textmetrics";
 import { canvasNow, type Frame } from "./viewport";
 import { BASE_WIDTH, textResolution } from "./zoom";
 import { UI_LAYERS } from "./world/layers";
@@ -207,13 +208,28 @@ export class Hud {
       this.texts.push(made);
       return made;
     };
-    const text = (x: number, y: number, size: number, color: string = UI_TEXT.main) =>
-      keep(scene.add.text(x, y, "", { fontFamily: UI_FONT, fontSize: `${size}px`, color, stroke: UI_TEXT.stroke, strokeThickness: size >= 30 ? 4 : 3, resolution }));
+    // Накреслення й обвідка — одразу в стилі: `setFontStyle` і `setStroke` готового напису міряють шрифт наново (`textmetrics.ts`).
+    const text = (size: number, color: string = UI_TEXT.main, look: { bold?: boolean; plain?: boolean | undefined } = {}) =>
+      keep(
+        scene.add.text(
+          0,
+          0,
+          "",
+          withMetrics({
+            fontFamily: UI_FONT,
+            fontSize: `${size}px`,
+            color,
+            resolution,
+            ...(look.bold ? { fontStyle: "bold" } : {}),
+            ...(look.plain ? {} : { stroke: UI_TEXT.stroke, strokeThickness: size >= 30 ? 4 : 3 }),
+          }),
+        ),
+      );
     // Шрифти великі: на телефоні полотно зменшується майже вдвічі.
     // Поле полотна смуги — за екраном, чорнильний край — у межах панелі (`HUD_BAND`).
     const band = new StretchArt(scene, layer, HUD_ART.band).setDepth(DEPTH - 1).setAlpha(HUD_BAND.alpha);
     this.band = (width, height) => band.place(bandRect(band.frame, width, height));
-    this.calendar = new DeskCalendar(scene, (size, color) => text(0, 0, size, color));
+    this.calendar = new DeskCalendar(scene, (size, color, plain) => text(size, color, { plain }));
     this.clock = new DeskClock(scene);
     // Іконки намальовані чорнилом для світлого бабла: на темній панелі їм потрібна світла підкладка. Місце й розмір — `arrange`.
     this.discs = STATS.map((stat) => ({ ring: addArt(scene, null, HUD_ART.stat), icon: addArt(scene, null, iconArt(stat.icon)) }));
@@ -231,19 +247,20 @@ export class Hud {
       mark: addArt(scene, null, markArt("ok")).setVisible(false),
     }));
     this.wallet = { ring: addArt(scene, null, HUD_ART.stat), icon: addArt(scene, null, HUD_ART.purse) };
-    this.money = text(0, 0, SMALL_TEXT.amount).setFontStyle("bold").setOrigin(0, 0.5);
+    this.money = text(SMALL_TEXT.amount, UI_TEXT.main, { bold: true }).setOrigin(0, 0.5);
     this.bill = { ring: addArt(scene, null, HUD_ART.alert).setVisible(false), icon: addArt(scene, null, iconArt(UTILITIES_ICON)).setVisible(false) };
     this.bill.ring.setInteractive({ useHandCursor: true }).on("pointerdown", (_p: unknown, _x: number, _y: number, event: EventData) => {
       event.stopPropagation();
       onBill();
     });
     const handwriting = (): Phaser.GameObjects.Text =>
-      keep(scene.add.text(0, 0, "", { fontFamily: HANDWRITING.family, fontStyle: HANDWRITING.weight, fontSize: `${SMALL_TEXT.schedule}px`, color: UI_TEXT.onPaper, resolution })).setOrigin(0, 0.5);
+      keep(scene.add.text(0, 0, "", withMetrics({ fontFamily: HANDWRITING.family, fontStyle: HANDWRITING.weight, fontSize: `${SMALL_TEXT.schedule}px`, color: UI_TEXT.onPaper, resolution }))).setOrigin(0, 0.5);
     this.schedule = [handwriting(), handwriting()];
-    // Шрифт вантажить браузер, а полотно малює рядок одразу: щойно шрифт готовий — перемалювати рядки й розкласти аркуш наново.
+    // Шрифт вантажить браузер, а полотно малює рядок одразу: щойно шрифт готовий — перемалювати рядки (з метриками вже цього
+    // шрифту, а не запасного) й розкласти аркуш наново.
     // Зразок — і з кирилицею: інакше браузер довантажує лише латинську частину (`unicode-range` у `theme.css`).
     void document.fonts?.load(`${HANDWRITING.weight} ${SMALL_TEXT.schedule}px Caveat`, "09:00 робота").then(() => {
-      for (const line of this.schedule) line.updateText();
+      for (const line of this.schedule) setFontSize(line, Math.round(SMALL_TEXT.schedule * this.textScale));
       this.placeRight();
     });
     this.left = scene.add
@@ -272,8 +289,9 @@ export class Hud {
 
     // Бабл телефона: мовна хмаринка під панеллю, хвостиком до телефона; натиснути — сховати. Папір і чорнило палітри арту.
     this.newsBg = scene.add.graphics();
-    this.newsTitle = keep(scene.add.text(0, 0, "", { fontFamily: UI_FONT, fontSize: "17px", fontStyle: "bold", color: UI_TEXT.onPaper, resolution }));
-    this.newsText = keep(scene.add.text(0, 0, "", { fontFamily: UI_FONT, fontSize: "17px", color: UI_TEXT.onPaper, resolution, wordWrap: { width: NEWS.width } }));
+    const news = { fontFamily: UI_FONT, fontSize: `${SMALL_TEXT.news}px`, color: UI_TEXT.onPaper, resolution };
+    this.newsTitle = keep(scene.add.text(0, 0, "", withMetrics({ ...news, fontStyle: "bold" })));
+    this.newsText = keep(scene.add.text(0, 0, "", withMetrics({ ...news, wordWrap: { width: NEWS.width } })));
     this.news = scene.add.container(0, 0, [this.newsBg, this.newsTitle, this.newsText]).setDepth(DEPTH).setVisible(false).addToDisplayList(layer);
     this.news.on("pointerdown", (_p: unknown, _x: number, _y: number, event: EventData) => {
       event.stopPropagation();
@@ -451,10 +469,11 @@ export class Hud {
     if (k === this.textScale) return;
     this.textScale = k;
     const px = (size: number): number => Math.round(size * k);
-    for (const line of this.schedule) line.setFontSize(px(SMALL_TEXT.schedule));
-    this.money.setFontSize(px(SMALL_TEXT.amount));
-    this.newsTitle.setFontSize(px(SMALL_TEXT.news));
-    this.newsText.setFontSize(px(SMALL_TEXT.news)).setWordWrapWidth(px(NEWS.width));
+    for (const line of this.schedule) setFontSize(line, px(SMALL_TEXT.schedule));
+    setFontSize(this.money, px(SMALL_TEXT.amount));
+    setFontSize(this.newsTitle, px(SMALL_TEXT.news));
+    setFontSize(this.newsText, px(SMALL_TEXT.news));
+    this.newsText.setWordWrapWidth(px(NEWS.width));
     const at = k > 1 ? HINT_BIG : HINT;
     const { ring, icon } = statDisc(2 * HINT.r * k + 2);
     this.hintUnder.setPosition(at.x, at.y).setDisplaySize(ring, ring);
