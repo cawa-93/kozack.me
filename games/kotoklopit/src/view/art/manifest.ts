@@ -6,6 +6,7 @@
 // Vite (`server.ssrLoadModule` чи `runnerImport`).
 
 import { OBJECTS } from "../../sim/home";
+import type { CleaningTool, HomeItem, MessKind } from "../../sim/types";
 import { ART_SEGMENT, ART_VIEWS, framesOf, isArtLayer, type ArtCategory, type ArtEntry, type ArtId } from "./types";
 
 /**
@@ -101,14 +102,43 @@ export function indexEntries(entries: readonly ArtEntry[]): ReadonlyMap<ArtId, A
 /** Модулі категорій: шлях → їхній `MANIFEST`. Поки каталог порожній — порожньо. */
 const MODULES = import.meta.glob<readonly ArtEntry[]>("./manifest/*.ts", { import: "MANIFEST", eager: true });
 
-/** Речі квартири — цілі дій (§8.2): кожній конвеєр рахує карту сяйва підсвітки (`ArtEntry.glow`). */
-const GLOWING: ReadonlySet<string> = new Set(OBJECTS.map((object) => `env/${object.id}`));
+/**
+ * Цілі дій, крім кота (§8.2): кожній конвеєр рахує карту сяйва підсвітки (`ArtEntry.glow`). Речі квартири (`env/<id>`) і те,
+ * що стоїть чи лежить на підлозі (`iso/floor.ts`): пилосос чи віник, речі котячого кутка й переноска кожної якості, безлад
+ * і уламки переноски. `Record` перевіряє, що переліки повні.
+ */
+const GLOW_ENV: ReadonlySet<string> = new Set([...OBJECTS.map((object) => object.id), ...Object.keys({ vacuum: true, broom: true } satisfies Record<CleaningTool, true>)]);
+const GLOW_ITEMS: Readonly<Record<HomeItem["kind"] | "carrier", true>> = { bowl: true, water: true, litter: true, toy: true, house: true, scratcher: true, carrier: true };
+const GLOW_MESSES: Readonly<Record<MessKind | "carrier", true>> = {
+  surprise: true,
+  vomit: true,
+  hairball: true,
+  litter: true,
+  broken: true,
+  fur: true,
+  mark: true,
+  pee: true,
+  puddle: true,
+  paper: true,
+  garbage: true,
+  carrier: true,
+};
+
+function glowing(id: string): boolean {
+  const [category, kind = "", variant] = id.split("/");
+  if (category === "env") return variant === undefined && GLOW_ENV.has(kind);
+  // `item/<вид>/<якість>`: без якості — те, що в руках (`item/vacuum`), а не на підлозі.
+  if (category === "item") return variant !== undefined && Object.hasOwn(GLOW_ITEMS, kind);
+  // Уламки переноски — `mess/carrier/<якість>`, решта безладу — `mess/<вид>`.
+  if (category === "mess") return Object.hasOwn(GLOW_MESSES, kind) && (variant !== undefined) === (kind === "carrier");
+  return false;
+}
 
 /** Усі записи: файли за абеткою, у файлі — у його порядку. */
 const ENTRIES: readonly ArtEntry[] = Object.keys(MODULES)
   .sort()
   .flatMap((file) => MODULES[file] ?? [])
-  .map((entry) => (GLOWING.has(entry.id) ? { ...entry, glow: true as const } : entry));
+  .map((entry) => (glowing(entry.id) ? { ...entry, glow: true as const } : entry));
 const INDEX = indexEntries(ENTRIES);
 
 /** Усі записи маніфесту (галерея, перевірки). */

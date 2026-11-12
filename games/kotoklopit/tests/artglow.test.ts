@@ -1,5 +1,5 @@
 // Карти сяйва в атласі (§8.2; `art/STYLE.md` §15, «Атлас»): конвеєр рахує ореол кадрів речей, які бувають ціллю дії, і
-// кладе його на сторінку поруч із кадрами; `index.json` каже, де карта й як вона лягає на кадр.
+// кладе його на сторінку атласу; `index.json` каже, де карта й як вона лягає на кадр.
 
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -14,10 +14,12 @@ import { ArtCache } from "../scripts/art/cache";
 import { rasterFrame } from "../scripts/art/raster";
 import { topLevelLayers } from "../scripts/art/svg";
 import { OBJECTS } from "../src/sim/home";
+import type { CleaningTool, HomeItem, MessKind, Quality } from "../src/sim/types";
 import { artIndexProblems } from "../src/view/art/atlasindex";
 import { GLOW_MAP, glowMap } from "../src/view/art/glowmap";
 import { artEntries } from "../src/view/art/manifest";
 import type { ArtEntry } from "../src/view/art/types";
+import { messFrame } from "../src/view/iso/looks";
 
 const GAME_DIR = fileURLToPath(new URL("..", import.meta.url));
 const FIXTURES = path.join(GAME_DIR, "tests", "fixtures", "art");
@@ -81,6 +83,14 @@ describe("карти сяйва в атласі", () => {
     expect([...second.files.keys()]).toEqual([...first.files.keys()]);
   });
 
+  it("карти лягають після всього іншого: кадри й шари лежать там само, де лежали б без карт", async () => {
+    const withGlow = await run();
+    const plain = await buildArt({ artDir: FIXTURES, entries: [BOX, BALL, GHOST].map(({ glow: _glow, ...entry }) => entry), defaultRes: 2, cache: new ArtCache(null), requireAll: false });
+    expect(plain.stats.glows).toBe(0);
+    const layersOf = (build: typeof plain): unknown => Object.fromEntries(Object.entries(build.index.frames).map(([id, frame]) => [id, frame.layers]));
+    expect(layersOf(withGlow)).toEqual(layersOf(plain));
+  });
+
   it("index.json: карта сяйва — прямокутник у межах сторінки з додатним scale", () => {
     const index = (glow: unknown): unknown => ({
       version: 2,
@@ -96,13 +106,24 @@ describe("карти сяйва в атласі", () => {
 });
 
 describe("маніфест: кому рахувати сяйво", () => {
-  it("кожна річ квартири (ціль дії) — з картою сяйва, і лише вони", () => {
-    const things = OBJECTS.map((object) => `env/${object.id}`).sort();
+  it("кожна ціль дії, крім кота, — з картою сяйва: речі квартири й те, що стоїть чи лежить на підлозі; і лише вони", () => {
+    const qualities: readonly Quality[] = ["cheap", "premium"];
+    // Речі котячого кутка й переноска — в обох якостях; безлад кожного виду й уламки переноски; пилосос чи віник на підлозі.
+    const itemKinds: Record<HomeItem["kind"] | "carrier", true> = { bowl: true, water: true, litter: true, toy: true, house: true, scratcher: true, carrier: true };
+    const messKinds: Record<MessKind, true> = { surprise: true, vomit: true, hairball: true, litter: true, broken: true, fur: true, mark: true, pee: true, puddle: true, paper: true, garbage: true };
+    const tools: Record<CleaningTool, true> = { vacuum: true, broom: true };
+    const targets = [
+      ...OBJECTS.map((object) => `env/${object.id}`),
+      ...Object.keys(itemKinds).flatMap((kind) => qualities.map((quality) => `item/${kind}/${quality}`)),
+      ...(Object.keys(messKinds) as MessKind[]).map((kind) => messFrame({ kind }).id as string),
+      ...qualities.map((quality) => messFrame({ kind: "broken", carrier: quality }).id as string),
+      ...Object.keys(tools).map((tool) => `env/${tool}`),
+    ].sort();
     const glowing = artEntries()
       .filter((entry) => entry.glow === true)
       .map((entry) => entry.id as string)
       .sort();
-    expect(glowing).toEqual(things);
+    expect(glowing).toEqual(targets);
     // Карта — з єдиного шару готових кольорів.
     for (const entry of artEntries()) if (entry.glow) expect(entry.layers, entry.id).toBeUndefined();
   });

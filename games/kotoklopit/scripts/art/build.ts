@@ -145,6 +145,13 @@ export function packGroup(entry: Pick<ArtEntry, "layers">): number {
   return entry.layers ? 1 : 0;
 }
 
+/**
+ * Група пакування карт сяйва — після всіх кадрів і шарів: карта не зсуває інших растрів, тож решта сторінок від карт не
+ * залежить (у гравця вони лишаються в кеші браузера), а плавні переходи альфи не лежать упереміш із пласкими кольорами —
+ * так webp без втрат стискає сторінки помітно гірше.
+ */
+const GLOW_GROUP = 2;
+
 /** Версія розрахунку карт сяйва для ключів кешу: змінилася формула в `glowmap.ts` — нова версія. */
 const GLOW_VERSION = "1";
 
@@ -292,15 +299,14 @@ export async function buildArt(options: ArtBuildOptions): Promise<ArtBuild> {
     }
   }
 
-  // Карти сяйва кадрів-цілей (§8.2) — растри тієї самої групи, що й самі кадри: однакові силуети станів — одна карта.
+  // Карти сяйва кадрів-цілей (§8.2): однакові силуети станів — одна карта.
   const glows = new Map<FrameId, { key: string; w: number; h: number; dx: number; dy: number; scale: number }>();
   for (const job of frames) {
     const layer = job.raster.layers[0];
     if (!job.entry.glow || job.stub || job.entry.layers || !layer) continue;
-    const group = packGroup(job.entry);
     const { image, dx, dy, scale } = glowRaster(layer, cache);
-    const key = hashOf("glow", String(group), String(image.w), String(image.h), image.data);
-    if (!images.has(key)) images.set(key, { image, group });
+    const key = hashOf("glow", String(image.w), String(image.h), image.data);
+    if (!images.has(key)) images.set(key, { image, group: GLOW_GROUP });
     layerImage.set(`${job.frame}@glow`, key);
     glows.set(job.frame, { key, w: image.w, h: image.h, dx, dy, scale });
   }
