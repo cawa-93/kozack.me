@@ -31,14 +31,25 @@ describe("розміри картки", () => {
     expect(rule(media, ".card")).toContain(`border-image-outset: ${CARD_CSS.low.outset}px;`);
   });
 
-  it("картка ліворуч (`.aside`): поле — не менше за виріз камери, як рахує `asideCardRight`", () => {
-    const aside = ".overlay.aside:not(.cinematic):not(.solid)";
+  it("кожна картка: поле ліворуч і праворуч — не менше за виріз камери (телефон набік), як рахує й `asideCardRight`", () => {
+    const media = css.slice(css.indexOf(`@media (max-height: ${CARD_CSS.low.maxHeight}px)`));
     for (const side of ["left", "right"]) {
-      expect(rule(css, `\n${aside}`)).toContain(`padding-${side}: max(${CARD_CSS.pad}px, env(safe-area-inset-${side}));`);
-      const media = css.slice(css.indexOf(`@media (max-height: ${CARD_CSS.low.maxHeight}px)`));
-      expect(rule(media, aside)).toContain(`padding-${side}: max(${CARD_CSS.low.pad}px, env(safe-area-inset-${side}));`);
+      expect(rule(css, "\n.overlay")).toContain(`padding-${side}: max(${CARD_CSS.pad}px, env(safe-area-inset-${side}));`);
+      expect(rule(media, ".overlay")).toContain(`padding-${side}: max(${CARD_CSS.low.pad}px, env(safe-area-inset-${side}));`);
     }
-    expect(rule(css, `\n${aside}`)).toContain("justify-content: flex-start;");
+    expect(rule(css, "\n.overlay.aside:not(.cinematic):not(.solid)")).toContain("justify-content: flex-start;");
+  });
+
+  it("хрестик телефона — на корпусі, від того самого поля `.overlay`, тож не під вирізом камери", () => {
+    const phone = readFileSync(new URL("../src/ui/phone.css", import.meta.url), "utf8").split("\r\n").join("\n");
+    const low = phone.slice(phone.indexOf(`@media (max-height: ${CARD_CSS.low.maxHeight}px)`));
+    for (const side of ["left", "right"]) {
+      expect(phone).toContain(`--overlay-pad-${side}: max(${CARD_CSS.pad}px, env(safe-area-inset-${side}));`);
+      expect(low).toContain(`--overlay-pad-${side}: max(${CARD_CSS.low.pad}px, env(safe-area-inset-${side}));`);
+    }
+    const close = rule(phone, ".overlay .card.card-phone > .card-close");
+    expect(close).toContain("var(--overlay-pad-left)");
+    expect(close).toContain("var(--overlay-pad-right)");
   });
 
   it("правий край притиснутої ліворуч картки", () => {

@@ -18,8 +18,9 @@
   --blue: #6c84a3;
   --plum: #8b5d78;
   --mustard: #d4a54c;
-  /* Поле `.overlay` (overlay.css): від нього хрестик рахує правий бік корпусу. */
-  --overlay-pad: 16px;
+  /* Поле `.overlay` ліворуч і праворуч (overlay.css, з вирізом камери): від нього хрестик рахує правий бік корпусу. */
+  --overlay-pad-left: max(16px, env(safe-area-inset-left));
+  --overlay-pad-right: max(16px, env(safe-area-inset-right));
   --phone-width: 860px;
   --phone-height: 600px;
   /* Рамка: довгі боки, короткий бік із камерою (ліворуч) і з кнопкою-хрестиком (праворуч). */
@@ -66,7 +67,10 @@
 .overlay .card.card-phone > .card-close {
   position: absolute;
   top: 50%;
-  left: calc(50% + min(var(--phone-width), 100% - 2 * var(--overlay-pad)) / 2 - var(--bezel-key) / 2);
+  left: calc(
+    50% + (var(--overlay-pad-left) - var(--overlay-pad-right)) / 2 + min(var(--phone-width), 100% - var(--overlay-pad-left) - var(--overlay-pad-right)) / 2 -
+      var(--bezel-key) / 2
+  );
   float: none;
   margin: 0;
   translate: -50% -50%;
@@ -258,7 +262,8 @@
 /* Телефон набік (низький екран): тонша рамка й поле `.overlay`, як у решти карток (overlay.css). */
 @media (max-height: 420px) {
   .overlay .card.card-phone {
-    --overlay-pad: 8px;
+    --overlay-pad-left: max(8px, env(safe-area-inset-left));
+    --overlay-pad-right: max(8px, env(safe-area-inset-right));
     --bezel: 5px;
     --bezel-cam: 24px;
     --bezel-key: 46px;
