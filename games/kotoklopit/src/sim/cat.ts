@@ -256,26 +256,30 @@ export function changeMood(state: GameState, cat: Cat, delta: number, reason?: s
   if (reason) emit(state, { type: "cat-mood", cat: cat.id, delta: scaled, reason });
 }
 
-/** Змінити любов кота (§7): «Відданість» прискорює зростання, «Образливість» — втрати (§9.12). */
-export function changeLove(state: GameState, cat: Cat, delta: number, reason?: string): void {
+/**
+ * Змінити любов кота (§7): «Відданість» прискорює зростання, «Образливість» — втрати (§9.12). Повертає зміну з рисами, до
+ * обмеження шкалою.
+ */
+export function changeLove(state: GameState, cat: Cat, delta: number, reason?: string): number {
   const step = delta > 0 ? traitLevel(cat, "devotion") : traitLevel(cat, "touchy");
   const scaled = delta * Math.max(0, 1 + LOVE_TRAIT_STEP * step);
   cat.love = clamp(cat.love + scaled);
-  // Неприємне запам'ятовується: ласощі одразу після нього зменшують втрату (§7).
-  if (scaled < 0) cat.hurt = { at: absoluteMinute(state.day, state.minute), amount: -scaled };
   if (reason) emit(state, { type: "cat-love", cat: cat.id, delta: scaled, reason });
+  return scaled;
 }
 
 /**
  * Неприємне від персонажа (§9.12, «Увага й ласка»): прогнали з місця, узяли на руки проти волі, купали, возили до
  * ветеринара, дали ліки. Любов падає (з «Образливістю»), а кіт це запам'ятовує: «Образливий» дметься, мстивий може
- * помститися. Брудний лоток і день без уваги — не образа: персонаж котові нічого не зробив. Неприємне в поїздці
- * рахується з повернення додому.
+ * помститися, а ласощі одразу після цього повертають частину втрати (`hurt`, §7). Брудний лоток і день без уваги — не образа:
+ * персонаж котові нічого не зробив. Неприємне в поїздці рахується з повернення додому.
  */
 export function offend(state: GameState, cat: Cat, delta: number, reason: string): void {
-  changeLove(state, cat, delta, reason);
+  const scaled = changeLove(state, cat, delta, reason);
   if (delta >= 0) return;
-  cat.offense = { at: absoluteMinute(state.day, state.minute), ...(cat.away === "trip" ? { away: true } : {}) };
+  const at = absoluteMinute(state.day, state.minute);
+  if (scaled < 0) cat.hurt = { at, amount: -scaled };
+  cat.offense = { at, ...(cat.away === "trip" ? { away: true } : {}) };
 }
 
 /** Кіт пережив стрес — бійку чи переноску (§9.12): мстивий може помститися. */
