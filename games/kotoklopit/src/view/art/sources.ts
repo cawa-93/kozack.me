@@ -63,7 +63,7 @@ export function artIndexNow(): ArtIndex | null | undefined {
   return index;
 }
 
-/** Кадр в `index.json`: його розмір, pivot, обрізка й шари; undefined — немає (чи індекс ще не завантажено). */
+/** Кадр в `index.json`: його розмір, pivot і шари, кожен зі своєю обрізкою; undefined — немає (чи індекс ще не завантажено). */
 export function indexFrame(frame: FrameId): IndexFrame | undefined {
   return index?.frames[frame];
 }
