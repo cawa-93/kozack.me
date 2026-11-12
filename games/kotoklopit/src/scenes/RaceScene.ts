@@ -118,6 +118,7 @@ import {
   type BarPart,
   type TrafficLook,
 } from "../view/racelook";
+import { LaneSteer } from "../view/racesteer";
 import { startHintShown } from "../view/starthint";
 import { DESTINATION_ICONS } from "../view/symbols";
 
@@ -172,7 +173,8 @@ export class RaceScene extends Phaser.Scene {
   /** Сцена показує гонку від самого старту (від'їзд від дому чи свіжа гонка), а не з середини після перезавантаження (`startHintShown`). */
   private fromStart = false;
   private keys: Record<"up" | "down" | "up2" | "down2", Phaser.Input.Keyboard.Key> | null = null;
-  private steer: -1 | 0 | 1 = 0;
+  /** Перестроювання цього кадру (`LaneSteer`): клавіша — раз на натискання, джойстик — раз на відхилення. */
+  private readonly steer = new LaneSteer();
   /** Плаваючий джойстик, як удома: вперед — газ, назад — гальмо, убік — перестроїтися. */
   private stick: { id: number; origin: { x: number; y: number }; x: number; y: number; steered: boolean } | null = null;
   /** Дорога, узбіччя, машини й смуга прогресу з атласу (крок 16, A14); створюється з кожною гонкою. */
@@ -275,7 +277,7 @@ export class RaceScene extends Phaser.Scene {
     this.touched = false;
     this.fromStart = trip?.phase === "drive" && trip.race.minutes === 0;
     this.stick = null;
-    this.steer = 0;
+    this.steer.clear();
     if (this.home) {
       this.listenSkip();
       return;
@@ -295,8 +297,8 @@ export class RaceScene extends Phaser.Scene {
       const K = Phaser.Input.Keyboard.KeyCodes;
       this.keys = keyboard.addKeys({ up: K.W, down: K.S, up2: K.UP, down2: K.DOWN }, false) as RaceScene["keys"];
       for (const [key, dir] of [["LEFT", -1], ["A", -1], ["RIGHT", 1], ["D", 1]] as const) {
-        keyboard.on(`keydown-${key}`, () => {
-          if (this.steering()) this.steer = dir;
+        keyboard.on(`keydown-${key}`, (event: KeyboardEvent) => {
+          if (this.steering()) this.steer.key(dir, event.repeat);
         });
       }
     }
@@ -364,7 +366,7 @@ export class RaceScene extends Phaser.Scene {
     stick.y = (dy * scale) / STICK_RADIUS;
     // Одне відхилення вбік — одне перестроювання; наступне — після повернення до середини.
     if (!stick.steered && Math.abs(stick.x) >= STICK_STEER) {
-      this.steer = stick.x < 0 ? -1 : 1;
+      this.steer.push(stick.x < 0 ? -1 : 1);
       stick.steered = true;
     } else if (Math.abs(stick.x) < STICK_STEER / 2) stick.steered = false;
   }
@@ -381,8 +383,7 @@ export class RaceScene extends Phaser.Scene {
     // Джойстик угору — газ, униз — гальмо, сильніше відхилення — сильніше натиск.
     const forward = -(this.stick?.y ?? 0);
     if (Math.abs(forward) > STICK_DEAD) throttle += (forward - Math.sign(forward) * STICK_DEAD) / (1 - STICK_DEAD);
-    const steer = this.steer;
-    this.steer = 0;
+    const steer = this.steer.take();
     if (throttle !== 0 || steer !== 0) this.touched = true;
     return { steer, throttle: Math.max(-1, Math.min(1, throttle)) };
   }
