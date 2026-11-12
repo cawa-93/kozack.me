@@ -7,9 +7,9 @@
 // туди-сюди, а тут вона заповнюється ходом завантаження (`--boot-progress`) — за байтами сторінок атласу, рівномірно й без
 // повернень назад (`loadArtAtlas` → `AtlasLoadProgress`). Гра готова — заставку прибрано.
 //
-// Атласу немає (404, порожній, не той формат, сторінка не прийшла й після повторів Phaser): у продакшні заставка каже, що
-// гра не завантажилася, і кнопка «Спробувати ще» довантажує лише те, чого бракує (`atlasload.ts` пам'ятає сторінки, що
-// прийшли); гра на маджентових заглушках гравцеві не потрібна. У режимі розробки (`__DEV_TOOLS__`: dev і прев'ю) гра, як і
+// Атласу немає (404, порожній, не той формат, сторінка не прийшла й після повторів Phaser, завантаження завмерло без байтів —
+// `loadwatch.ts`): у продакшні заставка каже, що гра не завантажилася, і кнопка «Спробувати ще» довантажує лише те, чого
+// бракує (`atlasload.ts` пам'ятає сторінки, що прийшли); гра на маджентових заглушках гравцеві не потрібна. У режимі розробки (`__DEV_TOOLS__`: dev і прев'ю) гра, як і
 // раніше, йде далі на заглушках `atlas.ts` — так видно, чого бракує.
 //
 // `loadArtAtlas` кличеться з `create()` і сам запускає обидва проходи завантажувача (спершу `index.json`, потім сторінки),
@@ -24,6 +24,10 @@ import { LOAD_FAILED } from "../texts";
 import { markArtReady } from "../view/art/atlas";
 import { warmCardArt } from "../ui/warmart";
 import { loadArtAtlas, type ArtAtlasState } from "../view/art/atlasload";
+import { cancelLoading, LoadWatchdog } from "./loadwatch";
+
+/** Як часто сторож завантаження перевіряє, чи прийшли байти, мс (`PreloadScene.watch`). */
+const WATCH_MS = 1000;
 
 /** Заставка з index.html: назва, смуга й місце для повідомлення, що гра не завантажилася. */
 interface Boot {
@@ -55,10 +59,49 @@ export class PreloadScene extends Phaser.Scene {
   /** Спроба завантажити атлас (перша чи «Спробувати ще»): смуга — з нуля, далі за байтами, що прийшли. */
   private attempt(): void {
     this.progress(0);
+    const unwatch = this.watch();
     void loadArtAtlas(this, undefined, (value) => this.progress(value)).then(
-      (result) => this.loaded(result.state),
-      () => this.loaded("none"),
+      (result) => {
+        unwatch();
+        this.loaded(result.state);
+      },
+      () => {
+        unwatch();
+        this.loaded("none");
+      },
     );
+  }
+
+  /**
+   * Сторож спроби (`LoadWatchdog`, §2.1): кожен байт, що прийшов (подія `progress` самого запиту — і без довжини відповіді, коли
+   * Phaser мовчить), і кожен файл, що скінчився, продовжують чекання; байтів немає `LOAD_STALL_MS` — запити, що качаються,
+   * скасовано як помилку (`cancelLoading`), і завантаження закінчується «не завантажилося». Повертає, як зняти сторожа.
+   */
+  private watch(): () => void {
+    const loader = this.load;
+    const watchdog = new LoadWatchdog(performance.now());
+    const alive = (): void => watchdog.alive(performance.now());
+    const heard = new WeakSet<XMLHttpRequest>();
+    const events = [Phaser.Loader.Events.FILE_PROGRESS, Phaser.Loader.Events.FILE_LOAD, Phaser.Loader.Events.FILE_LOAD_ERROR];
+    for (const event of events) loader.on(event, alive);
+    const timer = setInterval(() => {
+      // Запит файла з'являється, коли завантажувач його починає: слухати його байти — з першої перевірки після того.
+      for (const file of loader.inflight) {
+        const xhr = file.xhrLoader;
+        if (!xhr || heard.has(xhr)) continue;
+        heard.add(xhr);
+        xhr.addEventListener("progress", alive);
+      }
+      if (!watchdog.stalled(performance.now())) return;
+      cancelLoading(loader.inflight, Phaser.Loader.FILE_LOADING);
+      alive();
+    }, WATCH_MS);
+    const stop = (): void => {
+      clearInterval(timer);
+      for (const event of events) loader.off(event, alive);
+    };
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, stop);
+    return stop;
   }
 
   /** Смуга заставки: частка 0–1. */
