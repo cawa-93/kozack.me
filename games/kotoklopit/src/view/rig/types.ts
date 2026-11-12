@@ -245,7 +245,11 @@ export type AnimOf<R extends AnyRig> = RigAnim<BoneOf<R>, SlotOf<R>>;
 /** Обвіс для скелета `R`. */
 export type SkinOf<R extends AnyRig> = RigSkin<SlotOf<R>>;
 
-/** Визначити групу анімацій скелета: назви анімацій лишаються літеральними, а id кісток і слотів перевіряються за скелетом. */
+/**
+ * Визначити групу анімацій скелета: назви анімацій лишаються літеральними, а id кісток і слотів перевіряються за скелетом.
+ * Збирання замінює анімації групи готовими даними (`scripts/anims/bake.ts`) і розпізнає групу за цим викликом: словник
+ * записуй об'єктом із записами «назва: анімація», а ініціалізатори сталих модуля групи — без побічних дій.
+ */
 export function defineAnims<R extends AnyRig, const N extends string>(_rig: R, anims: Readonly<Record<N, AnimOf<NoInfer<R>>>>): Readonly<Record<N, AnimOf<R>>> {
   return anims;
 }

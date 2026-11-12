@@ -59,11 +59,11 @@ export function animsPlugin(options: AnimsPluginOptions = {}): Plugin {
     },
 
     transform: {
-      filter: { id: /\/src\/view\/rig\/anims\/[^/]+\/[^/]+\.ts(\?.*)?$/ },
+      // Лише сам модуль: адреса з параметром (`?raw`) — інший вміст.
+      filter: { id: /\/src\/view\/rig\/anims\/[^/]+\/[^/]+\.ts$/ },
       async handler(code, id) {
         if (!active) return null;
-        const file = id.split("?")[0] ?? id;
-        const group = GROUP_FILE.exec(path.relative(root, file).replaceAll("\\", "/"))?.[1];
+        const group = GROUP_FILE.exec(path.relative(root, id).replaceAll("\\", "/"))?.[1];
         if (group === undefined) return null;
         // Усі групи рахуються раз, одним графом модулів.
         loading ??= runnerImport<Loader>(path.join(import.meta.dirname, "load.ts"), { root, logLevel: "error" }).then(({ module }) => module.groupData());
