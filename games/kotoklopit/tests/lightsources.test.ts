@@ -16,7 +16,7 @@ import { BOILER, CANDLE_SHELVES, CEILING_LAMPS, DESK_CANDLE, DESK_LAMP, POWER_ST
 import { artOffset } from "../src/view/iso/geometry";
 import { candlesLit, daylight, lampsOn } from "../src/view/light/daylight";
 import { CANDLE_LIGHT, DESK_LAMP_LIGHT } from "../src/view/light/lightlook";
-import { candleFlicker, lightSources, litStrength, roomLamps, type LightKind, type LightSource } from "../src/view/light/sources";
+import { CANDLE_MEAN, candleFlicker, lightSources, litStrength, roomLamps, type LightKind, type LightSource } from "../src/view/light/sources";
 import type { Point } from "../src/view/world/part";
 import { ISO } from "../src/view/world/projection";
 
@@ -263,5 +263,17 @@ describe("джерела світла квартири", () => {
     expect(Math.max(...values) - Math.min(...values)).toBeGreaterThan(CANDLE_LIGHT.flicker / 3);
     expect(candleFlicker(2, 1234)).toBe(candleFlicker(2, 1234));
     expect(candleFlicker(2, 1234)).not.toBe(candleFlicker(3, 1234));
+  });
+
+  it("середня яскравість мерехтіння (`CANDLE_MEAN`, на ній свічка стоїть на карті світла) — середнє `candleFlicker` за час", () => {
+    for (const seed of [1, 4]) {
+      let sum = 0;
+      let n = 0;
+      for (let t = 0; t < 600_000; t += 7) {
+        sum += candleFlicker(seed, t);
+        n++;
+      }
+      expect(sum / n).toBeCloseTo(CANDLE_MEAN, 3);
+    }
   });
 });

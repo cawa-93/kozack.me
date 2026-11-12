@@ -296,3 +296,9 @@ export function candleFlicker(seed: number, time: number): number {
   // wave — від −1 до 1.
   return 1 - CANDLE_LIGHT.flicker * (0.5 + 0.5 * wave);
 }
+
+/**
+ * Середня яскравість мерехтіння (`candleFlicker`: середнє хвилі — 0). На карті світла свічка стоїть на ній, а мерехтить лише
+ * сяйво: карту на всю квартиру заради мерехтіння не перемальовують.
+ */
+export const CANDLE_MEAN = 1 - CANDLE_LIGHT.flicker / 2;

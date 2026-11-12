@@ -25,10 +25,11 @@ import {
   lightmapPlan,
   paneQuad,
   poolAlphaAt,
+  sourceLevel,
   toneOf,
   whitened,
 } from "../src/view/light/lightmap";
-import { lightSources } from "../src/view/light/sources";
+import { CANDLE_MEAN, lightSources } from "../src/view/light/sources";
 import { isoObjectLook } from "../src/view/world/objects";
 import type { Point } from "../src/view/world/part";
 import { ISO, ISO_WALLS } from "../src/view/world/projection";
@@ -92,9 +93,8 @@ describe("вигляд світла доби", () => {
     expect(CANDLE_LIGHT.radius).toBeLessThan(lampReach);
     expect(CANDLE_LIGHT.radius).toBeGreaterThanOrEqual(1.8);
     expect(CANDLE_LIGHT.poolCore).toBeLessThanOrEqual(CEILING_LIGHT.core);
-    // Мерехтіння: яскравість спадає щонайбільше на 10 % (від 1 до 1 − flicker, `candleFlicker`) і не частіше ≈ 4 разів на секунду.
+    // Мерехтіння: яскравість спадає щонайбільше на 10 % (від 1 до 1 − flicker, `candleFlicker`).
     expect(CANDLE_LIGHT.flicker).toBeLessThanOrEqual(0.1);
-    expect(CANDLE_LIGHT.flickerStep).toBeGreaterThanOrEqual(250);
   });
 
   it("відключення зі свічкою на поличці в кожній кімнаті — темніше за ніч із лампами: у кожній кімнаті й у квартирі загалом", () => {
@@ -105,7 +105,7 @@ describe("вигляд світла доби", () => {
     const mean = (outage: boolean, room: (typeof ROOMS)[number] | null): number => {
       s.modifiers.day = outage ? "outage" : null;
       const light = d(23 * 60, !outage);
-      const plan = lightmapPlan(light, lightSources(s, light), PANES, 0);
+      const plan = lightmapPlan(light, lightSources(s, light), PANES);
       let sum = 0;
       let n = 0;
       for (const r of room ? [room] : ROOMS) {
@@ -123,7 +123,7 @@ describe("вигляд світла доби", () => {
     // Але біля свічки світліше, ніж у темряві тону відключення: на стіні під поличкою й на підлозі перед нею тепло.
     s.modifiers.day = "outage";
     const dark = d(23 * 60, false);
-    const plan = lightmapPlan(dark, lightSources(s, dark), PANES, 0);
+    const plan = lightmapPlan(dark, lightSources(s, dark), PANES);
     for (const shelf of CANDLE_SHELVES) {
       const out = (o: number): Vec => (shelf.face === "y" ? { x: shelf.at.x, y: 1 + o } : { x: 1 + o, y: shelf.at.y });
       const wall = ISO.toScreen(shelf.at);
@@ -166,7 +166,7 @@ describe("вигляд світла доби", () => {
     const sources = lightSources(s, dark).filter((source) => source.kind === "candle");
     expect(sources).toHaveLength(CANDLE_SHELVES.length + 1);
     for (const source of sources) {
-      const plan = lightmapPlan(dark, [source], PANES, 0);
+      const plan = lightmapPlan(dark, [source], PANES);
       const base = luma(plan.tone);
       let worst = { add: 0, where: "" };
       const probe = (room: string, at: Vec, z: number): void => {
@@ -193,7 +193,7 @@ describe("вигляд світла доби", () => {
     const dark = d(23 * 60, false);
     const sources = lightSources(s, dark).filter((source) => source.kind === "candle");
     expect(sources.length).toBeGreaterThan(0);
-    const plan = lightmapPlan(dark, sources, PANES, 0);
+    const plan = lightmapPlan(dark, sources, PANES);
     // Тепла пляма свічки — її кольору (мала пляма полум'я — `coreColor`), не за ядром: ядро можна підбирати, а 0,3 — це вже
     // ядро плями полум'я.
     const warm = rgb(CANDLE_LIGHT.color);
@@ -234,7 +234,7 @@ describe("вигляд світла доби", () => {
   it("підсвітка цілі в темряві сильніша й світліша за яскравістю карти на ній; удень і під лампою — без змін (рецензія 2026-11-03)", () => {
     const s = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
     const lit = d(23 * 60);
-    const night = lightmapPlan(lit, lightSources(s, lit), PANES, 0);
+    const night = lightmapPlan(lit, lightSources(s, lit), PANES);
     // Посередині плями лампи — майже повне світло: сяйво як удень.
     const lamp = CEILING_LAMPS[3]!;
     const under = highlightBoost(luma(lightAt(night, ISO.toScreen(lamp.at))));
@@ -272,7 +272,7 @@ describe("вигляд світла доби", () => {
       const light = d(minute);
       expect(near(toneOf(light), white, 0.005), String(minute)).toBe(true);
       expect(near(glassOf(light), white, 0.005), String(minute)).toBe(true);
-      const plan = lightmapPlan(light, lightSources(newGame({ address: "she", difficulty: "normal", seed: 1 }).current, light), PANES, 0);
+      const plan = lightmapPlan(light, lightSources(newGame({ address: "she", difficulty: "normal", seed: 1 }).current, light), PANES);
       expect(plan.pools, String(minute)).toEqual([]);
       for (const strip of plan.strips) expect(strip.alpha, String(minute)).toBeLessThan(0.01);
     }
@@ -311,7 +311,7 @@ describe("вигляд світла доби", () => {
   it("у карті світла немає скла: над вікном (і над котом на підвіконні перед ним) — лише тон", () => {
     const s = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
     const light = d(19 * 60 + 30);
-    const plan = lightmapPlan(light, lightSources(s, light), PANES, 0);
+    const plan = lightmapPlan(light, lightSources(s, light), PANES);
     expect(Object.keys(plan).sort()).toEqual(["pools", "strips", "stripsKey", "tone"]);
     // Смуги сонця в карті лише трохи світлішають те, що в них стоїть (видиму смугу на підлозі дає додавання під меблями).
     expect(SUN.lift).toBeLessThanOrEqual(0.4);
@@ -322,9 +322,9 @@ describe("вигляд світла доби", () => {
     const s = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
     const lamps = d(20 * 60);
     const candles = d(20 * 60, false);
-    const plan = (light: Daylight): ReturnType<typeof lightmapPlan> => lightmapPlan(light, lightSources(s, light), PANES, 0);
+    const plan = (light: Daylight): ReturnType<typeof lightmapPlan> => lightmapPlan(light, lightSources(s, light), PANES);
     expect(plan(lamps).strips.length).toBeGreaterThan(0);
-    expect(lightmapKey(candles, lightSources(s, candles), 0)).not.toBe(lightmapKey(lamps, lightSources(s, lamps), 0));
+    expect(lightmapKey(candles, lightSources(s, candles))).not.toBe(lightmapKey(lamps, lightSources(s, lamps)));
     expect(plan(candles).stripsKey).toBe(plan(lamps).stripsKey);
     // Сонце пішло далі — смуги інші; сонця немає — смуг немає.
     expect(plan(d(19 * 60)).stripsKey).not.toBe(plan(lamps).stripsKey);
@@ -368,15 +368,22 @@ describe("вигляд світла доби", () => {
     }
   });
 
-  it("ключ карти: той самий кадр — той самий ключ; свічки мерехтять кроками, лампи — ні", () => {
+  it("ключ карти: той самий кадр — той самий ключ; свічки мерехтять сяйвом, а карта за сталих джерел з часом не змінюється", () => {
     const s = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
     const lit = d(23 * 60);
-    const sources = lightSources(s, lit);
-    expect(lightmapKey(lit, sources, 0)).toBe(lightmapKey(lit, sources, 10_000));
+    expect(lightmapKey(lit, lightSources(s, lit))).toBe(lightmapKey(lit, lightSources(s, lit)));
     s.modifiers.day = "outage";
     const dark = d(23 * 60, false);
     const candles = lightSources(s, dark);
-    expect(lightmapKey(dark, candles, 0)).toBe(lightmapKey(dark, candles, 100));
-    expect(lightmapKey(dark, candles, 0)).not.toBe(lightmapKey(dark, candles, 300));
+    const candle = candles.find((source) => source.kind === "candle");
+    if (!candle) throw new Error("у відключення о 23:00 свічки горять");
+    // Ні ключ, ні план карти від часу кадру не залежать: Canvas2D на всю квартиру й завантаження текстури заради мерехтіння не
+    // повторюють. Пляма свічки на карті — на середній яскравості мерехтіння.
+    expect(lightmapKey(dark, candles)).toBe(lightmapKey(dark, lightSources(s, dark)));
+    const pool = lightmapPlan(dark, candles, PANES).pools.find((p) => near(p.color, rgb(CANDLE_LIGHT.color), 1e-9));
+    expect(pool?.alpha).toBeCloseTo(candle.strength * CANDLE_MEAN, 9);
+    // Мерехтить сяйво (`sourceLevel`, щокадру): довкола тієї самої середньої яскравості.
+    const levels = Array.from({ length: 100 }, (_, i) => sourceLevel(candle, i * 50));
+    expect(Math.max(...levels) - Math.min(...levels)).toBeGreaterThan((candle.strength * CANDLE_LIGHT.flicker) / 3);
   });
 });

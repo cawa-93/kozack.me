@@ -5,8 +5,9 @@
 //   квартирою, меблями, котами й персонажем (`WORLD_LAYERS.light`, під позначками, баблами й панеллю): тон доби, світлі плями
 //   ламп, бра, свічок і техніки й трохи світліші смуги сонця. Скла в ній немає: над склом, як і над котом на підвіконні перед
 //   ним, — тон. Перемальовується лише за новим ключем (`lightmapKey`) і не частіше ніж `LIGHTMAP.minRedrawMs`, тож глухої ночі
-//   не малюється зовсім, а частіше за все — у присмерк і при свічках. Малюється під час гри, а не лежить готовою: у ній плями
-//   джерел, що горять саме зараз, і тон хвилини, наперед цього не запекти;
+//   не малюється зовсім, а частіше за все — у присмерк. Свічки на ній не мерехтять (мерехтить їхнє сяйво): інакше карту
+//   перемальовували б щокроку мерехтіння. Малюється під час гри, а не лежить готовою: у ній плями джерел, що горять саме
+//   зараз, і тон хвилини, наперед цього не запекти;
 // - скло вікон (лише видиме скло стулок, `paneGlass`) — просто над вікнами (`BACKDROP.window`), під усім, що стоїть: множенням
 //   темніє, де скло темніше за тон, і додаванням світлішає, де тепле скло світліше за тон (`glassLayers`), — а кіт перед ним
 //   ні;
@@ -230,12 +231,12 @@ export class IsoLightView implements LightPart {
 
   /** Карта світла: перемалювати за новим ключем, але не частіше ніж `LIGHTMAP.minRedrawMs` (поки видно стару). */
   private drawMap(parts: Parts, d: Daylight, sources: readonly LightSource[], time: number): void {
-    const key = lightmapKey(d, sources, time);
+    const key = lightmapKey(d, sources);
     const visible = parts.mapImage.visible;
     if (key !== this.mapKey && (!visible || time - this.mapAt >= LIGHTMAP.minRedrawMs)) {
       this.mapKey = key;
       this.mapAt = time;
-      this.painted = lightmapPlan(d, sources, this.panes, time);
+      this.painted = lightmapPlan(d, sources, this.panes);
       this.paintMap(parts.map, this.painted);
     }
     parts.mapImage.setVisible(true);

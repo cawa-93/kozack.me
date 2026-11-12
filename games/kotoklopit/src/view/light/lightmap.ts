@@ -33,7 +33,7 @@ import {
   toHex,
   type Rgb,
 } from "./lightlook";
-import { candleFlicker, type LightKind, type LightSource } from "./sources";
+import { CANDLE_MEAN, candleFlicker, type LightKind, type LightSource } from "./sources";
 import { sunStrips } from "./sunstrips";
 
 export function mix(a: Rgb, b: Rgb, t: number): Rgb {
@@ -225,22 +225,22 @@ export interface LightmapPlan {
   readonly stripsKey: string;
 }
 
-/** Яскравість джерела в мить `time` (мс сцени): свічки мерехтять. */
+/** Яскравість джерела в мить `time` (мс сцени): свічки мерехтять (так світить їхнє сяйво). */
 export function sourceLevel(source: LightSource, time: number): number {
   return source.flicker === undefined ? source.strength : source.strength * candleFlicker(source.flicker, time);
 }
 
-/** Час, за яким мерехтять свічки на карті світла: крок `CANDLE_LIGHT.flickerStep` (не частіше ≈ 4 разів на секунду). */
-export function flickerTime(time: number): number {
-  return Math.floor(time / CANDLE_LIGHT.flickerStep) * CANDLE_LIGHT.flickerStep;
+/** Яскравість джерела на карті світла: свічка — на середній яскравості мерехтіння (`CANDLE_MEAN`). */
+function mapLevel(source: LightSource): number {
+  return source.flicker === undefined ? source.strength : source.strength * CANDLE_MEAN;
 }
 
 /** Наскільки центр плями піднято від підлоги до джерела (частка шляху до `LightSource.screen`). */
 const LIFT: Record<LightKind, number> = { ceiling: 0, sconce: 0, lamp: POOL_LIFT, candle: POOL_LIFT, station: 0, boiler: 0, gas: POOL_LIFT, screen: 0 };
 
-/** Плями одного джерела на карті світла (`time` — уже крокований час мерехтіння). */
-function poolsOf(source: LightSource, time: number): PoolPaint[] {
-  const level = sourceLevel(source, time);
+/** Плями одного джерела на карті світла. */
+function poolsOf(source: LightSource): PoolPaint[] {
+  const level = mapLevel(source);
   if (level <= 0) return [];
   const color = rgb(source.color);
   const pools: PoolPaint[] = [];
@@ -292,13 +292,12 @@ export function sunColor(d: Daylight): Rgb {
   return rgb(d.phase === "morning" ? SUN.morning : SUN.evening);
 }
 
-/** План карти світла для світла доби `d`, джерел `sources` і вікон `panes` у мить `time` (мс сцени). */
-export function lightmapPlan(d: Daylight, sources: readonly LightSource[], panes: readonly Pane[], time: number): LightmapPlan {
+/** План карти світла для світла доби `d`, джерел `sources` і вікон `panes`. */
+export function lightmapPlan(d: Daylight, sources: readonly LightSource[], panes: readonly Pane[]): LightmapPlan {
   const tone = toneOf(d);
-  const t = flickerTime(time);
   return {
     tone,
-    pools: sources.flatMap((source) => poolsOf(source, t)),
+    pools: sources.flatMap((source) => poolsOf(source)),
     strips: stripsOf(d, panes, rgb(SUN.mapColor), SUN.lift),
     stripsKey: sunKey(d),
   };
@@ -344,17 +343,13 @@ export function whitened(color: number, t: number): number {
 const q = (v: number): number => Math.round(v * LIGHTMAP.steps);
 
 /**
- * Ключ карти світла: той самий ключ — та сама картинка з точністю до кроку (`lightKey` доби, джерела з яскравістю й крок
- * мерехтіння, поки горять свічки). Перемальовують лише за новим ключем.
+ * Ключ карти світла: той самий ключ — та сама картинка з точністю до кроку (`lightKey` доби, джерела з яскравістю; мерехтіння
+ * свічок на карті немає — `mapLevel`). Перемальовують лише за новим ключем.
  */
-export function lightmapKey(d: Daylight, sources: readonly LightSource[], time: number): string {
+export function lightmapKey(d: Daylight, sources: readonly LightSource[]): string {
   let key = lightKey(d);
-  let flicker = false;
-  for (const source of sources) {
-    key += `|${source.id}:${q(source.strength)}`;
-    if (source.flicker !== undefined) flicker = true;
-  }
-  return flicker ? `${key}|f${flickerTime(time)}` : key;
+  for (const source of sources) key += `|${source.id}:${q(source.strength)}`;
+  return key;
 }
 
 /** Ключ смуг сонця на підлозі: стіна, сила й висота сонця (як у `lightKey`); сонця немає — "-". */
