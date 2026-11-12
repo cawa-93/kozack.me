@@ -5,8 +5,9 @@
 // звернень до DOM під час імпорту — лише всередині функцій.
 //
 // Швидкість (телефон): лише `globalCompositeOperation` і `drawImage`, без циклів по пікселях `ImageData`. Шар, який треба
-// перефарбувати, проходить через одне допоміжне полотно (спільне, росте під найбільший кадр): намалювати шар → залити
-// кольором `source-atop` (чи множенням) → покласти на кадр. Це 3–4 операції на шар; кадр кота — ≈ 10 кроків.
+// перефарбувати, проходить через одне допоміжне полотно (спільне для цілей того самого виду, росте під найбільший кадр):
+// намалювати шар → залити кольором `source-atop` (чи множенням) → покласти на кадр. Це 3–4 операції на шар; кадр кота — ≈ 10
+// кроків.
 
 import type { Look } from "../../sim/types";
 import { hairSkin } from "../wardrobe/hair";
@@ -55,6 +56,8 @@ export interface Ctx2D {
   save(): void;
   restore(): void;
   setTransform(a: number, b: number, c: number, d: number, e: number, f: number): void;
+  /** Налаштування контексту (`willReadFrequently`); де браузер їх не каже — немає. */
+  getContextAttributes?(): CanvasRenderingContext2DSettings;
 }
 
 /** Де взяти допоміжне полотно щонайменше `w × h` (тести дають свій фальшивий контекст). */
@@ -64,7 +67,7 @@ export interface ComposeOptions {
   /** Розмір полотна кадру, пікселі (`size · res`). */
   w: number;
   h: number;
-  /** Допоміжне полотно для перефарбування; за замовчуванням — спільне (OffscreenCanvas чи `<canvas>`). */
+  /** Допоміжне полотно для перефарбування; за замовчуванням — спільне того самого виду, що й ціль (`scratchFor`). */
   scratch?: ScratchFactory;
   /** Очистити полотно перед складанням; за замовчуванням так. */
   clear?: boolean;
@@ -97,18 +100,55 @@ export function createCtx(w: number, h: number): Canvas2D | null {
   return null;
 }
 
+/**
+ * Вид полотна: `<canvas>` чи OffscreenCanvas і чи його пікселі в пам'яті процесора (`willReadFrequently`), а не у відеопам'яті.
+ * Допоміжне полотно — того самого виду, що й ціль: інакше кожен тонований крок перекладав би пікселі між відеопам'яттю й
+ * пам'яттю процесора, а читати з відеопам'яті — довго.
+ */
+interface CanvasKind {
+  offscreen: boolean;
+  cpu: boolean;
+}
+
+function canvasKind(ctx: Ctx2D): CanvasKind {
+  return {
+    offscreen: typeof OffscreenCanvas !== "undefined" && ctx.canvas instanceof OffscreenCanvas,
+    cpu: ctx.getContextAttributes?.().willReadFrequently === true,
+  };
+}
+
+/** Нове полотно 2D виду `kind`; поза браузером — null. */
+function createKindCtx(kind: CanvasKind, w: number, h: number): Canvas2D | null {
+  const width = Math.max(1, Math.ceil(w));
+  const height = Math.max(1, Math.ceil(h));
+  const settings: CanvasRenderingContext2DSettings = kind.cpu ? { willReadFrequently: true } : {};
+  if (kind.offscreen) return typeof OffscreenCanvas === "undefined" ? null : new OffscreenCanvas(width, height).getContext("2d", settings);
+  if (typeof document === "undefined") return null;
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  return canvas.getContext("2d", settings);
+}
+
 /** Спільні полотна за призначенням: ростуть під найбільший кадр і не звільняються (їх кілька, по одному на призначення). */
 const pooled = new Map<string, Canvas2D>();
 
-function pooledCtx(name: string, w: number, h: number): Canvas2D | null {
+function pooledCtx(name: string, w: number, h: number, kind?: CanvasKind): Canvas2D | null {
   const have = pooled.get(name);
   if (have && have.canvas.width >= w && have.canvas.height >= h) return have;
-  const ctx = createCtx(Math.max(w, have?.canvas.width ?? 0), Math.max(h, have?.canvas.height ?? 0));
+  const W = Math.max(w, have?.canvas.width ?? 0);
+  const H = Math.max(h, have?.canvas.height ?? 0);
+  const ctx = kind ? createKindCtx(kind, W, H) : createCtx(W, H);
   if (ctx) pooled.set(name, ctx);
   return ctx;
 }
 
-const sharedScratch: ScratchFactory = (w, h) => pooledCtx("scratch", w, h);
+/** Допоміжне полотно того самого виду, що й ціль: одне на всі цілі цього виду. */
+function scratchFor(target: Ctx2D): ScratchFactory {
+  const kind = canvasKind(target);
+  const name = `scratch:${kind.offscreen ? "offscreen" : "canvas"}${kind.cpu ? "+cpu" : ""}`;
+  return (w, h) => pooledCtx(name, w, h, kind);
+}
 
 // --- Складання кадру ---------------------------------------------------------------------------
 
@@ -144,7 +184,7 @@ export function composeFrame(target: Ctx2D, layers: LayerSource, recipe: TintRec
       const src = layers(step.layer);
       const paint = src ? opts.cloth.paint(step.pattern) : null;
       if (!src || !paint) continue;
-      scratch ??= (opts.scratch ?? sharedScratch)(w, h);
+      scratch ??= (opts.scratch ?? scratchFor(target))(w, h);
       if (!scratch || !drawCloth(scratch, paint, opts.cloth, w, h)) continue;
       // Тканина — лише в межах заливки свого регіону: на шкіру, підкладку й сусідній одяг не лізе.
       scratch.globalCompositeOperation = "destination-in";
@@ -171,7 +211,7 @@ export function composeFrame(target: Ctx2D, layers: LayerSource, recipe: TintRec
       target.fillStyle = cssColor(step.color);
       target.fillRect(0, 0, w, h);
     } else {
-      scratch ??= (opts.scratch ?? sharedScratch)(w, h);
+      scratch ??= (opts.scratch ?? scratchFor(target))(w, h);
       if (!scratch) {
         // Поза браузером без допоміжного полотна: хоч шар як є.
         target.globalCompositeOperation = step.put;
