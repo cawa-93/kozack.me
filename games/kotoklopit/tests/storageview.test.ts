@@ -79,7 +79,9 @@ describe("індикатор сховища: ховати, а не збират�
     indicators.set("fridge", fridge, 100, 200);
     const objects = made.length;
     const plate = made.find((m) => m.kind === "container")!;
-    expect(count(made, "graphics")).toBe(1);
+    // Плашка — три частини кадру атласу (краї й середина) і дві іконки запасів, без `Graphics`.
+    expect(count(made, "graphics")).toBe(0);
+    expect(count(made, "image")).toBe(3 + fridge.length);
     indicators.set("fridge", [], 0, 0);
     expect(plate.visible).toBe(false);
     expect(plate.destroyed).toBe(false);

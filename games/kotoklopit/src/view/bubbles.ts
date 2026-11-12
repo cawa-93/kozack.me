@@ -2,7 +2,7 @@
 // Над однією річчю — лише один бабл стану, найважливіший.
 // Кожен бабл — вголос (мовна хмаринка) чи думка (хмаринка з кружечками), правка автора 2026-10-25;
 // який саме — вирішує `eventBubbles` (symbols.ts) і сцена для станів.
-// Фон, іконка й позначка — кадри атласу (`ui/bubble/*`, `icon/*`, крок 16), а де що лежить — `iso/bubblelook.ts`.
+// Фон, іконка, позначка й плашка кількості — кадри атласу (`ui/bubble/*`, `icon/*`, `ui/count`), а де що лежить — `iso/bubblelook.ts`.
 // Бабли, що налазять один на одного (свої й чужі, подій і стану), щокадру стають у ряд поруч — `layoutBubbles` там само.
 
 import type Phaser from "phaser";
@@ -11,6 +11,7 @@ import { addArt } from "./art/atlas";
 import { bubbleArt, iconArt, markArt, type BubbleKind, type IconName, type Mark } from "./iconnames";
 import {
   BUBBLE_COUNT,
+  COUNT_ART,
   bubbleRepeat,
   bubbleSpan,
   countPillCenter,
@@ -24,7 +25,8 @@ import {
   type IsoBubbleLook,
   type LaidBubble,
 } from "./iso/bubblelook";
-import { isoPopColor, UI_FILL, UI_FONT, UI_TEXT } from "./iso/uilook";
+import { isoPopColor, UI_FONT, UI_TEXT } from "./iso/uilook";
+import { Slice3Art } from "./slice3art";
 import type { EventBubble, Thinker } from "./symbols";
 import { WORLD_LAYERS } from "./world/layers";
 import { withMetrics } from "./textmetrics";
@@ -154,7 +156,8 @@ export class Bubbles {
     if (mark !== undefined) place(addArt(scene, body, markArt(mark)));
     let pillWidth: number | undefined;
     if (count !== undefined) {
-      // Кількість — чорнильна плашка з паперовою обвідкою й паперовими цифрами: видно і на світлій підлозі, і на темній стіні.
+      // Кількість — чорнильна плашка з паперовою обвідкою (кадр `ui/count`) й паперовими цифрами: видно і на світлій підлозі, і
+      // на темній стіні.
       const c = BUBBLE_COUNT;
       const label = scene.add
         .text(0, 0, String(count), withMetrics({ fontFamily: UI_FONT, fontSize: `${c.font}px`, fontStyle: "bold", color: UI_TEXT.main, resolution: this.resolution(look.scale) }))
@@ -164,10 +167,8 @@ export class Bubbles {
       pillWidth = w;
       const { x: cx, y: cy } = countPillCenter(look, w, countSide(mark));
       label.setPosition(cx, cy);
-      const pill = scene.add.graphics();
-      pill.fillStyle(UI_FILL.ink).fillRoundedRect(cx - w / 2, cy - h / 2, w, h, h / 2);
-      pill.lineStyle(c.outline, UI_FILL.paper).strokeRoundedRect(cx - w / 2, cy - h / 2, w, h, h / 2);
-      body.add([pill, label]);
+      const pill = new Slice3Art(scene, COUNT_ART).place({ x: cx - w / 2, y: cy - h / 2, w, h });
+      body.add([...pill.images, label]);
     }
     const container = scene.add.container(x, y, [body]).setDepth(BUBBLE_DEPTH).addToDisplayList(this.layer);
     return { container, span: bubbleSpan(look, pillWidth, countSide(mark)) };

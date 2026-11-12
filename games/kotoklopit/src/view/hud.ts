@@ -1,7 +1,8 @@
 // Інтерфейс рівня (§8.4): настільний годинник, календарик, шкали показників, гроші, несплачений рахунок, іконки станів і короткий
 // розклад дня. Приховані числа (терпіння, репутація) тут не показуються.
-// Смуга, кружечки показників, рамки шкал, телефон і кнопка повного екрана — кадри атласу `ui/hud/*` (крок 16, A13), іконки —
-// `icon/*`, а кольори й написи — з палітри арту (`iso/hudlook.ts`, `iso/uilook.ts`); заливку шкал малює код у рамках арту.
+// Смуга, кружечки показників, шкали (рамка, доріжка, заливка, штрихування), телефон і кнопка повного екрана — кадри атласу
+// `ui/hud/*`, іконки — `icon/*`, а кольори й написи — з палітри арту (`iso/hudlook.ts`, `iso/uilook.ts`). Код малює лише тло
+// бабла телефона: воно змінне й вшир, і ввись, а видно його кілька секунд.
 
 import Phaser from "phaser";
 
@@ -14,7 +15,7 @@ import { absoluteMinute, formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from ".
 import type { GameState, Product, StatName } from "../sim/types";
 import { DeskCalendar } from "./deskcalendar";
 import { DeskClock } from "./deskclock";
-import { barDraw, barsKey, type BarDraw } from "./hudbars";
+import { barDraw, barsKey, hatchCrop, type BarDraw } from "./hudbars";
 import { newsHitArea } from "./hudnews";
 import { iconArt, markArt, type IconName } from "./iconnames";
 import { personStates } from "./personstates";
@@ -30,14 +31,16 @@ import {
   hudLayout,
   hudTextScale,
   isoBarRects,
-  STAT_BLINK,
-  STAT_FILL,
+  BAR_FILL_STATES,
+  barFillState,
   statDisc,
   type HudColumns,
   type HudLayout,
 } from "./iso/hudlook";
 import { UI_FILL, UI_FONT, UI_TEXT, uiEntry } from "./iso/uilook";
 import { scheduleOf } from "./schedule";
+import { slice3Frame } from "./slice3";
+import { Slice3Art } from "./slice3art";
 import { PERSON_STATE_ICONS, PRODUCT_ICONS, STAT_ICONS, UTILITIES_ICON } from "./symbols";
 import { setFontSize, withMetrics } from "./textmetrics";
 import { canvasNow, type Frame } from "./viewport";
@@ -60,8 +63,6 @@ const ROW_GAP = { amount: 4, bill: 10, schedule: 12 } as const;
  * рядка); `gap` — від аркуша до телефона, одиниці панелі. Лівий край рядків — точки запису.
  */
 const NOTE = { pad: 28, gap: 14 } as const;
-/** Штрихування частини шкали над межею (§6.3): крок смужок. */
-const HATCH_STEP = 6;
 /** Кнопки праворуч: відстань від правого краю до їхнього центру. */
 const BUTTONS_INSET = 44;
 /** Скільки лишити вільним ліворуч від центру телефона: він пульсує, коли є підказка. */
@@ -105,16 +106,12 @@ interface BarRect {
   h: number;
 }
 
-/** Як малювати шкали: доріжка, колір блимання, штрихування понад межею; контур дає рамка арту. */
-interface BarLook {
-  trough: number;
-  blink: number;
-  hatch: number;
-  radius: number;
+/** Шкала під рамкою арту — кадри атласу: доріжка й заливка «трьома частинами» (`slice3.ts`) і штрихування над межею (§6.3). */
+interface BarArt {
+  trough: Slice3Art;
+  fill: Slice3Art;
+  hatch: Phaser.GameObjects.Image;
 }
-
-/** Заливка — під рамкою арту, тож її кінці — півкола: радіус — половина висоти заливки (`isoBarRects`). */
-const BAR_LOOK: Omit<BarLook, "radius"> = { trough: UI_FILL.trough, blink: STAT_BLINK, hatch: UI_FILL.hatch };
 
 /** Місце шкали показника за розкладом панелі (праворуч від кружечка, посередині ряду); рамку й заливку розкладає `isoBarRects`. */
 const barSlot = (stat: (typeof STATS)[number], layout: HudLayout, columns: HudColumns): BarRect => ({
@@ -133,14 +130,14 @@ export class Hud {
   private readonly clock: DeskClock;
   /** Хвилина гри, яку показують годинник, календарик і розклад: щокадру їх не перераховують. */
   private shownAt: number | null = null;
-  private readonly bars: Phaser.GameObjects.Graphics;
+  private readonly bars: BarArt[];
+  private readonly hatchFrame = slice3Frame(uiEntry(HUD_ART.barHatch));
   /** Кружечки показників: паперове кільце й іконка. */
   private readonly discs: { ring: Phaser.GameObjects.Image; icon: Phaser.GameObjects.Image }[];
   /** Рамки шкал — «три частини» над заливкою. */
   private readonly barFrames: StretchArt[];
-  /** Де заливка шкал і як її малювати (за розкладом панелі, `arrange`). */
+  /** Де заливка шкал (за розкладом панелі, `arrange`). */
   private barRects: BarRect[] = [];
-  private readonly barLook: BarLook = { ...BAR_LOOK, radius: 0 };
   /** Що шкали показують цього кадру (`barDraw`, той самий масив) і ключ того, що вже намальовано (`barsKey`; null — малювати). */
   private readonly barShown: BarDraw[] = [];
   private barsDrawn: string | null = null;
@@ -233,7 +230,6 @@ export class Hud {
     this.clock = new DeskClock(scene);
     // Іконки намальовані чорнилом для світлого бабла: на темній панелі їм потрібна світла підкладка. Місце й розмір — `arrange`.
     this.discs = STATS.map((stat) => ({ ring: addArt(scene, null, HUD_ART.stat), icon: addArt(scene, null, iconArt(stat.icon)) }));
-    this.bars = scene.add.graphics();
     // Натиснути на стани — профіль у телефоні (§8.4): там кожен із назвою й описом.
     // Нульова зона не стає інтерактивною (`setHitAreaFromTexture`): спершу 1 × 1, розмір — у `placeStates`.
     this.statesZone = scene.add.zone(0, 0, 1, 1).setOrigin(0, 0.5);
@@ -264,9 +260,18 @@ export class Hud {
       this.placeRight();
     });
     this.left = scene.add
-      .container(0, 0, [this.calendar.root, this.clock.root, ...this.discs.flatMap((disc) => [disc.ring, disc.icon]), this.bars])
+      .container(0, 0, [this.calendar.root, this.clock.root, ...this.discs.flatMap((disc) => [disc.ring, disc.icon])])
       .setDepth(DEPTH)
       .addToDisplayList(layer);
+    this.bars = STATS.map((stat) => {
+      const bar: BarArt = {
+        trough: new Slice3Art(scene, HUD_ART.barFill, BAR_FILL_STATES.trough),
+        fill: new Slice3Art(scene, HUD_ART.barFill, barFillState(stat.name, false)),
+        hatch: addArt(scene, null, HUD_ART.barHatch).setOrigin(0, 0).setVisible(false),
+      };
+      this.left.add([...bar.trough.images, ...bar.fill.images, bar.hatch]);
+      return bar;
+    });
     // Рамки шкал — «три частини» над заливкою.
     this.barFrames = STATS.map(() => new StretchArt(scene, this.left, HUD_ART.bar));
     // Аркуш розкладу — до рядків, щоб вони лягли поверх нього.
@@ -357,10 +362,9 @@ export class Hud {
     this.barRects = this.barFrames.map((art, i) => {
       const bar = isoBarRects(barSlot(STATS[i] ?? STATS[0]!, layout, columns), frame);
       art.place(bar.frame);
+      this.bars[i]?.trough.place(bar.fill);
       return bar.fill;
     });
-    // Заливка — під рамкою арту, тож її кінці — півкола.
-    this.barLook.radius = (this.barRects[0]?.h ?? 0) / 2;
     this.barsDrawn = null;
     const radius = layout.disc.outer / 2;
     this.wallet.ring.setPosition(columns.money + radius, layout.rows[0]).setDisplaySize(ring, ring);
@@ -581,15 +585,19 @@ export class Hud {
     const key = barsKey(shown);
     if (key === this.barsDrawn) return;
     this.barsDrawn = key;
-    const g = this.bars.clear();
-    const look = this.barLook;
+    const hatch = this.hatchFrame;
     STATS.forEach((stat, i) => {
       const bar = this.barRects[i];
       const draw = shown[i];
-      if (!bar || !draw) return;
-      g.fillStyle(look.trough).fillRoundedRect(bar.x, bar.y, bar.w, bar.h, look.radius);
-      g.fillStyle(draw.blink ? look.blink : STAT_FILL[stat.name]).fillRoundedRect(bar.x, bar.y, draw.fill, bar.h, look.radius);
-      if (draw.hatch !== null) hatch(g, bar, bar.x + draw.hatch, bar.x + bar.w, look.hatch);
+      const art = this.bars[i];
+      if (!bar || !draw || !art) return;
+      art.fill.setState(barFillState(stat.name, draw.blink)).place({ x: bar.x, y: bar.y, w: draw.fill, h: bar.h });
+      const crop = draw.hatch === null ? null : hatchCrop(hatch, bar, draw.hatch);
+      art.hatch.setVisible(crop !== null);
+      if (!crop) return;
+      // Пікселів текстури на одиницю арту; обрізане зображення лишається на місці свого полотна.
+      const k = art.hatch.width / hatch.size.w;
+      art.hatch.setCrop(crop.src * k, 0, crop.srcW * k, art.hatch.height).setScale(crop.scale / k).setPosition(crop.x, crop.y);
     });
   }
 
@@ -622,20 +630,5 @@ export class Hud {
     if (active === this.fullscreenDrawn) return;
     this.fullscreenDrawn = active;
     this.fullscreen.show(active);
-  }
-}
-
-
-/** Косі смужки між x0 і x1 по висоті шкали; кожна смужка обрізана краями ділянки. */
-function hatch(g: Phaser.GameObjects.Graphics, bar: BarRect, x0: number, x1: number, color: number): void {
-  const top = bar.y + 1;
-  const bottom = bar.y + bar.h - 1;
-  const height = bottom - top;
-  g.lineStyle(2, color);
-  for (let start = x0 - height; start < x1; start += HATCH_STEP) {
-    // Смужка під 45°: від (start, низ) до (start + висота, верх).
-    const ax = Math.max(start, x0);
-    const bx = Math.min(start + height, x1);
-    if (bx > ax) g.lineBetween(ax, bottom - (ax - start), bx, bottom - (bx - start));
   }
 }

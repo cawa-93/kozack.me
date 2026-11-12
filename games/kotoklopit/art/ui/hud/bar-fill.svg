@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 20" width="22" height="20">
+<!-- ui/hud/bar-fill — доріжка й заливка шкали показника HUD під рамкою ui/hud/bar: пігулка без обвідки.
+size 22×20; pivot (11, 10) — центр; points: body (4, 4) і body-end (18, 16) — тіло, що лягає на місце заливки; cap (6, 0) — край.
+«Три частини» (src/view/slice3.ts): півкруглі краї по 6 не тягнуться, середина x 10–12 — рівна.
+Стани — колір: st-trough (доріжка, ink), st-health (red), st-satiety (orange), st-hygiene (blueHi), st-sanity (plumHi),
+st-blink (блимання низького показника, paper) — STAT_FILL, STAT_BLINK (src/view/iso/hudlook.ts), UI_FILL.trough.
+Геометрична, без «руки»: заміняє фігуру, яку малював код.
+-->
+<g id="p-trough" class="st-trough">
+<rect x="4" y="4" width="14" height="12" rx="6" fill="#2e1f29"/>
+</g>
+<g id="p-health" class="st-health">
+<rect x="4" y="4" width="14" height="12" rx="6" fill="#c4524b"/>
+</g>
+<g id="p-satiety" class="st-satiety">
+<rect x="4" y="4" width="14" height="12" rx="6" fill="#d9843f"/>
+</g>
+<g id="p-hygiene" class="st-hygiene">
+<rect x="4" y="4" width="14" height="12" rx="6" fill="#94a8c0"/>
+</g>
+<g id="p-sanity" class="st-sanity">
+<rect x="4" y="4" width="14" height="12" rx="6" fill="#a97d96"/>
+</g>
+<g id="p-blink" class="st-blink">
+<rect x="4" y="4" width="14" height="12" rx="6" fill="#f2e7d0"/>
+</g>
+</svg>

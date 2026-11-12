@@ -45,7 +45,7 @@ export function isoPopColor(color: string): string {
   return ISO_POP_COLORS[color.toLowerCase()] ?? color;
 }
 
-/** Кольори Graphics: числом. */
+/** Кольори фігур: числом. Нерухомі фігури — кадри атласу, намальовані цими кольорами (`tests/uishapes.test.ts`). */
 export const UI_FILL = {
   ink: hex(PALETTE.ink),
   paper: hex(PALETTE.paper),

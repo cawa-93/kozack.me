@@ -15,8 +15,12 @@ export const HUD_ART = {
   band: "ui/hud/band",
   /** Паперовий кружечок під іконкою показника на темній панелі (і під іконкою запасу на телефоні). */
   stat: "ui/hud/stat",
-  /** Рамка шкали показника; заливку малює код. */
+  /** Рамка шкали показника; під нею — доріжка й заливка (`barFill`). */
   bar: "ui/hud/bar",
+  /** Доріжка й заливка шкали «трьома частинами» (`slice3.ts`): стан — колір (`BAR_FILL_STATES`, `barFillState`). */
+  barFill: "ui/hud/bar-fill",
+  /** Штрихування шкали над межею показника: код показує частину кадру (`hatchCrop`). */
+  barHatch: "ui/hud/bar-hatch",
   /** Настільний годинник: корпус із тьмяними сегментами, точки запису — де стоять цифри й двокрапка. */
   clock: "ui/hud/clock",
   /** Цифра годинника, що світиться: стани `d0`…`d9` і `colon`. */
@@ -268,7 +272,18 @@ export const TOUCH_ALPHA = {
   carry: 0.75,
 } as const;
 
-/** Кольори шкал показників — з палітри арту: здоров'я червоне, ситість помаранчева, гігієна синя, глузд сливовий. */
+/** Стани кадру `ui/hud/bar-fill`, крім показників (ті — за назвою показника): доріжка шкали й блимання низького показника. */
+export const BAR_FILL_STATES = { trough: "trough", blink: "blink" } as const;
+
+/** Стан кадру заливки шкали показника `stat`: його колір чи блимання. */
+export function barFillState(stat: StatName, blink: boolean): string {
+  return blink ? BAR_FILL_STATES.blink : stat;
+}
+
+/**
+ * Кольори шкал показників — з палітри арту: здоров'я червоне, ситість помаранчева, гігієна синя, глузд сливовий. Запечені в
+ * стани кадру `ui/hud/bar-fill` (tint у запасному Canvas не діє); що кадр намальовано ними, звіряє `tests/uishapes.test.ts`.
+ */
 export const STAT_FILL: Readonly<Record<StatName, number>> = {
   health: hex(PALETTE.red),
   satiety: hex(PALETTE.orange),
@@ -276,7 +291,7 @@ export const STAT_FILL: Readonly<Record<StatName, number>> = {
   sanity: hex(PALETTE.plumHi),
 };
 
-/** Блимання показника нижче межі (§11.4): паперовим. */
+/** Блимання показника нижче межі (§11.4): паперовим (стан `blink` того самого кадру). */
 export const STAT_BLINK = hex(PALETTE.paper);
 
 /** Прямокутник на екрані, px полотна гри. */

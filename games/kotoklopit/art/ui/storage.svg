@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 34 62" width="34" height="62">
+<!-- ui/storage — плашка індикатора вмісту сховища (іконки запасів і числа кладе код поверх): папір у чорнильній рамці з тінню.
+size 34×62; pivot (17, 31) — центр; points: body (6, 6) і body-end (28, 54) — тіло, що лягає на місце плашки; cap (10, 0) — край.
+«Три частини» (src/view/slice3.ts): краї по 10 з рамкою не тягнуться, середина x 16–18 — рівна. Числа — STORAGE_LOOK
+(src/view/storage.ts): висота 48, заокруглення 10, рамка 3,5, тінь base на 4 нижче. Геометрична, без «руки»: заміняє фігуру,
+яку малював код.
+-->
+<g id="p-shadow">
+<rect x="6" y="10" width="22" height="48" rx="10" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="p-plate">
+<rect x="6" y="6" width="22" height="48" rx="10" fill="#f2e7d0" stroke="#2e1f29" stroke-width="3.5"/>
+</g>
+</svg>
