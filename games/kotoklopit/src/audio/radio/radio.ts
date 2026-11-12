@@ -2,7 +2,7 @@
 
 import { RADIO } from "../config";
 import { glide, type AudioEngine } from "../engine";
-import { timeoutSignal } from "../net";
+import { fetchBytes } from "../net";
 import type { AudioPrefs } from "../settings";
 import { Broadcast } from "./broadcast";
 import { ChunkStore } from "./chunks";
@@ -16,14 +16,14 @@ import type { Station } from "./schedule";
 const clock = (): number => Date.now() / 1000;
 
 /** Шматки: пам'ять (`ChunkStore`), далі сховище між сесіями, далі мережа з HTTP-кешем браузера. */
-const fetchBytes = persistentFetch(
+const chunkBytes = persistentFetch(
   () => (typeof caches === "undefined" ? Promise.resolve(null) : caches.open(RADIO_CACHE)),
-  (url) => fetch(url, { signal: timeoutSignal(RADIO.requestTimeoutMs) }),
+  async (url) => new Response(await fetchBytes(url, RADIO.stallMs)),
 );
 
 export class Radio {
   readonly stations: readonly Station[] = STATIONS;
-  private readonly store = new ChunkStore(chunkUrl, fetchBytes);
+  private readonly store = new ChunkStore(chunkUrl, chunkBytes);
   private readonly broadcast: Broadcast;
   /** Відколи решта станцій напоготові; null — персонаж далеко. */
   private nearSince: number | null = null;

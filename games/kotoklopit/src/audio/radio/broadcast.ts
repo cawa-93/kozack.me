@@ -6,7 +6,7 @@
 
 import { RADIO, SAMPLE_RATE, SFX } from "../config";
 import type { AudioEngine } from "../engine";
-import { timeoutSignal } from "../net";
+import { fetchBytes } from "../net";
 import { soundFile } from "../sfx/files";
 import type { ChunkStore } from "./chunks";
 import { chunkKey, chunkOf, chunkSamples, chunkStart, nextSlot, slotAt, trackSamples, type ChunkRef, type Slot, type Station } from "./schedule";
@@ -226,9 +226,7 @@ async function loadNoise(context: AudioContext): Promise<{ data: AudioBuffer; lo
   const file = soundFile("radio", "static");
   if (!file?.loop) return null;
   try {
-    const response = await fetch(file.url, { signal: timeoutSignal(SFX.requestTimeoutMs) });
-    if (!response.ok) return null;
-    return { data: await context.decodeAudioData(await response.arrayBuffer()), loop: file.loop };
+    return { data: await context.decodeAudioData(await fetchBytes(file.url, SFX.stallMs)), loop: file.loop };
   } catch {
     return null;
   }

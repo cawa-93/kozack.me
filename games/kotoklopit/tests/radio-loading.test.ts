@@ -89,40 +89,19 @@ describe("шматки в пам'яті (§8.10)", () => {
     expect(chunks.copy(ref("a", 0))).not.toBe(chunks.copy(ref("a", 0)));
   });
 
-  it("завислий запит за `RADIO.requestTimeoutMs` звільняє місце: решта шматків не чекає вічно (Н4)", () => {
+  it("повільний запит шматка тримає своє місце, скільки б не тривав: того самого шматка вдруге не просять, решта чекає черги", async () => {
     let now = 0;
-    const { chunks, fetchBytes } = store(vi.fn(() => new Promise<ArrayBuffer>(() => {})), 1000, () => now);
-    const refs = Array.from({ length: 10 }, (_, i) => ref("a", i));
-    chunks.want(refs);
-    expect(fetchBytes).toHaveBeenCalledTimes(RADIO.parallelRequests);
-    now = RADIO.requestTimeoutMs - 1;
-    chunks.want(refs);
-    expect(fetchBytes).toHaveBeenCalledTimes(RADIO.parallelRequests);
-    now = RADIO.requestTimeoutMs + 1;
-    chunks.want(refs);
-    // Завислі вважаються невдалими: їх попросять знову лише через `retryMs`, а місця дістаються наступним.
-    expect(fetchBytes).toHaveBeenCalledTimes(RADIO.parallelRequests * 2);
-    expect(fetchBytes.mock.calls.slice(RADIO.parallelRequests).map((call) => call.at(0))).toEqual(["a/3", "a/4", "a/5"]);
-  });
-
-  it("запізнілий шматок після тайм-ауту не ламає нового запиту того самого шматка", async () => {
-    let now = 0;
-    const late: ((data: ArrayBuffer) => void)[] = [];
-    const fetchBytes = vi.fn(() => new Promise<ArrayBuffer>((resolve) => late.push(resolve)));
+    // Повільна, але жива лінія: шматок приходить за 40 с. Завислий запит скасовує сама мережа (`net.ts`), а не черга.
+    const slow: (() => void)[] = [];
+    const fetchBytes = vi.fn(() => new Promise<ArrayBuffer>((resolve) => slow.push(() => resolve(new ArrayBuffer(100)))));
     const { chunks } = store(fetchBytes, 1000, () => now);
-    chunks.want([ref("a", 0)]);
-    now = RADIO.requestTimeoutMs + RADIO.retryMs + 2;
-    chunks.want([ref("a", 0)]);
-    expect(fetchBytes).toHaveBeenCalledTimes(2);
-    late[0]?.(new ArrayBuffer(100));
+    const refs = Array.from({ length: 10 }, (_, i) => ref("a", i));
+    for (now = 0; now <= 40_000; now += 500) chunks.want(refs);
+    expect(fetchBytes).toHaveBeenCalledTimes(RADIO.parallelRequests);
+    for (const done of slow) done();
     await settle();
-    expect(chunks.copy(ref("a", 0))?.byteLength).toBe(100);
-    // Новий запит ще йде: той самий шматок удруге не просять, а його відповідь не рахується двічі.
-    chunks.want([ref("a", 0)]);
-    expect(fetchBytes).toHaveBeenCalledTimes(2);
-    late[1]?.(new ArrayBuffer(100));
-    await settle();
-    expect(chunks.size).toBe(100);
+    chunks.want(refs);
+    expect(fetchBytes.mock.calls.map((call) => call.at(0))).toEqual(["a/0", "a/1", "a/2", "a/3", "a/4", "a/5"]);
   });
 
   it("шматок, що не прийшов, просить знову лише згодом", async () => {

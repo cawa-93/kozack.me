@@ -9,8 +9,7 @@ export type FetchBytes = (url: string) => Promise<ArrayBuffer>;
 export class ChunkStore {
   /** Порядок вставки — порядок витіснення: щойно потрібне переставляється в кінець. */
   private readonly bytes = new Map<string, ArrayBuffer>();
-  /** Запити, що йдуть: коли попросили. Завислий понад `RADIO.requestTimeoutMs` звільняє місце. */
-  private readonly loading = new Map<string, { since: number }>();
+  private readonly loading = new Set<string>();
   private readonly failedAt = new Map<string, number>();
   private total = 0;
 
@@ -23,7 +22,6 @@ export class ChunkStore {
 
   /** Попросити шматки: перші — найважливіші. Те, що вже є, лишається в пам'яті довше за решту. */
   want(refs: readonly ChunkRef[]): void {
-    this.expire();
     for (const ref of refs) {
       const key = chunkKey(ref);
       const known = this.bytes.get(key);
@@ -50,32 +48,16 @@ export class ChunkStore {
   }
 
   private load(ref: ChunkRef, key: string): void {
-    const request = { since: this.clock() };
-    this.loading.set(key, request);
-    const current = (): boolean => this.loading.get(key) === request;
+    this.loading.add(key);
     this.fetchBytes(this.url(ref))
       .then((data) => {
-        // Запізнілий після тайм-ауту шматок теж годиться; той самий удруге лише заміняє перший.
         this.failedAt.delete(key);
-        const old = this.bytes.get(key);
-        if (old) this.total -= old.byteLength;
-        this.bytes.delete(key);
         this.bytes.set(key, data);
         this.total += data.byteLength;
         this.evict();
       })
-      .catch(() => current() && this.failedAt.set(key, this.clock()))
-      .finally(() => current() && this.loading.delete(key));
-  }
-
-  /** Завислі запити — невдалі від миті тайм-ауту: місце звільняється, а знову їх попросять через `retryMs`. */
-  private expire(): void {
-    const now = this.clock();
-    for (const [key, request] of this.loading) {
-      if (now - request.since <= RADIO.requestTimeoutMs) continue;
-      this.loading.delete(key);
-      this.failedAt.set(key, request.since + RADIO.requestTimeoutMs);
-    }
+      .catch(() => this.failedAt.set(key, this.clock()))
+      .finally(() => this.loading.delete(key));
   }
 
   private evict(): void {

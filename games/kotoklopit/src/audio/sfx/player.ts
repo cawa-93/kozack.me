@@ -4,7 +4,7 @@
 import type { SoundBus } from "./bus";
 import { SFX } from "../config";
 import { heardAt, type AudioEngine } from "../engine";
-import { timeoutSignal } from "../net";
+import { fetchBytes } from "../net";
 import type { SoundFile } from "./files";
 
 /** Скільки розкодованого звуку тримати, байт; найдавніше використане витісняється. */
@@ -209,9 +209,7 @@ export class Player {
   private fetchBytes(file: SoundFile): Promise<ArrayBuffer | null> {
     let bytes = this.bytes.get(file.key);
     if (!bytes) {
-      bytes = fetch(file.url, { signal: timeoutSignal(SFX.requestTimeoutMs) })
-        .then((response) => (response.ok ? response.arrayBuffer() : null))
-        .catch(() => null);
+      bytes = fetchBytes(file.url, SFX.stallMs).catch(() => null);
       this.bytes.set(file.key, bytes);
       // Мережа збоїла — наступна потреба спробує знову.
       void bytes.then((result) => result === null && this.bytes.delete(file.key));

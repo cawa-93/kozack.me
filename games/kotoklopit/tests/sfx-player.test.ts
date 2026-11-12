@@ -4,7 +4,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { SFX } from "../src/audio/config";
-import { timeoutSignal } from "../src/audio/net";
 import { soundBus, type SoundBus } from "../src/audio/sfx/bus";
 import { allSoundFiles, soundFile, type SoundFile } from "../src/audio/sfx/files";
 import { Player } from "../src/audio/sfx/player";
@@ -94,21 +93,6 @@ describe("звуки: завислий запит не глушить решту
     const asked = fetch.mock.calls.length;
     await vi.advanceTimersByTimeAsync(SFX.retryMs * 3);
     expect(fetch.mock.calls.length).toBe(asked);
-  });
-
-  it("тайм-аут є й там, де браузер не знає `AbortSignal.timeout`", () => {
-    vi.useFakeTimers();
-    const native = AbortSignal.timeout;
-    Object.defineProperty(AbortSignal, "timeout", { value: undefined, configurable: true, writable: true });
-    try {
-      const signal = timeoutSignal(1000);
-      expect(signal).toBeInstanceOf(AbortSignal);
-      expect(signal?.aborted).toBe(false);
-      vi.advanceTimersByTime(1001);
-      expect(signal?.aborted).toBe(true);
-    } finally {
-      Object.defineProperty(AbortSignal, "timeout", { value: native, configurable: true, writable: true });
-    }
   });
 });
 
