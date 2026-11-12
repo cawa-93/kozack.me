@@ -154,6 +154,24 @@ describe("хвороби персонажа (§6.5)", () => {
     expect(isIll(state, "exhaustion")).toBe(true);
   });
 
+  it("лікар обнуляє рахунок коротких ночей, хоч би що лікував (§6.5)", () => {
+    const save = game();
+    const state = save.current;
+    state.day = 1;
+    state.minute = 19 * 60;
+    state.character.money = 500;
+    // Дві короткі ночі поспіль — ще не виснаження; третя дала б його.
+    for (let night = 0; night < 2; night++) nightlyIllness(state, 5.5);
+    expect(isIll(state, "exhaustion")).toBe(false);
+    fallIllPerson(state, "cold");
+    standAt(save, "door");
+    expect(startTrip(state, "doctor")).toBe(true);
+    driveSafely(save);
+    expect(doctorTreat(state, "cold", "premium", always())).toBe("cured");
+    nightlyIllness(state, 5.5);
+    expect(isIll(state, "exhaustion")).toBe(false);
+  });
+
   it("огляду в лікаря немає: лікує одразу, а платять лише за лікування (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6)", () => {
     const save = game();
     save.current.day = 1;

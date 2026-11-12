@@ -107,6 +107,8 @@ export function doctorTreat(state: GameState, id: IllnessId, quality: "cheap" | 
   (trip.log ??= { exam: null, done: [] }).done.push(`self:${id}:${result}`);
   if (result === "failed") return "failed";
   curePerson(state, id);
+  // Лікар обнуляє рахунок коротких ночей (§6.5), хоч би що лікував.
+  state.character.shortNights = 0;
   changeStat(state, "health", DOCTOR_TREAT.health);
   // Лікарняний — від завтра (§6.5): сьогодні ще робочий день, і дорога додому в робочий час — поїздка зі штрафом (перевірка
   // поїздок 2026-10-28; раніше лікарняний діяв уже сьогодні). Хто вже на лікарняному, тому він подовжується.
