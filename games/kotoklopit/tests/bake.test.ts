@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import type { Look, Shape } from "../src/sim/types";
-import { BakeCache, BAKE_BUDGET } from "../src/view/art/bakecache";
+import { BakeCache, BAKE_BUDGET, BAKE_MS_GUESS, FRAME_MS, frameLeft, IDLE_SPARE_MS, idleFits, nextBakeMs } from "../src/view/art/bakecache";
 import { artEntry, DEFAULT_RES } from "../src/view/art/manifest";
 import { ART_VIEWS, frameId, type ArtId, type ArtView } from "../src/view/art/types";
 import { CAT_FAR_SLOTS, ISO_CAT_FIT, ISO_CAT_RIG, isoCatSkin } from "../src/view/iso/catrig";
@@ -69,6 +69,37 @@ describe("запечений кадр — звичайна текстура з �
   it("полотно знищеного кадру обнуляється одразу, не чекаючи збирача сміття (iOS обмежує сумарну пам'ять полотен)", () => {
     expect(source).toMatch(/\.width = 0/);
     expect(source).toMatch(/\.height = 0/);
+  });
+});
+
+describe("запікання у вільний час (`prebakeArt`)", () => {
+  it("тривалість запікання — ковзне середнє замірів: спершу — як на повільному телефоні, далі — як на цьому", () => {
+    expect(BAKE_MS_GUESS).toBeGreaterThanOrEqual(5);
+    let avg = BAKE_MS_GUESS;
+    for (let i = 0; i < 40; i++) avg = nextBakeMs(avg, 1.5);
+    expect(avg).toBeCloseTo(1.5, 1);
+    // Один довгий замір (перше звернення до сторінки атласу) середнього не перекидає.
+    const spike = nextBakeMs(avg, 40);
+    expect(spike).toBeGreaterThan(avg);
+    expect(spike).toBeLessThan(20);
+  });
+
+  it("ще одне запікання — лише коли вільного часу більше, ніж воно зазвичай триває, і лишається запас браузерові", () => {
+    // Телефон: запікання ≈ 7 мс — 5 мс вільного часу мало (раніше бралося, бо більше за 3).
+    expect(idleFits(5, 7)).toBe(false);
+    expect(idleFits(7 + IDLE_SPARE_MS, 7)).toBe(false);
+    expect(idleFits(12, 7)).toBe(true);
+    // Десктоп: ≈ 1,5 мс — вистачає й 5.
+    expect(idleFits(5, 1.5)).toBe(true);
+    expect(idleFits(IDLE_SPARE_MS, 0)).toBe(false);
+  });
+
+  it("без `requestIdleCallback` вільний час — те, що лишилося до наступного кадру гри", () => {
+    expect(frameLeft(1000, 1000)).toBeCloseTo(FRAME_MS);
+    expect(frameLeft(1012, 1000)).toBeCloseTo(FRAME_MS - 12);
+    // Кадр гри затягнувся чи кадрів немає (вкладку сховано) — вільного часу немає.
+    expect(frameLeft(1030, 1000)).toBeLessThan(0);
+    expect(idleFits(frameLeft(1030, 1000), 1)).toBe(false);
   });
 });
 

@@ -80,6 +80,43 @@ export function mayBakeNow(spent: number, needed: number, budget: number = BAKES
   return needed <= 0 || spent <= 0 || spent + needed <= budget;
 }
 
+/**
+ * Скільки триває запікання кадру, поки його не поміряли, мс: як на повільному телефоні (5–9 мс), щоб перше запікання у
+ * вільний час не з'їло кадр гри; далі — ковзне середнє замірів цього пристрою (`nextBakeMs`).
+ */
+export const BAKE_MS_GUESS = 8;
+/**
+ * Вага нового заміру в ковзному середньому: середнє йде за пристроєм за кілька запікань, а один довгий замір (перше
+ * звернення до сторінки атласу) його не перекидає.
+ */
+const BAKE_MS_WEIGHT = 0.2;
+/** Скільки мілісекунд вільного часу лишати браузерові після запікання. */
+export const IDLE_SPARE_MS = 3;
+/** Кадр гри, мс (60 кадрів/с): без `requestIdleCallback` вільний час — те, що від нього лишилося (`frameLeft`). */
+export const FRAME_MS = 1000 / 60;
+
+/** Ковзне середнє тривалості запікання з новим заміром `sample`, мс. */
+export function nextBakeMs(average: number, sample: number): number {
+  return average + (sample - average) * BAKE_MS_WEIGHT;
+}
+
+/**
+ * Чи брати з черги ще одне запікання у вільний час: лишилося (`remaining`, мс) більше, ніж воно зазвичай триває
+ * (`averageMs`), і ще запас браузерові. Сталий поріг не годиться: на телефоні запікання довше за будь-який малий запас.
+ */
+export function idleFits(remaining: number, averageMs: number): boolean {
+  return remaining > averageMs + IDLE_SPARE_MS;
+}
+
+/**
+ * Вільний час без `requestIdleCallback` (Safari), мс: скільки лишилося до наступного кадру гри, якщо цей почався о
+ * `frameStart` (`game.loop.now`). Таймер спрацьовує, лише коли кадр уже пораховано й намальовано, тож це — верхня межа
+ * простою; кадр затягнувся чи кадрів немає (вкладку сховано) — від'ємне.
+ */
+export function frameLeft(now: number, frameStart: number, frame: number = FRAME_MS): number {
+  return frame - (now - frameStart);
+}
+
 /** Власник за замовчуванням — для кадрів, які не належать жодній істоті (галерея). */
 export const SHARED_OWNER = "shared";
 

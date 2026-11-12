@@ -20,7 +20,7 @@
 import Phaser from "phaser";
 
 import { hasArtFrame, type ArtParent } from "./atlas";
-import { BakeCache, BAKE_BUDGET, SHARED_OWNER, type BakeStats } from "./bakecache";
+import { BakeCache, BAKE_BUDGET, BAKE_MS_GUESS, frameLeft, idleFits, nextBakeMs, SHARED_OWNER, type BakeStats } from "./bakecache";
 import { clothFrame, clothIds, type ClothLayers } from "./cloth";
 import { composeFrame, createCtx, stubLayers, type LayerImage, type LayerSource } from "./compose";
 import { artEntry, DEFAULT_RES } from "./manifest";
@@ -166,6 +166,10 @@ interface Baker {
   queue: Map<string, Prebake>;
   /** Чи вже попрошено вільного часу для черги. */
   idle: boolean;
+  /** Скільки триває запікання на цьому пристрої, мс (ковзне середнє, `nextBakeMs`). */
+  bakeMs: number;
+  /** Гра: її кадр (`loop.now`) — вільний час без `requestIdleCallback`. */
+  game: Phaser.Game;
 }
 
 /** Кадр, що чекає запікання наперед. */
@@ -179,10 +183,7 @@ interface Prebake {
 
 /** Найдовша черга запікання наперед: 22 коти × ≈ 10 частин іншого ракурсу — з запасом. */
 const PREBAKE_QUEUE = 512;
-/** Скільки мілісекунд вільного часу лишати браузерові: менше — запікання наперед чекає наступної паузи. */
-const IDLE_SPARE_MS = 3;
-/** Без `requestIdleCallback` (Safari) — по стільки кадрів за раз через `setTimeout`. */
-const TIMEOUT_BATCH = 2;
+/** Без `requestIdleCallback` (Safari) — як часто перевіряти, чи до кадру гри лишилося на одне запікання (`frameLeft`). */
 const TIMEOUT_MS = 50;
 
 /** Кеш запечених кадрів на гру: текстури належать менеджерові текстур гри, а не сцені. */
@@ -192,7 +193,7 @@ function bakerOf(game: Phaser.Game): Baker {
   let baker = bakers.get(game);
   if (!baker) {
     const cache = new BakeCache<BakedFrame>((key) => dropTexture(game.textures, key), BAKE_BUDGET);
-    const made: Baker = { cache, frame: -1, baked: 0, queue: new Map(), idle: false };
+    const made: Baker = { cache, frame: -1, baked: 0, queue: new Map(), idle: false, bakeMs: BAKE_MS_GUESS, game };
     baker = made;
     bakers.set(game, made);
     // Гру знищено — разом із текстурами.
@@ -225,31 +226,38 @@ function bake(scene: Phaser.Scene, frame: FrameId, recipe: TintRecipe, opts: Bak
       baker.baked = 0;
     }
     baker.baked++;
+    const start = performance.now();
     const baked = make(scene, frame, recipe, key, opts.fallback);
+    baker.bakeMs = nextBakeMs(baker.bakeMs, performance.now() - start);
     return { value: baked, pixels: baked.px.w * baked.px.h };
   });
 }
 
-/** Попросити вільного часу для черги запікання наперед (раз, доки її не розібрано). */
+/**
+ * Попросити вільного часу для черги запікання наперед (раз, доки її не розібрано): запікати, доки вільного часу більше, ніж
+ * триває запікання на цьому пристрої (`idleFits`). Без `requestIdleCallback` (Safari) — по одному кадру за раз і лише
+ * тоді, коли до наступного кадру гри на нього лишилося часу (`frameLeft`), інакше запікання наперед само рвало б кадри.
+ */
 function scheduleIdle(baker: Baker): void {
   if (baker.idle || baker.queue.size === 0) return;
   baker.idle = true;
   if (typeof requestIdleCallback === "function") {
-    requestIdleCallback((deadline) => drainQueue(baker, () => deadline.timeRemaining() > IDLE_SPARE_MS));
+    requestIdleCallback((deadline) => drainQueue(baker, () => idleFits(deadline.timeRemaining(), baker.bakeMs)));
   } else {
-    let left = TIMEOUT_BATCH;
-    setTimeout(() => drainQueue(baker, () => left-- > 0), TIMEOUT_MS);
+    setTimeout(() => drainQueue(baker, (baked) => baked === 0 && idleFits(frameLeft(performance.now(), baker.game.loop.now), baker.bakeMs)), TIMEOUT_MS);
   }
 }
 
 /**
- * Запікати з черги, доки є час (`more`). Пропускає те, що вже запечене, сцену, якої вже немає, і власника, чий вигляд
- * відтоді змінився (кіт захворів, персонажа переодягли): запечене за старим рецептом скинуло б кадри нового.
+ * Запікати з черги, доки є час (`more`: скільки вже запечено цього разу). Пропускає те, що вже запечене, сцену, якої вже
+ * немає, і власника, чий вигляд відтоді змінився (кіт захворів, персонажа переодягли): запечене за старим рецептом скинуло
+ * б кадри нового.
  */
-function drainQueue(baker: Baker, more: () => boolean): void {
+function drainQueue(baker: Baker, more: (baked: number) => boolean): void {
   baker.idle = false;
+  let baked = 0;
   for (const [key, job] of baker.queue) {
-    if (!more()) break;
+    if (!more(baked)) break;
     baker.queue.delete(key);
     const scene = job.scene;
     if (!(scene.sys as Phaser.Scenes.Systems | undefined)?.game || baker.cache.peek(key) !== undefined) continue;
@@ -257,6 +265,7 @@ function drainQueue(baker: Baker, more: () => boolean): void {
     const current = baker.cache.ownerRecipe(job.owner);
     if (current !== null && current !== family) continue;
     bake(scene, job.frame, job.recipe, { owner: job.owner, fallback: job.fallback });
+    baked++;
   }
   scheduleIdle(baker);
 }
