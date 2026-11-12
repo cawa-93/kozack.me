@@ -115,6 +115,18 @@ describe("шматки між сесіями (§8.10)", () => {
     expect(cache.has("https://music.example/music/a-m48/6.mp3")).toBe(true);
   });
 
+  it("короткі сесії теж не дають сховищу рости: зайве прибирається, щойно сховище відкрили", async () => {
+    const cache = memoryCache();
+    // Десять коротких сесій, у кожній — менше нових шматків, ніж між прибираннями.
+    for (let session = 0; session < 10; session++) {
+      const get = persistentFetch(async () => cache, async () => bytes(1), 10);
+      for (let i = 0; i < 12; i++) await get(`https://music.example/music/a-m48/${session}-${i}.mp3`);
+      await settle();
+      await settle();
+    }
+    expect(cache.size()).toBeLessThanOrEqual(10 + 12);
+  });
+
   it("прибирає саме, коли назбиралось нових", async () => {
     const cache = memoryCache();
     const get = persistentFetch(async () => cache, async () => bytes(1), 10);

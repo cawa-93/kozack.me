@@ -18,14 +18,19 @@ export interface ChunkCache {
 const TRIM_EVERY = 50;
 
 /**
- * Отримувач шматків: спершу сховище, потім мережа; нове кладе в сховище, а найдавніше понад `limit` видаляє. Сховище, що не
- * відповіло за `RADIO.stallMs`, — як немає: інакше завислий запит займав би місце в черзі шматків назавжди (мережу так само
- * стереже `net.ts`). Не відкрилося вчасно — до кінця сесії без нього.
+ * Отримувач шматків: спершу сховище, потім мережа; нове кладе в сховище, а найдавніше понад `limit` видаляє (і щойно сховище
+ * відкрили). Сховище, що не відповіло за `RADIO.stallMs`, — як немає: інакше завислий запит займав би місце в черзі шматків
+ * назавжди (мережу так само стереже `net.ts`). Не відкрилося вчасно — до кінця сесії без нього.
  */
 export function persistentFetch(open: () => Promise<ChunkCache | null>, network: (url: string) => Promise<Response>, limit: number = RADIO.persistChunks): (url: string) => Promise<ArrayBuffer> {
   let opened: Promise<ChunkCache | null> | null = null;
   let stored = 0;
-  const cache = (): Promise<ChunkCache | null> => (opened ??= within(open(), null));
+  // Щойно відкрили — прибрати зайве з минулих сесій: коротка сесія не набирає `TRIM_EVERY` нових, і сховище росло б без межі.
+  const cache = (): Promise<ChunkCache | null> =>
+    (opened ??= within(open(), null).then((store) => {
+      if (store) trim(store, limit).catch(() => undefined);
+      return store;
+    }));
   return async (url) => {
     const store = await cache();
     const hit = store ? await within(store.match(url), undefined) : undefined;
