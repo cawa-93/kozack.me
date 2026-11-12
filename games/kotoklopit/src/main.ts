@@ -5,6 +5,7 @@ import { STATIONS } from "./audio/radio/playlist";
 import { Radio } from "./audio/radio/radio";
 import { AudioPrefs, browserStorage } from "./audio/settings";
 import { Sounds } from "./audio/sfx/sounds";
+import { limitFrames } from "./framerate";
 import { DayScene } from "./scenes/DayScene";
 import { PreloadScene } from "./scenes/PreloadScene";
 import { RaceScene } from "./scenes/RaceScene";
@@ -57,6 +58,8 @@ const game = new Phaser.Game({
   input: { activePointers: 3 },
   // Звук гри — `src/audio/`: другий AudioContext не потрібен.
   audio: { noAudio: true },
+  // Не частіше 60 кадрів на секунду, з допуском на тремтіння кадрів (§2.1, `framerate.ts`): `fps.limit` Phaser його не має.
+  callbacks: { postBoot: limitFrames },
   ...(render ? { render } : {}),
   // Спершу атлас арту (крок 16), потім день; гонку запускає DayScene.
   scene: [new PreloadScene("day"), new DayScene(session, radio, sounds), new RaceScene(session)],
