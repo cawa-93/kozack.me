@@ -16,6 +16,7 @@ import {
   glowRatio,
   type AlphaRaster,
 } from "../src/view/art/glowmap";
+import { highlightPulse } from "../src/view/iso/markslayout";
 import { HIGHLIGHT_DARK } from "../src/view/light/lightlook";
 
 /** Растр альфи з функції (0–1). */
@@ -26,6 +27,18 @@ function raster(w: number, h: number, at: (x: number, y: number) => number): Alp
 }
 
 const fract = (v: number): number => v - Math.floor(v);
+
+/** Межі пульсу підсвітки, які позначки справді показують (`highlightPulse`), за кілька його періодів. */
+const PULSE = (() => {
+  let min = Infinity;
+  let max = -Infinity;
+  for (let time = 0; time < 4000; time++) {
+    const pulse = highlightPulse(time);
+    min = Math.min(min, pulse);
+    max = Math.max(max, pulse);
+  }
+  return { min, max };
+})();
 
 /** Вибірка шейдера: білінійна, за межами текстури — прозоро (`boundedSampler`). Координати — у текселях, центр текселя — ціле. */
 function sample(a: AlphaRaster, x: number, y: number): number {
@@ -147,8 +160,8 @@ describe("карта сяйва кадру", () => {
     expect(map.data[map.data.length - 1]).toBe(0);
   });
 
-  it("сила карти — найслабше сяйво пульсу, ширина — як у фільтра", () => {
-    expect(GLOW_MAP.gain).toBe(TARGET_GLOW.min);
+  it("сила карти — найслабше сяйво, яке пульс справді показує, ширина — як у фільтра", () => {
+    expect(GLOW_MAP.gain).toBeCloseTo(TARGET_GLOW.min + TARGET_GLOW.pulse * PULSE.min, 4);
     expect(GLOW_MAP.distance).toBe(10);
   });
 
@@ -170,7 +183,7 @@ describe("шари сяйва в грі", () => {
   });
 
   it("слабке сяйво (далеко від речі) шари дають таким самим, як шейдер: сума прозоростей — сила / сила карти", () => {
-    for (const strength of [2, 3.3, 6, 14.4]) {
+    for (const strength of [2.8, 3.3, 5.6, (TARGET_GLOW.min + TARGET_GLOW.pulse * PULSE.max) * HIGHLIGHT_DARK.boost]) {
       const t = strength / GLOW_MAP.gain;
       let sum = 0;
       for (let k = 0; k < GLOW_LAYERS; k++) sum += glowLayerAlpha(t, k);
@@ -179,8 +192,19 @@ describe("шари сяйва в грі", () => {
   });
 
   it("шарів досить для найсильнішого пульсу в найтемнішому місці", () => {
-    const strongest = (TARGET_GLOW.min + TARGET_GLOW.pulse) * HIGHLIGHT_DARK.boost;
-    expect(GLOW_LAYERS).toBe(Math.ceil(strongest / GLOW_MAP.gain));
+    const strongest = (TARGET_GLOW.min + TARGET_GLOW.pulse * PULSE.max) * HIGHLIGHT_DARK.boost;
+    expect(GLOW_LAYERS).toBe(Math.ceil(strongest / GLOW_MAP.gain - 1e-4));
+  });
+
+  it("удень найслабший пульс — рівно один шар (сяйво шейдера без похибки), найсильніший — не більше двох", () => {
+    const layers = (pulse: number): number[] => {
+      const t = (TARGET_GLOW.min + TARGET_GLOW.pulse * pulse) / GLOW_MAP.gain;
+      return Array.from({ length: GLOW_LAYERS }, (_, k) => glowLayerAlpha(t, k)).filter((alpha) => alpha > 1e-4);
+    };
+    const weakest = layers(PULSE.min);
+    expect(weakest).toHaveLength(1);
+    expect(weakest[0]).toBeCloseTo(1, 4);
+    expect(layers(PULSE.max).length).toBeLessThanOrEqual(2);
   });
 
   it("карта лягає на кадр речі: origin — у pivot речі, масштаб — у scale разів більший", () => {

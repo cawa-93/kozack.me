@@ -10,6 +10,7 @@ import { targetOf, type Target } from "../../sim/targets";
 import type { GameState } from "../../sim/types";
 import { isWorking, searchProgress } from "../../sim/work";
 import { inMeeting } from "../../sim/work";
+import { HIGHLIGHT_PULSE } from "../art/glowmap";
 import type { BubbleKind } from "../iconnames";
 import { isoObjectLook } from "../world/objects";
 import type { Point } from "../world/part";
@@ -32,9 +33,10 @@ export function highlightTarget(state: GameState, blocked: boolean): Target | nu
   return targetOf(state);
 }
 
-/** Пульс підсвітки 0,2–0,9 — той самий, що в старому вигляді: частини світу роблять з нього яскравість сяйва чи контуру. */
+/** Пульс підсвітки (`HIGHLIGHT_PULSE`) — той самий, що в старому вигляді: частини світу роблять з нього яскравість сяйва чи контуру. */
 export function highlightPulse(time: number): number {
-  return 0.55 + 0.35 * Math.sin(time / 180);
+  const { min, max } = HIGHLIGHT_PULSE;
+  return (min + max) / 2 + ((max - min) / 2) * Math.sin(time / 180);
 }
 
 // --- Екран комп'ютера (§8.6) ---------------------------------------------------------------------------

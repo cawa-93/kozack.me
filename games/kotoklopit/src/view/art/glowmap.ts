@@ -7,19 +7,23 @@
 import { HIGHLIGHT_DARK } from "../light/lightlook";
 import type { FrameId } from "./types";
 
-/** Сила сяйва цілі (`outerStrength` шейдера): від `min` до `min + pulse` за пульсом позначок; у темряві — ще й × `HIGHLIGHT_DARK`. */
+/** Пульс підсвітки цілі: між цими межами він ходить (`highlightPulse`, `iso/markslayout.ts`). */
+export const HIGHLIGHT_PULSE = { min: 0.2, max: 0.9 } as const;
+
+/** Сила сяйва цілі (`outerStrength` шейдера): `min + pulse × пульс`; у темряві — ще й × `HIGHLIGHT_DARK`. */
 export const TARGET_GLOW = { min: 2, pulse: 4 } as const;
 
 /**
  * Карта сяйва речі: ширина ореолу (px атласу, як `distance` фільтра), вибірок на кільце (густо — рівний ореол без шуму),
  * у скільки разів карта дрібніша за кадр (ореол плавний, а різкий внутрішній край закриває сама річ) і сила, з якою
- * карту запечено, — найслабший пульс: тоді один шар карти — рівно сяйво шейдера, а сильніше дають шари поверх
- * (`glowLayerAlpha`).
+ * карту запечено, — найслабше сяйво, яке пульс показує: тоді один шар карти — рівно сяйво шейдера, а сильніше дають
+ * шари поверх (`glowLayerAlpha`). Слабшою силою карту пекти не варто: шари поверх м'якші за шейдер, і що їх більше, то
+ * далі сяйво від нього.
  */
-export const GLOW_MAP = { distance: 10, quality: 32, scale: 2, gain: TARGET_GLOW.min } as const;
+export const GLOW_MAP = { distance: 10, quality: 32, scale: 2, gain: TARGET_GLOW.min + TARGET_GLOW.pulse * HIGHLIGHT_PULSE.min } as const;
 
 /** Скільки шарів карти треба для найсильнішого сяйва — найсильнішого пульсу в найтемнішому місці (`HIGHLIGHT_DARK`). */
-export const GLOW_LAYERS = Math.ceil(((TARGET_GLOW.min + TARGET_GLOW.pulse) * HIGHLIGHT_DARK.boost) / GLOW_MAP.gain);
+export const GLOW_LAYERS = Math.ceil(((TARGET_GLOW.min + TARGET_GLOW.pulse * HIGHLIGHT_PULSE.max) * HIGHLIGHT_DARK.boost) / GLOW_MAP.gain - 1e-9);
 
 /**
  * Фільтр сяйва кота: вибірок на кільце й ширина (px). Кіт анімований, тож фільтр рахує щокадру — `quality × distance`
