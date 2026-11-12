@@ -1327,10 +1327,11 @@ export const PLAY_RELIEF = 50;
 /** Мінус голод за украдену страву. */
 export const STEAL_HUNGER = 50;
 /**
- * Голодний кіт краде їжу (§9.12): `step` — «Злодійство»; від `starving` ще `base`; `max` — стеля шансу. Шанс кидається раз на
+ * Голодний кіт краде їжу (§9.12): `thief` — шанс за рівнем «Злодійства» +1 і +2 (не рівним кроком: «+1» краде вдвічі рідше
+ * за «+2», а не вчетверо); від `starving` ще `base`; `max` — стеля шансу. Шанс кидається раз на
  * рішення кота й ще раз після прохання біля персонажа, тож частоту на годину задає й тривалість прохань (`tests/hungrytheft.test.ts`).
  */
-export const HUNGRY_THEFT = { step: 0.35, base: 0.25, starving: 95, starvingStep: 0.55, max: 0.9 } as const;
+export const HUNGRY_THEFT = { thief: [0.5, 0.7], base: 0.25, starving: 95, starvingStep: 0.55, max: 0.9 } as const;
 /** «Злодійство» (§9.12): `wait*` — «−» сидить біля їжі й не бере. */
 export const THIEF = { reach: 6, hunger: 30, pushStep: 0.2, victimMood: -2, relation: -3, guardFight: 0.3, waitChance: 0.5, waitMinutes: 3 } as const;
 /** Кіт і робота (§9.12). */

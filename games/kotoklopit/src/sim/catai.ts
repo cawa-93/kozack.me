@@ -1080,7 +1080,7 @@ function humanFood(state: GameState, rng: Rng): string | undefined {
 function hungryTheft(state: GameState, cat: Cat, rng: Rng, steal: string): boolean {
   const thief = traitLevel(cat, "thief");
   const starving = cat.needs.hunger >= HUNGRY_THEFT.starving ? HUNGRY_THEFT.base * Math.max(0, 1 + HUNGRY_THEFT.starvingStep * thief) : 0;
-  if (!rng.chance(Math.min(HUNGRY_THEFT.max, HUNGRY_THEFT.step * Math.max(0, thief) + starving))) return false;
+  if (!rng.chance(Math.min(HUNGRY_THEFT.max, (thief > 0 ? HUNGRY_THEFT.thief[thief - 1]! : 0) + starving))) return false;
   // Пам'ятає «ні» про кухню — не краде; «+» підходить і розвертається (§9.12, «Слухняність»).
   const verdict = noGo(state, cat, "kitchen");
   if (verdict === "go") start(cat, "steal", objectTile(state, steal), 1, steal);

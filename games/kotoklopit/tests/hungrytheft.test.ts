@@ -77,16 +77,16 @@ describe("крадіжки голодного кота без корму (`HUNGR
     const plain = theftsPerHour(0, STARVING);
     const honest = theftsPerHour(-1, STARVING);
     const rates = `+2: ${thief2}, +1: ${thief1}, без риси: ${plain}, −1: ${honest}`;
-    // Із запасом довкола очікуваних 4,3 / 1,0–1,35 / 0,73 / 0,42 на годину.
+    // Із запасом довкола очікуваних 4,3 / 2 / 0,73 / 0,42 на годину.
     expect(thief2, rates).toBeGreaterThan(2.8);
     expect(thief2, rates).toBeLessThan(6.5);
-    expect(thief1, rates).toBeGreaterThan(0.7);
-    expect(thief1, rates).toBeLessThan(2);
+    expect(thief1, rates).toBeGreaterThan(1.5);
+    expect(thief1, rates).toBeLessThan(2.6);
     expect(plain, rates).toBeGreaterThan(0.45);
     expect(plain, rates).toBeLessThan(1.2);
     expect(honest, rates).toBeGreaterThan(0.25);
     expect(honest, rates).toBeLessThan(0.7);
-    expect(thief2).toBeGreaterThan(thief1 * 2);
+    expect(thief2).toBeGreaterThan(thief1 * 1.5);
     expect(thief1).toBeGreaterThan(plain);
     expect(plain).toBeGreaterThan(honest);
     expect(theftsPerHour(-2, STARVING)).toBe(0);
