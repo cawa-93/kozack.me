@@ -83,6 +83,13 @@ export const IDLE: Input = { move: { x: 0, y: 0 }, hold: false };
 /** Що має статися після натискання: зараз лише сон, бо його обробляє хід гри. */
 export type TapResult = "sleep" | null;
 
+/**
+ * Натискання щось зробило, а вмісту рук не змінило (долили воду, відкрили кран, сіли за комп'ютер): `tap` бачить це лише з цієї
+ * позначки. null — нічого не сталося чи відмова.
+ */
+const DONE = "done";
+type TapOutcome = TapResult | typeof DONE;
+
 /** Причини відмови без подробиць: їх можна передати просто назвою. */
 type BareRefusal = Exclude<Refusal, { product: unknown } | { item: unknown } | { what: unknown } | { need: unknown }>["reason"];
 
@@ -94,25 +101,26 @@ function refuse(state: GameState, target: string, refusal: Refusal | BareRefusal
 }
 
 /**
- * Коротке натискання дії (§10). Одне утримання — одна дія: натискання, що змінило вміст рук (насипали корм, поклали чи викинули
- * річ, опустили кота, щось узяли), ще триває — і утримання тієї самої кнопки не почне нову дію, поки її не відпустили (інакше
- * кота, що почав їсти з щойно насипаної миски, за мить гладили б). Виняток — вудка біля кота: з нею утримання тут же починає гру
- * (§10), хоч би її щойно взяли, хоч би натискання її не кинуло. Відпущена кнопка скидає прапорець у `tickActivity`.
+ * Коротке натискання дії (§10). Одне утримання — одна дія: натискання, що щось зробило (змінило вміст рук чи повернуло `DONE`),
+ * ще триває — і утримання тієї самої кнопки не почне нову дію, поки її не відпустили (інакше кота, що почав їсти з щойно насипаної
+ * миски, за мить гладили б). Відмова й натискання, що нічого не зробило, утримання не забирають: біля страви на столі, лотка чи
+ * безладу дію робить саме утримання. Виняток — вудка біля кота: з нею утримання тут же починає гру (§10), хоч би її щойно взяли,
+ * хоч би натискання її не кинуло. Відпущена кнопка скидає прапорець у `tickActivity`.
  */
 export function tap(state: GameState): TapResult {
   const held = state.character.held;
-  const result = tapAction(state);
+  const outcome = tapAction(state);
   const now = state.character.held;
-  if (now !== held && now?.kind !== "toy") state.character.holdSpent = true;
-  return result;
+  if ((outcome === DONE || now !== held) && now?.kind !== "toy") state.character.holdSpent = true;
+  return outcome === DONE ? null : outcome;
 }
 
-function tapAction(state: GameState): TapResult {
+function tapAction(state: GameState): TapOutcome {
   const character = state.character;
   if (state.end !== null || character.body.stun > 0) return null;
   if (character.activity?.kind === "work") {
     stopWork(state);
-    return null;
+    return DONE;
   }
   // Під час тривалої дії натискання її не перериває: інакше можна випадково взяти страву зі столу.
   if (character.activity !== null) return null;
@@ -165,18 +173,18 @@ function tapAction(state: GameState): TapResult {
       return tapCarrier(state, target.id);
     case "cat":
       // Кота в протистоянні торкаються — коти розходяться (§9.4, рішення автора 2026-10-26); рук для цього не треба.
-      if (touchStandoff(state, target.cat)) return null;
+      if (touchStandoff(state, target.cat)) return DONE;
       if (held !== null) return refuse(state, target.id, "hands-full");
       // Кіт спить у барабані — натискання виганяє його, як і дія біля машини (§8.7; перевірка побуту 2026-10-28: брало сплячого
       // на руки — «розбудили» й «проти волі»).
       if (catInWasher(state) === target.cat) {
         tapWasher(state);
-        return null;
+        return DONE;
       }
       // Кіт сидить на умивальнику й просить води — натискання відкриває йому кран, а не бере на руки (§9.12, «Пиття»).
       if (catOnSink(state) === target.cat) {
         openTap(state, target.cat);
-        return null;
+        return DONE;
       }
       // Кіт нагорі не дотягтися: злізе сам — на корм, на вудку чи прокинувшись; застряглого знімають (§9.12, «Лазіння»).
       if (upHigh(state, target.cat)) {
@@ -188,14 +196,14 @@ function tapAction(state: GameState): TapResult {
         backAway(state, target.cat, state.character.body);
         observe(state, target.cat, "litterPicky", 1, false, DIRTY_CLOTHES_CATS.observeEvery);
         emit(state, { type: "cat-dodged", cat: target.cat.id, issue: "clothes" });
-        return null;
+        return DONE;
       }
       pickUpCat(state, target.cat);
       return null;
   }
 }
 
-function tapObject(state: GameState, target: HomeObject, held: Item | null): TapResult {
+function tapObject(state: GameState, target: HomeObject, held: Item | null): TapOutcome {
   const character = state.character;
   switch (target.kind) {
     case "fridge": {
@@ -249,7 +257,7 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       // У коробці спить допитливий кіт (§9.12): спершу його треба забрати.
       if (catInBox(state)) return refuse(state, target.id, "cat-in-box");
       if (unpack(state).length === 0) return refuse(state, target.id, "no-room");
-      return null;
+      return DONE;
     case "stove": {
       const stove = state.home.stove;
       if (held !== null) {
@@ -307,7 +315,7 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       // Без світла («Планове відключення», §4.1, рішення автора 2026-11-02) за комп'ютер сідають, як завжди: він працює від
       // зарядної станції, лише робота йде повільніше (`payFactor`, `reputationFactor`, `searchFactor`).
       startWork(state);
-      return null;
+      return DONE;
     case "bed":
       if (held !== null) return refuse(state, target.id, "hands-full");
       if (!canGoToSleep(state)) return refuse(state, target.id, "too-early");
@@ -317,17 +325,17 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       const escaped = state.cats.find((c) => c.away === "stairs");
       if (escaped && held === null) {
         catchCat(state, escaped);
-        return null;
+        return DONE;
       }
       // Тоді — гість, що подзвонив і чекає (§9.12 «Подзвонили — двері гостю», рішення автора 2026-11-03): персонаж відчиняє йому,
       // і візит стається зараз; пакунки нікуди не дінуться — їх забирають наступним натисканням. Кота на руках не опускає (сюди з
       // котом на руках веде `tap`). Іграшку й пилосос `tap` ставить на підлогу ще до цього, тож сюди з річчю доходять лише
       // продукти, страва й корм — руки зайняті, як і з пакунками.
-      if ((held === null || held.kind === "cat") && admitGuest(state)) return null;
+      if ((held === null || held.kind === "cat") && admitGuest(state)) return DONE;
       if (held !== null) return refuse(state, target.id, "hands-full");
       if (receivePackages(state).length === 0) return refuse(state, target.id, "no-packages");
       openDoor(state);
-      return null;
+      return DONE;
     }
     case "shower":
       // Кіт на руках біля душу — купання (§8.7); інакше персонаж заходить у кабіну й лишається там до кінця душу.
@@ -336,23 +344,23 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
         if (supplyCount(state, "shampoo") === 0) return refuse(state, target.id, { reason: "empty", product: "shampoo" });
         waterFright(state);
         character.activity = { kind: "use", target: target.id, progress: 0, inside: true, bath: true };
-        return null;
+        return DONE;
       }
       if (held !== null) return refuse(state, target.id, "hands-full");
       // Увімкнули воду: «Жахається води» тікає з ванної — персонаж ще бачить це, заходячи в кабіну (§9.12).
       waterFright(state);
       character.activity = { kind: "use", target: target.id, progress: 0, inside: true };
-      return null;
+      return DONE;
     case "sink": {
       // Ліки, пластир і бинт — біля умивальника (§6.5). Кіт на умивальнику чекає крана — спершу відкрити воду йому (§9.12).
       if (held !== null) return refuse(state, target.id, "hands-full");
       const drinker = catOnSink(state);
       if (drinker) {
         openTap(state, drinker);
-        return null;
+        return DONE;
       }
       const refusal = sinkCare(state, stateRng(state, "behavior"));
-      return refusal === null ? null : refuse(state, target.id, refusal);
+      return refusal === null ? DONE : refuse(state, target.id, refusal);
     }
     case "radio":
     case "wardrobe":
@@ -369,18 +377,18 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       // Без світла пральна машина не працює (§4.1, рішення автора 2026-11-02).
       if (result === "no-power") return refuse(state, target.id, "no-power");
       if (result === "clean") return refuse(state, target.id, "clothes-clean");
-      return null;
+      return DONE;
     }
   }
 }
 
-function tapItem(state: GameState, item: HomeItem, id: string, held: Item | null): TapResult {
+function tapItem(state: GameState, item: HomeItem, id: string, held: Item | null): TapOutcome {
   switch (item.kind) {
     case "bowl": {
       if (held === null) {
         // З порожніми руками біля годівниці — спорожнити її, щоб змінити корм (§9.12, правка автора 2026-10-25).
         const feeder = feederAt(state, item.slot);
-        if (feeder && emptyFeeder(state, item, feeder).length > 0) return null;
+        if (feeder && emptyFeeder(state, item, feeder).length > 0) return DONE;
         return refuse(state, id, { reason: "need", need: "catfood" });
       }
       if (held.kind !== "catfood") return refuse(state, id, { reason: "not-here", item: held });
@@ -393,7 +401,7 @@ function tapItem(state: GameState, item: HomeItem, id: string, held: Item | null
       item.water = waterCapacity(item);
       emit(state, { type: "watered", item: item.id });
       freshWater(state, item);
-      return null;
+      return DONE;
     case "litter":
       // Лоток чистять утриманням дії; чистий — нічого чистити.
       if (held !== null) return refuse(state, id, "hands-full");
@@ -454,21 +462,19 @@ function pourFood(state: GameState, bowl: BowlItem, id: string, held: Item & { k
 }
 
 /** Дія біля переносок (§8.7): кота з рук садять, порожніми руками випускають усіх. */
-function tapCarrier(state: GameState, id: string): TapResult {
+function tapCarrier(state: GameState, id: string): TapOutcome {
   const { character } = state;
   const held = character.held;
   if (held?.kind === "cat") {
     const cat = state.cats.find((c) => c.id === held.cat);
     if (cat && !canSeat(cat)) return refuse(state, id, "newborn");
     if (cat && !seatCat(state, cat)) return refuse(state, id, "carrier-full");
-    character.holdSpent = true;
-    return null;
+    return DONE;
   }
   if (held !== null) return refuse(state, id, "hands-full");
   if ((state.home.caged?.length ?? 0) === 0) return refuse(state, id, { reason: "need", need: "cat" });
   releaseCats(state);
-  character.holdSpent = true;
-  return null;
+  return DONE;
 }
 
 /** Покласти іграшку на підлогу під ногами. */
