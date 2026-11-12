@@ -1,6 +1,6 @@
 // Єдиний AudioContext гри (§8.10, §11.4а). Він окремо від Phaser, бо звук потрібен і карткам (DOM); Phaser запущено з `noAudio`.
 
-import { SAMPLE_RATE, SFX } from "./config";
+import { SAMPLE_RATE, SFX, VOLUME_GLIDE } from "./config";
 
 /** Браузер дозволяє звук лише після дії гравця; `fullscreenOnFirstAction` для цього не годиться: на iPhone він одразу виходить. */
 const GESTURES = ["pointerup", "keydown", "touchend"] as const;
@@ -66,6 +66,11 @@ export class AudioEngine {
     if (running && !this.running) for (const listener of this.listeners) listener();
     this.running = running;
   }
+}
+
+/** Гучність шини з повзунка — плавно (`VOLUME_GLIDE`). */
+export function glide(param: AudioParam, value: number, context: BaseAudioContext): void {
+  param.setTargetAtTime(value, context.currentTime, VOLUME_GLIDE);
 }
 
 /**

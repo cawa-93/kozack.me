@@ -1,7 +1,7 @@
 // Радіо (§8.10): вподобання гравця, ефір і завантаження разом. Сцени й картка працюють лише з цим класом.
 
 import { RADIO } from "../config";
-import type { AudioEngine } from "../engine";
+import { glide, type AudioEngine } from "../engine";
 import { timeoutSignal } from "../net";
 import type { AudioPrefs } from "../settings";
 import { Broadcast } from "./broadcast";
@@ -89,7 +89,7 @@ export class Radio {
   }
 
   setVolume(volume: number): void {
-    this.update({ volume });
+    this.prefs.adjust({ volume });
     this.applyVolume();
   }
 
@@ -117,14 +117,15 @@ export class Radio {
     return this.on ? this.station : null;
   }
 
-  private update(change: { station?: string; radioOn?: boolean; volume?: number }): void {
+  private update(change: { station?: string; radioOn?: boolean }): void {
     this.prefs.update(change);
     setRadioLit(this.on);
   }
 
   private applyVolume(): void {
     const music = this.engine.music;
-    if (music) music.gain.value = this.volume;
+    const context = this.engine.context;
+    if (music && context) glide(music.gain, this.volume, context);
   }
 
   private tick(): void {

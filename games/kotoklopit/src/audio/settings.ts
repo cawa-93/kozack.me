@@ -41,23 +41,47 @@ export function saveAudioSettings(storage: Storage | null, settings: AudioSettin
   }
 }
 
+/** Повзунок пише вподобання, коли на стільки зупинився, мс: подія `input` приходить на кожен крок. */
+const ADJUST_SAVE_MS = 400;
+
 /** Спільні вподобання радіо й звуків: одна копія в пам'яті, інакше кожен затирав би зміни іншого. */
 export class AudioPrefs {
   private settings: AudioSettings;
+  private pending: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private readonly storage: Storage | null,
     stations: readonly string[],
   ) {
     this.settings = loadAudioSettings(storage, stations);
+    // Сторінку закрили, поки повзунок ще не зупинився: записати, що встигли.
+    if (typeof window !== "undefined") window.addEventListener("pagehide", () => this.flush());
   }
 
   get value(): AudioSettings {
     return this.settings;
   }
 
+  /** Змінити й одразу записати (вимикач, станція). */
   update(change: Partial<AudioSettings>): void {
     this.settings = { ...this.settings, ...change };
+    this.save();
+  }
+
+  /** Зміна повзунком: у пам'яті одразу, у сховище — коли повзунок зупинився. */
+  adjust(change: Partial<AudioSettings>): void {
+    this.settings = { ...this.settings, ...change };
+    if (this.pending !== null) clearTimeout(this.pending);
+    this.pending = setTimeout(() => this.save(), ADJUST_SAVE_MS);
+  }
+
+  private flush(): void {
+    if (this.pending !== null) this.save();
+  }
+
+  private save(): void {
+    if (this.pending !== null) clearTimeout(this.pending);
+    this.pending = null;
     saveAudioSettings(this.storage, this.settings);
   }
 }

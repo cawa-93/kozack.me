@@ -4,7 +4,7 @@
 import { onEvent, type GameEvent } from "../../sim/events";
 import type { GameState } from "../../sim/types";
 import { SFX } from "../config";
-import type { AudioEngine } from "../engine";
+import { glide, type AudioEngine } from "../engine";
 import type { AudioPrefs } from "../settings";
 import { soundBus } from "./bus";
 import { soundFile } from "./files";
@@ -96,7 +96,7 @@ export class Sounds {
   }
 
   setVolume(volume: number): void {
-    this.prefs.update({ effects: volume });
+    this.prefs.adjust({ effects: volume });
     this.applyVolume();
   }
 
@@ -258,9 +258,10 @@ export class Sounds {
 
   private applyVolume(): void {
     const buses = this.engine.buses;
-    if (!buses) return;
-    buses.world.gain.value = this.volume * SFX.worldLevel;
-    buses.ui.gain.value = this.volume * SFX.uiLevel;
+    const context = this.engine.context;
+    if (!buses || !context) return;
+    glide(buses.world.gain, this.volume * SFX.worldLevel, context);
+    glide(buses.ui.gain, this.volume * SFX.uiLevel, context);
   }
 }
 
