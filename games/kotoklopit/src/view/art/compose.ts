@@ -17,7 +17,7 @@ import { artEntry } from "./manifest";
 import { STUB_LOOK, stubHatch, stubPixels } from "./placement";
 import { farRecipe, personRecipe } from "./recipes";
 import { artFrameState, artLayerSource, loadArtFrames, type FrameLayers } from "./sources";
-import { frameId, type ArtId, type ArtLayer, type ArtPoint, type ArtSize, type ArtView, type FrameId, type TintRecipe } from "./types";
+import { frameId, type ArtId, type ArtLayer, type ArtPoint, type ArtSize, type ArtView, type FrameId, type IndexFrame, type TintPattern, type TintRecipe } from "./types";
 
 // --- Шари й полотна ----------------------------------------------------------------------------
 
@@ -842,15 +842,110 @@ export function placeInk(ink: FigureInk, k: number, W: number, H: number, pad: n
 }
 
 /**
- * Фігура, що рухається (живий портрет кота, §9.7). Складати шари кадру щокадру задорого, тож кожен кадр частини тонується лише раз, а
- * далі його готове полотно тільки перекладають. Масштаб — за межами полотен частин першої пози (рухам є куди), а місце — за
- * намальованим (`placeInk`): кіт сидить на дні, а не висить.
+ * «Силует» рецепта: від чого залежить альфа складеного кадру, а з нею — межі намальованого (`inkOf`). Це кроки, що кладуться поверх
+ * чи множенням (множення теж додає альфи — на напівпрозорих краях), з їхнім шаром, непрозорістю, способом і тканиною візерунка.
+ * Кольори альфи не змінюють у жодному режимі, а `source-atop` не змінює її зовсім, тож коти з тими самими шарами поверх мають той
+ * самий ключ, а довга шерсть (`fluff`), завитки чи нашийник — інший. Перевіряє `tests/figurecanvas.test.ts` на всіх забарвленнях і
+ * візерунках.
+ */
+export function alphaKey(recipe: TintRecipe): string {
+  const steps: string[] = [];
+  for (const step of recipe.steps) {
+    const alpha = step.alpha ?? 1;
+    if (alpha <= 0 || step.put === "source-atop") continue;
+    let key = `${step.put === "multiply" ? "*" : "+"}${step.layer}`;
+    // Шар з кольором і без нього `composeFrame` кладе різними шляхами: альфа та сама, а округлення може різнитися.
+    if (step.color !== null) key += `~${step.tint ?? "source-atop"}`;
+    if (alpha !== 1) key += `%${alpha}`;
+    if (step.pattern) key += `#${patternAlphaKey(step.pattern)}`;
+    steps.push(key);
+  }
+  return steps.join(" ");
+}
+
+/** Тканина без кольору: маска `fill` тканини кладеться, лише коли колір є (`cloth.ts`), тож від кольору важить лише те, чи він є. */
+function patternAlphaKey(pattern: TintPattern): string {
+  const { tile, color, ...rest } = pattern;
+  const fields = Object.entries(rest)
+    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .map(([name, value]) => `,${name}:${String(value)}`);
+  return `${tile}${color === null ? "" : ".tone"}${fields.join("")}`;
+}
+
+/**
+ * Скільки пікселів тримає спільний кеш тонованих частин живих фігур: ≈ 30 котів з усіма рухами (кіт — ≈ 16 кадрів частин, разом
+ * ≈ 80 тис. пікселів, ≈ 0,3 МБ). Понад це давно вжите випадає першим.
+ */
+export const FIGURE_TINT_PIXELS = 2_500_000;
+
+interface TintedPart {
+  ctx: Canvas2D;
+  /** Кадр атласу, з якого складено: новий атлас (гаряча перезбірка в dev) — інші кадри, і старе вже не береться. */
+  frame: IndexFrame;
+  pixels: number;
+}
+
+/**
+ * Тоновані частини живих фігур — спільні для всіх `FigureCanvas`: картки котів будуються заново щоразу, як відкривають вкладку чи
+ * телефон її перебудовує. Ключ — кадр, рецепт і затінення; порядок Map — порядок вжитку (найдавніше — першим).
+ */
+const tintedParts = new Map<string, TintedPart>();
+let tintedPixels = 0;
+
+function tintedPart(key: string, frame: IndexFrame, touch: boolean): Canvas2D | null {
+  const have = tintedParts.get(key);
+  if (!have || have.frame !== frame) return null;
+  if (touch) {
+    tintedParts.delete(key);
+    tintedParts.set(key, have);
+  }
+  return have.ctx;
+}
+
+function keepTintedPart(key: string, part: TintedPart): void {
+  const old = tintedParts.get(key);
+  if (old) {
+    tintedParts.delete(key);
+    tintedPixels -= old.pixels;
+  }
+  tintedParts.set(key, part);
+  tintedPixels += part.pixels;
+  // Частини поточної пози щойно вжиті — у кінці, а разом вони менші за бюджет, тож посеред малювання не випадають.
+  for (const [oldest, { pixels }] of tintedParts) {
+    if (tintedPixels <= FIGURE_TINT_PIXELS || oldest === key) break;
+    tintedParts.delete(oldest);
+    tintedPixels -= pixels;
+  }
+}
+
+/** Межі намальованого частин: за кадром і силуетом рецепта (`alphaKey`), спільні для всіх фігур. Записи крихітні, але не безмежні. */
+const partInks = new Map<string, { frame: IndexFrame; ink: FigureInk | null }>();
+const PART_INKS_MAX = 4096;
+
+/** Частина пози з її кадром і шарами. */
+interface PlacedPart {
+  part: PortraitPart;
+  frame: FrameId;
+  source: FrameLayers;
+}
+
+/** Як малювати позу живої фігури. */
+export interface FigureDrawOptions {
+  /** Лише з уже складеного (тоновані частини й межі намальованого): чогось бракує — нічого не складати й не малювати, false. */
+  cachedOnly?: boolean;
+}
+
+/**
+ * Фігура, що рухається (живий портрет кота, §9.7). Складати шари кадру щокадру задорого, тож кожен кадр частини тонується лише раз — у
+ * спільний кеш (`tintedParts`), — а далі його готове полотно тільки перекладають; межі намальованого — раз на кадр і силует рецепта.
+ * Масштаб — за межами полотен частин першої пози (рухам є куди), а місце — за намальованим (`placeInk`): кіт сидить на дні, а не висить.
  */
 export class FigureCanvas {
-  private readonly tinted = new Map<string, Canvas2D>();
   private readonly far: TintRecipe;
   /** Кадри тканини рецепта (`clothIds`). */
   private readonly cloth: readonly FrameId[];
+  /** Силуети (`alphaKey`) ближніх і дальніх частин. */
+  private readonly alpha: { near: string; far: string };
   private fit: { k: number; ox: number; oy: number } | null = null;
 
   constructor(
@@ -860,24 +955,27 @@ export class FigureCanvas {
   ) {
     this.far = farRecipe(recipe);
     this.cloth = clothIds(recipe);
+    this.alpha = { near: alphaKey(recipe), far: alphaKey(this.far) };
   }
 
-  /** Намалювати позу; false — кадри ще вантажаться чи їх немає, тоді полотно лишається як було. */
-  draw(parts: readonly PortraitPart[]): boolean {
-    const frames: FrameId[] = parts.map((p) => frameId(p.id, p.state ?? null, p.view === undefined ? "front" : p.view));
+  /** Намалювати позу; false — кадри ще вантажаться, їх немає чи (з `cachedOnly`) ще не складено, тоді полотно лишається як було. */
+  draw(parts: readonly PortraitPart[], opts: FigureDrawOptions = {}): boolean {
+    const frames: FrameId[] = parts.map(portraitFrame);
     const state = figureState(frames, this.cloth);
     if (state === "loading") void loadFigure(frames, this.cloth);
     if (state !== "ready") return false;
     const ctx = this.canvas.getContext("2d");
     if (!ctx) return false;
-    const placed: { part: PortraitPart; source: FrameLayers }[] = [];
+    const placed: PlacedPart[] = [];
     for (const [i, part] of parts.entries()) {
-      const source = artLayerSource(frames[i] ?? part.id);
+      const frame = frames[i] ?? part.id;
+      const source = artLayerSource(frame);
       if (!source) return false;
-      placed.push({ part, source });
+      placed.push({ part, frame, source });
     }
+    if (opts.cachedOnly && !this.cached(placed)) return false;
     const { width: W, height: H } = this.canvas;
-    const tinted = placed.map(({ part, source }, i) => this.tint(`${frames[i]}|${part.far === true}`, source, part));
+    const tinted = placed.map((p) => this.tint(p));
     const { k, ox, oy } = (this.fit ??= this.place(placed, tinted, W, H));
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, W, H);
@@ -896,34 +994,63 @@ export class FigureCanvas {
     return true;
   }
 
-  /** Тонований кадр частини — раз на кадр (кеш `tinted`); null — полотна не створити. */
-  private tint(key: string, source: FrameLayers, part: PortraitPart): Canvas2D | null {
-    const cached = this.tinted.get(key);
+  private tintKey({ frame, part }: PlacedPart): string {
+    return `${frame}|${this.recipe.key}|${part.far === true ? "far" : "near"}`;
+  }
+
+  private inkKey({ frame, part }: PlacedPart): string {
+    return `${frame}|${part.far === true ? this.alpha.far : this.alpha.near}`;
+  }
+
+  /** Чи все для пози вже є: тоновані частини, а поки місця фігури ще немає, — і межі їхнього намальованого. */
+  private cached(placed: readonly PlacedPart[]): boolean {
+    return placed.every((p) => tintedPart(this.tintKey(p), p.source.frame, false) !== null && (this.fit !== null || partInks.get(this.inkKey(p))?.frame === p.source.frame));
+  }
+
+  /** Тонований кадр частини — раз на кадр, рецепт і затінення (`tintedParts`); null — полотна не створити. */
+  private tint(placed: PlacedPart): Canvas2D | null {
+    const { part, source } = placed;
+    const key = this.tintKey(placed);
+    const cached = tintedPart(key, source.frame, true);
     if (cached) return cached;
     const made = createCtx(source.w, source.h);
     if (!made) return null;
     const cloth = partCloth(this.cloth, source, part.view === undefined ? "front" : part.view);
     composeFrame(made, source.source, part.far === true ? this.far : this.recipe, { w: source.w, h: source.h, cloth });
-    this.tinted.set(key, made);
+    keepTintedPart(key, { ctx: made, frame: source.frame, pixels: source.w * source.h });
     return made;
   }
 
+  /** Межі намальованого частини — раз на кадр і силует (`partInks`): пікселі читає лише перша фігура; полотна немає — null. */
+  private ink(placed: PlacedPart, tinted: Canvas2D | null): FigureInk | null {
+    const key = this.inkKey(placed);
+    const have = partInks.get(key);
+    if (have && have.frame === placed.source.frame) return have.ink;
+    if (!tinted) return null;
+    const ink = inkOf(tinted, placed.source.w, placed.source.h);
+    if (partInks.size >= PART_INKS_MAX) partInks.delete(partInks.keys().next().value ?? key);
+    partInks.set(key, { frame: placed.source.frame, ink });
+    return ink;
+  }
+
   /** Масштаб — за полотнами частин (`fitFigure`), місце — за намальованим (`placeInk`); нічого не намальовано — як у `fitFigure`. */
-  private place(placed: readonly { part: PortraitPart; source: FrameLayers }[], tinted: readonly (Canvas2D | null)[], W: number, H: number): { k: number; ox: number; oy: number } {
+  private place(placed: readonly PlacedPart[], tinted: readonly (Canvas2D | null)[], W: number, H: number): { k: number; ox: number; oy: number } {
     const fit = fitFigure(placed, W, H, this.padding, "center");
-    const ink = figureInk(placed, tinted);
+    const ink = figureInk(
+      placed,
+      placed.map((p, i) => this.ink(p, tinted[i] ?? null)),
+    );
     return ink ? { k: fit.k, ...placeInk(ink, fit.k, W, H, Math.min(W, H) * INK_PAD) } : fit;
   }
 }
 
 /** Намальоване всіх частин в одиницях фігури: межі — кутами намальованого кожної частини, центр ваги — зважений її пікселями. */
-function figureInk(placed: readonly { part: PortraitPart; source: FrameLayers }[], tinted: readonly (Canvas2D | null)[]): FigureInk | null {
+function figureInk(placed: readonly { part: PortraitPart; source: FrameLayers }[], inks: readonly (FigureInk | null)[]): FigureInk | null {
   let all: FigureInk | null = null;
   let sx = 0;
   let sy = 0;
   for (const [i, { part, source }] of placed.entries()) {
-    const ctx = tinted[i];
-    const ink = ctx ? inkOf(ctx, source.w, source.h) : null;
+    const ink = inks[i];
     if (!ink) continue;
     const m = partMatrix(part, source.frame.pivot);
     const fx = source.frame.size.w / source.w;

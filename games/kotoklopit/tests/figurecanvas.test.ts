@@ -1,11 +1,19 @@
-// Компонувальник (`compose.ts`): допоміжне полотно того самого виду, що й ціль. Полотна тут — модель лише альфи: справжній
-// `composeFrame` малює на ній, як на Canvas2D, а вона рахує альфу за правилами режимів Canvas2D і лічить полотна, малювання й
-// читання пікселів.
+// Компонувальник для живих портретів котів (§9.7, `compose.ts`): спільний кеш тонованих частин (LRU за пікселями), межі
+// намальованого — раз на кадр і «силует» рецепта (`alphaKey`), «лише з кешу» для першого кадру, допоміжне полотно того самого
+// виду, що й ціль. Полотна тут — модель лише альфи: справжні `composeFrame`, `FigureCanvas` і `clothFrame` малюють на ній, як на
+// Canvas2D, а вона рахує альфу за правилами режимів Canvas2D (від альфи й залежать межі намальованого) і лічить полотна,
+// малювання й читання пікселів.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { Ctx2D, LayerSource } from "../src/view/art/compose";
-import type { ArtLayer, TintRecipe } from "../src/view/art/types";
+import { DEFAULT_LOOK } from "../src/sim/game";
+import { coatOf, type Coat } from "../src/sim/genetics";
+import type { Genes, Look, Shape } from "../src/sim/types";
+import { clothFrame, type ClothCtx, type ClothLayers } from "../src/view/art/cloth";
+import type { Ctx2D, LayerSource, PortraitPart } from "../src/view/art/compose";
+import { catRecipe, farRecipe, personRecipe, type CatRecipeOptions } from "../src/view/art/recipes";
+import { ART_INDEX_VERSION, type ArtIndex, type ArtLayer, type FrameId, type IndexFrame, type TintRecipe } from "../src/view/art/types";
+import { PATTERNS, patternFits } from "../src/view/wardrobe/patterns";
 
 // --- Модель полотна: лише альфа ----------------------------------------------------------------
 
@@ -275,5 +283,295 @@ describe("допоміжне полотно — того самого виду, 
     // Інший вид цілі — своє допоміжне полотно.
     compose.composeFrame(asCtx(new FakeOffscreen(FW, FH)), allLayers, recipe, { w: FW, h: FH });
     expect(kinds()).toEqual(["element", "offscreen", "offscreen"]);
+  });
+});
+
+// --- «Силует» рецепта ------------------------------------------------------------------------------
+
+/** По одному представнику кожного фенотипу гена (як у `compose.test.ts`). */
+const PAIRS = {
+  orange: [[false], [true], [false, false], [false, true], [true, true]],
+  bool: [
+    [true, true],
+    [false, false],
+  ],
+  tabby: [
+    [0, 0],
+    [1, 1],
+    [2, 2],
+    [3, 3],
+  ],
+  white: [
+    [0, 0],
+    [1, 0],
+    [1, 1],
+    [2, 1],
+  ],
+} as const;
+
+function allCoats(): { coat: Coat; fur: Shape["coat"] }[] {
+  const seen = new Map<string, { coat: Coat; fur: Shape["coat"] }>();
+  for (const orange of PAIRS.orange)
+    for (const black of PAIRS.bool)
+      for (const dense of PAIRS.bool)
+        for (const agouti of PAIRS.bool)
+          for (const tabby of PAIRS.tabby)
+            for (const white of PAIRS.white)
+              for (const full of PAIRS.bool)
+                for (const short of PAIRS.bool)
+                  for (const eyes of [0, 1, 2])
+                    for (const fur of [null, "hairless", "curly"] as const) {
+                      const genes: Genes = {
+                        orange: [...orange],
+                        black: [...black],
+                        dense: [...dense],
+                        agouti: [...agouti],
+                        tabby: [...tabby],
+                        white: [...white],
+                        full: [...full],
+                        short: [...short],
+                        eyes,
+                      };
+                      const coat = coatOf(genes, { coat: fur });
+                      seen.set(JSON.stringify({ coat, fur }), { coat, fur });
+                    }
+  return [...seen.values()];
+}
+
+const CAT_OPTIONS: readonly CatRecipeOptions[] = [{}, { dull: true }, { bald: true, collar: true }, { dull: true, bald: true, collar: true }];
+
+/**
+ * Рецепти, згруповані за `alphaKey`: у кожній групі складаємо кілька різних (за `key`) і порівнюємо альфу. Альфа від кольорів не
+ * залежить, тож якщо ключ щось пропустив (шар поверх, множення на краях, непрозорість кроку, тканину), рецепти групи розійдуться.
+ */
+function expectSameAlphaWithinKey(alphaKey: (recipe: TintRecipe) => string, composeFrame: typeof import("../src/view/art/compose").composeFrame, recipes: readonly TintRecipe[], opts: { cloth?: ReturnType<typeof clothFrame> } = {}): number {
+  const groups = new Map<string, Map<string, TintRecipe>>();
+  for (const recipe of recipes) {
+    const key = alphaKey(recipe);
+    expect(typeof key).toBe("string");
+    let group = groups.get(key);
+    if (!group) {
+      group = new Map();
+      groups.set(key, group);
+    }
+    if (group.size < 3) group.set(recipe.key, recipe);
+  }
+  const scratch = new AlphaCanvas(FW, FH, "scratch", false);
+  const looks = new Set<string>();
+  for (const [key, group] of groups) {
+    let first: string | null = null;
+    for (const recipe of group.values()) {
+      const target = new AlphaCanvas(FW, FH, "frame", false);
+      composeFrame(asCtx(target), allLayers, recipe, { w: FW, h: FH, scratch: () => asCtx(scratch), cloth: opts.cloth });
+      const alpha = Array.from(target.alpha).join(",");
+      looks.add(alpha);
+      if (first === null) first = alpha;
+      else expect(alpha, `${key}: ${recipe.key}`).toBe(first);
+    }
+  }
+  return looks.size;
+}
+
+describe("«силует» рецепта (`alphaKey`): від чого залежить альфа кадру", () => {
+  it("коти, зокрема дальні частини: рецепти з тим самим ключем — та сама альфа, хоч які кольори; довга шерсть — інший ключ", async () => {
+    const { compose } = await fresh();
+    const recipes: TintRecipe[] = [];
+    for (const { coat, fur } of allCoats()) {
+      for (const opts of CAT_OPTIONS) {
+        for (const seed of coat.second ? [0, 1, 2] : [0]) {
+          const recipe = catRecipe({ coat, fur, seed }, opts);
+          recipes.push(recipe, farRecipe(recipe));
+        }
+      }
+    }
+    // Модель розрізняє силуети: інакше перевірка нічого б не значила.
+    expect(expectSameAlphaWithinKey(compose.alphaKey, compose.composeFrame, recipes)).toBeGreaterThan(4);
+    const coat: Coat = { base: "black", second: null, tabby: null, white: 0, pointed: false, long: false, eyes: "green" };
+    const short = compose.alphaKey(catRecipe({ coat, fur: null, seed: 1 }));
+    expect(compose.alphaKey(catRecipe({ coat: { ...coat, base: "orange", tabby: "mackerel", white: 2 }, fur: null, seed: 1 }))).toBe(short);
+    expect(compose.alphaKey(catRecipe({ coat: { ...coat, long: true }, fur: null, seed: 1 }))).not.toBe(short);
+    expect(compose.alphaKey(catRecipe({ coat, fur: null, seed: 1 }, { collar: true }))).not.toBe(short);
+  });
+
+  it("персонаж з візерунками тканини (плитки, принти, манжети): те саме", async () => {
+    const { compose } = await fresh();
+    const pages = new Map<string, AlphaCanvas>();
+    const clothImage = (id: string, layer: string): AlphaCanvas => {
+      const name = `${id}:${layer}`;
+      let have = pages.get(name);
+      if (!have) {
+        have = image(6, 4, layerAlpha(name), name);
+        pages.set(name, have);
+      }
+      return have;
+    };
+    const lookup = (id: string): ClothLayers => ({
+      source: (layer) => ({ image: clothImage(id, layer) as unknown as CanvasImageSource, sx: 0, sy: 0, sw: 6, sh: 4 }),
+      w: 6,
+      h: 4,
+      size: { w: 6, h: 4 },
+      pivot: { x: 3, y: 2 },
+    });
+    const cloth = clothFrame(
+      { k: 1, pivot: { x: 8, y: 6 }, points: { print: { x: 8, y: 5 }, cuff: { x: 3, y: 9 } }, view: "front" },
+      lookup,
+      (w, h) => new AlphaCanvas(w, h, "cloth", false).getContext("2d") as unknown as ClothCtx,
+    );
+    const recipes: TintRecipe[] = [];
+    for (const top of [0, 1, 3, 5]) {
+      const base: Look = { ...DEFAULT_LOOK, top, bottom: top };
+      for (const stained of [false, true]) {
+        recipes.push(personRecipe(base, { stained }));
+        for (let p = 1; p < PATTERNS.length; p++) {
+          if (patternFits(p, "top", 0)) recipes.push(personRecipe({ ...base, topPattern: p }, { stained }));
+          if (patternFits(p, "bottom", 0)) recipes.push(personRecipe({ ...base, bottomPattern: p }, { stained }));
+        }
+      }
+    }
+    expect(recipes.some((r) => r.steps.some((s) => s.pattern?.kind === "print"))).toBe(true);
+    // Ближня й дальня частина поруч: у групу ключа потрапляють обидві.
+    expect(expectSameAlphaWithinKey(compose.alphaKey, compose.composeFrame, recipes.flatMap((r) => [r, farRecipe(r)]), { cloth })).toBeGreaterThan(4);
+  });
+});
+
+// --- Живий портрет ---------------------------------------------------------------------------------
+
+const BODY = "cat/body/normal/front" as FrameId;
+const HEAD = "cat/head/base/front" as FrameId;
+const POSE: readonly PortraitPart[] = [
+  { id: "cat/body/normal", view: "front", far: true, x: -4, y: 0 },
+  { id: "cat/body/normal", view: "front", x: 0, y: 0 },
+  { id: "cat/head/base", view: "front", x: 6, y: -8, rot: 10 },
+];
+const CAT_LAYERS: readonly ArtLayer[] = ["fill", "fluff", "white-1", "shade", "ink"];
+
+/** Кадр атласу з шарами `layers`: кожен — своє місце сторінки (`spread`) чи всі з її кута. */
+function indexFrame(w: number, h: number, layers: readonly ArtLayer[] = CAT_LAYERS, spread = true): IndexFrame {
+  return {
+    size: { w, h },
+    res: 1,
+    pivot: { x: w / 2, y: h },
+    trim: { x: 0, y: 0 },
+    layers: Object.fromEntries(layers.map((layer, i) => [layer, { page: 0, x: spread ? (i * 7) % 24 : 0, y: spread ? (i * 5) % 24 : 0, w, h }])),
+  };
+}
+
+const PAGE = image(64, 64, layerAlpha("page"));
+const atlas = (): ArtIndex => ({ version: ART_INDEX_VERSION, pages: [{ file: "page-0.webp", w: 64, h: 64 }], frames: { [BODY]: indexFrame(24, 14), [HEAD]: indexFrame(14, 12) } });
+
+/** Кольори різні, а шари поверх і множення ті самі. */
+const SHORT: TintRecipe = {
+  key: "short",
+  steps: [
+    { layer: "fill", color: 0x222222, put: "source-over" },
+    { layer: "white-1", color: 0xffffff, put: "source-atop" },
+    { layer: "shade", color: 0xf2dccb, tint: "multiply", put: "multiply" },
+    { layer: "ink", color: null, put: "source-over" },
+  ],
+};
+const SHORT_ORANGE: TintRecipe = {
+  key: "short-orange",
+  steps: [
+    { layer: "fill", color: 0xd98a3e, put: "source-over" },
+    { layer: "shade", color: 0xf2dccb, tint: "multiply", put: "multiply" },
+    { layer: "ink", color: null, put: "source-over" },
+  ],
+};
+/** Довга шерсть: `fluff` поверх — інший силует. */
+const LONG: TintRecipe = { key: "long", steps: [SHORT.steps[0]!, { layer: "fluff", color: 0x222222, put: "source-over" }, ...SHORT.steps.slice(1)] };
+
+const portrait = (): AlphaCanvas => new AlphaCanvas(80, 80, "portrait", false);
+const asElement = (canvas: AlphaCanvas): HTMLCanvasElement => canvas as unknown as HTMLCanvasElement;
+const picture = (canvas: AlphaCanvas): string => Array.from(canvas.alpha).join(",");
+
+describe("живий портрет (`FigureCanvas`): спільний кеш", () => {
+  beforeEach(() => vi.stubGlobal("OffscreenCanvas", FakeOffscreen));
+
+  it("повторне відкриття картки не складає частин і не читає пікселів; малюнок той самий", async () => {
+    const { compose, sources } = await fresh();
+    sources.shareArtAtlas(atlas(), [PAGE as unknown as CanvasImageSource]);
+    const first = portrait();
+    expect(new compose.FigureCanvas(asElement(first), SHORT, 0.02).draw(POSE)).toBe(true);
+    expect(stats.canvases).toBeGreaterThan(0);
+    expect(stats.reads).toBeGreaterThan(0);
+    expect(picture(first)).not.toBe(picture(portrait()));
+
+    resetStats();
+    const again = portrait();
+    expect(new compose.FigureCanvas(asElement(again), SHORT, 0.02).draw(POSE)).toBe(true);
+    expect(stats).toEqual({ canvases: 0, draws: 0, reads: 0 });
+    expect(picture(again)).toBe(picture(first));
+  });
+
+  it("межі намальованого — раз на кадр і силует: кіт інших кольорів складається, але пікселів не читає; довгошерстий — читає", async () => {
+    const { compose, sources } = await fresh();
+    sources.shareArtAtlas(atlas(), [PAGE as unknown as CanvasImageSource]);
+    const first = portrait();
+    new compose.FigureCanvas(asElement(first), SHORT, 0.02).draw(POSE);
+
+    resetStats();
+    const orange = portrait();
+    expect(new compose.FigureCanvas(asElement(orange), SHORT_ORANGE, 0.02).draw(POSE)).toBe(true);
+    expect(stats.draws).toBeGreaterThan(0);
+    expect(stats.reads).toBe(0);
+    // Альфа від кольору не залежить: та сама й на портреті, і місце фігури те саме.
+    expect(picture(orange)).toBe(picture(first));
+
+    resetStats();
+    new compose.FigureCanvas(asElement(portrait()), LONG, 0.02).draw(POSE);
+    expect(stats.reads).toBeGreaterThan(0);
+  });
+
+  it("кеш обмежений пікселями: випадає найдавніше вжите", async () => {
+    const { compose, sources } = await fresh();
+    const budget = compose.FIGURE_TINT_PIXELS;
+    expect(budget).toBeGreaterThan(0);
+    // Три кадри влазять, четвертий — уже ні.
+    const side = Math.ceil(Math.sqrt(budget / 3.5));
+    const ids = ["cat/a", "cat/b", "cat/c", "cat/d"] as const;
+    const page = image(side, side, () => 1);
+    const frames = Object.fromEntries(ids.map((id) => [`${id}/front`, indexFrame(side, side, ["fill", "ink"], false)])) as Record<FrameId, IndexFrame>;
+    sources.shareArtAtlas({ version: ART_INDEX_VERSION, pages: [{ file: "big.webp", w: side, h: side }], frames }, [page as unknown as CanvasImageSource]);
+    const plain: TintRecipe = { key: "plain", steps: [{ layer: "fill", color: 0x222222, put: "source-over" }, { layer: "ink", color: null, put: "source-over" }] };
+    const figure = new compose.FigureCanvas(asElement(portrait()), plain, 0.02);
+    const draw = (...which: (typeof ids)[number][]): number => {
+      resetStats();
+      for (const id of which) expect(figure.draw([{ id, view: "front" }])).toBe(true);
+      return stats.canvases;
+    };
+    expect(draw("cat/a", "cat/b", "cat/c")).toBe(3);
+    expect(draw("cat/a")).toBe(0);
+    expect(draw("cat/d")).toBe(1);
+    expect(draw("cat/a", "cat/c", "cat/d")).toBe(0);
+    expect(draw("cat/b")).toBe(1);
+  });
+
+  it("«лише з кешу»: чого ще не складено — не складає й не малює; складене — малює одразу", async () => {
+    const { compose, sources } = await fresh();
+    sources.shareArtAtlas(atlas(), [PAGE as unknown as CanvasImageSource]);
+    const empty = picture(portrait());
+    const first = portrait();
+    const figure = new compose.FigureCanvas(asElement(first), SHORT, 0.02);
+    expect(figure.draw(POSE, { cachedOnly: true })).toBe(false);
+    expect(stats).toEqual({ canvases: 0, draws: 0, reads: 0 });
+    expect(picture(first)).toBe(empty);
+    expect(figure.draw(POSE)).toBe(true);
+
+    resetStats();
+    const again = portrait();
+    expect(new compose.FigureCanvas(asElement(again), SHORT, 0.02).draw(POSE, { cachedOnly: true })).toBe(true);
+    expect(stats).toEqual({ canvases: 0, draws: 0, reads: 0 });
+    expect(picture(again)).toBe(picture(first));
+  });
+
+  it("новий атлас (гаряча перезбірка) — частини складаються заново, старі не беруться", async () => {
+    const { compose, sources } = await fresh();
+    sources.shareArtAtlas(atlas(), [PAGE as unknown as CanvasImageSource]);
+    new compose.FigureCanvas(asElement(portrait()), SHORT, 0.02).draw(POSE);
+    sources.shareArtAtlas(atlas(), [PAGE as unknown as CanvasImageSource]);
+    resetStats();
+    new compose.FigureCanvas(asElement(portrait()), SHORT, 0.02).draw(POSE);
+    expect(stats.canvases).toBeGreaterThan(0);
+    expect(stats.reads).toBeGreaterThan(0);
   });
 });

@@ -1,5 +1,6 @@
-// Живі портрети котів у картках (§9.7). Один цикл на всі: кадри рідше за гру, а портрети за краєм прокрутки не малюються, щоб десяток
-// котів у телефоні не гріли його. Коли картку закрили, полотно випадає з документа, і портрет сам зникає зі списку.
+// Живі портрети котів у картках (§9.7). Один цикл на всі: кадри рідше за гру, а портрети за краєм прокрутки не малюються й навіть не
+// складаються, щоб десяток котів у телефоні не гріли його. Коли картку закрили, полотно випадає з документа, і портрет сам зникає зі
+// списку.
 
 import type { Cat } from "../sim/types";
 import { FigureCanvas } from "../view/art/compose";
@@ -19,6 +20,8 @@ interface Live {
   born: number;
   attached: boolean;
   visible: boolean;
+  /** Перший кадр уже є (з кешу чи коли картку стало видно). */
+  drawn: boolean;
 }
 
 const live = new Map<HTMLCanvasElement, Live>();
@@ -32,7 +35,11 @@ function watch(canvas: HTMLCanvasElement): void {
   watcher ??= new IntersectionObserver((entries) => {
     for (const entry of entries) {
       const portrait = live.get(entry.target as HTMLCanvasElement);
-      if (portrait) portrait.visible = entry.isIntersecting;
+      if (!portrait) continue;
+      portrait.visible = entry.isIntersecting;
+      // Перший кадр — поза спокою, як і з кешу: з неї фігура бере масштаб і місце (`FigureCanvas`). Проміжку кадрів циклу не
+      // чекаємо, щоб картка не стояла порожньою.
+      if (portrait.visible && !portrait.drawn) portrait.drawn = portrait.figure.draw(portrait.poser.parts(0));
     }
   });
   watcher.observe(canvas);
@@ -57,20 +64,19 @@ function tick(time: number): void {
       forget(canvas);
       continue;
     }
-    if (portrait.visible) portrait.figure.draw(portrait.poser.parts(time - portrait.born));
+    if (portrait.visible && portrait.figure.draw(portrait.poser.parts(time - portrait.born))) portrait.drawn = true;
   }
 }
 
-/** Оживити кота на полотні: перший кадр — одразу, а далі він живе, поки полотно в документі. */
+/**
+ * Оживити кота на полотні: він живе, поки полотно в документі. Перший кадр одразу — лише якщо кота вже складено (картку відкривали чи
+ * телефон її перебудував): це лише перекласти готове, і картка не блимне порожньою. Інакше — коли картку видно (`watch`).
+ */
 export function liveCatPortrait(canvas: HTMLCanvasElement, cat: Cat): void {
-  const portrait: Live = {
-    figure: new FigureCanvas(canvas, catRecipeOf(cat), PADDING),
-    poser: new CatPoser(cat),
-    born: performance.now(),
-    attached: false,
-    visible: true,
-  };
-  portrait.figure.draw(portrait.poser.parts(0));
+  const figure = new FigureCanvas(canvas, catRecipeOf(cat), PADDING);
+  const poser = new CatPoser(cat);
+  const born = performance.now();
+  const portrait: Live = { figure, poser, born, attached: false, visible: false, drawn: figure.draw(poser.parts(0), { cachedOnly: true }) };
   live.set(canvas, portrait);
   watch(canvas);
   if (!looping) {
