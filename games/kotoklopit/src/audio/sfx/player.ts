@@ -42,7 +42,7 @@ export interface LoopVoice {
   set(gain: number, pan: number, rate?: number): void;
   /**
    * Коли початок кола стало чути, мс `performance.now()`, за годинником звуку; ще не звучить — null. Файл декодується не
-   * одразу, тож це пізніше за мить, коли петлю попросили.
+   * одразу, тож це пізніше за мить, коли петлю попросили; після паузи контексту — пізніше на час паузи.
    */
   startedAt(): number | null;
   stop(): void;
@@ -117,6 +117,9 @@ export class Player {
     let rate = 1;
     let stopped = false;
     let heard: number | null = null;
+    // Обидва годинники в мить, коли `heard` звірено: контекст, що стояв, відстає від `performance.now` на час паузи.
+    let syncedAt = 0;
+    let syncedTime = 0;
     const begin = (decoded: Decoded): void => {
       if (stopped) return;
       source = context.createBufferSource();
@@ -130,6 +133,8 @@ export class Player {
       const at = context.currentTime;
       source.start(at, range.rhythm ? range.start : range.start + Math.random() * (range.end - range.start));
       heard = heardAt(context, at);
+      syncedAt = performance.now();
+      syncedTime = at;
       gain.gain.setTargetAtTime(target, at, SFX.loopFade / 3);
     };
     // Файл не прийшов (збій мережі, тайм-аут) — знову, поки петля потрібна: інакше вона мовчала б, доки її не ввімкнуть наново.
@@ -155,7 +160,18 @@ export class Player {
         }
         if (Math.abs(panner.pan.value - pan) > 0.02) panner.pan.setTargetAtTime(pan, context.currentTime, SFX.loopFade / 3);
       },
-      startedAt: () => heard,
+      startedAt: () => {
+        // Музика стояла разом із контекстом, тож її початок зсувається на час паузи; звіряємо, лише коли звук знову йде.
+        if (heard === null || context.state !== "running") return heard;
+        const now = performance.now();
+        const slip = now - syncedAt - (context.currentTime - syncedTime) * 1000;
+        if (slip > SFX.clockSlipMs) {
+          heard += slip;
+          syncedAt = now;
+          syncedTime = context.currentTime;
+        }
+        return heard;
+      },
       stop: () => {
         stopped = true;
         const now = context.currentTime;

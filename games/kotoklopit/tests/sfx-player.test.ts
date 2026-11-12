@@ -136,6 +136,8 @@ describe("петлі: в унісон не звучать, ритмічна — 
     const audio = fakeAudio({ hold: true });
     // Вихід звуку відстає: семпл контексту 10 с прозвучить у мить 5000 мс `performance.now`.
     audio.context.getOutputTimestamp = () => ({ contextTime: 10, performanceTime: 5000 });
+    // Годинник сторінки стоїть разом із фальшивим годинником звуку: між ними немає розбіжності, як і в справжньому, що звучить.
+    const clock = vi.spyOn(performance, "now").mockReturnValue(4900);
     const player = new Player(audio.engine);
     const voice = player.loop(loopFile(true), { bus: "music", gain: 1, pan: 0 });
     expect(voice?.startedAt()).toBeNull();
@@ -146,6 +148,35 @@ describe("петлі: в унісон не звучать, ритмічна — 
     expect(audio.started()).toHaveLength(1);
     expect(audio.started()[0]?.started?.[0]).toBe(10.25);
     expect(voice?.startedAt()).toBeCloseTo(5250);
+    clock.mockRestore();
+  });
+
+  it("контекст стояв (схована вкладка, дзвінок) — петля стояла з ним, тож її долі зсуваються на час паузи", async () => {
+    vi.stubGlobal("fetch", vi.fn(bytes));
+    const audio = fakeAudio();
+    let now = 7000;
+    const clock = vi.spyOn(performance, "now").mockImplementation(() => now);
+    const player = new Player(audio.engine);
+    const voice = player.loop(loopFile(true), { bus: "music", gain: 1, pan: 0 });
+    await settle();
+    expect(voice?.startedAt()).toBeCloseTo(7000);
+    // Годинник звуку йде разом із `performance.now`: долі ті самі.
+    now += 3000;
+    audio.context.currentTime += 3;
+    expect(voice?.startedAt()).toBeCloseTo(7000);
+    // Вкладку сховали на 10 с: контекст зупинено, його годинник стоїть, а з ним і музика.
+    audio.context.state = "suspended";
+    now += 10_000;
+    expect(voice?.startedAt()).toBeCloseTo(7000);
+    // Повернулися: музика грає далі з того самого місця, тож її початок «стався» на 10 с пізніше.
+    audio.context.state = "running";
+    now += 500;
+    audio.context.currentTime += 0.5;
+    expect(voice?.startedAt()).toBeCloseTo(17_000);
+    now += 2000;
+    audio.context.currentTime += 2;
+    expect(voice?.startedAt()).toBeCloseTo(17_000);
+    clock.mockRestore();
   });
 
   it("без `getOutputTimestamp` — з поточного годинника й затримки виходу", async () => {
