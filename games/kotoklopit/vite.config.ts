@@ -41,10 +41,13 @@ export default defineConfig(({ command }) => ({
     target: "es2022",
     outDir: "../../public/games/kotoklopit",
     emptyOutDir: true,
-    // Phaser сам по собі важить близько 1,4 МБ.
+    // Phaser окремим файлом важить близько 1,4 МБ.
     chunkSizeWarningLimit: 1600,
     // Титри — у кожній збірці; галерея арту й каталог звуків — лише разом із режимом розробки: у продакшн-збірці їх немає.
     rolldownOptions: {
+      // Phaser — окремим файлом: хеш коду гри змінюється з кожним деплоєм, а Phaser — лише з оновленням бібліотеки, тож
+      // гравець, що повертається, не качає його знову.
+      output: { codeSplitting: { groups: [{ name: "phaser", test: /node_modules[\\/]phaser[\\/]/ }] } },
       input: {
         index: page("index.html"),
         credits: page("credits.html"),

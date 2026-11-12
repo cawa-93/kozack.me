@@ -11,6 +11,12 @@ NODE_VERSION = "24"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
+# Сторінки атласу теж мають хеш у назві; `art/index.json` — без хешу, тож його браузер і далі перепитує.
+[[headers]]
+  for = "/games/kotoklopit/art/page-*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
 
 [[redirects]]
   from = "/ru"
