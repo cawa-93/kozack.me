@@ -14,6 +14,7 @@ import { absoluteMinute, formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from ".
 import type { GameState, Product, StatName } from "../sim/types";
 import { DeskCalendar } from "./deskcalendar";
 import { DeskClock } from "./deskclock";
+import { newsHitArea } from "./hudnews";
 import { iconArt, markArt, type IconName } from "./iconnames";
 import { personStates } from "./personstates";
 import { StretchArt } from "./iso/hudart";
@@ -493,7 +494,12 @@ export class Hud {
     // Хвостик угору праворуч — до телефона.
     g.fillStyle(UI_FILL.paper).fillTriangle(-34, 1.5, -12, 1.5, 4, -14);
     g.lineStyle(3, UI_FILL.ink).lineBetween(-34, 0, 4, -14).lineBetween(4, -14, -12, 0);
-    this.news.setSize(width * 2, height * 2).setInteractive(new Phaser.Geom.Rectangle(-width, 0, width, height), Phaser.Geom.Rectangle.Contains);
+    // Зона дотику — за розміром цього бабла (`newsHitArea`): повторний `setInteractive` старої зони не міняє.
+    const { size, area } = newsHitArea(width, height);
+    this.news.setSize(size.width, size.height);
+    const hit = this.news.input?.hitArea as Phaser.Geom.Rectangle | undefined;
+    if (hit) hit.setTo(area.x, area.y, area.width, area.height);
+    else this.news.setInteractive(new Phaser.Geom.Rectangle(area.x, area.y, area.width, area.height), Phaser.Geom.Rectangle.Contains);
     this.news.setVisible(true).setAlpha(1).setScale(0.85);
     this.scene.tweens.add({ targets: this.news, scale: 1, duration: 180, ease: "Back.easeOut" });
     this.newsUntil = time + Math.min(NEWS.maxMs, NEWS.baseMs + NEWS.perCharMs * (title.length + text.length));
