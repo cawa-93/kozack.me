@@ -688,6 +688,9 @@ export function useProgress(state: GameState): number | null {
 export function tickActivity(state: GameState, input: Input, minutes: number): void {
   const character = state.character;
   const activity = character.activity;
+  // Відпустили кнопку — утримання знову вільне, хоч би персонаж ішов, сидів за комп'ютером чи стояв у душі: інакше натискання,
+  // зроблене ще на ходу, після зупинки утриманням нічого не починало б (§10).
+  if (!input.hold) character.holdSpent = false;
   // У душовій кабіні рух не діє: персонаж виходить, коли душ скінчився (§8.7). Поки говорить із мамою, душ стоїть, як і почата
   // тривала дія без кнопки (§4.1): він іде й без вводу, тож сам на розмову не зважав би.
   if (activity?.kind === "use" && activity.inside) {
@@ -729,7 +732,6 @@ export function tickActivity(state: GameState, input: Input, minutes: number): v
     return;
   }
   if (!input.hold) {
-    character.holdSpent = false;
     if (activity?.kind === "pet" || activity?.kind === "play") character.activity = null;
     return;
   }

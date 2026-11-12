@@ -134,4 +134,19 @@ describe("одне утримання — одна дія (§10)", () => {
     expect(state.character.held?.kind).toBe("toy");
     expect(state.character.activity).toMatchObject({ kind: "play", cat: cat.id });
   });
+
+  it("кнопку відпустили на ходу — нове натискання й утримання біля страви на столі їсть", () => {
+    const save = game();
+    const state = save.current;
+    state.home.surfaces["table"] = freshMeal(state, "cheap");
+    const cat = catAhead(save);
+    holding(save, { kind: "cat", cat: cat.id });
+    interact(save);
+    expect(state.character.held).toBeNull();
+    // Відпустив кнопку й пішов до столу; дію натиснув ще на ходу, тоді зупинився.
+    walkTo(save, "table");
+    interact(save);
+    keepHolding(save, 1);
+    expect(state.character.activity).toMatchObject({ kind: "use", target: "table" });
+  });
 });
