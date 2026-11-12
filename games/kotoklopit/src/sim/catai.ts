@@ -984,18 +984,11 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
     // столу (§9.12, «Кмітливість у бешкеті»).
     if (cabinetFood(state) && (state.home.cabinetOpen === true || rng.chance(CUNNING.openStep * Math.max(0, traitLevel(cat, "cunning"))))) return startRaid(state, cat, "cabinet");
     // Миски порожні: злодюжка краде людську їжу, а дуже голодний — будь-який кіт (§9.3).
-    const food = dishes(state, true).filter((d) => isEdible(d.dish));
-    const steal = food[rng.int(0, food.length - 1)];
+    const steal = humanFood(state, rng);
     const thief = traitLevel(cat, "thief");
-    const starving = n.hunger >= HUNGRY_THEFT.starving ? HUNGRY_THEFT.base * Math.max(0, 1 + HUNGRY_THEFT.starvingStep * thief) : 0;
-    if (steal && rng.chance(HUNGRY_THEFT.step * Math.max(0, thief) + starving)) {
-      // Пам'ятає «ні» про кухню — не краде; «+» підходить і розвертається (§9.12, «Слухняність»).
-      const verdict = noGo(state, cat, "kitchen");
-      if (verdict === "go") return start(cat, "steal", objectTile(state, steal.id), 1, steal.id);
-      if (verdict === "remember") return startRemember(state, cat, "kitchen", steal.id);
-    }
+    if (steal && hungryTheft(state, cat, rng, steal)) return;
     // «Чесний» сідає біля їжі на столі й не чіпає її (§9.12, рішення автора 2026-10-25).
-    if (steal && thief < 0 && rng.chance(THIEF.waitChance)) return start(cat, "beg", besideObject(state, objectById(steal.id)), THIEF.waitMinutes, steal.id);
+    if (steal && thief < 0 && rng.chance(THIEF.waitChance)) return start(cat, "beg", besideObject(state, objectById(steal)), THIEF.waitMinutes, steal);
     // «Не випрошує» (−2) не йде просити до персонажа — чекає біля миски (§9.12, рішення автора 2026-10-25).
     // Біля персонажа ворог — до нього не йде (§9.4, рішення автора 2026-10-26).
     if (context.present && !aloof(cat) && !avoiding(state, cat) && traitLevel(cat, "begging") > -2 && !enemyAtPerson(state, cat) && rng.chance(0.5)) return startAttention(state, cat, true);
@@ -1075,6 +1068,24 @@ function begAtBowl(state: GameState, cat: Cat): boolean {
   if (!slot) return false;
   start(cat, "beg", { x: slot.x, y: slot.y }, CAT_ACT_MINUTES.beg, "bowl");
   return true;
+}
+
+/** Людська їжа, яку голодний кіт без корму може вкрасти (§9.12): одна з тих, що лежать відкрито; undefined — немає. */
+function humanFood(state: GameState, rng: Rng): string | undefined {
+  const food = dishes(state, true).filter((d) => isEdible(d.dish));
+  return food[rng.int(0, food.length - 1)]?.id;
+}
+
+/** Голодний кіт без корму кидає шанс крадіжки (`TRAITS.md`, «Голодний кіт без корму»). true — пішов по їжу `steal`. */
+function hungryTheft(state: GameState, cat: Cat, rng: Rng, steal: string): boolean {
+  const thief = traitLevel(cat, "thief");
+  const starving = cat.needs.hunger >= HUNGRY_THEFT.starving ? HUNGRY_THEFT.base * Math.max(0, 1 + HUNGRY_THEFT.starvingStep * thief) : 0;
+  if (!rng.chance(Math.min(HUNGRY_THEFT.max, HUNGRY_THEFT.step * Math.max(0, thief) + starving))) return false;
+  // Пам'ятає «ні» про кухню — не краде; «+» підходить і розвертається (§9.12, «Слухняність»).
+  const verdict = noGo(state, cat, "kitchen");
+  if (verdict === "go") start(cat, "steal", objectTile(state, steal), 1, steal);
+  else if (verdict === "remember") startRemember(state, cat, "kitchen", steal);
+  return verdict !== "skip";
 }
 
 /** Кіт голодний, а корму в мисках немає: по увагу він іде через голод (§9.9, «Ласкавість»). */
@@ -2340,10 +2351,13 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
     case "attention": {
       // Прийшов, ходив слідом і нявчив, а ласки так і не дочекався — прояв «Вимогливості» (§9.9): довше за
       // звичайний похід — «+», пішов раніше — «−» (рішення автора 2026-10-25).
-      // Просив їсти біля персонажа й не дочекався — далі просить біля миски, без нового вибору (§9.12, «Похід по увагу»);
-      // тривалість такого походу — не прояв «Вимогливості».
+      // Просив їсти біля персонажа й не дочекався — далі краде або просить біля миски, а не вибирає заново між персонажем і
+      // мискою (§9.12, «Похід по увагу»); тривалість такого походу — не прояв «Вимогливості».
       if (act.forFood === true) {
-        if (wantsFood(state, cat)) begAtBowl(state, cat);
+        if (!wantsFood(state, cat)) return;
+        const steal = humanFood(state, rng);
+        if (steal && hungryTheft(state, cat, rng, steal)) return;
+        begAtBowl(state, cat);
         return;
       }
       if (act.seen !== true || cat.needs.attention < ATTENTION_SATISFIED) return;
