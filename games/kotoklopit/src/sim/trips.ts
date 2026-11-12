@@ -18,9 +18,9 @@ import type { AccidentCost, AccidentLoss, Cat, Destination, Difficulty, GameStat
 import { isNewborn } from "./reproduction";
 import { isWorkday, stopWork } from "./work";
 import { catOnStairs, guestAtDoor, openDoor } from "./door";
+import { HOME_DOOR } from "./home";
 
-/** Де персонаж з'являється вдома після поїздки: біля дверей. */
-export const HOME_DOOR = { x: 10.5, y: 10.2 } as const;
+export { HOME_DOOR } from "./home";
 
 /**
  * Дорога до пункту за звичайної швидкості, у хвилинах (§8.5): і гонка туди, і повернення без гонки. «Затори» її подовжують,

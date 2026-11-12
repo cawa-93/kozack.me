@@ -296,6 +296,9 @@ export function hasBigBox(state: Pick<GameState, "modifiers" | "today">): boolea
 /** Де персонаж прокидається: біля ліжка (§8.7). */
 export const SPAWN: Vec = { x: 2.5, y: 2.5 };
 
+/** Де персонаж з'являється вдома після поїздки: біля дверей. */
+export const HOME_DOOR = { x: 10.5, y: 10.2 } as const;
+
 /** Клітинка підлоги, на якій може стояти річ котячого кутка (§8.7, §9.12). Речі на підлозі не тверді. */
 export interface Place {
   id: string;

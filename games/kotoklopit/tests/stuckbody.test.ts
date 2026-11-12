@@ -8,8 +8,10 @@ import { moveBody } from "../src/sim/body";
 import { BODY_RADIUS } from "../src/sim/config";
 import { addSupply } from "../src/sim/economy";
 import { advance, newGame } from "../src/sim/game";
-import { placedObject, PLACES, thingHome } from "../src/sim/home";
+import { placedObject, PLACES, SPAWN, thingHome } from "../src/sim/home";
 import { moveThing } from "../src/sim/moving";
+import { thingFits } from "../src/sim/settle";
+import { HOME_DOOR } from "../src/sim/trips";
 import type { CarryThing, GameState, Product, Save, Vec } from "../src/sim/types";
 
 function game(): Save {
@@ -75,6 +77,23 @@ describe("персонаж не застрягає в сховищі (§8.7)", (
     const tile = tileOf(state, "cat-cabinet");
     expect(tile).not.toEqual(home);
     expect(touches(state.character.body, tile.x, tile.y), `${tile.x},${tile.y}`).toBe(false);
+  });
+
+  it("тверде не стає й там, де персонаж з'являється: біля ліжка, прокинувшись, і перед вхідними дверима, повернувшись із поїздки", () => {
+    const save = game();
+    const state = save.current;
+    // Персонаж посеред вітальні — його тіло клітинок біля ліжка й дверей не зачіпає.
+    Object.assign(state.character.body, { x: 7.5, y: 5.5 });
+    for (const thing of ["cat-cabinet", "litter-bag", "sterile-bin", "cat-kit"] as const) {
+      const fits = thingFits(state, thing);
+      for (const [where, at] of [["ліжко", SPAWN], ["двері", HOME_DOOR]] as const) {
+        for (let y = 0; y < 20; y++) {
+          for (let x = 0; x < 30; x++) {
+            if (touches(at, x, y)) expect(fits({ x, y }), `${thing} → ${x},${y} (${where})`).toBe(false);
+          }
+        }
+      }
+    }
   });
 
   it("той, хто вже опинився в твердому (стара гра), виходить із нього", () => {

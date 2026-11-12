@@ -12,6 +12,7 @@ import {
   distanceToRect,
   GAME_THINGS,
   hiddenTile,
+  HOME_DOOR,
   isSolid,
   isWall,
   itemPoint,
@@ -155,9 +156,20 @@ export function useSide(state: Pick<GameState, "home" | "modifiers" | "today">, 
   return sides.find((d) => !isWall(at.x + d.x, at.y + d.y) && !blocksPerson(state, at.x + d.x, at.y + d.y)) ?? sides[0] ?? null;
 }
 
-/** Тверда річ гри на клітинці зачепила б персонажа (§8.7): він застряг би в ній. У поїздці його вдома немає. */
+/**
+ * Клітинку зачіпає тіло там, де персонаж з'являється сам (§8.7): біля ліжка, прокинувшись, і біля дверей, повернувшись із
+ * поїздки. Тверде там він застав би собою.
+ */
+function touchesArrival(tile: Vec): boolean {
+  return bodyTouches(SPAWN, tile.x, tile.y) || bodyTouches(HOME_DOOR, tile.x, tile.y);
+}
+
+/**
+ * Тверда річ гри на клітинці зачепила б персонажа (§8.7): він застряг би в ній, — тепер чи там, де він з'явиться. У поїздці
+ * його вдома немає.
+ */
 function touchesPerson(state: GameState, thing: GameThing, tile: Vec): boolean {
-  return SOLID.has(thing) && state.trip === null && bodyTouches(state.character.body, tile.x, tile.y);
+  return SOLID.has(thing) && ((state.trip === null && bodyTouches(state.character.body, tile.x, tile.y)) || touchesArrival(tile));
 }
 
 /** Клітинка, де річ гри стоїть: зсунута чи своя. */
@@ -195,6 +207,7 @@ export function thingFits(state: GameState, thing: CarryThing): (tile: Vec) => b
   if (!SOLID.has(thing)) return () => true;
   let before: Uint8Array | null = null;
   return (tile) => {
+    if (touchesArrival(tile)) return false;
     const carried = state.home.thingCarried;
     const original = state.home.displaced?.[thing] ?? null;
     before ??= reachable(state);
