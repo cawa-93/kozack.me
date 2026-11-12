@@ -55,15 +55,6 @@ export interface BakedFrame {
   stub: boolean;
 }
 
-/**
- * Запекти кадр `frame` (`frameId(id, стан, ракурс)`) за рецептом — або взяти вже запечений — і повернути ключ CanvasTexture.
- * Ключ дійсний, доки кадр не звільнив бюджет, тож показувати його варто через `addBakedArt` / `setBakedArt`: кадр, який
- * показує зображення, не звільняється.
- */
-export function bakeFrame(scene: Phaser.Scene, frame: FrameId, recipe: TintRecipe, opts: BakeOptions = {}): string {
-  return bake(scene, frame, recipe, opts).key;
-}
-
 /** Що відомо про запечений кадр (розмір полотна, pivot); undefined — такого немає. */
 export function bakedFrame(scene: Phaser.Scene, key: string): BakedFrame | undefined {
   return bakerOf(scene.game).cache.peek(key);
