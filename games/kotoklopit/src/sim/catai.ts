@@ -704,11 +704,12 @@ function urgent(state: GameState, cat: Cat): boolean {
 
 /**
  * Кіт у поході до персонажа по їжу (§9.12, «Похід по увагу»): голод і втома його не переривають — інакше він щокадру вирішував
- * би заново, куди йти, перекидаючи шанси шафки й крадіжки, і не доходив би. Лоток, спрага й корм у мисці — переривають.
+ * би заново, куди йти, перекидаючи шанси шафки й крадіжки, і не доходив би. Лоток, спрага й корм у мисці — переривають; персонажа
+ * немає (ніч, поїздка) — просити нікого, і кіт вирішує заново, а не йде туди, де той стояв.
  */
-function askingPerson(state: GameState, cat: Cat): boolean {
+function askingPerson(state: GameState, cat: Cat, context: CatContext): boolean {
   const n = cat.needs;
-  return cat.act.kind === "attention" && cat.act.forFood === true && wantsFood(state, cat) && n.toilet < NEED_THRESHOLD.toilet && n.thirst < NEED_THRESHOLD.thirst;
+  return context.present && cat.act.kind === "attention" && cat.act.forFood === true && wantsFood(state, cat) && n.toilet < NEED_THRESHOLD.toilet && n.thirst < NEED_THRESHOLD.thirst;
 }
 
 /** Точка сонячної плями цієї години (§8.9): там, де вигляд малює смуги сонця; смуг немає, зокрема в «Дощ», — null. */
@@ -3292,7 +3293,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
     (cat.act.kind === "follow" && cat.act.target !== "food");
   // Кота під рукою — його пестять чи з ним грають — нагальне не перериває: інакше пестощі щокадру повертали б голодного кота на
   // місце, а він щокадру знову вирішував би, куди йти, витрачаючи rng (рішення автора 2026-10-26). Відпустили — вирішить сам.
-  if (calm && urgent(state, cat) && !getsAttention(state, cat) && !askingPerson(state, cat)) decide(state, cat, rng, context);
+  if (calm && urgent(state, cat) && !getsAttention(state, cat) && !askingPerson(state, cat, context)) decide(state, cat, rng, context);
   if (cat.act.kind === "attention") {
     if (!context.present) cat.act.minutes = 0;
     else {

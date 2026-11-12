@@ -4,7 +4,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createCat, idleAct } from "../src/sim/cat";
-import { beggingFood, decide } from "../src/sim/catai";
+import { beggingFood, decide, tickCats } from "../src/sim/catai";
 import { CAT_ACT_MINUTES, HUNGRY_ASK_MINUTES, LOVE_BEHAVIOR, RELATIONS } from "../src/sim/config";
 import { advance, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
@@ -216,6 +216,17 @@ describe("похід голодного кота до персонажа (§9.12
     follow(save, cat, 40, 1 / 30, { ...HUNGRY, attention: 95 });
     expect(cat.act.kind).toBe("beg");
     expect(cat.traits.find((t) => t.group === "demanding")?.seen).toBe(0);
+  });
+
+  it("персонаж поїхав чи заснув — кіт не йде туди, де той стояв, а одразу вирішує заново й просить біля миски", () => {
+    const save = game();
+    const cat = withCat(save);
+    sendToPerson(save, cat);
+    // Ніч і поїздка: коти живуть без персонажа, кроками по хвилині.
+    tickCats(save.current, 1, { present: false });
+    expect(cat.act.kind).toBe("beg");
+    const bowl = save.current.home.items.find((i) => i.kind === "bowl") as BowlItem;
+    expect(cat.act.target).toBe(`item:${bowl.id}`);
   });
 
   it("ворог біля персонажа, «Не випрошує» й кіт, що не любить, до персонажа не йдуть — просять біля миски", () => {
