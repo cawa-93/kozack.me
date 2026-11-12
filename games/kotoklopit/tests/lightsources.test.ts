@@ -198,6 +198,22 @@ describe("джерела світла квартири", () => {
     expect(litStrength(1)).toBe(1);
   });
 
+  it("стала геометрія джерел рахується раз: між кадрами ті самі місця, щокадру — лише яскравість", () => {
+    for (const outage of [false, true]) {
+      const s = state(outage);
+      if (!outage) s.home.stove.item = null;
+      const a = at(22, 0, s);
+      const b = at(22, 40, s);
+      expect(a.length, `${outage}`).toBeGreaterThan(3);
+      for (const source of a) {
+        const same = b.find((other) => other.id === source.id);
+        expect(same, source.id).toBeDefined();
+        expect(same?.screen, source.id).toBe(source.screen);
+        expect(same?.at, source.id).toBe(source.at);
+      }
+    }
+  });
+
   it("у сови по півночі (хвилина 1530) — те саме, що о 01:30", () => {
     const s = state();
     expect(lightSources(s, daylight(1530, true))).toEqual(lightSources(s, daylight(90, true)));

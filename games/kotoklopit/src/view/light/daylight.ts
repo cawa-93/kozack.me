@@ -120,6 +120,15 @@ export function daylight(minute: number, power: boolean): Daylight | null {
   };
 }
 
+/**
+ * Лампи доби о хвилині `minute` (як `daylight(minute, true).lamps`; удень — 0) без решти світла доби: їх питають щокадру для
+ * кожної кімнати й декору.
+ */
+export function lampsAt(minute: number): number {
+  const m = dayMinute(minute);
+  return m >= DAYLIGHT.morningEnd && m < DAYLIGHT.eveningStart ? 0 : lampLevel(m);
+}
+
 /** З якого рівня ламп (свічок) доби їхній кадр арту горить: з половини шляху вмикання. */
 export const LIT_FROM = 0.5;
 

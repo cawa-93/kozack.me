@@ -35,7 +35,7 @@ import { artOffset, objectScreen } from "../iso/geometry";
 import { screenShow } from "../iso/markslayout";
 import type { Point } from "../world/part";
 import { ISO } from "../world/projection";
-import { candlesLit, daylight, LIT_FROM, lampsOn, type Daylight } from "./daylight";
+import { candlesLit, LIT_FROM, lampsAt, lampsOn, type Daylight } from "./daylight";
 import { BOILER_LIGHT, CANDLE_LIGHT, CEILING_LIGHT, DESK_LAMP_LIGHT, GAS_LIGHT, SCONCE_LIGHT, SCREEN_LIGHT, STATION_LIGHT } from "./lightlook";
 
 /**
@@ -77,7 +77,7 @@ export interface LightSource {
 /** Лампи кімнати 0–1: світло доби зі зсувом увімкнення цієї кімнати (`DAYLIGHT.lampShift`, §8.9). */
 export function roomLamps(d: Daylight, room: RoomId): number {
   if (!d.power) return 0;
-  return daylight(d.minute - DAYLIGHT.lampShift[room], true)?.lamps ?? 0;
+  return lampsAt(d.minute - DAYLIGHT.lampShift[room]);
 }
 
 /**
@@ -147,92 +147,86 @@ const DESK_LAMP_FLOOR: Vec = { x: DESK_LAMP.at.x + DESK_LAMP_LIGHT.floor.x, y: D
 /** Перед столом із комп'ютером, де сидить персонаж: туди падає світло екрана. */
 const SCREEN_FLOOR: Vec = { x: 7, y: 7.1 };
 
-/**
- * Джерела світла цього кадру. Удень (`d` = null) — жодного. Порядок сталий: стельові, бра, настільна лампа, свічки (полички,
- * потім стіл), станція, бойлер, газ, екран.
- */
-export function lightSources(state: GameState, d: Daylight | null): LightSource[] {
-  if (!d) return [];
-  const out: LightSource[] = [];
-  const outage = powerOut(state);
-  if (!outage) {
-    CEILING_LAMPS.forEach((lamp, i) => {
-      const strength = roomLamps(d, lamp.room);
-      if (strength <= 0) return;
-      out.push({
-        id: `ceiling:${i}`,
-        kind: "ceiling",
-        room: lamp.room,
-        at: lamp.at,
-        screen: lifted(lamp.at, CEILING_HEIGHT),
-        radius: lamp.radius,
-        color: CEILING_LIGHT.color,
-        strength,
-      });
-    });
-    if (lampsOn(d)) {
-      const strength = litStrength(d.lamps);
-      SCONCES.forEach((sconce, i) => {
-        out.push({
-          id: `sconce:${i}`,
-          kind: "sconce",
-          room: sconce.room,
-          at: offWall(sconce.at, sconce.face, SCONCE_LIGHT.floor.out),
-          screen: decorPoint(sconce.id, "lamp", ISO.toScreen(sconce.at), sconce.lamp),
-          radius: SCONCE_LIGHT.floor.radius,
-          color: SCONCE_LIGHT.color,
-          strength,
-          face: sconce.face,
-        });
-      });
-      // Настільна лампа — разом із бра (той самий стан арту): тепла пляма на столі й на підлозі перед ним.
-      out.push({
-        id: "lamp",
-        kind: "lamp",
-        room: "living",
-        at: DESK_LAMP_FLOOR,
-        screen: decorPoint("env/desk-lamp", "lamp", deskLampPivot(), DESK_LAMP.lamp - DESK_LAMP.z),
-        radius: DESK_LAMP_LIGHT.radius,
-        color: DESK_LAMP_LIGHT.color,
-        strength,
-        host: DESK_LAMP.host,
-      });
-    }
-  }
-  if (outage) {
-    if (candlesLit(d)) {
-      const strength = litStrength(d.candles);
-      CANDLE_SHELVES.forEach((shelf, i) => {
-        out.push({
-          id: `candle:${i}`,
-          kind: "candle",
-          room: shelf.room,
-          at: shelf.pool ?? offWall(shelf.at, shelf.face, CANDLE_LIGHT.floor.out),
-          screen: decorPoint(shelf.id, "flame", shelfPivot(shelf), shelf.flame - shelf.z),
-          radius: CANDLE_LIGHT.radius,
-          color: CANDLE_LIGHT.color,
-          strength,
-          face: shelf.face,
-          flicker: i + 1,
-        });
-      });
-      // Свічка на столі з комп'ютером замість лампи (рішення автора 2026-11-03): світить, як свічка на поличці (колір, радіус,
-      // мерехтіння зі своїм зерном), але стоїть на столі — сяйво над столом, у його проміжку глибини, як у лампи (`host`), а
-      // пляма тягнеться до підлоги перед столом (`DESK_CANDLE.pool`).
-      out.push({
-        id: "candle:desk",
-        kind: "candle",
-        room: "living",
-        at: DESK_CANDLE.pool,
-        screen: decorPoint("env/desk-candle", "flame", deskCandlePivot(), DESK_CANDLE.flame - DESK_CANDLE.z),
-        radius: CANDLE_LIGHT.radius,
-        color: CANDLE_LIGHT.color,
-        strength,
-        host: DESK_CANDLE.host,
-        flicker: CANDLE_SHELVES.length + 1,
-      });
-    }
-    out.push({
+/** Джерело без яскравості: стала частина, її рахують раз (`fixedSources`). */
+type Fixed = Omit<LightSource, "strength">;
+
+/** Стала геометрія всіх джерел квартири: місця, кольори й радіуси не змінюються, щокадру — лише яскравість. */
+interface FixedSources {
+  readonly ceiling: readonly Fixed[];
+  readonly sconces: readonly Fixed[];
+  readonly lamp: Fixed;
+  readonly shelves: readonly Fixed[];
+  readonly deskCandle: Fixed;
+  /** Ці світять завжди на повну: той самий об'єкт щокадру. */
+  readonly station: LightSource;
+  readonly boiler: LightSource;
+  readonly gas: LightSource;
+  readonly screen: LightSource;
+}
+
+let fixed: FixedSources | null = null;
+
+/** Стала геометрія джерел — з першого запиту (точки кадрів — з маніфесту арту). */
+function fixedSources(): FixedSources {
+  if (fixed) return fixed;
+  const stove = objectById("stove");
+  fixed = {
+    ceiling: CEILING_LAMPS.map((lamp, i) => ({
+      id: `ceiling:${i}`,
+      kind: "ceiling",
+      room: lamp.room,
+      at: lamp.at,
+      screen: lifted(lamp.at, CEILING_HEIGHT),
+      radius: lamp.radius,
+      color: CEILING_LIGHT.color,
+    })),
+    sconces: SCONCES.map((sconce, i) => ({
+      id: `sconce:${i}`,
+      kind: "sconce",
+      room: sconce.room,
+      at: offWall(sconce.at, sconce.face, SCONCE_LIGHT.floor.out),
+      screen: decorPoint(sconce.id, "lamp", ISO.toScreen(sconce.at), sconce.lamp),
+      radius: SCONCE_LIGHT.floor.radius,
+      color: SCONCE_LIGHT.color,
+      face: sconce.face,
+    })),
+    // Настільна лампа — разом із бра (той самий стан арту): тепла пляма на столі й на підлозі перед ним.
+    lamp: {
+      id: "lamp",
+      kind: "lamp",
+      room: "living",
+      at: DESK_LAMP_FLOOR,
+      screen: decorPoint("env/desk-lamp", "lamp", deskLampPivot(), DESK_LAMP.lamp - DESK_LAMP.z),
+      radius: DESK_LAMP_LIGHT.radius,
+      color: DESK_LAMP_LIGHT.color,
+      host: DESK_LAMP.host,
+    },
+    shelves: CANDLE_SHELVES.map((shelf, i) => ({
+      id: `candle:${i}`,
+      kind: "candle",
+      room: shelf.room,
+      at: shelf.pool ?? offWall(shelf.at, shelf.face, CANDLE_LIGHT.floor.out),
+      screen: decorPoint(shelf.id, "flame", shelfPivot(shelf), shelf.flame - shelf.z),
+      radius: CANDLE_LIGHT.radius,
+      color: CANDLE_LIGHT.color,
+      face: shelf.face,
+      flicker: i + 1,
+    })),
+    // Свічка на столі з комп'ютером замість лампи: світить, як свічка на поличці (колір, радіус, мерехтіння зі своїм зерном),
+    // але стоїть на столі — сяйво над столом, у його проміжку глибини, як у лампи (`host`), а пляма тягнеться до підлоги
+    // перед столом (`DESK_CANDLE.pool`).
+    deskCandle: {
+      id: "candle:desk",
+      kind: "candle",
+      room: "living",
+      at: DESK_CANDLE.pool,
+      screen: decorPoint("env/desk-candle", "flame", deskCandlePivot(), DESK_CANDLE.flame - DESK_CANDLE.z),
+      radius: CANDLE_LIGHT.radius,
+      color: CANDLE_LIGHT.color,
+      host: DESK_CANDLE.host,
+      flicker: CANDLE_SHELVES.length + 1,
+    },
+    station: {
       id: "station",
       kind: "station",
       room: "living",
@@ -242,9 +236,8 @@ export function lightSources(state: GameState, d: Daylight | null): LightSource[
       color: STATION_LIGHT.color,
       strength: 1,
       host: POWER_STATION_ID,
-    });
-  } else if (d.dark > 0) {
-    out.push({
+    },
+    boiler: {
       id: "boiler",
       kind: "boiler",
       room: "bathroom",
@@ -254,11 +247,8 @@ export function lightSources(state: GameState, d: Daylight | null): LightSource[
       color: BOILER_LIGHT.color,
       strength: 1,
       face: BOILER.face,
-    });
-  }
-  if (outage && state.home.stove.item !== null) {
-    const stove = objectById("stove");
-    out.push({
+    },
+    gas: {
       id: "gas",
       kind: "gas",
       room: "kitchen",
@@ -268,10 +258,8 @@ export function lightSources(state: GameState, d: Daylight | null): LightSource[
       color: GAS_LIGHT.color,
       strength: 1,
       host: "stove",
-    });
-  }
-  if (screenShow(state) !== "off") {
-    out.push({
+    },
+    screen: {
       id: "screen",
       kind: "screen",
       room: "living",
@@ -281,8 +269,43 @@ export function lightSources(state: GameState, d: Daylight | null): LightSource[
       color: SCREEN_LIGHT.color,
       strength: 1,
       host: "computer",
+    },
+  };
+  return fixed;
+}
+
+/**
+ * Джерела світла цього кадру. Удень (`d` = null) — жодного. Порядок сталий: стельові, бра, настільна лампа, свічки (полички,
+ * потім стіл), станція, бойлер, газ, екран.
+ */
+export function lightSources(state: GameState, d: Daylight | null): LightSource[] {
+  if (!d) return [];
+  const all = fixedSources();
+  const out: LightSource[] = [];
+  const outage = powerOut(state);
+  if (!outage) {
+    CEILING_LAMPS.forEach((lamp, i) => {
+      const strength = roomLamps(d, lamp.room);
+      if (strength > 0) out.push({ ...all.ceiling[i]!, strength });
     });
+    if (lampsOn(d)) {
+      const strength = litStrength(d.lamps);
+      for (const sconce of all.sconces) out.push({ ...sconce, strength });
+      out.push({ ...all.lamp, strength });
+    }
   }
+  if (outage) {
+    if (candlesLit(d)) {
+      const strength = litStrength(d.candles);
+      for (const shelf of all.shelves) out.push({ ...shelf, strength });
+      out.push({ ...all.deskCandle, strength });
+    }
+    out.push(all.station);
+  } else if (d.dark > 0) {
+    out.push(all.boiler);
+  }
+  if (outage && state.home.stove.item !== null) out.push(all.gas);
+  if (screenShow(state) !== "off") out.push(all.screen);
   return out;
 }
 

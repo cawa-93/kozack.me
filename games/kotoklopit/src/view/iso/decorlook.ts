@@ -15,7 +15,7 @@
 
 import { powerOut } from "../../sim/modifiers";
 import type { GameState } from "../../sim/types";
-import { candlesLit, daylight, lampsOn } from "../light/daylight";
+import { lampsAt, LIT_FROM } from "../light/daylight";
 
 /** Стан кадру бра (`env/sconce/*`) і настільної лампи (`env/desk-lamp`). */
 export type SconceState = "off" | "on";
@@ -46,12 +46,13 @@ export const decorLookInit = (): DecorLook => ({ sconce: "off", deskLamp: "off",
  */
 export function decorLook(state: GameState, lightMinute: number | null, out: DecorLook = decorLookInit()): DecorLook {
   const power = !powerOut(state);
-  const light = lightMinute === null ? null : daylight(lightMinute, power);
-  // Без електрики лампи доби — 0 (`daylight`), тож бра в день відключення не вмикаються.
-  out.sconce = lampsOn(light) ? "on" : "off";
+  // Горять із половини шляху вмикання, як `lampsOn` і `candlesLit`: без електрики замість ламп — свічки (`daylight`), тож бра в
+  // день відключення не вмикаються.
+  const lit = lightMinute !== null && lampsAt(lightMinute) >= LIT_FROM;
+  out.sconce = power && lit ? "on" : "off";
   out.boiler = power ? "on" : "off";
   out.station = !power;
-  out.candles = power ? null : candlesLit(light) ? "lit" : "out";
+  out.candles = power ? null : lit ? "lit" : "out";
   // На столі — лампа (горить із бра) чи, без електрики, свічка (горить зі свічками на поличках).
   out.deskLamp = power ? out.sconce : null;
   out.deskCandle = out.candles;

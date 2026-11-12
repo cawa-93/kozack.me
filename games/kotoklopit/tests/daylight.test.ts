@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 import { DAYLIGHT } from "../src/sim/config";
-import { candlesLit, daylight, dayMinute, lampsOn, lightKey, type Daylight } from "../src/view/light/daylight";
+import { candlesLit, daylight, dayMinute, lampsAt, lampsOn, lightKey, type Daylight } from "../src/view/light/daylight";
 
 const at = (h: number, m = 0, power = true): Daylight | null => daylight(h * 60 + m, power);
 
@@ -95,5 +95,9 @@ describe("світло доби", () => {
       const b = parts(daylight(m + 0.5, true));
       for (let i = 0; i < a.length; i++) expect(Math.abs(a[i]! - b[i]!)).toBeLessThan(0.08);
     }
+  });
+
+  it("лампи доби без усього світла доби (`lampsAt`) — рівно `daylight(…, true).lamps`, удень — 0", () => {
+    for (let minute = -60; minute <= 1600; minute += 0.25) expect(lampsAt(minute), `${minute}`).toBe(daylight(minute, true)?.lamps ?? 0);
   });
 });
