@@ -5,6 +5,7 @@ import { catchEscaped, IDLE, tap, tickActivity, tickStove, type Input } from "./
 import { isMoving, moveBody, newBody } from "./body";
 import { greetAtDoor, tickCats } from "./catai";
 import { passAwakeTime } from "./character";
+import { setDifficulty } from "./difficulty";
 import { BODY_PACE, FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, MODIFIERS, START_MONEY, START_STATS } from "./config";
 import { landFlying, newHome, tickDeliveries, tickFlying } from "./economy";
 import { openDoor, ringBell } from "./door";
@@ -347,12 +348,15 @@ export function replayWeek(save: Save): void {
 // Умови дня повторюються, а поведінка котів генерується заново (§6.1).
 function restore(save: Save, snapshot: GameState): void {
   const replays = save.current.replays + 1;
+  const difficulty = save.current.difficulty;
   save.current = clone(snapshot);
   // Поточний ранок — знову сам знімок дня.
   save.morning = null;
   save.current.replays = replays;
   // Умови дня — зі знімка (модифікатор уже обрано з них), поведінка — нова.
   save.current.rng.behavior = streamSeed(save.current.seed, "behavior", save.current.day, replays);
+  // Складність — обрана зараз, а не зі знімка (§5.2): перемкнути, як у грі, щоб набране до порогів зберегло свою частку.
+  setDifficulty(save.current, difficulty);
 }
 
 export function serialize(save: Save): string {
