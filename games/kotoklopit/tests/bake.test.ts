@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import type { Look, Shape } from "../src/sim/types";
-import { BakeCache, BAKE_BUDGET, BAKE_MS_GUESS, FRAME_MS, frameLeft, IDLE_SPARE_MS, idleFits, nextBakeMs } from "../src/view/art/bakecache";
+import { BakeCache, BAKE_BUDGET, BAKE_MS_GUESS, FRAME_MS, frameLeft, IDLE_SPARE_MS, idleFits, nextBakeMs, ownerBudget, PERSON_OWNER } from "../src/view/art/bakecache";
 import { artEntry, DEFAULT_RES } from "../src/view/art/manifest";
 import { ART_VIEWS, frameId, type ArtId, type ArtView } from "../src/view/art/types";
 import { CAT_FAR_SLOTS, ISO_CAT_FIT, ISO_CAT_RIG, isoCatSkin } from "../src/view/iso/catrig";
@@ -60,10 +60,13 @@ describe("запікання наперед — лише в ракурсах, д
 describe("запечений кадр — звичайна текстура з полотна (`bake.ts`)", () => {
   const source = readFileSync(new URL("../src/view/art/bake.ts", import.meta.url), "utf8");
 
-  it("не CanvasTexture: та одразу читає пікселі полотна (`getImageData`) і тримає їхню копію; полотну тоді не треба лишатися в пам'яті процесора", () => {
+  it("не CanvasTexture: та одразу читає пікселі полотна (`getImageData`) і тримає їхню копію", () => {
     expect(source).not.toMatch(/\.addCanvas\(/);
-    expect(source).not.toMatch(/willReadFrequently:\s*true/);
     expect(source).toMatch(/\.textures\.create\(/);
+  });
+
+  it("полотно кадру — у пам'яті процесора (`willReadFrequently`): після збою відеокарти Phaser перевантажує текстуру з полотна, а полотно у відеопам'яті браузер тоді очищує — частини котів зникли б", () => {
+    expect(source).toMatch(/willReadFrequently:\s*true/);
   });
 
   it("полотно знищеного кадру обнуляється одразу, не чекаючи збирача сміття (iOS обмежує сумарну пам'ять полотен)", () => {
@@ -235,6 +238,11 @@ function heaviestPerson(measure: (skin: Skin) => number): Skin {
 }
 
 describe("бюджет запечених кадрів власника (`BAKE_BUDGET`)", () => {
+  it("персонаж — власник `PERSON_OWNER` з бюджетом свого виду, а не кота", () => {
+    expect(ownerBudget(BAKE_BUDGET, PERSON_OWNER)).toBe(BAKE_BUDGET.kinds?.[PERSON_OWNER]);
+    expect(ownerBudget(BAKE_BUDGET, PERSON_OWNER).pixelsPerOwner).toBeGreaterThan(BAKE_BUDGET.pixelsPerOwner);
+  });
+
   const person = PERSON_RIG as unknown as LooseDef;
   const cat = ISO_CAT_RIG as unknown as LooseDef;
 

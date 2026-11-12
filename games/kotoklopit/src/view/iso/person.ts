@@ -34,6 +34,7 @@ import { facingFromTiles } from "../anim/catfacing";
 import { personAnim, personEventAnim, type PersonAnimChoice } from "../anim/personanim";
 import { addArt, setArt } from "../art/atlas";
 import { addBakedArt, releaseBaked, setBakedArt } from "../art/bake";
+import { PERSON_OWNER } from "../art/bakecache";
 import { artEntry } from "../art/manifest";
 import { farRecipe, personRecipe } from "../art/recipes";
 import type { ArtId, TintRecipe } from "../art/types";
@@ -76,9 +77,6 @@ import { cropPixels, featherAt, featherRect, lineEnd, palmAt, reachArm, reachedP
 import { glideOffset, glideRate, personSpot, shotFace, shotPlace, showFace, touchFacing, type ShotPlace } from "./personspot";
 
 type PersonAnim = AnimOf<typeof PERSON_RIG>;
-
-/** Власник запечених кадрів персонажа (бюджет `bake.ts`). */
-export const PERSON_OWNER = "person";
 
 /** Над волосінню пір'я: на стільки вище за неї. */
 const FEATHER_DEPTH = 0.5;

@@ -283,11 +283,13 @@ function make(scene: Phaser.Scene, frame: FrameId, recipe: TintRecipe, key: stri
   dropTexture(scene.textures, key);
   // Спершу скласти кадр на полотні, а вже готове віддати текстурі: `createCanvas` і `refresh` завантажували його у
   // відеопам'ять двічі — порожнє полотно й готове. Текстура — звичайна, з полотна, а не `CanvasTexture`: та одразу читає
-  // пікселі полотна (`getImageData`) і тримає їхню копію, а пікселів запеченого кадру ніхто не читає.
+  // пікселі полотна (`getImageData`) і тримає їхню копію, а пікселів запеченого кадру ніхто не читає. Полотно — у пам'яті
+  // процесора (`willReadFrequently`): після збою відеокарти Phaser перевантажує текстуру з нього, а полотно у відеопам'яті
+  // браузер тоді очищує — запечені частини зникли б до наступного запікання.
   const canvas = document.createElement("canvas");
   canvas.width = px.w;
   canvas.height = px.h;
-  const context = canvas.getContext("2d");
+  const context = canvas.getContext("2d", { willReadFrequently: true });
   if (context) {
     // Візерунок тканини запікається разом із кадром: щокадру його ніхто не малює.
     const cloth =
