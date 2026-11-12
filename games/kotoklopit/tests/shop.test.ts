@@ -232,12 +232,12 @@ describe("назви варіантів (§6.4)", () => {
     // «Таблетки для котів» були й назвою дешевих).
     const general = new Set(Object.values(PRODUCT_TITLES).map((t) => t.name.toLowerCase()));
     for (const { name } of shown) expect(general.has(name.toLowerCase()), name).toBe(false);
-    // Не довга: на телефоні набік — один-два рядки біля іконки (`TEXTS.md`, «Назви товарів»), як найдовша з прикладу автора
-    // («Ветеринарні таблетки для котів»). Корм для стерилізованих — виняток: без «корму» незрозуміло, що це, а «для
-    // стерилізованих» переноситься цілим другим рядком.
+    // Не довга: на телефоні набік — один-два рядки біля іконки (`TEXTS.md`, «Назви товарів»). Корм для стерилізованих —
+    // виняток: без «корму» незрозуміло, що це, а «для стерилізованих» переноситься цілим другим рядком.
     for (const { key, name } of shown) expect(name.length, name).toBeLessThanOrEqual(key === "sterileFood" ? 32 : 30);
-    // Таблетки й краплі — як у прикладі автора (рішення автора 2026-11-03).
-    expect(VARIANT_TITLES["pills"]).toEqual({ cheap: "Аптечні таблетки для котів", premium: "Ветеринарні таблетки для котів" });
+    // Таблетки й краплі: «ветеринарні» вже каже, для кого, тож дорогі — без «для котів»; дешевим «аптечним» воно потрібне.
+    expect(VARIANT_TITLES["pills"]).toEqual({ cheap: "Аптечні таблетки для котів", premium: "Ветеринарні таблетки" });
+    expect(VARIANT_TITLES["drops"]).toEqual({ cheap: "Аптечні краплі для котів", premium: "Ветеринарні краплі" });
     // Для кого — видно з назви: ліки, ласощі, шампунь і м'ята для котів кажуть це самі, а ліки для себе — ні.
     for (const key of ["pills", "drops", "treats", "shampoo", "catnip"]) {
       for (const name of Object.values(VARIANT_TITLES[key] ?? {})) expect(name, name).toMatch(/кот|ветеринар/iu);
