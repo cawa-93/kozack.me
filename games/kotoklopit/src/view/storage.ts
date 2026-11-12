@@ -113,10 +113,27 @@ export function storageChipWidth(look: StorageLook, withLimit: boolean, textWidt
 
 interface Indicator {
   container: Phaser.GameObjects.Container;
+  /** Що показано: запаси з кількостями. */
   key: string;
+  /** Склад плашки (`plateKey`): той самий — нова кількість лише міняє тексти. */
+  plate: string;
+  /** Числа в рядках, по одному на рядок. */
+  texts: Phaser.GameObjects.Text[];
   width: number;
   height: number;
 }
+
+/** Що показують рядки: запаси й кількості. */
+const linesKey = (lines: readonly StorageLine[]): string => lines.map((l) => `${l.product}:${l.count}/${l.limit ?? ""}`).join(",");
+
+/**
+ * Склад плашки: запаси й ширина кожної фішки, що від нього залежить (`make`) — з лімітом за лімітом, без нього (ящики) — за самим
+ * числом. Той самий склад — та сама плашка з рамкою й іконками, інша лише кількість.
+ */
+const plateKey = (lines: readonly StorageLine[]): string => lines.map((l) => (l.limit === undefined ? `${l.product}#${l.count}` : `${l.product}/${l.limit}`)).join(",");
+
+/** Число в рядку: з лімітом — «кількість/ліміт». */
+const lineText = (line: StorageLine): string => (line.limit === undefined ? String(line.count) : `${line.count}/${line.limit}`);
 
 export class StorageIndicators {
   private readonly shown = new Map<string, Indicator>();
@@ -131,23 +148,29 @@ export class StorageIndicators {
     private readonly head: () => Point | null = () => null,
   ) {}
 
-  /** Показати вміст над сховищем; порожній список прибирає індикатор. Викликати щокадру. */
+  /**
+   * Показати вміст над сховищем; порожній список ховає індикатор (не знищує: персонаж повернеться — та сама плашка). Викликати
+   * щокадру.
+   */
   set(id: string, lines: readonly StorageLine[], x: number, y: number): void {
     const current = this.shown.get(id);
-    const key = lines.map((l) => `${l.product}:${l.count}/${l.limit ?? ""}`).join(",");
     if (lines.length === 0) {
-      current?.container.destroy();
-      this.shown.delete(id);
+      current?.container.setVisible(false);
       return;
     }
+    const key = linesKey(lines);
+    if (current && current.key !== key && current.plate === plateKey(lines)) {
+      lines.forEach((line, i) => current.texts[i]?.setText(lineText(line)).setColor(line.count === 0 ? this.look.zero : this.look.text));
+      current.key = key;
+    }
     if (current && current.key === key) {
-      current.container.setPosition(x, this.lift(x, y, current));
+      current.container.setPosition(x, this.lift(x, y, current)).setVisible(true);
       return;
     }
     current?.container.destroy();
     const made = this.make(lines);
     made.container.setPosition(x, this.lift(x, y, made));
-    this.shown.set(id, { ...made, key });
+    this.shown.set(id, { ...made, key, plate: plateKey(lines) });
   }
 
   /** Низ плашки: у точці (x, y) чи над головою персонажа, якщо він під нею. */
@@ -160,7 +183,7 @@ export class StorageIndicators {
    * («ліміт/ліміт», а без ліміту — саме число): текст не вилазить за плашку (корм 110/110 не вміщався в сталу фішку), а плашка не
    * стрибає, коли кількість міняється.
    */
-  private make(lines: readonly StorageLine[]): { container: Phaser.GameObjects.Container; width: number; height: number } {
+  private make(lines: readonly StorageLine[]): { container: Phaser.GameObjects.Container; texts: Phaser.GameObjects.Text[]; width: number; height: number } {
     const look = this.look;
     const texts = lines.map((line) => {
       const widest = line.limit === undefined ? String(line.count) : `${line.limit}/${line.limit}`;
@@ -168,7 +191,7 @@ export class StorageIndicators {
         .text(0, 0, widest, { fontFamily: FONT, fontSize: `${look.fontSize}px`, fontStyle: "bold", color: line.count === 0 ? look.zero : look.text, resolution: 2 })
         .setOrigin(0, 0.5);
       const measured = text.width;
-      text.setText(line.limit === undefined ? String(line.count) : `${line.count}/${line.limit}`);
+      text.setText(lineText(line));
       return { text, measured };
     });
     const chips = lines.map((line, i) => storageChipWidth(look, line.limit !== undefined, texts[i]?.measured ?? 0));
@@ -187,7 +210,7 @@ export class StorageIndicators {
       left += chips[i] ?? 0;
     });
     const container = this.scene.add.container(0, 0, parts).setDepth(DEPTH).addToDisplayList(this.layer);
-    return { container, width, height };
+    return { container, texts: texts.map((t) => t.text), width, height };
   }
 
   clear(): void {
