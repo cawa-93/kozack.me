@@ -57,8 +57,7 @@ export class TouchControls {
     private readonly onDash: () => void,
     private readonly onCarry: () => void,
   ) {
-    scene.input.addPointer(2);
-    const image = (id: (typeof TOUCH_ART)[keyof typeof TOUCH_ART], alpha: number, state?: string): Phaser.GameObjects.Image =>
+    const image =(id: (typeof TOUCH_ART)[keyof typeof TOUCH_ART], alpha: number, state?: string): Phaser.GameObjects.Image =>
       addArt(scene, layer, id, state === undefined ? {} : { state }).setDepth(DEPTH).setAlpha(alpha).setVisible(false);
     this.base = image(TOUCH_ART.base, TOUCH_ALPHA.base);
     this.knob = image(TOUCH_ART.knob, TOUCH_ALPHA.knob);

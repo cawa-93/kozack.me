@@ -55,7 +55,8 @@ const game = new Phaser.Game({
     mode: Phaser.Scale.NONE,
     autoCenter: Phaser.Scale.NO_CENTER,
   },
-  input: { activePointers: 3 },
+  // Дотики разом (§10): джойстик, дія, ривок, перестановка й запас. Лише тут — сцени вказівників не додають.
+  input: { activePointers: 5 },
   // Звук гри — `src/audio/`: другий AudioContext не потрібен.
   audio: { noAudio: true },
   // Не частіше 60 кадрів на секунду, з допуском на тремтіння кадрів (§2.1, `framerate.ts`): `fps.limit` Phaser його не має.

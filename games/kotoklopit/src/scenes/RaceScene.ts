@@ -300,7 +300,6 @@ export class RaceScene extends Phaser.Scene {
         });
       }
     }
-    this.input.addPointer(2);
     this.input.on("pointerdown", (p: Phaser.Input.Pointer) => this.down(p));
     this.input.on("pointermove", (p: Phaser.Input.Pointer) => this.moveStick(p));
     this.input.on("pointerup", (p: Phaser.Input.Pointer) => this.up(p));
