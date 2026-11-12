@@ -17,14 +17,18 @@ export interface ChunkCache {
 /** Скільки нових шматків між прибираннями: перелік ключів довгий, рахувати його щоразу немає потреби. */
 const TRIM_EVERY = 50;
 
-/** Отримувач шматків: спершу сховище, потім мережа; нове кладе в сховище, а найдавніше понад `limit` видаляє. */
+/**
+ * Отримувач шматків: спершу сховище, потім мережа; нове кладе в сховище, а найдавніше понад `limit` видаляє. Сховище, що не
+ * відповіло за `RADIO.stallMs`, — як немає: інакше завислий запит займав би місце в черзі шматків назавжди (мережу так само
+ * стереже `net.ts`). Не відкрилося вчасно — до кінця сесії без нього.
+ */
 export function persistentFetch(open: () => Promise<ChunkCache | null>, network: (url: string) => Promise<Response>, limit: number = RADIO.persistChunks): (url: string) => Promise<ArrayBuffer> {
   let opened: Promise<ChunkCache | null> | null = null;
   let stored = 0;
-  const cache = (): Promise<ChunkCache | null> => (opened ??= open().catch(() => null));
+  const cache = (): Promise<ChunkCache | null> => (opened ??= within(open(), null));
   return async (url) => {
     const store = await cache();
-    const hit = await store?.match(url).catch(() => undefined);
+    const hit = store ? await within(store.match(url), undefined) : undefined;
     if (hit) return hit.arrayBuffer();
     const response = await network(url);
     if (!response.ok) throw new Error(`${response.status} ${url}`);
@@ -38,6 +42,18 @@ export function persistentFetch(open: () => Promise<ChunkCache | null>, network:
     }
     return response.arrayBuffer();
   };
+}
+
+/** Відповідь сховища; відмовило чи мовчить довше за `RADIO.stallMs` — `fallback`. */
+function within<T>(step: Promise<T>, fallback: T): Promise<T> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(fallback), RADIO.stallMs);
+    const done = (value: T): void => {
+      clearTimeout(timer);
+      resolve(value);
+    };
+    step.then(done, () => done(fallback));
+  });
 }
 
 /** Ключі Cache Storage йдуть у порядку додавання: найдавніші — на початку. */

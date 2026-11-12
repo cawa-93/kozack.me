@@ -1,5 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { RADIO } from "../src/audio/config";
 import { persistentFetch, trim, type ChunkCache } from "../src/audio/radio/persist";
 
 /** Cache Storage у пам'яті: ключі в порядку додавання, як у браузері. */
@@ -64,6 +65,35 @@ describe("шматки між сесіями (§8.10)", () => {
     expect((await get(URL_A)).byteLength).toBe(10);
     expect((await get(URL_A)).byteLength).toBe(10);
     expect(network).toHaveBeenCalledTimes(2);
+  });
+
+  describe("сховище, що не відповідає, не тримає запит вічно: черга шматків чекає лише застиглої мережі", () => {
+    afterEach(() => vi.useRealTimers());
+
+    /** Скільки байтів повернув запит, поки йде фальшивий годинник; 0 — ще чекає. */
+    const ask = (get: (url: string) => Promise<ArrayBuffer>): { got: number } => {
+      const result = { got: 0 };
+      void get(URL_A).then((data) => (result.got = data.byteLength));
+      return result;
+    };
+
+    it("шукання в сховищі зависло — за `RADIO.stallMs` шматок береться з мережі", async () => {
+      vi.useFakeTimers();
+      const cache = memoryCache();
+      cache.match = () => new Promise(() => undefined);
+      const result = ask(persistentFetch(async () => cache, async () => bytes(10)));
+      await vi.advanceTimersByTimeAsync(RADIO.stallMs - 100);
+      expect(result.got).toBe(0);
+      await vi.advanceTimersByTimeAsync(200);
+      expect(result.got).toBe(10);
+    });
+
+    it("сховище не відкривається — так само", async () => {
+      vi.useFakeTimers();
+      const result = ask(persistentFetch(() => new Promise(() => undefined), async () => bytes(10)));
+      await vi.advanceTimersByTimeAsync(RADIO.stallMs + 100);
+      expect(result.got).toBe(10);
+    });
   });
 
   it("сховище, що відмовляє записувати, гри не ламає", async () => {
