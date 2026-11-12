@@ -92,12 +92,13 @@ function fakeTab(locks: FakeLocks | undefined): {
 }
 
 /** Гра для тесту: скільки разів її зберегли. */
-function fakeGame(): { persist: () => void; saves: number } {
+function fakeGame(): { persist: () => void; retire: () => void; saves: number } {
   const game = {
     saves: 0,
     persist: () => {
       game.saves++;
     },
+    retire: () => undefined,
   };
   return game;
 }
@@ -200,6 +201,36 @@ describe("одна вкладка (§4.2)", () => {
     // Повернулася з кешу: гра в ній уже застаріла, а замок — у другої; перезавантажившись, вона стане в чергу.
     first.fire("pageshow", true);
     expect(first.reloads()).toBe(1);
+  });
+
+  it("сторінка, що віддала замок із кешу, більше не зберігає: її застаріла гра не лягає поверх новішої", async () => {
+    const items: Record<string, string> = {};
+    (globalThis as { localStorage?: unknown }).localStorage = {
+      getItem: (key: string) => items[key] ?? null,
+      setItem: (key: string, value: string) => {
+        items[key] = value;
+      },
+    };
+    Object.assign(globalThis, {
+      window: { setInterval: () => 0, addEventListener: () => undefined },
+      document: { visibilityState: "visible", addEventListener: () => undefined },
+    });
+    const restore = (): Session => Session.restore({ address: "she", difficulty: "normal" });
+    const locks = new FakeLocks();
+    const tab = fakeTab(locks);
+    const first = await openGame(tab.page, restore);
+    first.save.current.minute = 500;
+    tab.fire("pagehide", true);
+    // Тим часом інша сторінка гри дістала замок, грала й зберегла новішу гру.
+    const second = await openGame(fakeTab(locks).page, restore);
+    expect(second.save.current.minute).toBe(500);
+    second.save.current.minute = 900;
+    second.persist();
+    // Перша повертається з кешу й перезавантажується; вивантажуючись, вона ховається й зберігає (`visibilitychange`, `pagehide`).
+    tab.fire("pageshow", true);
+    expect(tab.reloads()).toBe(1);
+    first.persist();
+    expect(loadSave().save?.current.minute).toBe(900);
   });
 
   it("вкладку закривають (не в кеш) — замок відпускає сам браузер, коли сторінки вже немає: після автозбереження", async () => {

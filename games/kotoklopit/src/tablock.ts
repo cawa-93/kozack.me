@@ -19,10 +19,16 @@ export interface TabPage {
   busy(): () => void;
 }
 
-/** Відкрити гру (`open`: прочитати збереження й почати), коли вкладка дістала право грати. */
-export async function openGame<T extends { persist(): void }>(page: TabPage, open: () => T): Promise<T> {
+/**
+ * Відкрити гру (`open`: прочитати збереження й почати), коли вкладка дістала право грати. `retire` — гра віддала право грати й
+ * більше не зберігається: повернувшись, сторінка перезавантажиться, і її застаріла гра, вивантажуючись, лягла б поверх новішої.
+ */
+export async function openGame<T extends { persist(): void; retire(): void }>(page: TabPage, open: () => T): Promise<T> {
   let game: T | null = null;
-  await claim(page, () => game?.persist());
+  await claim(page, () => {
+    game?.persist();
+    game?.retire();
+  });
   game = open();
   return game;
 }
@@ -32,7 +38,7 @@ export async function openGame<T extends { persist(): void }>(page: TabPage, ope
  * уперед» замка не тримає й не чекає: інакше гра стояла б в усіх вкладках, поки браузер не викине сторінку з кешу; повернулася
  * з кешу — перезавантажується (її гра вже застаріла) і стає в чергу заново.
  */
-function claim(page: TabPage, save: () => void): Promise<void> {
+function claim(page: TabPage, leaveGame: () => void): Promise<void> {
   const { locks } = page;
   if (locks === undefined) return Promise.resolve();
   return new Promise((granted) => {
@@ -59,7 +65,7 @@ function claim(page: TabPage, save: () => void): Promise<void> {
       if (!persisted) return;
       if (release !== null) {
         // Зберегти до того, як відпустити: друга вкладка читає збереження, щойно дістала замок.
-        save();
+        leaveGame();
         release();
         release = null;
       }

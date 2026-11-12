@@ -40,6 +40,8 @@ export class Session {
   /** Останній запис у сховище браузера не вдався (§4.2) — і чи гравцеві про це вже сказали (`takeSaveWarning`). */
   private saveFailed = false;
   private saveWarned = false;
+  /** Вкладка віддала право грати (`retire`, §4.2 «Одна вкладка»): гра більше не зберігається. */
+  private retired = false;
   private readonly resetListeners = new Set<() => void>();
 
   constructor(save: Save) {
@@ -79,10 +81,18 @@ export class Session {
     return () => this.resetListeners.delete(listener);
   }
 
+  /**
+   * Вкладка віддала право грати (сторінка пішла в кеш «назад-уперед», `tablock.ts`): тепер грає інша, і це збереження вже
+   * застаріле — повернувшись, сторінка перезавантажиться, а вивантажуючись, не має лягти поверх новішого.
+   */
+  retire(): void {
+    this.retired = true;
+  }
+
   persist(): void {
     // Доки гравець не відповів на картку про нечитабельне збереження, заглушка нової гри не лягає на його місце:
-    // інакше після перезавантаження картки вже не було б (перевірка циклу гри 2026-10-27).
-    if (!this.persistent || this.unreadable !== null) return;
+    // інакше після перезавантаження картки вже не було б.
+    if (!this.persistent || this.retired || this.unreadable !== null) return;
     try {
       localStorage.setItem(SAVE_KEY, serialize(this.save));
       this.saveFailed = false;
