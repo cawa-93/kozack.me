@@ -22,6 +22,8 @@ const eat = (save: Save): void => {
   interact(save);
   walkTo(save, "table");
   interact(save);
+  // Відпустити кнопку й натиснути знову: натискання, що поставило страву, утриманням їжу не починає (§10).
+  advance(save, 0.001);
   holdUntilDone(save);
 };
 

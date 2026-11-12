@@ -49,6 +49,8 @@ describe("мамині судочки в холодильнику (§6.4, ріш
     standAt(save, "table");
     interact(save);
     expect(save.current.home.surfaces["table"]).toMatchObject(SUDOCHOK);
+    // Відпустити кнопку: натискання, що поставило судочок, утриманням їжу не починає (§10).
+    advance(save, 0.001);
     const { events, stop } = recordEvents();
     advance(save, bodyMinutes(EAT_MINUTES * 3), { move: { x: 0, y: 0 }, hold: true });
     stop();

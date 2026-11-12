@@ -93,8 +93,21 @@ function refuse(state: GameState, target: string, refusal: Refusal | BareRefusal
   return null;
 }
 
-/** Коротке натискання дії (§10). */
+/**
+ * Коротке натискання дії (§10). Одне утримання — одна дія: натискання, що змінило вміст рук (насипали корм, поклали чи викинули
+ * річ, опустили кота, щось узяли), ще триває — і утримання тієї самої кнопки не почне нову дію, поки її не відпустили (інакше
+ * кота, що почав їсти з щойно насипаної миски, за мить гладили б). Виняток — вудка біля кота: з нею утримання тут же починає гру
+ * (§10), хоч би її щойно взяли, хоч би натискання її не кинуло. Відпущена кнопка скидає прапорець у `tickActivity`.
+ */
 export function tap(state: GameState): TapResult {
+  const held = state.character.held;
+  const result = tapAction(state);
+  const now = state.character.held;
+  if (now !== held && now?.kind !== "toy") state.character.holdSpent = true;
+  return result;
+}
+
+function tapAction(state: GameState): TapResult {
   const character = state.character;
   if (state.end !== null || character.body.stun > 0) return null;
   if (character.activity?.kind === "work") {
@@ -113,19 +126,13 @@ export function tap(state: GameState): TapResult {
     if (target?.type === "carrier") return tapCarrier(state, target.id);
     const object = target?.type === "object" ? target.object : null;
     if (object !== null && (object.kind === "shower" || (object.kind === "door" && guestAtDoor(state) !== null))) return tapObject(state, object, held);
+    // Пестощі опущеного кота утримання, що триває, не почне (`tap`).
     putDownCat(state, held.cat);
-    // Одне утримання — одна дія (§10): натискання, що опустило кота, ще триває — і пестощі опущеного кота не почнуться, поки
-    // кнопку не відпустили (перевірка графіки 2026-11-02: за мить довшого натискання його вже гладили). Відпущена кнопка
-    // скидає прапорець у `tickActivity`.
-    character.holdSpent = true;
     return null;
   }
-  // Пилосос ставлять на підлогу будь-де, як іграшку (§8.7, рішення автора 2026-11-02, «Пилосос у руках»): з ним у руках
-  // натискання лише ставить його. Одне утримання — одна дія (§10): поки кнопку не відпустили, прибирати руками чи гладити кота
-  // біля поставленого пилососа не почнуть.
+  // Пилосос ставлять на підлогу будь-де, як іграшку (§8.7, «Пилосос у руках»): з ним у руках натискання лише ставить його.
   if (held?.kind === "vacuum") {
     putVacuumDown(state);
-    character.holdSpent = true;
     return null;
   }
   // Річ котячого кутка, базу робота, сховище й переноски дія теж лише ставить (§8.7), як і кнопка перестановки.

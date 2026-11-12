@@ -33,6 +33,8 @@ const serveMeal = (save: Save): void => {
   interact(save);
   standAt(save, "table");
   interact(save);
+  // Відпустити кнопку: утримання, що триває після натискання, яке поставило страву, їсти не починає (§10).
+  advance(save, 0.001);
 };
 
 describe("холодильник (§6.4, §8.7)", () => {
