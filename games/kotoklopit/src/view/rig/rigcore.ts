@@ -116,6 +116,15 @@ export function slotFrame(art: ArtId, entry: ArtEntry | undefined, state: string
   return { art, state: st, view: vw, frame: frameId(art, st, vw) };
 }
 
+/**
+ * Ракурси, у яких слот видно у вихідній позі (`SlotSetup.visible`). Анімація слот лише ховає, а показати схований ракурсом
+ * не може (`evaluate`), тож в інших ракурсах кадр слота не з'явиться ніколи — і запікати його там наперед (`rigsprite.ts`)
+ * нема для чого: ззаду не видно морди й очей.
+ */
+export function slotViews<S extends string>(def: Pick<RigDef<string, S, string>, "views">, slot: S): readonly ArtView[] {
+  return ART_VIEWS.filter((view) => def.views[view].slots?.[slot]?.visible !== false);
+}
+
 // --- Перевірка ---------------------------------------------------------------------------------
 
 const finite = (v: unknown): boolean => typeof v === "number" && Number.isFinite(v);

@@ -30,8 +30,8 @@ import { addArt, setArt } from "../art/atlas";
 import { addBakedArt, bakesThisFrame, isBakedArt, mayBakeNow, prebakeArt, setBakedArt } from "../art/bake";
 import { artEntry, DEFAULT_RES } from "../art/manifest";
 import { artGeometry, artPlacement } from "../art/placement";
-import { ART_VIEWS, type ArtEntry, type ArtId, type ArtView, type FrameLayer, type TintRecipe } from "../art/types";
-import { Rig, slotFrame, type ArtLookup, type PlayOptions, type ProportionRef, type RigFit, type SlotFrame } from "./rigcore";
+import type { ArtEntry, ArtId, ArtView, FrameLayer, TintRecipe } from "../art/types";
+import { Rig, slotFrame, slotViews, type ArtLookup, type PlayOptions, type ProportionRef, type RigFit, type SlotFrame } from "./rigcore";
 import type { AnyRig, BoneOf, RigAnchor, RigAnim, RigDef, RigFacing, RigSkin, SlotOf, SocketOf, Vec2 } from "./types";
 
 /** Текстура кадру слота ззовні (запечений кадр компонувальника): ключ текстури Phaser і кадр у ній. */
@@ -115,6 +115,8 @@ export class RigSprite<B extends string, S extends string, K extends string> ext
   private source: SlotTextureSource<S> | null;
   private baked: RigBaked<S> | null;
   private readonly views: SlotView[];
+  /** Ракурси, у яких слот видно (`slotViews`): лише в них — запікання наперед. */
+  private readonly shownViews: (readonly ArtView[])[];
   /** Прикріплене за індексом гнізда (`rig.socketIds`). */
   private readonly cargo: (Attachable | null)[];
   private appliedOrder = -1;
@@ -138,6 +140,7 @@ export class RigSprite<B extends string, S extends string, K extends string> ext
     this.baked = opts.baked ?? null;
     this.rig = new Rig(def, { fit: opts.fit, lookup: this.lookup, skin: opts.skin, facing: opts.facing, proportions: opts.proportions });
     this.views = this.rig.slots.map(() => ({ image: null, baseX: 1, baseY: 1, art: null, state: null, view: null, kind: "atlas", pinned: null }));
+    this.shownViews = this.rig.slots.map((pose) => slotViews(def, pose.id));
     this.cargo = this.rig.socketIds.map(() => null);
     this.now = scene.time.now;
     this.update(this.now);
@@ -431,8 +434,9 @@ export class RigSprite<B extends string, S extends string, K extends string> ext
     if (baked && entry?.layers) {
       const recipe = this.recipeOf(i);
       const opts = { state: frame.state, view: frame.view, owner: baked.owner };
-      // Той самий кадр іншого ракурсу — наперед, у вільний час: коли скелет обернеться, запікати не доведеться.
-      for (const other of ART_VIEWS) {
+      // Той самий кадр іншого ракурсу — наперед, у вільний час: коли скелет обернеться, запікати не доведеться. Лише там,
+      // де слот видно: зайві кадри (очі ззаду) витісняли б із бюджету власника потрібні.
+      for (const other of this.shownViews[i]!) {
         if (other !== frame.view && entry.views?.includes(other)) prebakeArt(this.scene, art, recipe, { state: frame.state, view: other, owner: baked.owner });
       }
       if (!slot.image || slot.kind !== "baked") {
