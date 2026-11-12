@@ -5,7 +5,7 @@
 // Фон, іконка й позначка — кадри атласу (`ui/bubble/*`, `icon/*`, крок 16), а де що лежить — `iso/bubblelook.ts`.
 // Бабли, що налазять один на одного (свої й чужі, подій і стану), щокадру стають у ряд поруч — `layoutBubbles` там само.
 
-import Phaser from "phaser";
+import type Phaser from "phaser";
 
 import { addArt } from "./art/atlas";
 import { bubbleArt, iconArt, markArt, type BubbleKind, type IconName, type Mark } from "./iconnames";
@@ -88,6 +88,14 @@ interface Floater extends Placed {
   says: BubbleSays | undefined;
   /** Скільки висить, перш ніж згаснути, мс (повтор починає відлік знову). */
   hold: number;
+  /** Згас — що зробити з ним замість знищення (напис чекає наступного, `popText`); немає — знищити. */
+  release: (() => void) | undefined;
+}
+
+/** Напис «+N ₴», що згас і чекає наступного (`popText`). */
+interface IdleText {
+  container: Phaser.GameObjects.Container;
+  label: Phaser.GameObjects.Text;
 }
 
 /** Бабл, щойно складений: контейнер і скільки він займає ліворуч і праворуч від точки. */
@@ -103,6 +111,8 @@ export class Bubbles {
   /** Бабли стану, підтверджені цього кадру (`setState` з іконкою); решту прибирає `sweepStates`. */
   private readonly confirmed = new Set<string>();
   private readonly floaters = new Set<Floater>();
+  /** Написи, що згасли (`popText`): наступний бере їх, а не складає новий `Text` з текстурою. */
+  private readonly idleTexts: IdleText[] = [];
   /** Як лежить бабл кожного виду (з маніфесту). */
   private readonly looks: Readonly<Record<BubbleKind, IsoBubbleLook>> = { say: isoBubbleLook("say"), think: isoBubbleLook("think") };
   /**
@@ -259,13 +269,25 @@ export class Bubbles {
     if (!start) return;
     // Одиниця світу ізометрії дрібна (≈ 0,72 px CSS на телефоні), тож напис — 22 px; колір — токеном палітри арту
     // (`isoPopColor`).
-    const style = { fontFamily: UI_FONT, fontSize: "22px", fontStyle: "bold", color: isoPopColor(color), stroke: UI_TEXT.stroke, strokeThickness: 4, resolution: this.resolution(1) };
-    const label = this.scene.add
-      .text(0, 0, text, style)
-      .setOrigin(0.5, 1)
-      .setAlpha(0.75);
-    const container = this.scene.add.container(start.x, start.y - 4, [label]).setDepth(BUBBLE_DEPTH + 2).addToDisplayList(this.layer);
-    this.float(container, at, 700);
+    const resolution = this.resolution(1);
+    let item = this.idleTexts.pop();
+    if (item) {
+      item.label.setText(text).setColor(isoPopColor(color));
+      if (item.label.style.resolution !== resolution) item.label.setResolution(resolution);
+      item.container.setPosition(start.x, start.y - 4).setAlpha(1).setVisible(true);
+    } else {
+      const style = { fontFamily: UI_FONT, fontSize: "22px", fontStyle: "bold", color: isoPopColor(color), stroke: UI_TEXT.stroke, strokeThickness: 4, resolution };
+      const label = this.scene.add
+        .text(0, 0, text, style)
+        .setOrigin(0.5, 1)
+        .setAlpha(0.75);
+      item = { label, container: this.scene.add.container(start.x, start.y - 4, [label]).setDepth(BUBBLE_DEPTH + 2).addToDisplayList(this.layer) };
+    }
+    const idle = item;
+    this.float(idle.container, at, 700, undefined, () => {
+      idle.container.setVisible(false);
+      this.idleTexts.push(idle);
+    });
   }
 
   /**
@@ -283,8 +305,9 @@ export class Bubbles {
     at: Anchor,
     hold: number,
     beside: Pick<Floater, "owner" | "span" | "icon" | "height" | "says"> = { owner: undefined, span: NO_SPAN, icon: undefined, height: 0, says: undefined },
+    release?: () => void,
   ): void {
-    const floater: Floater = { container, at, rise: 0, x: container.x, y: container.y, visible: true, target: 0, dx: 0, placed: false, hold, ...beside };
+    const floater: Floater = { container, at, rise: 0, x: container.x, y: container.y, visible: true, target: 0, dx: 0, placed: false, hold, release, ...beside };
     this.floaters.add(floater);
     this.fade(floater);
   }
@@ -298,10 +321,11 @@ export class Bubbles {
       alpha: 0,
       delay: hold,
       duration: 500,
-      // Згас: зникає сам (зупиняти твіни тут не треба — вони й так скінчилися).
+      // Згас: зникає сам (зупиняти твіни тут не треба — вони й так скінчилися); напис — чекає наступного.
       onComplete: () => {
         this.floaters.delete(floater);
-        container.destroy();
+        if (floater.release) floater.release();
+        else container.destroy();
       },
     });
   }
@@ -378,8 +402,14 @@ export class Bubbles {
     for (const bubble of this.states.values()) bubble.container.destroy();
     this.states.clear();
     this.confirmed.clear();
-    for (const f of this.floaters) f.container.destroy();
+    // Твіни знищених ще можуть скінчитися: знищене не повертається до написів, що чекають.
+    for (const f of this.floaters) {
+      f.release = undefined;
+      f.container.destroy();
+    }
     this.floaters.clear();
+    for (const idle of this.idleTexts) idle.container.destroy();
+    this.idleTexts.length = 0;
     this.laid.length = 0;
   }
 }
