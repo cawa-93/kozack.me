@@ -37,6 +37,9 @@ export function scale(data: Float32Array, factor: number): void {
 
 const isRhythm = (span: Span): boolean => span.loop === true && span.rhythm === true;
 
+/** Скільки матеріалу на перехід ритмічної петлі може бракувати через округлення ffmpeg, с; більше — справді бракує. */
+const RHYTHM_SLACK = 0.001;
+
 /** Що вирізати з оригіналу, с. Ритмічній петлі — ще `crossfade` за `end`: з цього матеріалу її кінець переходить у початок. */
 export function cut(span: Span, crossfade: number): { start: number | undefined; end: number | undefined } {
   if (!isRhythm(span)) return { start: span.start, end: span.end };
@@ -56,7 +59,11 @@ export function loopSamples(data: Float32Array, span: Span, shape: LoopShape): {
   if (rhythm) {
     fade = Math.round(shape.crossfade * shape.sampleRate);
     length = Math.round(((span.end ?? 0) - (span.start ?? 0)) * shape.sampleRate);
-    if (data.length < length + fade) throw new Error(`ритмічна петля: за end бракує ${((length + fade - data.length) / shape.sampleRate).toFixed(3)} с матеріалу на перехід`);
+    // Кінець вирізаного відрізка різні збірки ffmpeg округлюють (обрізка й перерахунок частоти) з різницею в кілька семплів:
+    // бракує стількох — перехід на них коротший, а коло те саме.
+    const short = length + fade - data.length;
+    if (short > Math.round(RHYTHM_SLACK * shape.sampleRate)) throw new Error(`ритмічна петля: за end бракує ${(short / shape.sampleRate).toFixed(3)} с матеріалу на перехід`);
+    if (short > 0) fade -= short;
   }
   const body = data.slice(0, length);
   for (let i = 0; i < fade; i++) {

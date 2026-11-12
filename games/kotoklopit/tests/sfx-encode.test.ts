@@ -52,6 +52,21 @@ describe("кодування петель (§11.4а)", () => {
     expect(length).toBe(at(2) - at(SFX.loopCrossfade));
   });
 
+  it("вихід ffmpeg на кілька семплів коротший (інша збірка): кодування не падає, а коло й шов ті самі", () => {
+    const recipe = { loop: true, rhythm: true, start: 1, end: 3 };
+    const full = cutOut(cut(recipe, SFX.loopCrossfade));
+    const exact = loopSamples(full, recipe, SHAPE);
+    const short = loopSamples(full.slice(0, full.length - 3), recipe, SHAPE);
+    expect(short.length).toBe(exact.length);
+    expect(short.start).toBe(exact.start);
+    expect(short.samples.length).toBe(exact.samples.length);
+    const body = short.samples.subarray(short.start, short.start + short.length);
+    const k = body[short.length - 1]! / ORIGINAL[at(3) - 1]!;
+    // Після кінця кола — те, що в оригіналі за end; перехід лише на три семпли коротший.
+    expect(body[0]! / k).toBeCloseTo(ORIGINAL[at(3)]!, 4);
+    expect(body[at(SFX.loopCrossfade)]! / k).toBeCloseTo(ORIGINAL[at(1) + at(SFX.loopCrossfade)]!, 4);
+  });
+
   it("ритмічній петлі, за end якої бракує матеріалу на перехід, кодувальник відмовляє", () => {
     const recipe = { loop: true, rhythm: true, start: 1, end: 3 };
     expect(() => loopSamples(cutOut({ start: 1, end: 3.1 }), recipe, SHAPE)).toThrow(/end/);
