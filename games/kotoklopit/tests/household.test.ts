@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 import { bathe, giveTreat, nightlyCare, putCollar } from "../src/sim/care";
-import { changeLove, createCat, idleAct } from "../src/sim/cat";
+import { createCat, idleAct, offend } from "../src/sim/cat";
 import { discardCarrier } from "../src/sim/carriers";
 import { addSupply, boxCount, discard, discardAppliance, discardLock, freeSlots, landFlying, place, receivePackages, supplyCount, tickDeliveries, utilitiesDue } from "../src/sim/economy";
 import { advance, interact, newGame } from "../src/sim/game";
@@ -55,7 +55,8 @@ describe("ласощі й нашийник (§7, §9.10)", () => {
     const cat = held(save);
     save.current.home.supplies.treats = { cheap: 5, premium: 0 };
     cat.love = 50;
-    changeLove(save.current, cat, -4, "ліки");
+    // Неприємне від персонажа (§7) — через `offend`, як ліки (`giveMedicine`): просто втрату любові ласощі не повертають.
+    offend(save.current, cat, -4, "дали ліки");
     const after = cat.love;
     giveTreat(save.current, "cheap", never());
     expect(cat.love).toBeCloseTo(after + 2 + 2);
