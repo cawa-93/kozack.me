@@ -80,14 +80,19 @@ export function glide(param: AudioParam, value: number, context: BaseAudioContex
   }
 }
 
+/** Штамп виходу, давніший за стільки, мс, — ще з-перед паузи контексту. */
+const STAMP_FRESH_MS = 1000;
+
 /**
  * Коли семпл контексту на мить `time` (с) буде чути, мс `performance.now()`: з урахуванням затримки виходу. Під це підлаштовує
  * рух те, що йде в такт звуку (стрічка титрів, §4.2). Без `getOutputTimestamp` (старі Safari) — із затримки, яку каже контекст.
  */
 export function heardAt(context: AudioContext, time: number): number {
-  const stamp = typeof context.getOutputTimestamp === "function" ? context.getOutputTimestamp() : null;
-  if (stamp?.performanceTime && stamp.contextTime !== undefined) return stamp.performanceTime + (time - stamp.contextTime) * 1000;
-  return performance.now() + (time - context.currentTime + (context.outputLatency || context.baseLatency || 0)) * 1000;
+  const now = performance.now();
+  // Штамп — з останнього виходу звуку: поки контекст стоїть і щойно після паузи він давній, а відлік від нього збився б на паузу.
+  const stamp = context.state === "running" && typeof context.getOutputTimestamp === "function" ? context.getOutputTimestamp() : null;
+  if (stamp?.performanceTime && stamp.contextTime !== undefined && Math.abs(now - stamp.performanceTime) < STAMP_FRESH_MS) return stamp.performanceTime + (time - stamp.contextTime) * 1000;
+  return now + (time - context.currentTime + (context.outputLatency || context.baseLatency || 0)) * 1000;
 }
 
 /** Приглушені верхи шини світу (§11.4а): квартира звучить здалеку, а не над вухом. Той самий фільтр — у каталозі звуків. */

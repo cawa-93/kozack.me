@@ -179,6 +179,30 @@ describe("петлі: в унісон не звучать, ритмічна — 
     clock.mockRestore();
   });
 
+  it("файл декодувався, поки контекст стояв: давній штамп виходу не зсуває долі, вони — від миті, коли звук пішов знову", async () => {
+    vi.stubGlobal("fetch", vi.fn(bytes));
+    const audio = fakeAudio({ hold: true });
+    let now = 9000;
+    const clock = vi.spyOn(performance, "now").mockImplementation(() => now);
+    // Поки контекст стоїть, штамп виходу — з миті, коли звук зупинився (8 с тому); пішов знову — свіжий.
+    audio.context.getOutputTimestamp = () => (audio.context.state === "running" ? { contextTime: audio.context.currentTime, performanceTime: now } : { contextTime: 10, performanceTime: 1000 });
+    audio.context.currentTime = 10;
+    const player = new Player(audio.engine);
+    const voice = player.loop(loopFile(true), { bus: "music", gain: 1, pan: 0 });
+    await settle();
+    audio.context.state = "suspended";
+    audio.decodes[0]?.resolve();
+    await settle();
+    expect(audio.started()).toHaveLength(1);
+    // Вкладка ще 3 с схована, потім звук іде: початок кола чути в мить 12 000.
+    now = 12_000;
+    audio.context.state = "running";
+    now += 500;
+    audio.context.currentTime += 0.5;
+    expect(voice?.startedAt()).toBeCloseTo(12_000);
+    clock.mockRestore();
+  });
+
   it("без `getOutputTimestamp` — з поточного годинника й затримки виходу", async () => {
     vi.stubGlobal("fetch", vi.fn(bytes));
     const audio = fakeAudio();
