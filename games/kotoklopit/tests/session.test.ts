@@ -5,19 +5,33 @@ import { afterEach, describe, expect, it } from "vitest";
 import { loadSave, Session } from "../src/session";
 import { newGame, SAVE_VERSION, serialize } from "../src/sim/game";
 
-/** Сховище браузера для тесту: у Node його немає. */
-function fakeStorage(items: Record<string, string>): void {
+/** Сховище браузера для тесту: у Node його немає. `full` — переповнене: запис кидає помилку, як `QuotaExceededError`. */
+function fakeStorage(items: Record<string, string>, full = false): void {
   (globalThis as { localStorage?: unknown }).localStorage = {
     getItem: (key: string) => items[key] ?? null,
     setItem: (key: string, value: string) => {
+      if (full) throw new Error("QuotaExceededError");
       items[key] = value;
     },
   };
 }
 
-/** Те, що `Session.restore` бере в браузера, крім сховища. */
-function fakeBrowser(): void {
-  Object.assign(globalThis, { window: { setInterval: () => 0 }, document: { addEventListener: () => undefined } });
+/** Те, що `Session.restore` бере в браузера, крім сховища; `fire` — подія вікна чи документа. */
+function fakeBrowser(): { fire: (type: string) => void; hide: () => void } {
+  const listeners: Record<string, (() => void)[]> = {};
+  const on = (type: string, listener: () => void): void => {
+    (listeners[type] ??= []).push(listener);
+  };
+  const document = { visibilityState: "visible", addEventListener: on };
+  Object.assign(globalThis, { window: { setInterval: () => 0, addEventListener: on }, document });
+  const fire = (type: string): void => listeners[type]?.forEach((listener) => listener());
+  return {
+    fire,
+    hide: () => {
+      document.visibilityState = "hidden";
+      fire("visibilitychange");
+    },
+  };
 }
 
 const OTHER_VERSION = JSON.stringify({ version: SAVE_VERSION + 1, current: {} });
@@ -66,5 +80,65 @@ describe("збереження в браузері", () => {
     session.unreadable = null;
     session.persist();
     expect(loadSave()).toMatchObject({ save: { current: { seed: 3 } }, unreadable: null });
+  });
+});
+
+describe("автозбереження", () => {
+  it("гра зберігається, коли вкладку ховають і коли сторінку закривають чи покидають (pagehide)", () => {
+    const items: Record<string, string> = {};
+    fakeStorage(items);
+    const browser = fakeBrowser();
+    const session = Session.restore({ address: "she", difficulty: "normal" });
+    session.save.current.minute = 700;
+    browser.hide();
+    expect(loadSave().save?.current.minute).toBe(700);
+    // Safari, покидаючи сторінку, не завжди каже, що вкладку сховано, — тоді зберігає `pagehide`: друга вкладка (§4.2,
+    // «Одна вкладка») прочитає вже записане.
+    session.save.current.minute = 701;
+    browser.fire("pagehide");
+    expect(loadSave().save?.current.minute).toBe(701);
+  });
+});
+
+describe("запис у сховище браузера не вдався (§4.2)", () => {
+  const game = (): Session => new Session(newGame({ address: "she", difficulty: "normal", seed: 3 }));
+
+  it("сцена дізнається про це один раз за запуск, щоб сказати гравцеві й порадити зберегти гру файлом", () => {
+    fakeStorage({}, true);
+    const session = game();
+    expect(session.takeSaveWarning()).toBe(false);
+    session.persist();
+    expect(session.takeSaveWarning()).toBe(true);
+    expect(session.takeSaveWarning()).toBe(false);
+    // Наступні невдалі записи — без нових повідомлень.
+    session.persist();
+    expect(session.takeSaveWarning()).toBe(false);
+  });
+
+  it("сховище заблоковане зовсім (звернення до нього кидає помилку) — так само", () => {
+    Object.defineProperty(globalThis, "localStorage", {
+      configurable: true,
+      get: () => {
+        throw new Error("SecurityError");
+      },
+    });
+    const session = game();
+    session.persist();
+    expect(session.takeSaveWarning()).toBe(true);
+  });
+
+  it("запис вдався — казати нічого", () => {
+    fakeStorage({});
+    const session = game();
+    session.persist();
+    expect(session.takeSaveWarning()).toBe(false);
+  });
+
+  it("сценарій режиму розробки нічого не пише — і не каже", () => {
+    fakeStorage({}, true);
+    const session = game();
+    session.persistent = false;
+    session.persist();
+    expect(session.takeSaveWarning()).toBe(false);
   });
 });

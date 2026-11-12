@@ -37,6 +37,9 @@ export class Session {
    * Після цього — null.
    */
   unreadable: string | null = null;
+  /** Запис у сховище браузера не вдався (§4.2) — і чи гравцеві про це вже сказали (`takeSaveWarning`). */
+  private saveFailed = false;
+  private saveWarned = false;
   private readonly resetListeners = new Set<() => void>();
 
   constructor(save: Save) {
@@ -55,6 +58,9 @@ export class Session {
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden") session.persist();
     });
+    // Safari, покидаючи сторінку, не завжди ховає вкладку (`visibilitychange`), а `pagehide` буває завжди: вкладка, що чекала
+    // своєї черги (§4.2, «Одна вкладка»), має прочитати вже записане.
+    window.addEventListener("pagehide", () => session.persist());
     return session;
   }
 
@@ -80,8 +86,16 @@ export class Session {
     try {
       localStorage.setItem(SAVE_KEY, serialize(this.save));
     } catch {
-      // Сховище може бути недоступне чи повне: гра йде далі без збереження.
+      // Сховище недоступне чи повне: гра йде далі без збереження, а сцена скаже про це гравцеві.
+      this.saveFailed = true;
     }
+  }
+
+  /** Чи сказати гравцеві, що гра не зберігається в браузері (§4.2): після першого невдалого запису — раз за запуск. */
+  takeSaveWarning(): boolean {
+    if (!this.saveFailed || this.saveWarned) return false;
+    this.saveWarned = true;
+    return true;
   }
 }
 
