@@ -132,6 +132,15 @@ export function stubRes(entry: Pick<ArtEntry, "size">, res: number): number {
   return Math.min(res, STUB_ATLAS_RES, STUB_MAX_PX / Math.max(entry.size.w, entry.size.h));
 }
 
+/**
+ * Група пакування запису (`PackItem.group`): шари записів із `layers` (кіт, персонаж, гонка, тканини) бере лише
+ * компонувальник, по кілька за раз на кадр, тож вони лягають групою після решти — шари кадру на одній-двох сторінках, і
+ * запікання кадру не зачіпає сторінок, з яких ще не малювали (кожна нова сторінка — пауза першого запікання).
+ */
+export function packGroup(entry: Pick<ArtEntry, "layers">): number {
+  return entry.layers ? 1 : 0;
+}
+
 /** Растр заглушки запису: `stubSvg` з розміром і pivot запису, без обрізки; той самий растр — для кожного шару. */
 async function stubRaster(entry: ArtEntry, res: number, cache: ArtCache): Promise<FrameRaster> {
   const svg = stubSvg({ size: entry.size, pivot: entry.pivot });
@@ -237,15 +246,17 @@ export async function buildArt(options: ArtBuildOptions): Promise<ArtBuild> {
   const frames = (await pool(jobs, concurrency, (job) => job())).filter((job): job is FrameJob => job !== null);
   frames.sort((a, b) => (a.frame < b.frame ? -1 : a.frame > b.frame ? 1 : 0));
 
-  // Однакові растри (заглушки однакового розміру, однакові стани, усі порожні шари) лежать на сторінці один раз.
-  const images = new Map<string, Rgba>();
+  // Однакові растри (заглушки однакового розміру, однакові стани, усі порожні шари) лежать на сторінці один раз — у межах
+  // групи пакування: інакше шар брав би, скажімо, порожній піксель зі сторінки іншої групи.
+  const images = new Map<string, { image: Rgba; group: number }>();
   const layerImage = new Map<string, string>();
   let layerCount = 0;
   for (const job of frames) {
+    const group = packGroup(job.entry);
     for (const layer of job.raster.layers) {
       layerCount++;
-      const key = hashOf(String(layer.w), String(layer.h), layer.data);
-      if (!images.has(key)) images.set(key, layer);
+      const key = hashOf(String(group), String(layer.w), String(layer.h), layer.data);
+      if (!images.has(key)) images.set(key, { image: layer, group });
       layerImage.set(`${job.frame}#${layer.layer}`, key);
     }
   }
@@ -254,7 +265,7 @@ export async function buildArt(options: ArtBuildOptions): Promise<ArtBuild> {
   let packed: ReturnType<typeof pack>;
   try {
     packed = pack(
-      [...images].map(([key, image]) => ({ key, w: image.w, h: image.h })),
+      [...images].map(([key, { image, group }]) => ({ key, w: image.w, h: image.h, group })),
       packOptions,
     );
   } catch (error) {
@@ -279,7 +290,7 @@ export async function buildArt(options: ArtBuildOptions): Promise<ArtBuild> {
       const page = composePage(
         size.w,
         size.h,
-        placed.map(([k, at]) => ({ image: images.get(k) as Rgba, x: at.x, y: at.y })),
+        placed.map(([k, at]) => ({ image: (images.get(k) as { image: Rgba }).image, x: at.x, y: at.y })),
         packOptions.extrude,
       );
       data = await sharp(page.data, { raw: { width: page.w, height: page.h, channels: 4 } }).webp(webp).toBuffer();

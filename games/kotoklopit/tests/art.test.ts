@@ -523,6 +523,30 @@ describe("пакування", () => {
     expect(result.pages.length).toBeLessThanOrEqual(4);
   });
 
+  it("групи: наступна група лягає з останньої сторінки попередньої й далі, а не в прогалини її ранніх сторінок", () => {
+    const opts = { maxSize: 64, extrude: 0, gap: 0 };
+    const list: PackItem[] = [
+      { key: "c", w: 10, h: 10, group: 1 },
+      { key: "a", w: 64, h: 40 },
+      { key: "e", w: 60, h: 30, group: 1 },
+      { key: "b", w: 64, h: 40, group: 0 },
+      { key: "d", w: 10, h: 10, group: 1 },
+      { key: "f", w: 10, h: 10 },
+    ];
+    const result = pack(list, opts);
+    const page = (key: string): number | undefined => result.placements.get(key)?.page;
+    // Група 0: a і b — кожен на свою сторінку, f — у прогалину сторінки 0.
+    expect([page("a"), page("b"), page("f")]).toEqual([0, 1, 0]);
+    // Група 1: c і d — на останню сторінку групи 0 (там ще є місце), а не на сторінку 0; e туди не влазить — нова.
+    expect([page("c"), page("d"), page("e")]).toEqual([1, 1, 2]);
+    // Детерміновано.
+    const again = pack([...list].reverse(), opts);
+    expect([...again.placements].sort()).toEqual([...result.placements].sort());
+    // Без груп — як досі: усе в одній групі.
+    const flat = pack(list.map(({ key, w, h }) => ({ key, w, h })), opts);
+    expect(flat.placements.get("c")?.page).toBe(0);
+  });
+
   it("растр, ширший за сторінку, — помилка з ключем", () => {
     expect(() => pack([{ key: "env/slab#all", w: 2046, h: 10 }])).toThrow(/«env\/slab#all»: 2046×10 px/);
     expect(pack([{ key: "a", w: 2042, h: 2042 }]).pages).toEqual([{ w: 2048, h: 2048 }]);
@@ -684,6 +708,36 @@ describe("збирання атласу на фікстурах", () => {
     expect(a.fill).toMatchObject({ dx: 20, dy: 20, w: 40, h: 40 });
     // Дві заливки, контур і один порожній піксель.
     expect(build.stats.images).toBe(4);
+  });
+
+  it("шари записів із layers — групою після решти: кадр бере шари з якомога менше сторінок", async () => {
+    // Сторінки 256²: стани коробки — кожен на свою, у прогалинах лишається місце для шарів голови.
+    const build = await buildArt({ artDir: FIXTURES, entries: FIXTURE_ENTRIES, defaultRes: 2, cache: new ArtCache(null), requireAll: false, pack: { maxSize: 256, extrude: 2, gap: 2 } });
+    expect(build.errors).toEqual([]);
+    const pagesOf = (layered: boolean): number[] =>
+      Object.entries(build.index.frames)
+        .filter(([id]) => id.startsWith("cat/") === layered)
+        .flatMap(([, f]) => Object.values(f.layers).map((r) => r!.page));
+    expect(build.index.pages.length).toBeGreaterThan(2);
+    // Жоден шар не лежить на сторінці, ранішій за останню сторінку кадрів без шарів.
+    expect(Math.min(...pagesOf(true))).toBeGreaterThanOrEqual(Math.max(...pagesOf(false)));
+  });
+
+  it("порожній кадр без шарів і порожній шар — різні растри: шар не тягне сторінку групи без шарів", async () => {
+    const dir = tempDir();
+    mkdirSync(path.join(dir, "cat"), { recursive: true });
+    mkdirSync(path.join(dir, "item"), { recursive: true });
+    writeFileSync(path.join(dir, "cat", "part.svg"), svg('<g id="fill"><rect x="10" y="10" width="20" height="20" fill="#ffffff"/></g><g id="ink"/>'));
+    writeFileSync(path.join(dir, "item", "none.svg"), svg(""));
+    const part: ArtEntry = { id: "cat/part", size: HEAD.size, pivot: HEAD.pivot, layers: ["fill", "ink"] };
+    const none: ArtEntry = { id: "item/none", size: HEAD.size, pivot: HEAD.pivot };
+    const build = await buildArt({ artDir: dir, entries: [part, none], defaultRes: 2, cache: new ArtCache(null), requireAll: true });
+    expect(build.errors).toEqual([]);
+    const ink = build.index.frames["cat/part"]!.layers.ink!;
+    const all = build.index.frames["item/none"]!.layers.all!;
+    expect([ink.w, ink.h, all.w, all.h]).toEqual([1, 1, 1, 1]);
+    expect([ink.page, ink.x, ink.y]).not.toEqual([all.page, all.x, all.y]);
+    expect(build.stats.images).toBe(3);
   });
 
   it("з кешем друге збирання нічого не растеризує й дає той самий атлас", async () => {

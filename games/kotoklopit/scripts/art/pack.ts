@@ -27,6 +27,11 @@ export interface PackItem {
   key: string;
   w: number;
   h: number;
+  /**
+   * Група (за замовчуванням 0): групи лягають по черзі за номером, і група — з останньої сторінки попередньої й далі, а не
+   * в прогалини її ранніх сторінок. Так растри, які беруть разом, лежать на якомога менше сторінок.
+   */
+  group?: number;
 }
 
 /** Де растр на сторінці: номер сторінки й лівий верхній кут самого растра (без краю). */
@@ -116,14 +121,18 @@ class Skyline {
 }
 
 /**
- * Розкласти растри по сторінках: від найвищих (і найширших) до найнижчих, кожен — на першу сторінку, де є місце, інакше —
- * на нову. Растр, що з краєм не влазить у сторінку, — помилка (такому запису — меншу `res` чи поділ на частини).
+ * Розкласти растри по сторінках: група за групою (`PackItem.group`), у групі — від найвищих (і найширших) до найнижчих,
+ * кожен — на першу сторінку групи, де є місце, інакше — на нову. Растр, що з краєм не влазить у сторінку, — помилка
+ * (такому запису — меншу `res` чи поділ на частини).
  */
 export function pack(items: readonly PackItem[], options: PackOptions = PACK_DEFAULTS): PackResult {
   const pad = options.extrude * 2 + options.gap;
-  const sorted = [...items].sort((a, b) => b.h - a.h || b.w - a.w || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+  const sorted = [...items].sort((a, b) => (a.group ?? 0) - (b.group ?? 0) || b.h - a.h || b.w - a.w || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
   const pages: Skyline[] = [];
   const placements = new Map<string, Placement>();
+  /** Група, що пакується, і перша сторінка, на яку їй можна: остання сторінка попередньої групи. */
+  let group = sorted[0]?.group ?? 0;
+  let from = 0;
   for (const item of sorted) {
     const w = item.w + pad;
     const h = item.h + pad;
@@ -132,8 +141,12 @@ export function pack(items: readonly PackItem[], options: PackOptions = PACK_DEF
         `«${item.key}»: ${item.w}×${item.h} px з краєм не влазить у сторінку ${options.maxSize}² — меншу res чи поділити на частини`,
       );
     }
+    if ((item.group ?? 0) !== group) {
+      group = item.group ?? 0;
+      from = Math.max(0, pages.length - 1);
+    }
     let placed = false;
-    for (let p = 0; p < pages.length && !placed; p++) {
+    for (let p = from; p < pages.length && !placed; p++) {
       const page = pages[p];
       const spot = page?.find(w, h);
       if (page && spot) {
