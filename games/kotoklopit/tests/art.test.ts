@@ -643,6 +643,15 @@ describe("збирання атласу на фікстурах", () => {
     // Кожен шар — зі своєю рамкою обрізки: зсув у полотні кадру й розмір; спільної рамки кадру немає.
     expect(head).not.toHaveProperty("trim");
     const frame = await rasterFrame(headJob("front"));
+    // Рамка вмісту кадру з шарами — об'єднання рамок шарів (тут — контур): на ній гра запікає кадр.
+    expect(head.box).toEqual({ x: frame.trim.x, y: frame.trim.y, w: frame.w, h: frame.h });
+    expect(head.box).toEqual({ x: 18, y: 14, w: 92, h: 92 });
+    for (const layer of Object.values(head.layers)) {
+      expect(layer!.dx).toBeGreaterThanOrEqual(head.box!.x);
+      expect(layer!.dy + layer!.h).toBeLessThanOrEqual(head.box!.y + head.box!.h);
+    }
+    // Кадр без шарів малює Phaser напряму — рамка йому не потрібна.
+    expect(index.frames["env/box/open"]).not.toHaveProperty("box");
     for (const layer of frame.layers) expect(head.layers[layer.layer]).toMatchObject({ dx: layer.x, dy: layer.y, w: layer.w, h: layer.h });
     expect(head.layers.ink).toMatchObject({ dx: 18, dy: 14, w: 92, h: 92 });
     expect(head.layers.shade!.w).toBeLessThan(92);
@@ -706,6 +715,8 @@ describe("збирання атласу на фікстурах", () => {
     expect(a.ink).toEqual(empty);
     expect(b.shade).toEqual(empty);
     expect(a.fill).toMatchObject({ dx: 20, dy: 20, w: 40, h: 40 });
+    // Порожні шари рамки вмісту не розтягують: вона — лише заливка.
+    expect(build.index.frames["cat/part"]!.box).toEqual({ x: 20, y: 20, w: 40, h: 40 });
     // Дві заливки, контур і один порожній піксель.
     expect(build.stats.images).toBe(4);
   });
@@ -768,7 +779,7 @@ describe("збирання атласу на фікстурах", () => {
   it("порожній маніфест — порожній index.json без сторінок", async () => {
     const build = await run([]);
     expect(build.errors).toEqual([]);
-    expect(build.index).toEqual({ version: 2, pages: [], frames: {} });
+    expect(build.index).toEqual({ version: 3, pages: [], frames: {} });
     expect([...build.files.keys()]).toEqual(["index.json"]);
   });
 });

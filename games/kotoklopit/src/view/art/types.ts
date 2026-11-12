@@ -254,7 +254,7 @@ export function framesOf(entry: ArtEntry): ArtFrameRef[] {
 export const ART_DIR = "art";
 export const ART_INDEX_FILE = "index.json";
 /** Версія формату `index.json`: несумісна зміна формату — нова версія. */
-export const ART_INDEX_VERSION = 2;
+export const ART_INDEX_VERSION = 3;
 /** Ключ текстури Phaser з усіма сторінками атласу (сторінка — джерело текстури з тим самим номером). */
 export const ART_TEXTURE = "art";
 
@@ -312,6 +312,14 @@ export interface IndexGlow extends AtlasRect {
   scale: number;
 }
 
+/** Прямокутник у полотні кадру, цілі пікселі атласу від його лівого верхнього кута. */
+export interface FrameBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 /** Кадр у `index.json`: полотно `size · res` пікселів, на яке шари лягають кожен зі своїм зсувом. */
 export interface IndexFrame {
   /** Розмір полотна SVG, одиниці арту (з маніфесту). */
@@ -324,6 +332,11 @@ export interface IndexFrame {
   points?: Readonly<Record<string, ArtPoint>>;
   /** Шари кадру: де кожен лежить в атласі й на полотні кадру; запис без `layers` має єдиний шар `all`. */
   layers: Readonly<Partial<Record<FrameLayer, IndexLayer>>>;
+  /**
+   * Рамка вмісту кадру запису з `layers`: об'єднання рамок його непорожніх шарів. На ній, а не на всьому полотні, гра
+   * запікає тонований кадр (`bakeframe.ts`). Без поля — усе полотно.
+   */
+  box?: FrameBox;
   /** SVG ще немає — кадр є маджентовою заглушкою потрібного розміру й pivot. */
   stub?: true;
   /** Карта сяйва кадру — у записів із `glow`; у заглушки її немає. */

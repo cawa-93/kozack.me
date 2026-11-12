@@ -3,7 +3,7 @@
 // без Phaser і DOM: їх кличе `atlas.ts`, а перевіряє `tests/artatlas.test.ts`; `stubSvg` і `STUB_LOOK` може взяти
 // конвеєр, щоб його заглушки в атласі виглядали так само, як заглушки в рантаймі.
 
-import { frameId, layerFrameName, type ArtEntry, type ArtId, type ArtPoint, type ArtSize, type ArtView, type FrameLayer } from "./types";
+import { frameId, layerFrameName, type ArtEntry, type ArtId, type ArtPoint, type ArtSize, type ArtView, type FrameBox, type FrameLayer } from "./types";
 
 /** Який кадр запису: стан, ракурс і шар. */
 export interface ArtFrameOptions {
@@ -60,7 +60,6 @@ export function artGeometry(
   return DEFAULT_GEOMETRY;
 }
 
-/** Origin і масштаб зображення Phaser: origin — частки розміру, масштаб — одиниць арту (px світу) на піксель текстури. */
 /**
  * Кадр накладок частини кота чи персонажа (F5: `cat/<частина>-extra/…`, `person/<частина>-extra…`): той самий кадр, лише
  * другий сегмент id — з «-extra» (`cat/body/normal/front` → `cat/body-extra/normal/front`, `person/leg/back` →
@@ -75,6 +74,7 @@ export function extraFrameOf(frame: string): string | null {
   return parts.join("/");
 }
 
+/** Origin і масштаб зображення Phaser: origin — частки розміру, масштаб — одиниць арту (px світу) на піксель текстури. */
 export interface ArtPlacement {
   originX: number;
   originY: number;
@@ -95,6 +95,47 @@ export function artPlacement(geometry: ArtGeometry, framePx: ArtSize): ArtPlacem
     scaleX: size.w / framePx.w,
     scaleY: size.h / framePx.h,
   };
+}
+
+// --- Кадр на рамці вмісту -------------------------------------------------------------------------
+
+/** Найменша рамка, що вміщує обидві. */
+export function unionBox(a: FrameBox, b: FrameBox): FrameBox {
+  const x = Math.min(a.x, b.x);
+  const y = Math.min(a.y, b.y);
+  return { x, y, w: Math.max(a.x + a.w, b.x + b.w) - x, h: Math.max(a.y + a.h, b.y + b.h) - y };
+}
+
+/**
+ * Origin зображення, текстура якого — рамка `box` полотна кадру `framePx`, щоб точка кадру `point` (одиниці арту) стояла в
+ * точці зображення. Точка буває поза рамкою (суглоб поза намальованим) — тоді origin поза 0–1, і Phaser це малює.
+ */
+export function boxOrigin(geometry: ArtGeometry, framePx: ArtSize, box: FrameBox, point: ArtPoint): ArtPoint {
+  return { x: ((point.x * framePx.w) / geometry.size.w - box.x) / box.w, y: ((point.y * framePx.h) / geometry.size.h - box.y) / box.h };
+}
+
+/**
+ * Як поставити кадр, від якого в текстурі лишили рамку вмісту `box` (пікселі полотна `framePx`): origin — у pivot, що тепер
+ * відлічується від початку рамки, масштаб — як у повного полотна (`artPlacement`). Кожен піксель рамки стає на екрані там
+ * само, де стояв би на повному полотні.
+ */
+export function boxPlacement(geometry: ArtGeometry, framePx: ArtSize, box: FrameBox): ArtPlacement {
+  const full = artPlacement(geometry, framePx);
+  if (box.x === 0 && box.y === 0 && box.w === framePx.w && box.h === framePx.h) return full;
+  const origin = boxOrigin(geometry, framePx, box, geometry.pivot);
+  return { originX: origin.x, originY: origin.y, scaleX: full.scaleX, scaleY: full.scaleY };
+}
+
+/**
+ * Прямокутник обтинання `rect` (пікселі полотна кадру) у пікселях рамки `box`, обтятий нею: `Image.setCrop` рахує від
+ * початку текстури й від'ємного початку сам не обтинає. Поза рамкою — нульовий розмір.
+ */
+export function boxCrop(box: FrameBox, rect: FrameBox): FrameBox {
+  const x0 = Math.max(rect.x, box.x);
+  const y0 = Math.max(rect.y, box.y);
+  const x1 = Math.min(rect.x + rect.w, box.x + box.w);
+  const y1 = Math.min(rect.y + rect.h, box.y + box.h);
+  return { x: x0 - box.x, y: y0 - box.y, w: Math.max(0, x1 - x0), h: Math.max(0, y1 - y0) };
 }
 
 // --- Заглушка ---------------------------------------------------------------------------------

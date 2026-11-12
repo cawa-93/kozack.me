@@ -9,7 +9,7 @@
 
 import { artIndexUrl, artPageUrl, parseArtIndex } from "./atlasindex";
 import type { LayerImage, LayerSource } from "./compose";
-import type { ArtIndex, ArtLayer, FrameId, IndexFrame } from "./types";
+import type { ArtIndex, ArtLayer, FrameBox, FrameId, IndexFrame } from "./types";
 
 /** Базова адреса гри (`BASE_URL` збірки: у грі на сайті — `/games/kotoklopit/`); адреси атласу — `atlasindex.ts`. */
 const base = (): string => import.meta.env.BASE_URL;
@@ -133,11 +133,13 @@ async function loadImage(url: string): Promise<CanvasImageSource | null> {
   }
 }
 
-/** Шари кадру для компонувальника: джерело, розмір полотна кадру в пікселях і сам кадр з `index.json`. */
+/** Шари кадру для компонувальника: джерело, розмір полотна кадру в пікселях, рамка вмісту в ньому й сам кадр з `index.json`. */
 export interface FrameLayers {
   source: LayerSource;
   w: number;
   h: number;
+  /** Рамка вмісту (`IndexFrame.box`); без неї в індексі — усе полотно. */
+  box: FrameBox;
   frame: IndexFrame;
 }
 
@@ -155,7 +157,9 @@ export function artLayerSource(frame: FrameId): FrameLayers | null {
     if (!rect || !image) return null;
     return { image, sx: rect.x, sy: rect.y, sw: rect.w, sh: rect.h, dx: rect.dx, dy: rect.dy };
   };
-  return { source, w: Math.round(entry.size.w * entry.res), h: Math.round(entry.size.h * entry.res), frame: entry };
+  const w = Math.round(entry.size.w * entry.res);
+  const h = Math.round(entry.size.h * entry.res);
+  return { source, w, h, box: entry.box ?? { x: 0, y: 0, w, h }, frame: entry };
 }
 
 /** Забути завантажене (тести, гаряча перезбірка атласу в dev). */

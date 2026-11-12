@@ -9,6 +9,7 @@ import {
   isArtLayer,
   type ArtIndex,
   type AtlasPage,
+  type FrameBox,
   type IndexGlow,
   type IndexLayer,
 } from "./types";
@@ -98,6 +99,16 @@ function frameProblems(id: string, frame: unknown, pages: readonly AtlasPage[], 
   if (!isObject(layers) || Object.keys(layers).length === 0) return add(`${where}: немає шарів`);
   const { w, h } = size as { w: number; h: number };
   const res = frame["res"] as number;
+  const rawBox = frame["box"];
+  let box: FrameBox | null = null;
+  if (rawBox !== undefined) {
+    const isPixel = (value: unknown): boolean => Number.isInteger(value) && (value as number) >= 0;
+    if (!isObject(rawBox) || !isPixel(rawBox["x"]) || !isPixel(rawBox["y"]) || !isPixel(rawBox["w"]) || !isPixel(rawBox["h"]) || rawBox["w"] === 0 || rawBox["h"] === 0) {
+      return add(`${where}: рамка вмісту (box) — { x, y, w, h } цілими пікселями`);
+    }
+    box = rawBox as unknown as FrameBox;
+    if (box.x + box.w > w * res + ROUNDING_PX || box.y + box.h > h * res + ROUNDING_PX) return add(`${where}: рамка вмісту (box) виходить за полотно кадру ${w * res} × ${h * res}`);
+  }
   for (const [layer, rect] of Object.entries(layers)) {
     const at = `${where}, шар «${layer}»`;
     if (layer !== "all" && !isArtLayer(layer)) {
@@ -121,6 +132,11 @@ function frameProblems(id: string, frame: unknown, pages: readonly AtlasPage[], 
     // Кожен шар обрізано своєю рамкою: лягає на полотно кадру зі своїм зсувом і має в ньому вміститися.
     if (r.dx < 0 || r.dy < 0 || r.dx + r.w > w * res + ROUNDING_PX || r.dy + r.h > h * res + ROUNDING_PX) {
       if (!add(`${at}: виходить за полотно кадру ${w * res} × ${h * res}`)) return false;
+    }
+    // Порожній шар — спільний прозорий піксель у (0, 0): рамки вмісту він не розтягує.
+    const blank = r.w === 1 && r.h === 1 && r.dx === 0 && r.dy === 0;
+    if (box && !blank && (r.dx < box.x || r.dy < box.y || r.dx + r.w > box.x + box.w || r.dy + r.h > box.y + box.h)) {
+      if (!add(`${at}: виходить за рамку вмісту кадру (box)`)) return false;
     }
   }
   if (frame["stub"] !== undefined && frame["stub"] !== true) return add(`${where}: stub — лише true`);

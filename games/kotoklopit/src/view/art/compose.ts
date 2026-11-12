@@ -64,9 +64,15 @@ export interface Ctx2D {
 export type ScratchFactory = (w: number, h: number) => Ctx2D | null;
 
 export interface ComposeOptions {
-  /** Розмір полотна кадру, пікселі (`size · res`). */
+  /** Розмір полотна, на якому складають, пікселі: усе полотно кадру (`size · res`) чи його рамка вмісту. */
   w: number;
   h: number;
+  /**
+   * Де лівий верхній кут цього полотна в полотні кадру, цілі пікселі (рамка вмісту, `bakeframe.ts`); за замовчуванням
+   * (0, 0). Шари, плитка тканини й принти лягають зі зсувом на нього — туди само, куди лягли б на повному полотні.
+   */
+  x?: number;
+  y?: number;
   /** Допоміжне полотно для перефарбування; за замовчуванням — спільне того самого виду, що й ціль (`scratchFor`). */
   scratch?: ScratchFactory;
   /** Очистити полотно перед складанням; за замовчуванням так. */
@@ -167,6 +173,8 @@ function scratchFor(target: Ctx2D): ScratchFactory {
 export function composeFrame(target: Ctx2D, layers: LayerSource, recipe: TintRecipe, opts: ComposeOptions): void {
   const w = Math.max(1, Math.round(opts.w));
   const h = Math.max(1, Math.round(opts.h));
+  const ox = Math.round(opts.x ?? 0);
+  const oy = Math.round(opts.y ?? 0);
   const clear = opts.clear ?? true;
   target.save();
   target.setTransform(1, 0, 0, 1, 0, 0);
@@ -185,10 +193,10 @@ export function composeFrame(target: Ctx2D, layers: LayerSource, recipe: TintRec
       const paint = src ? opts.cloth.paint(step.pattern) : null;
       if (!src || !paint) continue;
       scratch ??= (opts.scratch ?? scratchFor(target))(w, h);
-      if (!scratch || !drawCloth(scratch, paint, opts.cloth, w, h)) continue;
+      if (!scratch || !drawCloth(scratch, paint, opts.cloth, w, h, ox, oy)) continue;
       // Тканина — лише в межах заливки свого регіону: на шкіру, підкладку й сусідній одяг не лізе.
       scratch.globalCompositeOperation = "destination-in";
-      drawLayer(scratch, src, w, h);
+      drawLayer(scratch, src, w, h, ox, oy);
       target.globalCompositeOperation = step.put;
       target.globalAlpha = alpha;
       target.drawImage(scratch.canvas, 0, 0, w, h, 0, 0, w, h);
@@ -201,12 +209,12 @@ export function composeFrame(target: Ctx2D, layers: LayerSource, recipe: TintRec
       // Як є: контур, деталі, накладки.
       target.globalCompositeOperation = step.put;
       target.globalAlpha = alpha;
-      drawLayer(target, src, w, h);
+      drawLayer(target, src, w, h, ox, oy);
     } else if (empty && step.color !== null && alpha === 1 && (step.tint ?? "source-atop") === "source-atop") {
       // Перша заливка: намалювати й перефарбувати просто на кадрі, без допоміжного полотна.
       target.globalCompositeOperation = "source-over";
       target.globalAlpha = 1;
-      drawLayer(target, src, w, h);
+      drawLayer(target, src, w, h, ox, oy);
       target.globalCompositeOperation = "source-atop";
       target.fillStyle = cssColor(step.color);
       target.fillRect(0, 0, w, h);
@@ -216,14 +224,14 @@ export function composeFrame(target: Ctx2D, layers: LayerSource, recipe: TintRec
         // Поза браузером без допоміжного полотна: хоч шар як є.
         target.globalCompositeOperation = step.put;
         target.globalAlpha = alpha;
-        drawLayer(target, src, w, h);
+        drawLayer(target, src, w, h, ox, oy);
       } else {
         const s = scratch;
         s.setTransform(1, 0, 0, 1, 0, 0);
         s.globalAlpha = 1;
         s.globalCompositeOperation = "source-over";
         s.clearRect(0, 0, w, h);
-        drawLayer(s, src, w, h);
+        drawLayer(s, src, w, h, ox, oy);
         if (step.color !== null) {
           s.fillStyle = cssColor(step.color);
           if ((step.tint ?? "source-atop") === "source-atop") {
@@ -234,7 +242,7 @@ export function composeFrame(target: Ctx2D, layers: LayerSource, recipe: TintRec
             s.globalCompositeOperation = "multiply";
             s.fillRect(0, 0, w, h);
             s.globalCompositeOperation = "destination-in";
-            drawLayer(s, src, w, h);
+            drawLayer(s, src, w, h, ox, oy);
           }
         }
         if (step.put === "multiply") {
@@ -253,9 +261,10 @@ export function composeFrame(target: Ctx2D, layers: LayerSource, recipe: TintRec
 
 /**
  * Тканина кроку візерунка на очищене допоміжне полотно: плитка — від pivot кадру (цілі пікселі: без розмиття), принт — у
- * точці `print`, манжет — у `cuff`. false — класти нічого (принт, а точки в кадрі немає).
+ * точці `print`, манжет — у `cuff`; усе — зі зсувом на початок полотна (`left`, `top`) у полотні кадру. false — класти
+ * нічого (принт, а точки в кадрі немає).
  */
-function drawCloth(s: Ctx2D, paint: ClothPaint, cloth: ClothFrame, w: number, h: number): boolean {
+function drawCloth(s: Ctx2D, paint: ClothPaint, cloth: ClothFrame, w: number, h: number, left: number, top: number): boolean {
   const prints: { image: ClothImage; x: number; y: number }[] = [];
   for (const [image, name] of [
     [paint.print, "print"],
@@ -264,7 +273,7 @@ function drawCloth(s: Ctx2D, paint: ClothPaint, cloth: ClothFrame, w: number, h:
     // Груди ззаду не видно: принт на груди — лише спереду; манжет видно з обох боків.
     if (!image || (name === "print" && cloth.view === "back")) continue;
     const at = (cloth.view ? cloth.points?.[`${name}-${cloth.view}`] : undefined) ?? cloth.points?.[name];
-    if (at) prints.push({ image, x: Math.round(at.x * cloth.k - image.px), y: Math.round(at.y * cloth.k - image.py) });
+    if (at) prints.push({ image, x: Math.round(at.x * cloth.k - image.px) - left, y: Math.round(at.y * cloth.k - image.py) - top });
   }
   if (!paint.fill && prints.length === 0) return false;
   s.setTransform(1, 0, 0, 1, 0, 0);
@@ -272,8 +281,8 @@ function drawCloth(s: Ctx2D, paint: ClothPaint, cloth: ClothFrame, w: number, h:
   s.globalCompositeOperation = "source-over";
   s.clearRect(0, 0, w, h);
   if (paint.fill) {
-    const ox = Math.round(cloth.pivot.x * cloth.k);
-    const oy = Math.round(cloth.pivot.y * cloth.k);
+    const ox = Math.round(cloth.pivot.x * cloth.k) - left;
+    const oy = Math.round(cloth.pivot.y * cloth.k) - top;
     s.fillStyle = paint.fill;
     s.setTransform(1, 0, 0, 1, ox, oy);
     s.fillRect(-ox, -oy, w, h);
@@ -283,10 +292,11 @@ function drawCloth(s: Ctx2D, paint: ClothPaint, cloth: ClothFrame, w: number, h:
   return true;
 }
 
-function drawLayer(ctx: Ctx2D, src: LayerImage, w: number, h: number): void {
+/** Шар на полотно `w × h`, лівий верхній кут якого — у (`left`, `top`) полотна кадру. */
+function drawLayer(ctx: Ctx2D, src: LayerImage, w: number, h: number, left: number, top: number): void {
   if (src.sw <= 0 || src.sh <= 0) return;
-  const dx = src.dx ?? 0;
-  const dy = src.dy ?? 0;
+  const dx = (src.dx ?? 0) - left;
+  const dy = (src.dy ?? 0) - top;
   const dw = src.dw ?? src.sw;
   const dh = src.dh ?? src.sh;
   if (dx >= w || dy >= h || dx + dw <= 0 || dy + dh <= 0) return;

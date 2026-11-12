@@ -367,6 +367,7 @@ export async function buildArt(options: ArtBuildOptions): Promise<ArtBuild> {
       pivot: job.entry.pivot,
       ...(job.entry.points ? { points: job.entry.points } : {}),
       layers,
+      ...(job.entry.layers ? { box: { x: job.raster.trim.x, y: job.raster.trim.y, w: job.raster.w, h: job.raster.h } } : {}),
       ...(job.stub ? { stub: true as const } : {}),
     };
     const glow = glows.get(job.frame);
