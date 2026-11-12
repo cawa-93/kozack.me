@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 
 import { OBJECTS, objectById } from "../src/sim/home";
 import { ISO_BACKDROP_DEPTH, ISO_DEPTH_MAX, ISO_DEPTH_SLOT, IsoDepth, isoDepth } from "../src/view/iso/depth";
+import { DOOR_BOXES } from "../src/view/iso/geometry";
 import { WALL_SEGMENTS } from "../src/view/art/manifest/lib/geometry";
 import { objectBox } from "../src/view/world/isoorder";
 import { isoObjectLook } from "../src/view/world/objects";
@@ -244,6 +245,45 @@ describe("реєстр глибини: коли рахує", () => {
     expect(cat.calls()).toBe(calls);
     expect(registry.box("table")).toBe(t);
     expect(registry.box("fridge")?.depth).toBe(fridge.depth());
+  });
+
+  it("увімкнена знову коробка кличе колбек, хоч глибина та сама: її зображення поки могла тримати інша коробка", () => {
+    // Вхідні двері (`apartment.ts`, `drawDoor`): зачинені — коробка речі `door`, відчинені — поріг `DOOR_BOXES.body`; обидві
+    // ставлять глибину тому самому зображенню. Після першого відчинення зачинені двері мають повернутися на свою глибину, а не
+    // лишитися на глибині порога, де їх закриває кіт у кімнаті за дверима.
+    const registry = new IsoDepth();
+    let image = Number.NaN;
+    const closed = registry.addBox({ ...objectBox(objectById("door")), id: "door" }, (d) => (image = d));
+    const threshold = registry.addBox(DOOR_BOXES.body, (d) => (image = d));
+    threshold.setActive(false);
+    registry.addPoint(() => {}, { id: "cat:1" }).place(11.5, 10.9);
+    registry.solve();
+    const closedDepth = image;
+    expect(closed.depth).toBe(closedDepth);
+    closed.setActive(false);
+    threshold.setActive(true);
+    registry.solve();
+    expect(image).not.toBe(closedDepth);
+    closed.setActive(true);
+    threshold.setActive(false);
+    registry.solve();
+    expect(image).toBe(closedDepth);
+    expect(registry.point("cat:1")!.depth).toBeLessThan(image);
+  });
+
+  it("неактивна коробка не має глибини, доки її не ввімкнули й не розв'язали знову", () => {
+    const registry = new IsoDepth();
+    const calls = recorder();
+    const box = registry.addBox({ x0: 1, y0: 1, x1: 2, y1: 2 }, calls.set);
+    registry.solve();
+    expect(calls.calls()).toBe(1);
+    box.setActive(false);
+    registry.solve();
+    expect(box.depth).toBeNaN();
+    box.setActive(true);
+    registry.solve();
+    expect(calls.calls()).toBe(2);
+    expect(box.depth).toBe(calls.depth());
   });
 
   it("видалені коробки й точки забуваються, id звільняється; повтор id — помилка", () => {

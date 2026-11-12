@@ -39,7 +39,7 @@ export interface IsoBoxSpec extends IsoBox {
 
 export interface IsoBoxHandle {
   readonly id: string | null;
-  /** Остання глибина (NaN — ще не було розв'язку з цією коробкою). */
+  /** Остання глибина (NaN — ще не було розв'язку з цією коробкою чи вона неактивна). */
   readonly depth: number;
   /**
    * Чи коробка зараз є (сховища з'являються з першим запасом, ящики біля входу — лише з покупками): без неї порядок
@@ -109,6 +109,9 @@ class BoxEntry implements IsoBoxHandle, IsoBox {
   setActive(active: boolean): void {
     if (this.active === active || this.removed) return;
     this.active = active;
+    // Увімкнена знову коробка має покликати колбек, хоч глибина та сама: її зображення поки могла тримати інша коробка
+    // (зачинені двері й поріг відчинених — одне зображення, `drawDoor` в `apartment.ts`).
+    if (!active) this.depth = Number.NaN;
     this.registry.changed();
   }
 
