@@ -13,7 +13,7 @@ import { bathe } from "./care";
 import { canSeat, releaseCats, seatCat } from "./carriers";
 import { catInWasher, emptyFeeder, fillFountainTank, furPerHour, putVacuumDown, sameFood, takeVacuum, tapWasher } from "./household";
 import { observe } from "./knowledge";
-import { cookFactor, powerOut } from "./modifiers";
+import { cookFactor, onCall, powerOut } from "./modifiers";
 import { dropThing, putThing } from "./moving";
 import { changeStat, statCeiling, unpleasantTask } from "./character";
 import {
@@ -688,8 +688,10 @@ export function useProgress(state: GameState): number | null {
 export function tickActivity(state: GameState, input: Input, minutes: number): void {
   const character = state.character;
   const activity = character.activity;
-  // У душовій кабіні рух не діє: персонаж виходить, коли душ скінчився (§8.7).
+  // У душовій кабіні рух не діє: персонаж виходить, коли душ скінчився (§8.7). Поки говорить із мамою, душ стоїть, як і почата
+  // тривала дія без кнопки (§4.1): він іде й без вводу, тож сам на розмову не зважав би.
   if (activity?.kind === "use" && activity.inside) {
+    if (onCall(state)) return;
     const target = targetById(state, activity.target);
     if (target === null) {
       character.activity = null;

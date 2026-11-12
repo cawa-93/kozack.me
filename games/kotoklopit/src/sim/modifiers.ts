@@ -266,6 +266,7 @@ export function startModifiers(state: GameState, rng: Rng): void {
   today.callAt = null;
   // Дзвінок, на який до ночі так і не відповіли, минає без штрафу, як і картка, що не встигла показатися (§4.1).
   delete today.callPending;
+  delete today.callUntil;
   today.meetingMinutes = 0;
   today.officeDone = false;
   delete today.showDone;
@@ -352,8 +353,10 @@ export function decideFoundling(state: GameState, take: boolean, rng: Rng = foun
 export function answerCall(state: GameState): boolean {
   if (state.today.callPending !== true) return false;
   delete state.today.callPending;
+  state.today.callUntil = state.minute + MODIFIERS.call.minutes;
   stopWork(state);
-  // Пестощі й гра закінчуються; почата тривала дія (прибирання, їжа) лише чекає, як і без кнопки (повторна перевірка модифікаторів 2026-10-28).
+  // Пестощі й гра закінчуються; почата тривала дія (прибирання, їжа) лише чекає, як і без кнопки, а душ, що йде й без кнопки, —
+  // поки триває розмова (`onCall`).
   const kind = state.character.activity?.kind;
   if (kind === "pet" || kind === "play") state.character.activity = null;
   // Кота з рук опускають поруч, як і засинаючи (загальна ревізія 2026-10-29: кіт, що пручається, усі 30 хвилин лишався на
@@ -365,6 +368,12 @@ export function answerCall(state: GameState): boolean {
   // він гудів би й забирав здоровий глузд, нічого не прибираючи.
   if (held?.kind === "vacuum") putVacuumDown(state);
   return true;
+}
+
+/** Персонаж розмовляє з мамою, бо відповів на дзвінок (§4.1). */
+export function onCall(state: GameState): boolean {
+  const until = state.today.callUntil;
+  return until !== undefined && state.minute < until;
 }
 
 /** Не відповісти мамі (§4.1): здоровий глузд падає — раз, лише на дзвінок, що чекає відповіді. */
@@ -777,6 +786,7 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
   if (day === "construction-dust") tickConstructionDust(state, from, minutes);
   // Кур'єр із сусідськими посилками й сусідка — візити з дзвінком за `GUESTS.ringLead` хвилин (§4.1).
   if (day === "neighbor-parcels") tickParcels(state, from, minutes);
+  if (today.callUntil !== undefined && from + minutes >= today.callUntil) delete today.callUntil;
   if (today.callAt !== null && crossed(from, minutes, today.callAt)) {
     today.callAt = null;
     // Дзвінок чекає, поки гравець вирішить: картка живе лише в сцені, і після перезавантаження сторінки дзвінок зникав без
