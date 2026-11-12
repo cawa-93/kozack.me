@@ -7,7 +7,7 @@ import { newGame } from "../src/sim/game";
 import { objectById } from "../src/sim/home";
 import type { Target } from "../src/sim/targets";
 import type { Cat } from "../src/sim/types";
-import type { ApartmentPart, CatsPart, LightPart, PersonPart, Point, WorldFrame, WorldPart } from "../src/view/world/part";
+import { BASKET_ANCHOR, type ApartmentPart, type CatsPart, type LightPart, type PersonPart, type Point, type WorldFrame, type WorldPart } from "../src/view/world/part";
 import { ISO } from "../src/view/world/projection";
 import { UI_LAYERS, WORLD_LAYERS } from "../src/view/world/layers";
 import { World } from "../src/view/world/world";
@@ -41,7 +41,7 @@ function world(): { world: World; log: string[] } {
   const result = new World(ISO);
   result.attach({
     apartment,
-    floor: fake("floor", log, (id) => /^(item|mess):/.test(id), ["item", "mess"]),
+    floor: fake("floor", log, (id) => /^(item|mess):/.test(id) || id === BASKET_ANCHOR, ["item", "mess"]),
     cats,
     person,
     marks: fake("marks", log, () => false),
@@ -77,6 +77,8 @@ describe("світ із частин", () => {
     expect(w.anchor("item:2")).toEqual({ x: 5, y: 0 });
     expect(w.anchor("mess:9")).toEqual({ x: 5, y: 0 });
     expect(w.anchor("fridge")).toEqual({ x: 9, y: 0 });
+    // Кошик білизни — без двокрапки, як річ квартири, але малює його підлога: туди летить зношений одяг (§8.7).
+    expect(w.anchor(BASKET_ANCHOR)).toEqual({ x: 5, y: 0 });
     expect(w.anchor("high:1")).toBeNull();
     expect(w.objectAnchor("boxes")).toEqual({ x: -1, y: -1 });
     expect(w.person.head).toEqual({ x: 7, y: 8 });

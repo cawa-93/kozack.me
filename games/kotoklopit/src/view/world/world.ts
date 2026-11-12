@@ -4,7 +4,7 @@
 import type { GameEvent } from "../../sim/events";
 import { CARRIER_TARGET, VACUUM_TARGET, type Target } from "../../sim/targets";
 import type { GameState } from "../../sim/types";
-import type { CatPoints, PersonPart, Point, WorldFrame, WorldPart, WorldParts, WorldQuery } from "./part";
+import { BASKET_ANCHOR, type CatPoints, type PersonPart, type Point, type WorldFrame, type WorldPart, type WorldParts, type WorldQuery } from "./part";
 import type { Projection } from "./projection";
 
 export class World implements WorldQuery {
@@ -53,12 +53,12 @@ export class World implements WorldQuery {
 
   /**
    * Якір до частини-власниці за id: `person`, `cat:N`, `item:N` і `mess:N`, вертикальний пилосос на підлозі (`VACUUM_TARGET`),
-   * без двокрапки — річ квартири.
+   * переноски й кошик білизни (`BASKET_ANCHOR`) — у підлоги; решта без двокрапки — річ квартири.
    */
   anchor(id: string): Point | null {
     const { person, cats, floor, apartment } = this.all;
     if (id === "person") return person.anchor(id);
-    if (id === VACUUM_TARGET || id === CARRIER_TARGET) return floor.anchor(id);
+    if (id === VACUUM_TARGET || id === CARRIER_TARGET || id === BASKET_ANCHOR) return floor.anchor(id);
     const colon = id.indexOf(":");
     if (colon < 0) return apartment.anchor(id);
     const kind = id.slice(0, colon);

@@ -66,7 +66,7 @@ import { createWorld, WORLD_BUILDERS } from "../view/world/factory";
 import { flyIsoIcon } from "../view/iso/marksflight";
 import { mealHold } from "../view/mealpress";
 import { personBubbleAnchor } from "../view/iso/markslayout";
-import type { WorldFrame } from "../view/world/part";
+import { BASKET_ANCHOR, type WorldFrame } from "../view/world/part";
 import { dayShow, REVEAL_SECONDS, type DayShow } from "../view/dayshow";
 import type { World } from "../view/world/world";
 import { markDeparture, takeDeparture } from "../view/departing";
@@ -1030,7 +1030,7 @@ export class DayScene extends Phaser.Scene {
         // Зношений одяг летить із душової кабіни в кошик білизни (§8.7), як запаси з ящиків; кошик наповнюється, коли долетить
         // (`iso/floor.ts`).
         const from = this.world.objectAnchor("shower");
-        const to = this.world.anchor("basket");
+        const to = this.world.anchor(BASKET_ANCHOR);
         if (from && to) this.flyIcon("laundry", from, to, 0);
         break;
       }

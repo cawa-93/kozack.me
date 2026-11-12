@@ -22,7 +22,7 @@ import type { CarryThing, CleaningTool, GameState, HomeItem, TrinketKind, Vec } 
 import { addArt, setArt } from "../art/atlas";
 import type { PartContext } from "../world/context";
 import { isoItemLook, isoObjectLook, thingPoint, type IsoFootprint } from "../world/objects";
-import type { Point, WorldFrame, WorldPart } from "../world/part";
+import { BASKET_ANCHOR, type Point, type WorldFrame, type WorldPart } from "../world/part";
 import { ISO } from "../world/projection";
 import { isoDepth, type IsoDepth, type IsoPointHandle, type IsoPointOptions } from "./depth";
 import { PlaceMark } from "./placemark";
@@ -606,7 +606,7 @@ export class IsoFloorView implements WorldPart {
   anchor(id: string): Point | null {
     const state = this.ctx.state();
     const home = state.home;
-    if (id === "basket") return floorAnchorAt(BASKET_AT, isoItemLook("basket").height);
+    if (id === BASKET_ANCHOR) return floorAnchorAt(BASKET_AT, isoItemLook("basket").height);
     if (id === VACUUM_TARGET) return home.vacuumAt ? floorAnchorAt(home.vacuumAt, isoItemLook("vacuum").height) : null;
     if (id === CARRIER_TARGET) {
       if (home.carriers.length === 0) return null;
