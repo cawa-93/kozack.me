@@ -1,10 +1,10 @@
 // Картка кота (§9.7): живий портрет, ім'я зі знаком статі й те, що про кота відомо. Та сама і в знайомстві, і у вкладці «Коти»
 // телефона: у знайомстві ім'я — поле (кота щойно назвали), у телефоні — заголовок, а поле — лише після малопомітного олівця.
 
-import { renameCat } from "../sim/cat";
 import { NAME_MAX_LENGTH } from "../sim/config";
 import type { Cat } from "../sim/types";
 import { CAT_INTRO_TEXTS } from "../texts";
+import { catNameEditor } from "./catname";
 import { liveCatPortrait } from "./liveportrait";
 import { element } from "./overlay";
 import { portraitCanvas } from "./portrait";
@@ -20,7 +20,7 @@ export interface CatFacts {
   chips: readonly TraitChip[];
 }
 
-/** Поле імені: нове ім'я діє одразу, з кожною літерою; порожнє поле, коли з нього вийшли, повертає ім'я кота. */
+/** Поле імені (`catname.ts`): нове ім'я діє одразу, з кожною літерою; порожнє поле, коли з нього вийшли, повертає ім'я кота. */
 function nameField(cat: Cat): HTMLInputElement {
   const input = element("input");
   input.type = "text";
@@ -28,9 +28,11 @@ function nameField(cat: Cat): HTMLInputElement {
   input.maxLength = NAME_MAX_LENGTH;
   input.className = "button name-input";
   input.setAttribute("aria-label", CAT_INTRO_TEXTS.name);
-  input.addEventListener("input", () => renameCat(cat, input.value));
+  const editor = catNameEditor(cat);
+  input.addEventListener("focus", () => editor.focus());
+  input.addEventListener("input", () => editor.input(input.value));
   input.addEventListener("blur", () => {
-    input.value = cat.name;
+    input.value = editor.blur();
   });
   return input;
 }

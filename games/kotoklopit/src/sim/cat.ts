@@ -223,7 +223,7 @@ export function meetCat(cat: Cat): void {
 }
 
 /** Нове ім'я кота (§9.7): порожнє поле лишає те, що було. */
-export function renameCat(cat: Cat, name: string): void {
+export function renameCat(cat: Pick<Cat, "name">, name: string): void {
   const own = name.trim();
   if (own !== "") cat.name = own;
 }
