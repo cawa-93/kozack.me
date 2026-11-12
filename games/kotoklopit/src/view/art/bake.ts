@@ -1,7 +1,7 @@
 // Запікання тонованих кадрів у Phaser: частина кота чи персонажа — це кілька білих шарів атласу, які компонувальник
-// (`compose.ts`) складає за рецептом (`recipes.ts`) у CanvasTexture. CanvasTexture, а не tint: tint не діє в Canvas-режимі
-// Phaser (`Phaser.AUTO` на старих телефонах), а полотно переживає втрату WebGL-контексту — Phaser сам завантажує його у
-// відеопам'ять знову.
+// (`compose.ts`) складає за рецептом (`recipes.ts`) на полотні, а воно стає текстурою. Полотно, а не tint: tint не діє в
+// Canvas-режимі Phaser (`Phaser.AUTO` на старих телефонах), а полотно переживає втрату WebGL-контексту — Phaser сам
+// завантажує його у відеопам'ять знову.
 //
 // Персонаж запікається так само, як кіт, хоч зовнішність у нього одна: рецептів усе одно кілька (плями на одязі, дальні
 // частини), шари потрібні котам, портрету й галереї, а готові кадри додали б байтів атласу й другий шлях показу заради
@@ -191,9 +191,7 @@ const bakers = new WeakMap<Phaser.Game, Baker>();
 function bakerOf(game: Phaser.Game): Baker {
   let baker = bakers.get(game);
   if (!baker) {
-    const cache = new BakeCache<BakedFrame>((key) => {
-      if (game.textures.exists(key)) game.textures.remove(key);
-    }, BAKE_BUDGET);
+    const cache = new BakeCache<BakedFrame>((key) => dropTexture(game.textures, key), BAKE_BUDGET);
     const made: Baker = { cache, frame: -1, baked: 0, queue: new Map(), idle: false };
     baker = made;
     bakers.set(game, made);
@@ -282,14 +280,14 @@ function make(scene: Phaser.Scene, frame: FrameId, recipe: TintRecipe, key: stri
     layers = synthetic?.source ?? (() => null);
     stub = true;
   }
-  if (scene.textures.exists(key)) scene.textures.remove(key);
+  dropTexture(scene.textures, key);
   // Спершу скласти кадр на полотні, а вже готове віддати текстурі: `createCanvas` і `refresh` завантажували його у
-  // відеопам'ять двічі — порожнє полотно й готове. Полотно — у пам'яті процесора (`willReadFrequently`), як і в
-  // `CanvasTexture` Phaser: він читає його пікселі (`getImageData`) одразу, а з відеопам'яті це довго.
+  // відеопам'ять двічі — порожнє полотно й готове. Текстура — звичайна, з полотна, а не `CanvasTexture`: та одразу читає
+  // пікселі полотна (`getImageData`) і тримає їхню копію, а пікселів запеченого кадру ніхто не читає.
   const canvas = document.createElement("canvas");
   canvas.width = px.w;
   canvas.height = px.h;
-  const context = canvas.getContext("2d", { willReadFrequently: true });
+  const context = canvas.getContext("2d");
   if (context) {
     // Візерунок тканини запікається разом із кадром: щокадру його ніхто не малює.
     const cloth =
@@ -297,9 +295,23 @@ function make(scene: Phaser.Scene, frame: FrameId, recipe: TintRecipe, key: stri
         ? clothFrame({ k: px.w / geometry.size.w, pivot: geometry.pivot, points: found?.entry.points, view: frameView(frame, found?.entry) }, (id) => atlasCloth(scene, id), createCtx)
         : undefined;
     composeFrame(context, layers, recipe, { w: px.w, h: px.h, cloth });
-    scene.textures.addCanvas(key, canvas);
+    scene.textures.create(key, canvas)?.add("__BASE", 0, 0, 0, px.w, px.h);
   }
   return { key, px, geometry, stub };
+}
+
+/**
+ * Прибрати текстуру запеченого кадру, а її полотно обнулити одразу, не чекаючи збирача сміття: iOS обмежує сумарну пам'ять
+ * полотен сторінки, і понад неї нові полотна порожні.
+ */
+function dropTexture(textures: Phaser.Textures.TextureManager, key: string): void {
+  if (!textures.exists(key)) return;
+  const image = textures.get(key).getSourceImage();
+  textures.remove(key);
+  if (image instanceof HTMLCanvasElement) {
+    image.width = 0;
+    image.height = 0;
+  }
 }
 
 /** Ракурс кадру запису; без ракурсів — null. */

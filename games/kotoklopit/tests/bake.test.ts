@@ -57,6 +57,21 @@ describe("запікання наперед — лише в ракурсах, д
   });
 });
 
+describe("запечений кадр — звичайна текстура з полотна (`bake.ts`)", () => {
+  const source = readFileSync(new URL("../src/view/art/bake.ts", import.meta.url), "utf8");
+
+  it("не CanvasTexture: та одразу читає пікселі полотна (`getImageData`) і тримає їхню копію; полотну тоді не треба лишатися в пам'яті процесора", () => {
+    expect(source).not.toMatch(/\.addCanvas\(/);
+    expect(source).not.toMatch(/willReadFrequently:\s*true/);
+    expect(source).toMatch(/\.textures\.create\(/);
+  });
+
+  it("полотно знищеного кадру обнуляється одразу, не чекаючи збирача сміття (iOS обмежує сумарну пам'ять полотен)", () => {
+    expect(source).toMatch(/\.width = 0/);
+    expect(source).toMatch(/\.height = 0/);
+  });
+});
+
 // --- Бюджет власника ---------------------------------------------------------------------------
 
 type Skin = Readonly<Record<string, ArtId | null>>;

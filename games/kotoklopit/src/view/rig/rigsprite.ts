@@ -199,7 +199,7 @@ export class RigSprite<B extends string, S extends string, K extends string> ext
   }
 
   /**
-   * Закріпити за слотом текстуру ззовні (запечений `CanvasTexture` компонувальника) — незалежно від стану й ракурсу;
+   * Закріпити за слотом текстуру ззовні (запечене компонувальником полотно) — незалежно від стану й ракурсу;
    * null — знову кадр атласу (чи `setTextureSource`).
    */
   setSlotTexture(slot: S, key: string | null, frame?: string | number): this {
