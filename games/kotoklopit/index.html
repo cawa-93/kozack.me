@@ -5,12 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#2b2530" />
     <title>Котоклопіт</title>
+    <script>
+      // Запобіжник заставки (§2.1): код гри не прийшов (обірваний запит, файл, якого після деплою вже немає) чи впав, ще не
+      // почавши вантажити атлас, — тоді замість смуги, що бігла б вічно, «Гра не завантажилася» з кнопкою, яка перезавантажує
+      // сторінку. Відколи заставку веде PreloadScene (`data-started`), збій показує вона. Звичайний скрипт старого синтаксису:
+      // має спрацювати й там, де код гри не запускається зовсім. Він у <head> перед усім: збірка ставить код гри, його частини
+      // й стиль у кінець <head>. Помилку ресурсу чути лише на перехопленні (`true`).
+      (function () {
+        function fail() {
+          // Заставку ще не прочитано (файл не прийшов, поки читають сторінку) — повідомлення, щойно прочитали.
+          if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", fail);
+            return;
+          }
+          var root = document.getElementById("boot");
+          if (!root || !root.isConnected || root.hasAttribute("data-started")) return;
+          if (root.classList.contains("boot-failed") || root.classList.contains("boot-busy")) return;
+          var box = root.querySelector(".boot-fail");
+          var message = document.getElementById("boot-failed");
+          if (!box || !message) return;
+          box.innerHTML = message.innerHTML;
+          var retry = box.querySelector("button");
+          if (retry) {
+            retry.addEventListener("click", function () {
+              location.reload();
+            });
+            retry.focus();
+          }
+          root.classList.add("boot-failed");
+        }
+        window.addEventListener(
+          "error",
+          function (event) {
+            var target = event.target;
+            var tag = target && target.tagName;
+            // Без елемента — помилка коду; з елементом — не прийшов файл: скрипт, частина коду чи стиль гри. Інше (іконка вкладки,
+            // наперед узятий атлас) гра бере ще раз сама.
+            if (!tag || tag === "SCRIPT" || (tag === "LINK" && (target.rel === "stylesheet" || target.rel === "modulepreload"))) fail();
+          },
+          true,
+        );
+      })();
+    </script>
     <!--
       Заставка, поки вантажиться гра (крок 16): видно одразу, ще до коду гри й атласу, — назва гри й смуга, без JS. Смуга —
       того самого розміру й місця, що й одиниці інтерфейсу гри (280 × 6 з 1280 × 720, посередині): поки коду немає, вона
       біжить туди-сюди, а потім заповнюється ходом завантаження атласу (`--boot-progress`, src/scenes/PreloadScene.ts). Гра
-      готова — заставку прибирає PreloadScene. Замість смуги — повідомлення: гра не завантажилася (PreloadScene) чи її
-      відкрито в іншій вкладці (src/tablock.ts, §4.2). Кольори — тло й папір гри (art/palette.ts).
+      готова — заставку прибирає PreloadScene. Замість смуги — повідомлення: гра не завантажилася (`#boot-failed`: атлас —
+      PreloadScene, код гри — запобіжник вище) чи її відкрито в іншій вкладці (src/tablock.ts, §4.2). Кольори — тло й папір
+      гри (art/palette.ts).
     -->
     <style>
       html,
@@ -93,6 +136,9 @@
       .boot-fail p {
         margin: 0;
       }
+      .boot-fail .boot-fail-title {
+        font-weight: 700;
+      }
       .boot.boot-failed .boot-bar,
       .boot.boot-busy .boot-bar {
         display: none;
@@ -119,6 +165,12 @@
       <span class="boot-bar" aria-hidden="true"></span>
       <div class="boot-fail"></div>
     </div>
+    <!-- Повідомлення замість смуги: гра не завантажилася (кнопка — PreloadScene довантажує атлас, запобіжник — сторінку). -->
+    <template id="boot-failed">
+      <p class="boot-fail-title">Гра не завантажилася</p>
+      <p>Перевірте зв'язок з інтернетом.</p>
+      <button type="button" class="button primary">Спробувати ще</button>
+    </template>
     <div class="rotate" role="status">
       <span class="rotate-art" aria-hidden="true"></span>
       <p>Поверніть телефон</p>

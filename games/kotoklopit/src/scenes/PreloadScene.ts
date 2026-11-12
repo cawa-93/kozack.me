@@ -20,7 +20,6 @@
 
 import Phaser from "phaser";
 
-import { LOAD_FAILED } from "../texts";
 import { markArtReady } from "../view/art/atlas";
 import { warmCardArt } from "../ui/warmart";
 import { loadArtAtlas, type ArtAtlasState } from "../view/art/atlasload";
@@ -53,6 +52,8 @@ export class PreloadScene extends Phaser.Scene {
 
   create(): void {
     this.boot = bootScreen();
+    // Заставку тепер веде ця сцена: запобіжник index.html (код гри не прийшов чи впав) більше в неї не втручається.
+    this.boot?.root.setAttribute("data-started", "");
     this.attempt();
   }
 
@@ -120,26 +121,19 @@ export class PreloadScene extends Phaser.Scene {
     this.finish(state);
   }
 
-  /** Атлас не завантажився: повідомлення й кнопка, що пробує ще раз. */
+  /** Атлас не завантажився: повідомлення з index.html (`#boot-failed`) і кнопка, що пробує ще раз. */
   private failed(boot: Boot): void {
     const fail = boot.fail!;
-    const title = document.createElement("p");
-    title.textContent = LOAD_FAILED.title;
-    title.style.fontWeight = "700";
-    const text = document.createElement("p");
-    text.textContent = LOAD_FAILED.body;
-    const retry = document.createElement("button");
-    retry.type = "button";
-    retry.className = "button primary";
-    retry.textContent = LOAD_FAILED.retry;
-    retry.addEventListener("click", () => {
+    const message = document.getElementById("boot-failed");
+    if (message instanceof HTMLTemplateElement) fail.replaceChildren(message.content.cloneNode(true));
+    const retry = fail.querySelector("button");
+    retry?.addEventListener("click", () => {
       boot.root.classList.remove("boot-failed");
       fail.replaceChildren();
       this.attempt();
     });
-    fail.replaceChildren(title, text, retry);
     boot.root.classList.add("boot-failed");
-    retry.focus();
+    retry?.focus();
   }
 
   /**

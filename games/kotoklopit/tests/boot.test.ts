@@ -1,9 +1,9 @@
 // Заставка завантаження (крок 16): статична, у index.html — видно ще до коду гри; PreloadScene веде її смугу, а якщо атлас
-// не прийшов (продакшн), показує в ній повідомлення з кнопкою «Спробувати ще» (`LOAD_FAILED`).
+// не прийшов (продакшн), показує в ній повідомлення з кнопкою «Спробувати ще» (`#boot-failed`). Те саме повідомлення — і коли
+// не прийшов чи впав сам код гри, ще до PreloadScene (запобіжник у index.html).
 
 import { describe, expect, it } from "vitest";
 
-import { LOAD_FAILED } from "../src/texts";
 import { AtlasLoadProgress, DONE_SHARE, INDEX_SHARE, PAGE_BYTES_PER_PIXEL } from "../src/view/art/loadprogress";
 
 const pages = import.meta.glob<string>("../index.html", { query: "?raw", import: "default", eager: true });
@@ -24,10 +24,152 @@ describe("заставка завантаження", () => {
     expect(html.indexOf('id="boot"')).toBeGreaterThan(html.indexOf('id="game"'));
   });
 
-  it("повідомлення, що гра не завантажилася, — заголовок, текст і кнопка", () => {
-    expect(LOAD_FAILED.title).toBeTruthy();
-    expect(LOAD_FAILED.body).toMatch(/інтернет/);
-    expect(LOAD_FAILED.retry).toBe("Спробувати ще");
+  it("повідомлення, що гра не завантажилася, — заголовок, текст і кнопка (`#boot-failed`)", () => {
+    const failed = template();
+    expect(failed).toMatch(/<p class="boot-fail-title">Гра не завантажилася<\/p>/);
+    expect(failed).toMatch(/<p>[^<]*інтернет[^<]*<\/p>/);
+    expect(failed).toMatch(/<button type="button" class="button primary">Спробувати ще<\/button>/);
+  });
+});
+
+/** Вміст `<template id="boot-failed">`. */
+function template(): string {
+  return /<template id="boot-failed">([\s\S]*?)<\/template>/.exec(html)?.[1] ?? "";
+}
+
+/** Запобіжник заставки — звичайний (не модуль) скрипт у index.html. */
+function guard(): string {
+  const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((match) => match[1] ?? "");
+  expect(scripts).toHaveLength(1);
+  return scripts[0] ?? "";
+}
+
+type Listener = (event: { target: unknown }) => void;
+
+/** Сторінка з заставкою для запобіжника: вікно, документ, заставка, шаблон повідомлення й перезавантаження. */
+function bootPage(readyState: "loading" | "complete" = "complete") {
+  const listeners: { type: string; listener: Listener; capture: boolean }[] = [];
+  const ready: (() => void)[] = [];
+  const classes = new Set<string>();
+  const attributes = new Set<string>();
+  let reloads = 0;
+  let focused = 0;
+  const clicks: (() => void)[] = [];
+  const button = {
+    addEventListener: (type: string, listener: () => void) => {
+      if (type === "click") clicks.push(listener);
+    },
+    focus: () => focused++,
+  };
+  const box = {
+    innerHTML: "",
+    querySelector: (selector: string) => (selector === "button" && box.innerHTML.includes("<button") ? button : null),
+  };
+  const root = {
+    isConnected: true,
+    classList: {
+      add: (name: string) => classes.add(name),
+      remove: (name: string) => classes.delete(name),
+      contains: (name: string) => classes.has(name),
+    },
+    hasAttribute: (name: string) => attributes.has(name),
+    querySelector: (selector: string) => (selector === ".boot-fail" ? box : null),
+  };
+  const document = {
+    readyState,
+    getElementById: (id: string) =>
+      document.readyState === "loading" ? null : id === "boot" ? root : id === "boot-failed" ? { innerHTML: template() } : null,
+    addEventListener: (type: string, listener: () => void) => {
+      if (type === "DOMContentLoaded") ready.push(listener);
+    },
+  };
+  const window = {
+    addEventListener: (type: string, listener: Listener, capture?: boolean) => listeners.push({ type, listener, capture: capture === true }),
+  };
+  const location = { reload: () => reloads++ };
+  new Function("window", "document", "location", guard())(window, document, location);
+  /** Подія `error` на вікні: помилка ресурсу (`target` — елемент) не спливає, тож її чують лише на перехопленні. */
+  const error = (target: unknown): void => {
+    const resource = target !== window;
+    for (const entry of listeners) if (entry.type === "error" && (entry.capture || !resource)) entry.listener({ target });
+  };
+  return {
+    window,
+    root,
+    classes,
+    attributes,
+    box,
+    error,
+    click: () => clicks.forEach((click) => click()),
+    /** Сторінку прочитано: заставка є. */
+    parsed: () => {
+      document.readyState = "complete";
+      ready.forEach((listener) => listener());
+    },
+    reloads: () => reloads,
+    focused: () => focused,
+  };
+}
+
+describe("запобіжник заставки: код гри не прийшов чи впав до PreloadScene", () => {
+  it("скрипт гри не прийшов — повідомлення з шаблону замість смуги, кнопка перезавантажує сторінку", () => {
+    const page = bootPage();
+    page.error({ tagName: "SCRIPT" });
+    expect(page.classes.has("boot-failed")).toBe(true);
+    expect(page.box.innerHTML).toBe(template());
+    expect(page.focused()).toBe(1);
+    page.click();
+    expect(page.reloads()).toBe(1);
+  });
+
+  it("не прийшов стиль гри чи частина коду — так само; іконка вкладки чи наперед узятий атлас — ні (їх беруть ще раз)", () => {
+    for (const rel of ["stylesheet", "modulepreload"]) {
+      const page = bootPage();
+      page.error({ tagName: "LINK", rel });
+      expect(page.classes.has("boot-failed"), rel).toBe(true);
+    }
+    for (const target of [{ tagName: "LINK", rel: "icon" }, { tagName: "LINK", rel: "preload" }, { tagName: "IMG" }]) {
+      const page = bootPage();
+      page.error(target);
+      expect(page.classes.has("boot-failed"), JSON.stringify(target)).toBe(false);
+    }
+  });
+
+  it("код гри впав на старті — повідомлення; заставку вже веде PreloadScene (`data-started`) — ні, свій збій вона показує сама", () => {
+    const early = bootPage();
+    early.error(early.window);
+    expect(early.classes.has("boot-failed")).toBe(true);
+    const started = bootPage();
+    started.attributes.add("data-started");
+    started.error(started.window);
+    started.error({ tagName: "SCRIPT" });
+    expect(started.classes.has("boot-failed")).toBe(false);
+  });
+
+  it("повідомлення вже на заставці (гра в іншій вкладці) чи заставки вже немає — не чіпає", () => {
+    const busy = bootPage();
+    busy.classes.add("boot-busy");
+    busy.error({ tagName: "SCRIPT" });
+    expect(busy.classes.has("boot-failed")).toBe(false);
+    expect(busy.box.innerHTML).toBe("");
+    const gone = bootPage();
+    gone.root.isConnected = false;
+    gone.error({ tagName: "SCRIPT" });
+    expect(gone.classes.has("boot-failed")).toBe(false);
+  });
+
+  it("запобіжник — у <head>: збірка ставить код гри, його частини й стиль у кінець <head>, а запобіжник має чути, якщо ті не прийдуть", () => {
+    expect(html.indexOf("<script>")).toBeGreaterThan(0);
+    expect(html.indexOf("<script>")).toBeLessThan(html.indexOf("</head>"));
+    expect(html.indexOf("<script>")).toBeLessThan(html.indexOf('<script type="module"'));
+  });
+
+  it("файл не прийшов, ще поки сторінку читають (заставки ще немає), — повідомлення, щойно її прочитали", () => {
+    const page = bootPage("loading");
+    page.error({ tagName: "LINK", rel: "stylesheet" });
+    expect(page.classes.has("boot-failed")).toBe(false);
+    page.parsed();
+    expect(page.classes.has("boot-failed")).toBe(true);
   });
 });
 
