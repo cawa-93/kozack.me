@@ -221,7 +221,7 @@ function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   // мітить» — ніколи (рішення автора 2026-10-25).
   const marking = traitLevel(cat, "marking");
   const intact = cat.sex === "male" && !cat.sterilized;
-  // Шанс мітки — лише тому, хто може мітити саме зараз (П13): тригери обходять усіх котів і лотки.
+  // Шанс мітки — лише тому, хто може мітити саме зараз: тригери дорогі, обходять усіх котів і лотки.
   const canMark = (intact || marking > 0) && cat.ageWeeks >= BREEDING.minAge && !sleeping;
   let markRate = intact ? BREEDING.markPerHour : 0;
   if (canMark && marking > 0) markRate = Math.max(markRate, markTriggered(state, cat) ? MARKING.triggerPerHour : MARKING.calmPerHour);
@@ -3528,7 +3528,7 @@ function tickRelations(state: GameState, minutes: number, rng: Rng): void {
       if (!b) continue;
       // Сон поруч зближує (§9.4) — і тих, хто ще не друзі: «Товариський» лягає й до малознайомих (§9.12).
       const together = asleep(a) && asleep(b) && distance(a, b) <= RELATIONS.sleepTogether.distance;
-      // Стосунок пари — раз на пару (П13); знову — лише якщо шипіння нижче його змінило.
+      // Стосунок пари — раз на пару: пари перебираються щокадру; знову — лише якщо шипіння нижче його змінило.
       const value = relation(state, a, b);
       if (value >= RELATIONS.friend) {
         if (together) changeRelation(state, a, b, RELATIONS.sleepTogether.perHour * hours);
@@ -4641,7 +4641,7 @@ function snubPasser(state: GameState, cat: Cat, other: Cat, rng: Rng): boolean {
  */
 function hissAtNewcomer(state: GameState, cat: Cat, other: Cat, rng: Rng): boolean {
   const n = RELATIONS.newcomer;
-  // Спершу дешеве (П13): пару перевіряють щокадру, а нових майже ніколи немає.
+  // Спершу дешеве: пару перевіряють щокадру, а нових майже ніколи немає.
   if (other.act.goal === null || isKitten(cat) || asleep(cat) || !SNUB_FROM.has(cat.act.kind)) return false;
   if (!isNewcomer(state, other) || isNewcomer(state, cat) || distance(cat, other) >= n.distance) return false;
   const now = absoluteMinute(state.day, state.minute);
@@ -4726,7 +4726,7 @@ function approachGuarded(state: GameState, cat: Cat, rng: Rng): void {
   if (target === null || cat.act.guarded === true) return;
   const guardLevel = (g: Cat): number => feudGuardLevel(state, g, cat, Math.max(traitLevel(g, "territorial"), isEnemy(state, g, cat) ? TERRITORY.enemyLevel : 0));
   const guarded = `guard:${target}`;
-  // Рівень охорони — останнім (П13): він дорогий, а біля тієї самої речі майже ніхто не сидить.
+  // Рівень охорони — останнім: він дорогий, а біля тієї самої речі майже ніхто не сидить.
   const guard = state.cats.find(
     (g) =>
       g.id !== cat.id &&
@@ -4800,7 +4800,7 @@ function warmKittens(state: GameState, minutes: number): void {
  * шипить і б'є лапою — кошеняті настрій −2, і воно відскакує; на це кошеня — година спокою. Прояв «−».
  */
 function swatKitten(state: GameState, cat: Cat, kitten: Cat, rng: Rng): void {
-  // Риса — після дешевого (П13): пару перевіряють щокадру, а кошеня в ній буває рідко.
+  // Риса — після дешевого: пару перевіряють щокадру, а кошеня в ній буває рідко.
   if (isKitten(cat) || !isKitten(kitten) || isNewborn(kitten) || asleep(cat) || asleep(kitten) || !SNUB_FROM.has(cat.act.kind)) return;
   if (distance(cat, kitten) > NURTURING.swatReach || (kitten.act.goal === null && kitten.act.kind !== "zoomies")) return;
   const level = traitLevel(cat, "nurturing");
