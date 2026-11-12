@@ -128,6 +128,10 @@ export class Radio {
   }
 
   private tick(): void {
+    // Схованою вкладкою й поки звук стоїть (блокування екрана, дзвінок), музика не грає: ефір тягнув би лише мобільний трафік
+    // і витісняв прослухане з кешу. Контексту ще немає (гравець нічого не натискав) — станцію вже готують (§8.10).
+    const context = this.engine.context;
+    if ((typeof document !== "undefined" && document.visibilityState === "hidden") || (context && context.state !== "running")) return;
     const now = clock();
     this.store.want(wantedChunks({ stations: this.stations, listening: this.playing()?.id ?? null, nearSeconds: this.nearSince === null ? null : now - this.nearSince, now }));
     this.broadcast.tick();

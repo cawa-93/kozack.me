@@ -7,6 +7,7 @@ import { STATIONS } from "../src/audio/radio/playlist";
 import playlist from "../src/audio/radio/playlist.json";
 import type { AudioEngine } from "../src/audio/engine";
 import { Broadcast } from "../src/audio/radio/broadcast";
+import { ChunkStore } from "../src/audio/radio/chunks";
 import { radioLit } from "../src/audio/radio/lamp";
 import { Radio } from "../src/audio/radio/radio";
 import { AudioPrefs, DEFAULT_AUDIO, loadAudioSettings, saveAudioSettings } from "../src/audio/settings";
@@ -213,7 +214,7 @@ describe("файли радіо (§8.10)", () => {
   });
 });
 
-describe("радіо: дотик до станції (§8.10)", () => {
+describe("радіо: дотик до станції й прихована вкладка (§8.10)", () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
@@ -245,5 +246,33 @@ describe("радіо: дотик до станції (§8.10)", () => {
     radio.choose(radio.station);
     expect(radio.on).toBe(true);
     expect(tune).toHaveBeenCalledTimes(1);
+  });
+
+  it("звук стоїть (вкладка схована, екран заблоковано, дзвінок) — ефір не качається", () => {
+    const want = vi.spyOn(ChunkStore.prototype, "want");
+    playing("suspended").standby();
+    expect(want).not.toHaveBeenCalled();
+  });
+
+  it("вкладку сховали, а контекст ще не зупинився — ефір не качається", () => {
+    vi.stubGlobal("document", { visibilityState: "hidden" });
+    const want = vi.spyOn(ChunkStore.prototype, "want");
+    playing("running").standby();
+    expect(want).not.toHaveBeenCalled();
+  });
+
+  it("вкладка видна й звук іде — станція вантажиться наперед", () => {
+    vi.stubGlobal("document", { visibilityState: "visible" });
+    const want = vi.spyOn(ChunkStore.prototype, "want");
+    playing("running").standby();
+    expect(want).toHaveBeenCalledTimes(1);
+    expect(want.mock.calls[0]?.[0].length).toBeGreaterThan(0);
+  });
+
+  it("до першої дії гравця звуку ще немає, але станцію вже готують (екран завантаження, §8.10)", () => {
+    vi.stubGlobal("document", { visibilityState: "visible" });
+    const want = vi.spyOn(ChunkStore.prototype, "want");
+    playing(null).standby();
+    expect(want.mock.calls[0]?.[0].length).toBeGreaterThan(0);
   });
 });
