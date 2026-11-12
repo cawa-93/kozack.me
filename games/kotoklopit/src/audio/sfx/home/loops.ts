@@ -1,4 +1,4 @@
-// Петлі дому зі стану (§11.4а): плита, пральна, пилосос у руках, робот-пилосос, мухи над брудним лотком і зіпсованою стравою. Кличуть кожні
+// Петлі дому зі стану (§11.4а): плита, пральна, пилосос у руках, робот-пилосос, мухи над брудним лотком, зіпсованою стравою й «сюрпризом». Кличуть кожні
 // `SFX.loopMs`, тож записи петель і масив — спільні й перезаписуються, а не створюються щоразу; програвач їх не зберігає.
 
 import { NOISE, ROBOT } from "../../../sim/config";
@@ -45,8 +45,8 @@ export function homeLoops(state: GameState): readonly LoopCue[] {
 }
 
 /**
- * Мухи — одна петля над найближчим до персонажа брудним лотком чи зіпсованою стравою на кухні (§8.7): кілька однакових гудінь
- * злилися б у шум. Ставить місце й гучність у `flies`; ні того, ні того немає — false.
+ * Мухи — одна петля над найближчим до персонажа брудним лотком, зіпсованою стравою на кухні (§8.7) чи «сюрпризом» (§9.12):
+ * кілька однакових гудінь злилися б у шум. Ставить місце й гучність у `flies`; нічого з цього немає — false.
  */
 function placeFlies(state: GameState): boolean {
   const { x, y } = state.character.body;
@@ -67,6 +67,14 @@ function placeFlies(state: GameState): boolean {
     if (distance >= bestDistance) continue;
     bestDistance = distance;
     flies.at = p;
+    flies.gain = 1;
+  }
+  for (const mess of state.home.messes) {
+    if (mess.kind !== "surprise") continue;
+    const distance = (mess.x - x) ** 2 + (mess.y - y) ** 2;
+    if (distance >= bestDistance) continue;
+    bestDistance = distance;
+    flies.at = { x: mess.x, y: mess.y };
     flies.gain = 1;
   }
   return bestDistance < Infinity;

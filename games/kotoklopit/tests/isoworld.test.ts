@@ -34,7 +34,9 @@ import {
   itemFrame,
   kitLook,
   litterFrame,
+  MESS_SMELL_LIFT,
   messFrame,
+  messSmells,
   robotFrame,
   shapedState,
   showerState,
@@ -558,6 +560,18 @@ describe("кадри квартири й підлоги (iso/looks.ts)", () => {
     expect(basketState(2.5)).toBe("load-3");
     expect(basketState(0)).toBe("overflow");
     for (let clothes = -1; clothes <= 8; clothes += 0.5) expectFrame({ id: "env/laundry-basket", state: basketState(clothes) });
+  });
+
+  it("над «сюрпризом» — хвилі запаху, над рештою безладу — ні (§9.12)", () => {
+    const messes: MessKind[] = ["surprise", "vomit", "hairball", "litter", "broken", "fur", "mark", "pee", "puddle", "paper", "garbage"];
+    for (const kind of messes) expect(messSmells({ kind }), kind).toBe(kind === "surprise");
+    for (const state of ["a", "b"]) expectFrame({ id: "fx/smell", state });
+  });
+
+  it("хвилі запаху ростуть із купки «сюрпризу»: над підлогою, але не вище за її верх", () => {
+    const pile = artEntry("mess/surprise")!;
+    expect(MESS_SMELL_LIFT).toBeGreaterThan(0);
+    expect(MESS_SMELL_LIFT).toBeLessThan(pile.pivot.y);
   });
 });
 

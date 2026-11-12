@@ -546,6 +546,12 @@ export function messFrame(mess: Pick<Mess, "kind" | "carrier">): IsoFrame {
   return frame(mess.carrier ? `mess/carrier/${mess.carrier}` : `mess/${mess.kind}`);
 }
 
+/** «Сюрприз» смердить, доки його не прибрали (§9.12): над ним хвилі запаху. */
+export const messSmells = (mess: Pick<Mess, "kind">): boolean => mess.kind === "surprise";
+
+/** На скільки над підлогою починаються хвилі запаху «сюрпризу», одиниці арту: з верху купки (`mess/surprise`), а не з підлоги. */
+export const MESS_SMELL_LIFT = 16;
+
 // --- Пил і павутина (§8.7) ---------------------------------------------------------------------------
 
 /** Клубки пилу на відкритій підлозі (`mess/dust/floor`): три різні, по черзі за номером місця — сусідні різняться. */

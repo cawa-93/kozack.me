@@ -219,6 +219,35 @@ describe("петлі дому (§11.4а)", () => {
     expect(loops(state)).toEqual([]);
   });
 
+  it("мухи гудуть над «сюрпризом», доки його не прибрали; над іншим безладом — ні (§9.12)", () => {
+    const state = home();
+    expect(loops(state)).toEqual([]);
+    state.home.messes.push({ id: 91, kind: "vomit", x: 4.5, y: 8.5, cat: null });
+    expect(loops(state)).toEqual([]);
+    state.home.messes.push({ id: 92, kind: "surprise", x: 3.5, y: 8.5, cat: null });
+    const [flies] = group.loops?.(state) ?? [];
+    expect(flies?.sound).toBe("flies-loop");
+    expect(soundPoint(state, flies?.at)).toEqual({ x: 3.5, y: 8.5 });
+    expect(flies?.gain).toBe(1);
+    state.home.messes = state.home.messes.filter((m) => m.kind !== "surprise");
+    expect(loops(state)).toEqual([]);
+  });
+
+  it("мухи — над тим, що ближче до персонажа: «сюрпризом» чи брудним лотком", () => {
+    const state = home();
+    const box = state.home.items.find((i): i is LitterItem => i.kind === "litter")!;
+    box.uses = LITTER_CAPACITY.cheap;
+    state.home.messes.push({ id: 92, kind: "surprise", x: 3.5, y: 8.5, cat: null });
+    state.character.body.x = 8.5;
+    state.character.body.y = 4;
+    expect(soundPoint(state, (group.loops?.(state) ?? [])[0]?.at)).toEqual({ x: 8.5, y: 3.5 });
+    state.character.body.x = 4;
+    state.character.body.y = 8;
+    const loop = group.loops?.(state) ?? [];
+    expect(loop.map((l) => l.sound)).toEqual(["flies-loop"]);
+    expect(soundPoint(state, loop[0]?.at)).toEqual({ x: 3.5, y: 8.5 });
+  });
+
   it("кілька станів звучать разом, кожен своїм ключем", () => {
     const state = home();
     state.home.stove.item = { kind: "raw", quality: "cheap" };

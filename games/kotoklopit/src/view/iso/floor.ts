@@ -28,7 +28,7 @@ import { isoDepth, type IsoDepth, type IsoPointHandle, type IsoPointOptions } fr
 import { PlaceMark } from "./placemark";
 import { BASKET_AT, floorAnchorAt, SOFA_PEEK, stashPoint } from "./geometry";
 import { IsoHighlight } from "./highlight";
-import { basketState, carriedThingFrame, carrierLocked, carrierOccupied, carrierShakes, carrierSlot, dockFrame, dustFrame, feederFrame, fountainFrame, itemFrame, litterSmells, messFrame, placedFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
+import { basketState, carriedThingFrame, carrierLocked, carrierOccupied, carrierShakes, carrierSlot, dockFrame, dustFrame, feederFrame, fountainFrame, itemFrame, litterSmells, MESS_SMELL_LIFT, messFrame, messSmells, placedFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
 import { FLIGHT } from "./markslayout";
 import { PersonSwept } from "./swept";
 import { freshTuft, TUFT_APPEAR, tuftAppearLook, tuftRollFrom } from "./tuftappear";
@@ -52,9 +52,15 @@ const GHOST_HALF = 56;
 const FEEDER_BEHIND = 0.3;
 /** Бабл над безладом — на стільки над підлогою (як у старому вигляді: 12 px над плямою). */
 const MESS_HEIGHT = 6;
-/** Як часто хвилі запаху брудного лотка міняють кадр, мс, і на якій частці висоти лотка вони починаються. */
+/** Хвилі запаху (брудний лоток, «сюрприз»): кадри коливання, як часто вони міняються, мс, і на якій частці висоти лотка починаються. */
+const SMELL: readonly IsoFrame[] = [
+  { id: "fx/smell", state: "a" },
+  { id: "fx/smell", state: "b" },
+];
 const SMELL_MS = 450;
 const SMELL_LIFT = 0.8;
+/** Півширина малюнка хвиль запаху (`fx/smell`), одиниці арту. */
+const SMELL_HALF = 20;
 /** Пів сторони сліду речі на підлозі для каркаса підсвітки без WebGL, клітинки. */
 const OUTLINE_HALF = 0.4;
 /** Жмут шерсті на підлозі: бабла над ним немає, висота — для порядку; півширина малюнка `mess/fur-tuft`. */
@@ -128,6 +134,11 @@ export class IsoFloorView implements WorldPart {
    */
   private readonly items = new Map<number, Spot>();
   private readonly messes = new Map<number, Spot>();
+  /**
+   * Хвилі запаху над «сюрпризом» за id безладу (§9.12). Окрема точка глибини, а не накладка на пляму: пляма пласка й лежить
+   * під тими, хто стоїть за нею, а хвилі стоять над підлогою й мають закривати їх.
+   */
+  private readonly messSmells = new Map<number, Spot>();
   private readonly feeders = new Map<string, Spot>();
   private readonly trinkets = new Map<TrinketKind, Spot>();
   private readonly tufts = new Map<number, Spot>();
@@ -223,6 +234,8 @@ export class IsoFloorView implements WorldPart {
     const { home } = state;
     for (const spots of this.all()) for (const spot of spots) spot.seen = false;
 
+    const smell = SMELL[Math.floor(frame.time / SMELL_MS) % SMELL.length]!;
+
     // Речі котячого кутка (§9.12); іграшку в зубах малює кіт.
     const fountain = home.appliances.fountain;
     for (const item of home.items) {
@@ -239,10 +252,7 @@ export class IsoFloorView implements WorldPart {
       this.place(spot, look, shownAt(item), isoItemLook(item.kind, item.quality).height, item.kind === "toy" ? item.hidden : undefined);
       // Фонтанчик (§8.7) — на кожній мисці з водою; брудний лоток пахне (§9.12).
       if (item.kind === "water") this.extra(spot, "fountain", fountain ? fountainFrame(state, fountain, item) : null, ON.overlay);
-      if (item.kind === "litter") {
-        const smell: IsoFrame = { id: "fx/smell", state: Math.floor(frame.time / SMELL_MS) % 2 === 0 ? "a" : "b" };
-        this.extra(spot, "smell", litterSmells(item) ? smell : null, ON.fx, spot.height * SMELL_LIFT);
-      }
+      if (item.kind === "litter") this.extra(spot, "smell", litterSmells(item) ? smell : null, ON.fx, spot.height * SMELL_LIFT);
     }
 
     // Автогодівниці над мисками (§9.12): позаду миски на тій самій клітинці.
@@ -268,6 +278,14 @@ export class IsoFloorView implements WorldPart {
         this.messes.set(mess.id, spot);
       }
       this.place(spot, messFrame(mess), mess, MESS_HEIGHT);
+      if (!messSmells(mess)) continue;
+      let waves = this.messSmells.get(mess.id);
+      if (!waves) {
+        waves = this.spot(smell, { half: SMELL_HALF });
+        this.messSmells.set(mess.id, waves);
+      }
+      this.place(waves, smell, mess, MESS_HEIGHT);
+      waves.image.y -= MESS_SMELL_LIFT;
     }
 
     // Жмути шерсті (§8.7, рішення автора 2026-11-02): лежать на своїх місцях, доки їх не прибере пилосос чи робот, — прибирають
@@ -452,6 +470,7 @@ export class IsoFloorView implements WorldPart {
   private *all(): Generator<Iterable<Spot>> {
     yield this.items.values();
     yield this.messes.values();
+    yield this.messSmells.values();
     yield this.feeders.values();
     yield this.trinkets.values();
     yield this.tufts.values();
@@ -466,7 +485,7 @@ export class IsoFloorView implements WorldPart {
    */
   private forgetUnseen(time: number): void {
     const swept = this.swept;
-    for (const map of [this.items, this.messes, this.feeders, this.trinkets, this.singles] as Map<unknown, Spot>[]) {
+    for (const map of [this.items, this.messes, this.messSmells, this.feeders, this.trinkets, this.singles] as Map<unknown, Spot>[]) {
       for (const [key, spot] of map) {
         if (spot.seen) continue;
         map.delete(key);
@@ -590,6 +609,7 @@ export class IsoFloorView implements WorldPart {
     for (const spots of this.all()) for (const spot of spots) destroySpot(spot);
     this.items.clear();
     this.messes.clear();
+    this.messSmells.clear();
     this.feeders.clear();
     this.trinkets.clear();
     this.tufts.clear();
