@@ -34,6 +34,17 @@ export function zeroHealthCause(cat: Cat): FarewellCause {
 export function removeCat(state: GameState, cat: Cat, cause: FarewellCause, day: number, minute?: number): AlbumEntry {
   state.cats = state.cats.filter((c) => c.id !== cat.id);
   forgetRelations(state, cat);
+  // Перемир'я після бійки й паузи шипіння за ним іншим котам більше не потрібні, а в збереженні лишалися б назавжди.
+  for (const other of state.cats) {
+    if (other.truce) {
+      delete other.truce[cat.id];
+      if (Object.keys(other.truce).length === 0) delete other.truce;
+    }
+    if (other.snubAt) {
+      delete other.snubAt[cat.id];
+      if (Object.keys(other.snubAt).length === 0) delete other.snubAt;
+    }
+  }
   // Кіт міг сидіти в переносці (§8.7): без цього місце лишалося б зайнятим.
   if (state.home.caged) state.home.caged = state.home.caged.filter((id) => id !== cat.id);
   const held = state.character.held;
