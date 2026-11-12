@@ -81,14 +81,24 @@ export class Sounds {
     onEvent((event, state) => this.onGameEvent(event, state));
     this.engine.onRunning(() => {
       this.applyVolume(false);
-      const { fetch, warm } = startupFiles(GROUPS);
-      void this.player.preload(fetch).then(() => this.player.keep(warm));
+      if (this.scene) this.warmUp();
     });
   }
 
-  /** Сцена квартири: звідки слухати й чи звучить світ. */
+  /**
+   * Сцена квартири: звідки слухати й чи звучить світ. Звуки тягнуть, коли вона вже є: поки вантажиться атлас, дотик до заставки
+   * вмикає звук, але канал — атласу (§2.1).
+   */
   attach(scene: SoundScene): void {
+    const first = this.scene === null;
     this.scene = scene;
+    if (first && this.engine.context?.state === "running") this.warmUp();
+  }
+
+  /** Стягнути й декодувати звуки старту (`startupFiles`). */
+  private warmUp(): void {
+    const { fetch, warm } = startupFiles(GROUPS);
+    void this.player.preload(fetch).then(() => this.player.keep(warm));
   }
 
   get volume(): number {

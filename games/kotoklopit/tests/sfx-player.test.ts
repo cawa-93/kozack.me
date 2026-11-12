@@ -217,6 +217,25 @@ describe("звуки на старті: інтерфейс першим, муз�
     expect([...keys, "ui/credits"].sort()).toEqual(allSoundFiles().map((file) => file.key).sort());
   });
 
+  it("поки вантажиться гра (сцени дня ще немає), звуків не тягнуть, хоч звук уже ввімкнено дотиком: канал — атласу", async () => {
+    const fetch = vi.fn((_url: string) => bytes());
+    vi.stubGlobal("fetch", fetch);
+    const audio = fakeAudio();
+    let running: (() => void) | null = null;
+    (audio.engine as { onRunning(listener: () => void): void }).onRunning = (listener) => (running = listener);
+    const sounds = new Sounds(audio.engine, prefs());
+    sounds.start();
+    // Гравець торкнувся заставки: звук запустився.
+    running!();
+    await settle();
+    expect(fetch).not.toHaveBeenCalled();
+    // Атлас прийшов, день показано — тепер звуки.
+    const state = newGame({ address: "he", difficulty: "normal", seed: 2 }).current;
+    sounds.attach({ mode: () => "live", state: () => state });
+    await settle();
+    expect(fetch.mock.calls.map((call) => call[0])).toContain(plan.fetch[0]!.url);
+  });
+
   it("кінець гри декодується заздалегідь: звучить раз на гру, і запізнілий звук пропав би", () => {
     expect(plan.warm.map((file) => file.key)).toEqual(["ui/end"]);
   });
