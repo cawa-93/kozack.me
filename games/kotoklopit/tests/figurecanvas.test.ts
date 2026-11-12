@@ -451,8 +451,7 @@ function indexFrame(w: number, h: number, layers: readonly ArtLayer[] = CAT_LAYE
     size: { w, h },
     res: 1,
     pivot: { x: w / 2, y: h },
-    trim: { x: 0, y: 0 },
-    layers: Object.fromEntries(layers.map((layer, i) => [layer, { page: 0, x: spread ? (i * 7) % 24 : 0, y: spread ? (i * 5) % 24 : 0, w, h }])),
+    layers: Object.fromEntries(layers.map((layer, i) => [layer, { page: 0, x: spread ? (i * 7) % 24 : 0, y: spread ? (i * 5) % 24 : 0, w, h, dx: 0, dy: 0 }])),
   };
 }
 
