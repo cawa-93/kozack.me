@@ -943,13 +943,13 @@ export class DayScene extends Phaser.Scene {
       const anchor = this.world.anchor(storage.object);
       if (!anchor) continue;
       const lift = this.bubbles.hasState(storage.object) ? this.storage.look.bubbleLift : 0;
-      const lines = personBusy || this.bubbles.busy(storage.object) ? [] : storageIndicator(state, storage);
+      const lines = personBusy || this.bubbles.busy(storage.object) ? [] : storageIndicator(state, storage, target);
       const highest = projection.backWallTop(anchor.x) + 40;
       this.storage.set(storage.object, lines, anchor.x, Math.max(highest, anchor.y - lift));
     }
     // Ящики біля входу (§6.4): зблизька видно, що в них лежить.
     const boxes = this.world.anchor("boxes");
-    this.storage.set("boxes", boxes && !personBusy ? boxesIndicator(state) : [], boxes?.x ?? 0, boxes?.y ?? 0);
+    this.storage.set("boxes", boxes && !personBusy ? boxesIndicator(state, target) : [], boxes?.x ?? 0, boxes?.y ?? 0);
     // Сонливість — думка персонажа (поки лагодить дріт — вістрям на рамці смуги лагодження, `personBubbleAnchor`).
     const over = personBubbleAnchor(state, this.world.person.head, "think");
     const head = this.belowHud(over, "think") ?? over;

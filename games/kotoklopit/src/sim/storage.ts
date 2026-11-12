@@ -2,7 +2,7 @@
 
 import { FILL_STAGES, PRODUCTS, STORAGE_LIMITS } from "./config";
 import { boxCount, supplyCount } from "./economy";
-import { targetOf } from "./targets";
+import { targetOf, type Target } from "./targets";
 import type { GameState, Product } from "./types";
 
 export interface Storage {
@@ -36,29 +36,29 @@ export interface StorageLine {
 
 /**
  * Сховище в фокусі (§6.4): саме воно ціль дії персонажа, а персонаж не в поїздці й не всередині
- * (душова кабіна). Лише тоді видно весь вміст.
+ * (душова кабіна). Лише тоді видно весь вміст. `target` — ціль дії цього кадру: сцена рахує її раз для всіх сховищ.
  */
-export function isFocusedStorage(state: GameState, storage: Storage): boolean {
+export function isFocusedStorage(state: GameState, storage: Storage, target: Target | null = targetOf(state)): boolean {
   const activity = state.character.activity;
   if (state.trip !== null || (activity?.kind === "use" && activity.inside)) return false;
-  return targetOf(state)?.id === storage.object;
+  return target?.id === storage.object;
 }
 
 /**
  * Що зараз видно над сховищем (§6.4): лише в фокусі й лише запаси, які вже бували вдома, — з
  * кількістю й лімітом. Поза фокусом — нічого: скільки лишилося, видно з самого сховища.
  */
-export function storageIndicator(state: GameState, storage: Storage): StorageLine[] {
-  if (!isFocusedStorage(state, storage)) return [];
+export function storageIndicator(state: GameState, storage: Storage, target: Target | null = targetOf(state)): StorageLine[] {
+  if (!isFocusedStorage(state, storage, target)) return [];
   return storage.products
     .filter((product) => state.home.acquired.includes(product))
     .map((product) => ({ product, count: supplyCount(state, product), limit: STORAGE_LIMITS[product] }));
 }
 
-/** Ящики біля входу в фокусі (§6.4): що в них лежить, без ліміту — вони безлімітні. */
-export function boxesIndicator(state: GameState): StorageLine[] {
+/** Ящики біля входу в фокусі (§6.4): що в них лежить, без ліміту — вони безлімітні. `target` — як у `isFocusedStorage`. */
+export function boxesIndicator(state: GameState, target: Target | null = targetOf(state)): StorageLine[] {
   const activity = state.character.activity;
-  if (state.trip !== null || (activity?.kind === "use" && activity.inside) || targetOf(state)?.id !== "boxes") return [];
+  if (state.trip !== null || (activity?.kind === "use" && activity.inside) || target?.id !== "boxes") return [];
   return (Object.keys(state.home.boxes ?? {}) as Product[]).filter((p) => boxCount(state, p) > 0).map((product) => ({ product, count: boxCount(state, product) }));
 }
 
