@@ -7,7 +7,7 @@ import { createCat, idleAct } from "../src/sim/cat";
 import { ACCIDENT, CARRIER, CARRIER_MOOD, NEED_THRESHOLD, PET } from "../src/sim/config";
 import { nextTripCat, nextTripRider, tripCat, tripCatPlace } from "../src/sim/destinations";
 import { removeCat } from "../src/sim/farewell";
-import { goToSleep, interact, newGame } from "../src/sim/game";
+import { carryFoundling, goToSleep, interact, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { room } from "../src/sim/shop";
@@ -493,6 +493,21 @@ describe("смерть під замком (§8.7)", () => {
     expect(state.cats).not.toContain(who);
     expect(state.album.at(-1)).toMatchObject({ id: who.id, cause: { kind: "carrier" } });
     expect(state.home.caged).toEqual([]);
+    expect(state.character.stats.sanity).toBeLessThan(sanity);
+  });
+
+  it("кіт не дочекався, поки персонаж відносив знайду (§4.1), — утрата одразу, як і вдома", () => {
+    const save = game("premium");
+    const state = save.current;
+    const who = cat(save);
+    seat(state, who);
+    who.health = 1;
+    who.needs.hunger = CARRIER.vitalNeed;
+    state.minute = hours(12);
+    const sanity = state.character.stats.sanity;
+    carryFoundling(save);
+    expect(state.cats).not.toContain(who);
+    expect(state.album.at(-1)).toMatchObject({ id: who.id, cause: { kind: "carrier" } });
     expect(state.character.stats.sanity).toBeLessThan(sanity);
   });
 

@@ -149,8 +149,8 @@ function breakCarrier(state: GameState, cat: Cat, index: number, rng: Rng): void
   if (quality) rememberBroken(state, cat, "carrier", quality);
 }
 
-/** Хвилини кота під замком (§8.7). `present` — персонаж удома не спить: смерть уночі рахує ранок. */
-export function tickCaged(state: GameState, cat: Cat, minutes: number, rng: Rng, present: boolean): void {
+/** Хвилини кота під замком (§8.7). `lossNow` — не ніч: смерть забирає глузд одразу; уночі — рахує ранок. */
+export function tickCaged(state: GameState, cat: Cat, minutes: number, rng: Rng, lossNow: boolean): void {
   const cage = cat.cage;
   if (!cage) return;
   const hours = minutes / MINUTES_PER_HOUR;
@@ -176,7 +176,7 @@ export function tickCaged(state: GameState, cat: Cat, minutes: number, rng: Rng,
   }
   if (VITAL.some((need) => cat.needs[need] >= CARRIER.vitalNeed)) {
     changeHealth(state, cat, -CARRIER.healthPerHour * hours, "переноска");
-    if (cat.health <= 0) return dieCaged(state, cat, present);
+    if (cat.health <= 0) return dieCaged(state, cat, lossNow);
   }
   if (stage !== "chew") return;
   const carrier = state.home.carriers[index];
@@ -185,10 +185,13 @@ export function tickCaged(state: GameState, cat: Cat, minutes: number, rng: Rng,
   if (carrier.wear >= CARRIER.strength[carrier.quality]) breakCarrier(state, cat, index, rng);
 }
 
-/** Кіт не дочекався (§8.7): помирає одразу; уночі втрату рахує ранок, як і будь-яку іншу. */
-function dieCaged(state: GameState, cat: Cat, present: boolean): void {
+/**
+ * Кіт не дочекався (§8.7): помирає одразу й одразу забирає глузд — і коли персонаж поза домом (відносить знайду); уночі
+ * (`lossNow` хибне) втрату рахує ранок, як і будь-яку іншу.
+ */
+function dieCaged(state: GameState, cat: Cat, lossNow: boolean): void {
   removeCat(state, cat, { kind: "carrier" }, state.day, state.minute);
-  if (present) applyMorningSanity(state, 1, 0);
+  if (lossNow) applyMorningSanity(state, 1, 0);
 }
 
 /**

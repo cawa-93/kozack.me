@@ -150,6 +150,8 @@ export { enoughFor, isDirty, itemsOf };
 /** Хто є поруч із котами: персонаж удома й не спить — до нього можна піти по увагу. */
 export interface CatContext {
   present: boolean;
+  /** Персонаж спить (§8.8): утрату за ніч рахує ранок. Без поля — день. */
+  night?: true;
   /** Скільки ігрових хвилин триває хвилина тіла (§8); без поля — одна: уночі темп один. */
   pace?: number;
 }
@@ -3274,7 +3276,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   recordMood(cat, minutes);
   if (cat.away !== null) {
     if (cat.away === "stairs" && state.minute >= ESCAPE.returnMinute) returnFromStairs(state, cat);
-    if (cat.away === "carrier") tickCaged(state, cat, minutes, rng, context.present);
+    if (cat.away === "carrier") tickCaged(state, cat, minutes, rng, context.night !== true);
     return;
   }
   if (isCarried(state, cat)) return carried(state, cat, minutes, rng);
