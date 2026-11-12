@@ -17,6 +17,7 @@ import { adopt, buyFromBreeder, enterShow, groom, nextTripCat, officeMeeting, ve
 import { canLeave, startTrip } from "../sim/trips";
 import { advertise, cancelAd, recentlyArrived } from "../sim/farewell";
 import { exportSave, exportUnreadable, importSave } from "../ui/files";
+import { saveFailedCard } from "../ui/savewarning";
 import { accidentCard, destinationCard, visitCard } from "../ui/trips";
 import { objectById } from "../sim/home";
 import { canGoToSleep, collapseMinute, isDrowsy } from "../sim/sleep";
@@ -722,6 +723,7 @@ export class DayScene extends Phaser.Scene {
     const next = this.overlay.isOpen ? undefined : this.queued.shift();
     if (next) this.overlay.show(next);
     else this.introduceCat();
+    this.warnUnsaved();
     if (this.updateTrip(delta)) {
       this.tickClock(0, false);
       this.render(time, 0);
@@ -1278,6 +1280,16 @@ export class DayScene extends Phaser.Scene {
       // Гра ще не почалася: квартиру й панель заглушки нової гри за карткою не видно, як і в картках вибору персонажа.
       solid: true,
     });
+  }
+
+  /**
+   * Гра не зберігається в браузері (§4.2): раз за запуск — картка, коли жодної іншої не відкрито. Не з черги карток одразу
+   * після невдалого запису: чергу скидає `restart`, а запис буває й до сцени, і в мить заміни гри.
+   */
+  private warnUnsaved(): void {
+    if (this.overlay.isOpen || !this.session.takeSaveWarning()) return;
+    const close = (): void => this.overlay.close();
+    this.queueCard(saveFailedCard(() => exportSave(this.session.save), close));
   }
 
   /**
