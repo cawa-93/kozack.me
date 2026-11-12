@@ -352,20 +352,27 @@ export class IsoFloorView implements WorldPart {
   private drawCarriers(state: GameState, time: number): void {
     // Переноски в руках (§8.7, «Сховища й переноски») — у квартирі їх немає.
     if (!thingPresent(state, "carrier")) return;
-    const shown = state.home.carriers.slice(0, CARRIER.shown);
+    const carriers = state.home.carriers;
+    const count = Math.min(carriers.length, CARRIER.shown);
     const at = thingPoint(state, "carrier", CARRIER_SPOT);
-    shown.forEach((carrier, index) => {
+    const s = ISO.toScreen(at);
+    const look = isoItemLook("carrier");
+    for (let index = 0; index < count; index++) {
+      const carrier = carriers[index]!;
       const id = index === 0 ? "carrier" : `carrier-${index}`;
-      const look = isoItemLook("carrier");
       const locked = carrierLocked(state, index);
-      const spot = this.single(id, { id: `item/carrier/${carrier.quality}`, state: locked ? "closed" : "body" }, at, look.height, { id, half: look.half });
+      // Точку реєстру — одразу кінцеву (купа — з кроком порядку): поставлена двічі за кадр, вона щокадру змушувала б реєстр
+      // глибини рахувати заново.
+      const order = { x: at.x + index * CARRIER_ORDER, y: at.y + index * CARRIER_ORDER };
+      const spot = this.single(id, { id: `item/carrier/${carrier.quality}`, state: locked ? "closed" : "body" }, at, look.height, { id, half: look.half }, undefined, order);
       this.extra(spot, "grate", !locked && index === 0 && carrierOccupied(state) ? { id: `item/carrier/${carrier.quality}`, state: "grate" } : null, ON.grate);
-      spot.point.place(at.x + index * CARRIER_ORDER, at.y + index * CARRIER_ORDER);
-      const slot = carrierSlot(shown.length, index);
+      const slot = carrierSlot(count, index);
       const shake = carrierShakes(state, index) ? Math.sin(time / CARRIER_SHAKE.ms) * CARRIER_SHAKE.px : 0;
-      const s = ISO.toScreen(at);
-      for (const image of [spot.image, ...[...spot.extras.values()].map((e) => e.image)]) image.setPosition(s.x + slot.x + shake, s.y + slot.y);
-    });
+      const x = s.x + slot.x + shake;
+      const y = s.y + slot.y;
+      spot.image.setPosition(x, y);
+      for (const extra of spot.extras.values()) extra.image.setPosition(x, y);
+    }
   }
 
   /** Поки річ у руках, видно, де вона стане (§8.7): напівпрозора річ і контур клітинки. Поставити нікуди — нічого не видно. */
@@ -422,13 +429,13 @@ export class IsoFloorView implements WorldPart {
     this.singles.get(name)?.image.setVisible(false);
   }
 
-  private single(name: string, frame: IsoFrame, at: Vec, height: number, options: IsoPointOptions, under?: string): Spot {
+  private single(name: string, frame: IsoFrame, at: Vec, height: number, options: IsoPointOptions, under?: string, order?: Vec): Spot {
     let spot = this.singles.get(name);
     if (!spot) {
       spot = this.spot(frame, options);
       this.singles.set(name, spot);
     }
-    this.place(spot, frame, at, height, under);
+    this.place(spot, frame, at, height, under, order);
     return spot;
   }
 
