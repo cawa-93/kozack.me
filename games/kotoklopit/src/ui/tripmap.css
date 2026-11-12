@@ -156,20 +156,12 @@
   text-overflow: ellipsis;
 }
 
-.tripmap-time,
-.tripmap-why {
+.tripmap-time {
   overflow: hidden;
   color: var(--ink-soft);
   font: 400 calc(var(--time) * 1cqw) / 1.2 system-ui, sans-serif;
   white-space: nowrap;
   text-overflow: ellipsis;
-}
-
-/* Причина, чому туди не можна, — дрібно під назвою; довга переноситься. */
-.tripmap-why {
-  font-size: calc((var(--time) - 0.25) * 1cqw);
-  line-height: 1.15;
-  white-space: normal;
 }
 
 .tripmap-time .glyph {

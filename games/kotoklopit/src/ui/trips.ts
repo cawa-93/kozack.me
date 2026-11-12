@@ -45,14 +45,10 @@ function stockNote(note: string): HTMLElement {
 }
 
 /**
- * Чому туди не можна. «no-cat» і «newborn» бувають лише з котом на руках, і тоді — в усіх рядках, тож їх кажуть один раз над
- * списком (рецензія реалізації А15, 2026-10-29: у рядку «no-cat» стояв текст «Спершу опустіть кота.», якого ніхто не бачив).
+ * Чому нікуди не можна: з новонародженим на руках — в усі пункти одразу, тож причину кажуть один раз над мапою. Офісу й
+ * виставки поза їхнім днем на мапі немає зовсім (`shownDestinations`), тож своїх причин вони не мають.
  */
-const BLOCKERS = {
-  newborn: "Новонароджене — лише біля мами.",
-  office: "Їхати в офіс треба лише в день зборів.",
-  show: "Виставка — лише в її день.",
-} as const;
+const NEWBORN_BLOCKER = "Новонароджене — лише біля мами.";
 
 /** Де кіт на місці (§8.5): у переносці чи на руках. */
 function whereCat(state: GameState, cat: Cat): string {
@@ -103,10 +99,10 @@ function shownDestinations(state: GameState): { destination: Destination; blocke
 
 /**
  * Шпилька пункту на мапі — кнопка: голівка з іконкою пункту (та сама, що на табличці на даху будівлі, §11.4 «Іконка біля назви»),
- * назва й час дороги та на місці, а коли туди не можна — причина замість часу. Причину «для всіх» (`everywhere`) кажуть один раз
- * над мапою, тож тут — час, як і в доступних.
+ * назва й час дороги та на місці. Коли туди не можна (`blocked`), причину кажуть один раз над мапою, тож тут — час, як і в
+ * доступних.
  */
-function mapPin(state: GameState, destination: Destination, pin: MapPin, blocker: keyof typeof BLOCKERS | null, everywhere: boolean): HTMLButtonElement {
+function mapPin(state: GameState, destination: Destination, pin: MapPin, blocked: boolean): HTMLButtonElement {
   const button = element("button", `tripmap-pin ${pin.side}`);
   button.type = "button";
   // Шпилька стоїть краєм з боку голівки: ширина таблички не зсуває голівку з кінця дороги (`tripmap.ts`).
@@ -118,13 +114,11 @@ function mapPin(state: GameState, destination: Destination, pin: MapPin, blocker
   if (icon) head.append(icon);
   const label = element("span", "tripmap-label");
   label.append(element("span", "tripmap-name", DESTINATION_TITLES[destination]));
-  if (blocker === null || everywhere) {
-    // Гліф 🕐 — рядковий блок (`glyphs.ts`): час — кожен своїм рядком, а не через « · », щоб шпилька лишалася вузькою.
-    label.append(element("span", "tripmap-time", `🚗 ~${minutesText(roadMinutes(state, destination))}`));
-    label.append(element("span", "tripmap-time", `🕐 ~${minutesText(TRIPS[destination].visit)}`));
-  } else label.append(element("span", "tripmap-why", BLOCKERS[blocker]));
+  // Гліф 🕐 — рядковий блок (`glyphs.ts`): час — кожен своїм рядком, а не через « · », щоб шпилька лишалася вузькою.
+  label.append(element("span", "tripmap-time", `🚗 ~${minutesText(roadMinutes(state, destination))}`));
+  label.append(element("span", "tripmap-time", `🕐 ~${minutesText(TRIPS[destination].visit)}`));
   button.append(head, label);
-  button.disabled = blocker !== null;
+  button.disabled = blocked;
   return button;
 }
 
@@ -135,8 +129,7 @@ function mapPin(state: GameState, destination: Destination, pin: MapPin, blocker
  */
 export function destinationCard(state: GameState, onPick: (d: Destination) => void, onCancel: () => void): Card {
   // Причину, через яку не можна їхати нікуди, кажуть один раз, а не біля кожної шпильки.
-  const held = state.character.held?.kind === "cat" ? tripBlocker(state, "shop") : null;
-  const everywhere = held === "newborn" ? held : null;
+  const newborn = state.character.held?.kind === "cat" && tripBlocker(state, "shop") === "newborn";
   const layout = tripMapLayout(Object.fromEntries((Object.keys(TRIPS) as Destination[]).map((d) => [d, roadMinutes(state, d)])) as Record<Destination, number>);
   const { pin, home } = TRIP_MAP;
   const map = element("div", "tripmap");
@@ -153,7 +146,7 @@ export function destinationCard(state: GameState, onPick: (d: Destination) => vo
   house.setAttribute("aria-hidden", "true");
   house.setAttribute("style", `left:${cqw(home.x - home.size / 2)};top:${cqw(home.y - home.size / 2)}`);
   const pins = shown.map(({ destination, blocker }) => {
-    const button = mapPin(state, destination, layout[destination], blocker, everywhere !== null && blocker === everywhere);
+    const button = mapPin(state, destination, layout[destination], blocker !== null);
     button.addEventListener("click", () => onPick(destination));
     return button;
   });
@@ -161,7 +154,7 @@ export function destinationCard(state: GameState, onPick: (d: Destination) => vo
   return {
     title: "Куди поїхати?",
     aside: [...dayEvent(state, roadFactor(state) !== 1), purse(state)],
-    body: [...(everywhere !== null ? [BLOCKERS[everywhere]] : []), map],
+    body: [...(newborn ? [NEWBORN_BLOCKER] : []), map],
     actions: [],
     onDismiss: onCancel,
     closable: true,
@@ -275,7 +268,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers, sto
         break;
       }
       body.push(
-        `${cat.name}: здоров'я — ${describe(log.exam.health, ["відмінне", "добре", "так собі", "погане"])}, настрій — ${describe(log.exam.mood, ["чудовий", "добрий", "кепський", "жахливий"])}, вага — ${log.exam.weight >= WEIGHT.visible ? "зайва" : "у нормі"}.`,
+        `${cat.name}: здоров'я — ${describe(log.exam.health, ["міцне", "добре", "так собі", "погане"])}, настрій — ${describe(log.exam.mood, ["чудовий", "добрий", "кепський", "жахливий"])}, вага — ${log.exam.weight >= WEIGHT.visible ? "зайва" : "у нормі"}.`,
       );
       // Як кіт поводився на огляді (§9.12): спокійний, шипів чи вирвався.
       if (log.exam.manner) body.push(fill(VET_MANNER.vet[log.exam.manner], cat.sex, { кіт: cat.name }));
