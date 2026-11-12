@@ -1,15 +1,16 @@
-// Сторінки атласу для DOM (крок 16, GRAPHICS_PLAN.md: «Тонування й запікання»): `index.json` і ті сторінки, на яких лежать
-// потрібні кадри, — без Phaser, для портрета в редакторі (`composePortrait`). У грі їх віддає завантажувач Phaser
-// (`shareArtAtlas` з `atlasload.ts`, коли PreloadScene склала атлас): портрет бере ті самі зображення, без другого раунду
-// запитів і без другої розпакованої копії сторінок у пам'яті (≈ 16 МБ на сторінку 2048²). Власне завантаження — запасне:
-// для галереї, тестів і гри, де атлас Phaser не склався. Адреси й перевірка `index.json` — спільні (`atlasindex.ts`).
+// Сторінки атласу для Canvas2D (крок 16, GRAPHICS_PLAN.md: «Тонування й запікання»): `index.json` і ті сторінки, на яких
+// лежать потрібні кадри, — без Phaser, для компонувальника: запікання кадрів у грі (`bake.ts`) і портрет у редакторі
+// (`composePortrait`). У грі їх віддає завантажувач Phaser (`shareArtAtlas` з `atlasload.ts`, коли PreloadScene склала атлас)
+// — усі, і ті сторінки компонувальника, яких у текстурі Phaser немає: без другого раунду запитів і без другої розпакованої
+// копії сторінок у пам'яті (≈ 16 МБ на сторінку 2048²). Власне завантаження — запасне: для тестів і гри, де атлас Phaser не
+// склався. Адреси й перевірка `index.json` — спільні (`atlasindex.ts`).
 //
 // Поза браузером (тести в Node) нічого не вантажиться: атласу «немає», і портрет малює запасний малюнок. Під час імпорту
 // модуль нічого не робить — лише коли попросять.
 
 import { artIndexUrl, artPageUrl, parseArtIndex } from "./atlasindex";
 import type { LayerImage, LayerSource } from "./compose";
-import type { ArtIndex, ArtLayer, FrameId, IndexFrame } from "./types";
+import type { ArtIndex, ArtLayer, FrameBox, FrameId, IndexFrame } from "./types";
 
 /** Базова адреса гри (`BASE_URL` збірки: у грі на сайті — `/games/kotoklopit/`); адреси атласу — `atlasindex.ts`. */
 const base = (): string => import.meta.env.BASE_URL;
@@ -133,11 +134,13 @@ async function loadImage(url: string): Promise<CanvasImageSource | null> {
   }
 }
 
-/** Шари кадру для компонувальника: джерело, розмір полотна кадру в пікселях і сам кадр з `index.json`. */
+/** Шари кадру для компонувальника: джерело, розмір полотна кадру в пікселях, рамка вмісту в ньому й сам кадр з `index.json`. */
 export interface FrameLayers {
   source: LayerSource;
   w: number;
   h: number;
+  /** Рамка вмісту (`IndexFrame.box`); без неї в індексі — усе полотно. */
+  box: FrameBox;
   frame: IndexFrame;
 }
 
@@ -155,7 +158,9 @@ export function artLayerSource(frame: FrameId): FrameLayers | null {
     if (!rect || !image) return null;
     return { image, sx: rect.x, sy: rect.y, sw: rect.w, sh: rect.h, dx: rect.dx, dy: rect.dy };
   };
-  return { source, w: Math.round(entry.size.w * entry.res), h: Math.round(entry.size.h * entry.res), frame: entry };
+  const w = Math.round(entry.size.w * entry.res);
+  const h = Math.round(entry.size.h * entry.res);
+  return { source, w, h, box: entry.box ?? { x: 0, y: 0, w, h }, frame: entry };
 }
 
 /** Забути завантажене (тести, гаряча перезбірка атласу в dev). */

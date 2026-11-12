@@ -14,19 +14,24 @@
 // - Бюджет запікань на кадр гри (`BAKES_PER_FRAME`, `bakesThisFrame`, `isBakedArt`): скелет, якому бракує кадрів понад
 //   нього, ще кадр-другий показує попередню позу (`rigsprite.ts`); інший ракурс запікається наперед у вільний час
 //   (`prebakeArt`), тож поворот кота зазвичай нічого не запікає.
+// - Текстура запеченого кадру — лише рамка вмісту кадру (`bakeframe.ts`), а не все полотно: розміщення (`bakedPlacement`,
+//   `bakedOrigin`, `bakedCrop`) рахує від початку рамки.
+// - Шари — зі сторінок атласу (`sources.ts`), а не з кадрів текстури Phaser: сторінок компонувальника в ній немає.
 // - Шарів кадру в атласі немає (конвеєра чи SVG ще немає) — запікається заглушка з синтетичними шарами (`stubLayers`):
 //   маджентова штриховка поверх кольорів і візерунків рецепта.
 
 import Phaser from "phaser";
 
-import { hasArtFrame, type ArtParent } from "./atlas";
+import type { ArtParent } from "./atlas";
+import { bakeLayers } from "./bakeframe";
 import { BakeCache, BAKE_BUDGET, BAKE_MS_GUESS, frameLeft, idleFits, nextBakeMs, SHARED_OWNER, type BakeStats } from "./bakecache";
 import { clothFrame, clothIds, type ClothLayers } from "./cloth";
-import { composeFrame, createCtx, stubLayers, type LayerImage, type LayerSource } from "./compose";
+import { composeFrame, createCtx, stubLayers, type LayerSource } from "./compose";
 import { artEntry, DEFAULT_RES } from "./manifest";
 import { partExtraFrame } from "../wardrobe/index";
-import { artGeometry, artPlacement, frameNameFor, type ArtFallback, type ArtGeometry, type ArtPlacement } from "./placement";
-import { ART_TEXTURE, framesOf, layerFrameName, type ArtEntry, type ArtId, type ArtLayer, type ArtSize, type ArtView, type FrameId, type TintRecipe } from "./types";
+import { artGeometry, boxCrop, boxOrigin, boxPlacement, frameNameFor, type ArtFallback, type ArtGeometry, type ArtPlacement } from "./placement";
+import { artLayerSource } from "./sources";
+import { framesOf, type ArtEntry, type ArtId, type ArtPoint, type ArtSize, type ArtView, type FrameBox, type FrameId, type TintRecipe } from "./types";
 
 export { BAKE_BUDGET, BAKES_PER_FRAME, mayBakeNow, SHARED_OWNER, type BakeBudget, type BakeStats } from "./bakecache";
 
@@ -47,11 +52,20 @@ export interface BakedArtOptions extends BakeOptions {
   view?: ArtView | null | undefined;
 }
 
-/** Запечений кадр: текстура, розмір її полотна, розмір і pivot кадру й чи це заглушка. */
+/**
+ * Запечений кадр: текстура, розмір її полотна, розмір і pivot кадру й чи це заглушка. Текстура — рамка вмісту `box` полотна
+ * кадру `canvas`, тож пікселі текстури — не пікселі кадру: місце, масштаб і обтинання — `bakedPlacement`, `bakedOrigin`,
+ * `bakedCrop`.
+ */
 export interface BakedFrame {
   key: string;
+  /** Розмір текстури, пікселі: розмір рамки. */
   px: ArtSize;
+  /** Розмір і pivot усього кадру, одиниці арту. */
   geometry: ArtGeometry;
+  /** Усе полотно кадру, пікселі, і рамка вмісту в ньому, яка стала текстурою (у заглушки — усе полотно). */
+  canvas: ArtSize;
+  box: FrameBox;
   stub: boolean;
 }
 
@@ -62,7 +76,19 @@ export function bakedFrame(scene: Phaser.Scene, key: string): BakedFrame | undef
 
 /** Як поставити запечений кадр: origin у pivot, масштаб — щоб 1 одиниця арту була 1 px світу (як `addArt`). */
 export function bakedPlacement(baked: BakedFrame): ArtPlacement {
-  return artPlacement(baked.geometry, baked.px);
+  return boxPlacement(baked.geometry, baked.canvas, baked.box);
+}
+
+/** Origin зображення запеченого кадру, щоб у точці зображення стояла точка кадру `point` (одиниці арту), а не pivot. */
+export function bakedOrigin(baked: BakedFrame, point: ArtPoint): ArtPoint {
+  return boxOrigin(baked.geometry, baked.canvas, baked.box, point);
+}
+
+/** Прямокутник кадру `rect` (одиниці арту) у пікселях текстури запеченого кадру — для `Image.setCrop`. */
+export function bakedCrop(baked: BakedFrame, rect: FrameBox): FrameBox {
+  const kx = baked.canvas.w / baked.geometry.size.w;
+  const ky = baked.canvas.h / baked.geometry.size.h;
+  return boxCrop(baked.box, { x: rect.x * kx, y: rect.y * ky, w: rect.w * kx, h: rect.h * ky });
 }
 
 /**
@@ -264,22 +290,28 @@ function drainQueue(baker: Baker, more: (baked: number) => boolean): void {
 /** Запекти кадр: шари з атласу, а якщо їх немає — синтетичні шари заглушки. */
 function make(scene: Phaser.Scene, frame: FrameId, recipe: TintRecipe, key: string, fallback: ArtFallback | undefined): BakedFrame {
   const found = resolveFrame(frame);
-  const atlas = atlasLayers(scene, frame, recipe);
-  let px: ArtSize;
+  const atlas = bakeLayers(frame, partExtraFrame(frame) as FrameId | null, recipe);
+  let canvasPx: ArtSize;
+  let box: FrameBox;
   let geometry: ArtGeometry;
   let layers: LayerSource;
   let stub = false;
   if (atlas) {
-    px = atlas.px;
-    geometry = artGeometry(found?.entry, fallback, { px, res: found?.entry.res ?? DEFAULT_RES });
+    canvasPx = atlas.canvas;
+    box = atlas.box;
+    geometry = artGeometry(found?.entry, fallback, { px: canvasPx, res: found?.entry.res ?? DEFAULT_RES });
     layers = atlas.source;
   } else {
     geometry = artGeometry(found?.entry, fallback, null);
-    const synthetic = stubLayers(found?.id ?? frame, geometry);
-    px = synthetic ? { w: synthetic.w, h: synthetic.h } : { w: 1, h: 1 };
+    // Продакшн без атласу гри не показує («Гра не завантажилася»), тож малювання заглушок у його збірку не йде: кадр, якого
+    // чомусь немає, там порожній.
+    const synthetic = __DEV_TOOLS__ ? stubLayers(found?.id ?? frame, geometry) : null;
+    canvasPx = synthetic ? { w: synthetic.w, h: synthetic.h } : { w: 1, h: 1 };
+    box = { x: 0, y: 0, w: canvasPx.w, h: canvasPx.h };
     layers = synthetic?.source ?? (() => null);
     stub = true;
   }
+  const px = { w: box.w, h: box.h };
   dropTexture(scene.textures, key);
   // Спершу скласти кадр на полотні, а вже готове віддати текстурі: `createCanvas` і `refresh` завантажували його у
   // відеопам'ять двічі — порожнє полотно й готове. Текстура — звичайна, з полотна, а не `CanvasTexture`: та одразу читає
@@ -294,12 +326,12 @@ function make(scene: Phaser.Scene, frame: FrameId, recipe: TintRecipe, key: stri
     // Візерунок тканини запікається разом із кадром: щокадру його ніхто не малює.
     const cloth =
       clothIds(recipe).length > 0
-        ? clothFrame({ k: px.w / geometry.size.w, pivot: geometry.pivot, points: found?.entry.points, view: frameView(frame, found?.entry) }, (id) => atlasCloth(scene, id), createCtx)
+        ? clothFrame({ k: canvasPx.w / geometry.size.w, pivot: geometry.pivot, points: found?.entry.points, view: frameView(frame, found?.entry) }, atlasCloth, createCtx)
         : undefined;
-    composeFrame(context, layers, recipe, { w: px.w, h: px.h, cloth });
+    composeFrame(context, layers, recipe, { w: px.w, h: px.h, x: box.x, y: box.y, cloth });
     scene.textures.create(key, canvas)?.add("__BASE", 0, 0, 0, px.w, px.h);
   }
-  return { key, px, geometry, stub };
+  return { key, px, geometry, canvas: canvasPx, box, stub };
 }
 
 /**
@@ -321,50 +353,12 @@ function frameView(frame: FrameId, entry: ArtEntry | undefined): ArtView | null 
   return (entry && framesOf(entry).find((f) => f.frame === frame)?.view) ?? null;
 }
 
-/** Шар кадру атласу: прямокутник на сторінці зі зсувом обрізки й повне полотно кадру; немає чи заглушка — null. */
-function atlasLayer(scene: Phaser.Scene, name: string): { image: LayerImage; px: ArtSize } | null {
-  if (!hasArtFrame(scene, name)) return null;
-  const f = scene.textures.getFrame(ART_TEXTURE, name);
-  const image = f.source.image as CanvasImageSource | null;
-  if (!image || (f.customData as { stub?: unknown }).stub === true) return null;
-  // Обрізка: кадр лежить на полотні кадру зі зсувом (`setTrim` → `x`, `y`).
-  return { image: { image, sx: f.cutX, sy: f.cutY, sw: f.cutWidth, sh: f.cutHeight, dx: f.x, dy: f.y }, px: { w: Math.round(f.realWidth), h: Math.round(f.realHeight) } };
-}
-
-/** Шари кадру тканини (`cloth/*`) з атласу для візерунка; немає — null. */
-function atlasCloth(scene: Phaser.Scene, id: ArtId): ClothLayers | null {
+/** Шари кадру тканини (`cloth/*`) зі сторінок атласу для візерунка; немає — null. */
+function atlasCloth(id: ArtId): ClothLayers | null {
   const entry = artEntry(id);
-  if (!entry?.layers) return null;
-  const found = new Map<ArtLayer, LayerImage>();
-  let px: ArtSize | null = null;
-  for (const layer of entry.layers) {
-    const got = atlasLayer(scene, layerFrameName(id, layer));
-    if (!got) continue;
-    px ??= got.px;
-    found.set(layer, got.image);
-  }
-  if (!px) return null;
-  return { source: (layer) => found.get(layer) ?? null, w: px.w, h: px.h, size: entry.size, pivot: entry.pivot };
-}
-
-/**
- * Шари кадру з атласу (`ART_TEXTURE`, кадри `<кадр>#<шар>` з обрізкою, див. `atlas.ts`): кожен крок рецепта — свій кадр
- * текстури; накладки `extra-*` — з кадру накладок частини (`partExtraFrame`: те саме полотно, інший запис). Жодного шару
- * немає — null (заглушка). Кадр, позначений конвеєром як заглушка (`customData.stub`), — теж.
- */
-function atlasLayers(scene: Phaser.Scene, frame: FrameId, recipe: TintRecipe): { source: LayerSource; px: ArtSize } | null {
-  const found = new Map<ArtLayer, LayerImage>();
-  const extras = partExtraFrame(frame) as FrameId | null;
-  let px: ArtSize | null = null;
-  for (const { layer } of recipe.steps) {
-    if (found.has(layer)) continue;
-    const got = atlasLayer(scene, layerFrameName(layer.startsWith("extra-") && extras ? extras : frame, layer));
-    if (!got) continue;
-    px ??= got.px;
-    found.set(layer, got.image);
-  }
-  if (!px || found.size === 0) return null;
-  return { source: (layer) => found.get(layer) ?? null, px };
+  const layers = entry?.layers ? artLayerSource(id) : null;
+  if (!entry || !layers) return null;
+  return { source: layers.source, w: layers.w, h: layers.h, size: entry.size, pivot: entry.pivot };
 }
 
 /** Запис маніфесту для кадру: id запису — кадр без стану й ракурсу (кадри всіх записів різні, тож збіг один). */

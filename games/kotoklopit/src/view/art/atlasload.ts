@@ -1,7 +1,9 @@
 // Завантаження атласу арту в Phaser (крок 16, GRAPHICS_PLAN.md: «Шов хвилі 1», контракт кадрів у `atlas.ts`): `index.json`
-// → сторінки → одна текстура `ART_TEXTURE`, у якій кожна сторінка — джерело з тим самим номером, а кожен шар кожного кадру —
-// кадр `layerFrameName(frameId, шар)` з обрізкою до полотна `size · res`. Так атлас вантажать галерея (`src/dev/gallery`) і
-// PreloadScene гри — однаково, одним кодом (DOM-портрет бере ті самі зображення через `sources.ts`, `shareArtAtlas`).
+// → сторінки → одна текстура `ART_TEXTURE`, у якій сторінка — джерело з тим самим номером, а кожен шар кожного кадру на ній —
+// кадр `layerFrameName(frameId, шар)` з обрізкою до полотна `size · res`. Сторінки компонувальника (`AtlasPage.compose`)
+// вантажаться й розпаковуються разом з усіма, але джерелами текстури не стають і у відеопам'ять не йдуть: їхні шари читає
+// лише Canvas2D — запікання (`bake.ts`) і DOM-портрет — через `sources.ts` (`shareArtAtlas`). Так атлас вантажать галерея
+// (`src/dev/gallery`) і PreloadScene гри — однаково, одним кодом.
 //
 // Кликати з `create()` сцени, а не з `preload()`: завантажувач іде двома проходами (спершу `index.json`, потім сторінки,
 // яких до нього не знати), і кожен запускає сам (`load.start()`), тож він не чекає кадрів гри — і скрипт знімків, у якого
@@ -10,7 +12,7 @@
 
 import Phaser from "phaser";
 
-import { artIndexUrl, artPageUrl, parseArtIndex } from "./atlasindex";
+import { artIndexUrl, artPageUrl, parseArtIndex, phaserPages } from "./atlasindex";
 import { afterDecode, AtlasLoadProgress } from "./loadprogress";
 import { shareArtAtlas } from "./sources";
 import { ART_TEXTURE, layerFrameName, type ArtIndex, type FrameId, type FrameLayer } from "./types";
@@ -22,6 +24,14 @@ export interface ArtAtlasResult {
   state: ArtAtlasState;
   /** Розібраний `index.json`; null — атласу немає. */
   index: ArtIndex | null;
+}
+
+export interface ArtAtlasOptions {
+  /**
+   * Шари записів із `layers` — теж кадрами Phaser: сторінки компонувальника стають джерелами текстури. Лише для галереї,
+   * яка показує шари окремо; грі вони у відеопам'яті не потрібні.
+   */
+  layerFrames?: boolean;
 }
 
 /** Ключ тексту `index.json` у кеші Phaser на час завантаження. */
@@ -43,14 +53,19 @@ const arrived = new WeakMap<Phaser.Game, Map<string, HTMLImageElement>>();
  * Завантажити атлас (якщо його ще немає) і скласти текстуру `ART_TEXTURE`. Атласу немає (файлу немає, він не той, сторінка
  * не прийшла) — `state: "none"`, і `addArt` малює заглушки; помилки формату — `console.warn`. `base` — базова адреса гри.
  * `onProgress` — хід завантаження, частка 0–1 за байтами, що не спадає (для смуги заставки; лише тому, хто почав
- * завантаження).
+ * завантаження); `options` — теж лише його.
  */
-export function loadArtAtlas(scene: Phaser.Scene, base: string = import.meta.env.BASE_URL, onProgress?: (fraction: number) => void): Promise<ArtAtlasResult> {
+export function loadArtAtlas(
+  scene: Phaser.Scene,
+  base: string = import.meta.env.BASE_URL,
+  onProgress?: (fraction: number) => void,
+  options: ArtAtlasOptions = {},
+): Promise<ArtAtlasResult> {
   if (scene.textures.exists(ART_TEXTURE)) return Promise.resolve({ state: "ready", index: loadedArtIndex(scene) });
   const game = scene.game;
   let loading = pending.get(game);
   if (!loading) {
-    loading = load(scene, base, onProgress).finally(() => pending.delete(game));
+    loading = load(scene, base, onProgress, options).finally(() => pending.delete(game));
     pending.set(game, loading);
   }
   return loading;
@@ -62,7 +77,7 @@ export function loadedArtIndex(scene: Phaser.Scene): ArtIndex | null {
   return (index as ArtIndex | undefined) ?? null;
 }
 
-function load(scene: Phaser.Scene, base: string, onProgress?: (fraction: number) => void): Promise<ArtAtlasResult> {
+function load(scene: Phaser.Scene, base: string, onProgress: ((fraction: number) => void) | undefined, options: ArtAtlasOptions): Promise<ArtAtlasResult> {
   return new Promise((resolve) => {
     const loader = scene.load;
     // Поступ за байтами: спершу `index.json`, потім сторінки (`AtlasLoadProgress`); слухач знято, щойно завантаження скінчилося.
@@ -130,7 +145,7 @@ function load(scene: Phaser.Scene, base: string, onProgress?: (fraction: number)
           none();
           return;
         }
-        if (!installAtlas(scene, index, images as HTMLImageElement[])) {
+        if (!installAtlas(scene, index, images as HTMLImageElement[], options.layerFrames === true)) {
           none();
           return;
         }
@@ -167,22 +182,32 @@ class PageFile extends Phaser.Loader.FileTypes.ImageFile {
   }
 }
 
-/** Скласти `ART_TEXTURE` зі сторінок і додати кадри всіх шарів (контракт — `atlas.ts`); false — не вдалося. */
-function installAtlas(scene: Phaser.Scene, index: ArtIndex, images: readonly HTMLImageElement[]): boolean {
+/**
+ * Скласти `ART_TEXTURE` зі сторінок для Phaser (`phaserPages`; з `layerFrames` — з усіх) і додати кадри шарів, що на них
+ * лежать (контракт — `atlas.ts`); false — не вдалося.
+ */
+function installAtlas(scene: Phaser.Scene, index: ArtIndex, images: readonly HTMLImageElement[], layerFrames: boolean): boolean {
   index.pages.forEach((page, i) => {
     const image = images[i];
     if (image && (image.naturalWidth !== page.w || image.naturalHeight !== page.h)) {
       console.warn(`Атлас арту: сторінка ${page.file} — ${image.naturalWidth} × ${image.naturalHeight}, а в index.json ${page.w} × ${page.h}`);
     }
   });
-  const texture = scene.textures.create(ART_TEXTURE, [...images]);
+  const pages = phaserPages(index, layerFrames);
+  /** Сторінка → номер джерела текстури. Сторінки компонувальника — останні (`artIndexProblems`), тож номери збігаються. */
+  const sourceOf = new Map(pages.map((page, source) => [page, source]));
+  const texture = scene.textures.create(
+    ART_TEXTURE,
+    pages.map((page) => images[page] as HTMLImageElement),
+  );
   if (!texture) return false;
-  const first = index.pages[0];
+  const first = index.pages[pages[0] ?? 0];
   if (first) texture.add("__BASE", 0, 0, 0, first.w, first.h);
   for (const [id, frame] of Object.entries(index.frames)) {
     for (const [layer, rect] of Object.entries(frame.layers)) {
-      if (!rect) continue;
-      const added = texture.add(layerFrameName(id as FrameId, layer as FrameLayer), rect.page, rect.x, rect.y, rect.w, rect.h);
+      const source = rect ? sourceOf.get(rect.page) : undefined;
+      if (!rect || source === undefined) continue;
+      const added = texture.add(layerFrameName(id as FrameId, layer as FrameLayer), source, rect.x, rect.y, rect.w, rect.h);
       if (!added) continue;
       added.setTrim(frame.size.w * frame.res, frame.size.h * frame.res, rect.dx, rect.dy, rect.w, rect.h);
       // Pivot і точки для розміщення беруться з маніфесту (`atlas.ts`); тут — для того, хто дивиться на кадр сам по собі.

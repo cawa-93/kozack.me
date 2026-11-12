@@ -13,7 +13,7 @@ import type { Cat, Quality, Shape } from "../../sim/types";
 import type { CatFace } from "../anim/catface";
 import type { CatAnimId } from "../anim/ids";
 import { addArt, setArt } from "../art/atlas";
-import { addBakedArt, bakedFrame, catOwner, releaseBaked, setBakedArt } from "../art/bake";
+import { addBakedArt, bakedCrop, bakedFrame, bakedOrigin, bakedPlacement, catOwner, releaseBaked, setBakedArt } from "../art/bake";
 import { artEntry } from "../art/manifest";
 import { catRecipeOf, farRecipe } from "../art/recipes";
 import type { ArtId, ArtView, TintRecipe } from "../art/types";
@@ -357,11 +357,12 @@ export class IsoCatView {
     }
   }
 
-  /** Базовий масштаб запеченого кадру (1 одиниця арту = 1 px світу): з розміру полотна. */
+  /** Базовий масштаб запеченого кадру (1 одиниця арту = 1 px світу). */
   private baseScale(image: Phaser.GameObjects.Image, axis: "x" | "y" = "x"): number {
     const baked = bakedFrame(this.scene, image.texture.key);
     if (!baked) return 1;
-    return axis === "x" ? baked.geometry.size.w / baked.px.w : baked.geometry.size.h / baked.px.h;
+    const placement = bakedPlacement(baked);
+    return axis === "x" ? placement.scaleX : placement.scaleY;
   }
 
   /** Лишити від кадру хвоста лише кінчик (`tip` маніфесту, інакше — верх полотна). */
@@ -369,14 +370,14 @@ export class IsoCatView {
     const baked = bakedFrame(this.scene, image.texture.key);
     const entry = artEntry(art);
     if (!baked || !entry) return;
-    const k = baked.px.w / baked.geometry.size.w;
     const tip = entry.points?.tip ?? { x: entry.pivot.x, y: Math.min(entry.size.h / 4, entry.pivot.y) };
     const half = PEEK.tailWindow;
-    const x = Math.max(0, (tip.x - half) * k);
-    const y = Math.max(0, (tip.y - half) * k);
-    image.setCrop(x, y, half * 2 * k, half * 2.4 * k);
+    // Текстура запеченого кадру — рамка вмісту, а не все полотно: вікно й origin — через `bakedCrop` і `bakedOrigin`.
+    const crop = bakedCrop(baked, { x: Math.max(0, tip.x - half), y: Math.max(0, tip.y - half), w: half * 2, h: half * 2.4 });
+    image.setCrop(crop.x, crop.y, crop.w, crop.h);
     // Кадр обрізано — pivot кінчика, щоб кінчик стояв у точці, а не весь хвіст.
-    image.setOrigin(tip.x / entry.size.w, (tip.y + half) / entry.size.h);
+    const origin = bakedOrigin(baked, { x: tip.x, y: tip.y + half });
+    image.setOrigin(origin.x, origin.y);
   }
 
   /** Точки для інших частин: над головою й спинка (з видимого скелета; інакше — над очима). */

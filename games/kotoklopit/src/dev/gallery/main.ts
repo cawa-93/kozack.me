@@ -351,7 +351,8 @@ class GalleryScene extends Phaser.Scene {
     camera.setScroll(0, 0);
     setupInput(this);
     status.textContent = "Атлас вантажиться…";
-    void loadArtAtlas(this)
+    // Вкладки «Кадри» й «Скелети» показують окремі шари кадрами Phaser.
+    void loadArtAtlas(this, undefined, undefined, { layerFrames: true })
       .catch((error: unknown): ArtAtlasResult => {
         // Атлас не склався — галерея однаково відкривається, на заглушках.
         console.error("Галерея: атлас не завантажився", error);

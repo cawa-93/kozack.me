@@ -93,7 +93,7 @@ describe("карти сяйва в атласі", () => {
 
   it("index.json: карта сяйва — прямокутник у межах сторінки з додатним scale", () => {
     const index = (glow: unknown): unknown => ({
-      version: 2,
+      version: 3,
       pages: [{ file: "p.webp", w: 64, h: 64 }],
       frames: { "env/box": { size: { w: 10, h: 10 }, res: 2, pivot: { x: 5, y: 5 }, layers: { all: { page: 0, x: 0, y: 0, w: 20, h: 20, dx: 0, dy: 0 } }, glow } },
     });

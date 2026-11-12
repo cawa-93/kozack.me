@@ -123,3 +123,31 @@ describe("шви арту", () => {
     expect(imports).toEqual(['import type Phaser from "phaser";']);
   });
 });
+
+const prodOnly = import.meta.glob<string>(["../src/view/art/manifest.ts", "../src/view/art/bake.ts"], { query: "?raw", import: "default", eager: true });
+const sourceOf = (name: string): string => Object.entries(prodOnly).find(([file]) => file.endsWith(name))?.[1] ?? "";
+/** Рядки коду (без коментарів), де є `what`. */
+const codeLines = (source: string, what: RegExp): string[] =>
+  source
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => !/^(\/\/|\/?\*)/.test(line) && what.test(line));
+
+describe("поза продакшн-збіркою (`__DEV_TOOLS__`)", () => {
+  it("маніфест перевіряється при завантаженні лише в dev, на прев'ю, у тестах і в конвеєрі — продакшн цю роботу не виконує", () => {
+    const source = sourceOf("/manifest.ts");
+    const calls = codeLines(source, /\bindexEntries\(ENTRIES\)/);
+    expect(calls.length).toBe(1);
+    expect(calls[0]).toMatch(/\bCHECKED \?/);
+    // Конвеєр атласу вантажить маніфест без конфігу гри (`runnerImport`): там `__DEV_TOOLS__` не оголошено — і перевірка є.
+    expect(codeLines(source, /\bconst CHECKED\b/)).toEqual(['const CHECKED = typeof __DEV_TOOLS__ === "undefined" || __DEV_TOOLS__;']);
+    // У тестах перевірка працює.
+    expect(__DEV_TOOLS__).toBe(true);
+  });
+
+  it("синтетичні заглушки компонувальника (`stubLayers`) запікання кличе лише під `__DEV_TOOLS__`", () => {
+    const calls = codeLines(sourceOf("/bake.ts"), /\bstubLayers\(/);
+    expect(calls.length).toBe(1);
+    expect(calls[0]).toMatch(/__DEV_TOOLS__ \?/);
+  });
+});

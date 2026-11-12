@@ -137,20 +137,23 @@ export function stubRes(entry: Pick<ArtEntry, "size">, res: number): number {
 }
 
 /**
- * Група пакування запису (`PackItem.group`): шари записів із `layers` (кіт, персонаж, гонка, тканини) бере лише
- * компонувальник, по кілька за раз на кадр, тож вони лягають групою після решти — шари кадру на одній-двох сторінках, і
- * запікання кадру не зачіпає сторінок, з яких ще не малювали (кожна нова сторінка — пауза першого запікання).
+ * Набір сторінок запису (`PackItem.sheet`): шари записів із `layers` (кіт, персонаж, гонка, тканини) читає лише
+ * компонувальник через Canvas2D, а Phaser їх не малює, — тож вони на своїх сторінках (`AtlasPage.compose`), яких гра у
+ * відеопам'ять не вантажить. Усе, що Phaser малює напряму (кадри без шарів, карти сяйва), туди не кладеться.
  */
-export function packGroup(entry: Pick<ArtEntry, "layers">): number {
-  return entry.layers ? 1 : 0;
+export function packSheet(entry: Pick<ArtEntry, "layers">): number {
+  return entry.layers ? COMPOSE_SHEET : 0;
 }
 
+/** Набір сторінок компонувальника: останній, тож номер сторінки для Phaser — номер джерела його текстури. */
+const COMPOSE_SHEET = 1;
+
 /**
- * Група пакування карт сяйва — після всіх кадрів і шарів: карта не зсуває інших растрів, тож решта сторінок від карт не
+ * Група пакування карт сяйва — після всіх кадрів без шарів: карта не зсуває інших растрів, тож решта сторінок від карт не
  * залежить (у гравця вони лишаються в кеші браузера), а плавні переходи альфи не лежать упереміш із пласкими кольорами —
  * так webp без втрат стискає сторінки помітно гірше.
  */
-const GLOW_GROUP = 2;
+const GLOW_GROUP = 1;
 
 /** Версія розрахунку карт сяйва для ключів кешу: змінилася формула в `glowmap.ts` — нова версія. */
 const GLOW_VERSION = "1";
@@ -285,16 +288,16 @@ export async function buildArt(options: ArtBuildOptions): Promise<ArtBuild> {
   frames.sort((a, b) => (a.frame < b.frame ? -1 : a.frame > b.frame ? 1 : 0));
 
   // Однакові растри (заглушки однакового розміру, однакові стани, усі порожні шари) лежать на сторінці один раз — у межах
-  // групи пакування: інакше шар брав би, скажімо, порожній піксель зі сторінки іншої групи.
-  const images = new Map<string, { image: Rgba; group: number }>();
+  // набору сторінок: інакше шар брав би, скажімо, порожній піксель зі сторінки для Phaser.
+  const images = new Map<string, { image: Rgba; sheet: number; group: number }>();
   const layerImage = new Map<string, string>();
   let layerCount = 0;
   for (const job of frames) {
-    const group = packGroup(job.entry);
+    const sheet = packSheet(job.entry);
     for (const layer of job.raster.layers) {
       layerCount++;
-      const key = hashOf(String(group), String(layer.w), String(layer.h), layer.data);
-      if (!images.has(key)) images.set(key, { image: layer, group });
+      const key = hashOf(String(sheet), String(layer.w), String(layer.h), layer.data);
+      if (!images.has(key)) images.set(key, { image: layer, sheet, group: 0 });
       layerImage.set(`${job.frame}#${layer.layer}`, key);
     }
   }
@@ -306,7 +309,7 @@ export async function buildArt(options: ArtBuildOptions): Promise<ArtBuild> {
     if (!job.entry.glow || job.stub || job.entry.layers || !layer) continue;
     const { image, dx, dy, scale } = glowRaster(layer, cache);
     const key = hashOf("glow", String(image.w), String(image.h), image.data);
-    if (!images.has(key)) images.set(key, { image, group: GLOW_GROUP });
+    if (!images.has(key)) images.set(key, { image, sheet: 0, group: GLOW_GROUP });
     layerImage.set(`${job.frame}@glow`, key);
     glows.set(job.frame, { key, w: image.w, h: image.h, dx, dy, scale });
   }
@@ -315,7 +318,7 @@ export async function buildArt(options: ArtBuildOptions): Promise<ArtBuild> {
   let packed: ReturnType<typeof pack>;
   try {
     packed = pack(
-      [...images].map(([key, { image, group }]) => ({ key, w: image.w, h: image.h, group })),
+      [...images].map(([key, { image, sheet, group }]) => ({ key, w: image.w, h: image.h, sheet, group })),
       packOptions,
     );
   } catch (error) {
@@ -332,7 +335,7 @@ export async function buildArt(options: ArtBuildOptions): Promise<ArtBuild> {
   const pages: AtlasPage[] = [];
   let bytes = 0;
   for (let p = 0; p < packed.pages.length; p++) {
-    const size = packed.pages[p] ?? { w: 1, h: 1 };
+    const size = packed.pages[p] ?? { w: 1, h: 1, sheet: 0 };
     const placed = [...packed.placements].filter(([, at]) => at.page === p).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
     const key = hashOf("page", PIPELINE_VERSION, JSON.stringify(webp), JSON.stringify(packOptions), `${size.w}x${size.h}`, placed.map(([k, at]) => `${k}@${at.x},${at.y}`).join(";"));
     let data = cache.read(key, "webp");
@@ -348,7 +351,7 @@ export async function buildArt(options: ArtBuildOptions): Promise<ArtBuild> {
     }
     const file = `page-${p}.${hashOf(data).slice(0, 10)}.webp`;
     files.set(file, data);
-    pages.push({ file, w: size.w, h: size.h, bytes: data.length });
+    pages.push({ file, w: size.w, h: size.h, bytes: data.length, ...(size.sheet === COMPOSE_SHEET ? { compose: true as const } : {}) });
     bytes += data.length;
   }
 
@@ -367,6 +370,7 @@ export async function buildArt(options: ArtBuildOptions): Promise<ArtBuild> {
       pivot: job.entry.pivot,
       ...(job.entry.points ? { points: job.entry.points } : {}),
       layers,
+      ...(job.entry.layers ? { box: { x: job.raster.trim.x, y: job.raster.trim.y, w: job.raster.w, h: job.raster.h } } : {}),
       ...(job.stub ? { stub: true as const } : {}),
     };
     const glow = glows.get(job.frame);

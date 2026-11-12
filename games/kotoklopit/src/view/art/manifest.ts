@@ -139,7 +139,13 @@ const ENTRIES: readonly ArtEntry[] = Object.keys(MODULES)
   .sort()
   .flatMap((file) => MODULES[file] ?? [])
   .map((entry) => (glowing(entry.id) ? { ...entry, glow: true as const } : entry));
-const INDEX = indexEntries(ENTRIES);
+/**
+ * Чи перевіряти записи при завантаженні модуля. Продакшн-збірка цього не робить: ті самі записи вже перевірили тести й
+ * конвеєр атласу під час збирання. Конвеєр вантажить модуль без конфігу гри (`runnerImport`), де `__DEV_TOOLS__` не
+ * оголошено, — там перевірка є.
+ */
+const CHECKED = typeof __DEV_TOOLS__ === "undefined" || __DEV_TOOLS__;
+const INDEX: ReadonlyMap<ArtId, ArtEntry> = CHECKED ? indexEntries(ENTRIES) : new Map(ENTRIES.map((entry) => [entry.id, entry]));
 
 /** Усі записи маніфесту (галерея, перевірки). */
 export function artEntries(): readonly ArtEntry[] {
