@@ -494,9 +494,10 @@ export function tickHousehold(state: GameState, from: number, minutes: number): 
   const fed = feed(state);
   if (fed.length > 0) emit(state, { type: "feeder", bowls: fed });
   topUpWater(state);
-  // Без світла робот-пилосос не виїжджає з бази (§4.1): ні прибирання, ні шуму, ні котів на ньому.
+  // Без світла робот-пилосос не виїжджає з бази (§4.1): ні прибирання, ні шуму, ні котів на ньому. Базу несуть у руках — так само
+  // (§8.7): поставили посеред виїзду — їде далі з тієї частки маршруту, яку показує `robotProgress`.
   const robot = home.appliances.robot;
-  if (robot && minutes < 1440 && !powerOut(state)) for (const start of ROBOT[robot].starts) robotClean(state, robot, start, from, minutes, crossed);
+  if (robot && robotDocked(state) && minutes < 1440 && !powerOut(state)) for (const start of ROBOT[robot].starts) robotClean(state, robot, start, from, minutes, crossed);
 }
 
 /**
