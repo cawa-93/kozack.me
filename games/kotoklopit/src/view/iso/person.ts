@@ -287,7 +287,10 @@ export class IsoPersonView implements PersonPart {
     this.sprite.setFacing(facing);
     this.play(choice, reach);
     this.sprite.setPosition(feet.x, feet.y);
-    this.sprite.update(this.clock);
+    // Схований (душова кабіна, поїздка): кадри скелета не ставити й не запікати — їх не видно; поза — лише для якорів (бабли
+    // над головою), як і досі.
+    if (this.hidden) this.sprite.rig.evaluate(this.clock);
+    else this.sprite.update(this.clock);
     this.sprite.setVisible(!this.hidden);
 
     // Тінь під ногами (не частина скелета: лишається на підлозі), запах над головою.
