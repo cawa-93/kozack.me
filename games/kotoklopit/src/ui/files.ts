@@ -3,6 +3,15 @@
 import { deserialize, serialize } from "../sim/game";
 import type { Save } from "../sim/types";
 
+/**
+ * Скільки живе посилання на файл. Safari на iPhone читає його лише після того, як гравець підтвердить «Завантажити?», —
+ * а саме там файл найпотрібніший: Safari стирає дані сайту, який тиждень не відкривали.
+ */
+const DOWNLOAD_URL_MS = 60_000;
+
+/** Більший файл — точно не збереження (воно — десятки кілобайтів): не читати його в пам'ять цілим. */
+const MAX_SAVE_FILE_BYTES = 20 * 1024 * 1024;
+
 /** Завантажити поточну гру файлом JSON. */
 export function exportSave(save: Save): void {
   downloadJson(serialize(save), `kotoklopit-${save.current.character.name}-день-${save.current.day + 1}.json`);
@@ -22,10 +31,11 @@ function downloadJson(json: string, fileName: string): void {
   document.body.append(link);
   link.click();
   link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setTimeout(() => URL.revokeObjectURL(url), DOWNLOAD_URL_MS);
 }
 
-/** Прочитати збереження з файлу; помилка — якщо файл не збереження чи старої версії. */
+/** Прочитати збереження з файлу; помилка — якщо файл не збереження, завеликий чи старої версії. */
 export async function importSave(file: File): Promise<Save> {
+  if (file.size > MAX_SAVE_FILE_BYTES) throw new Error("файл завеликий для збереження");
   return deserialize(await file.text());
 }
