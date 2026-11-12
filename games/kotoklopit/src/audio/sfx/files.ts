@@ -7,8 +7,14 @@ export interface EncodedFile {
   hash: string;
   /** Тривалість звуку без запасу на краях, с. */
   seconds: number;
-  /** Петля: коло між цими мітками декодованого файлу, с (запас на краях — `SFX.loopPad`). */
-  loop?: { start: number; end: number };
+  /** Петля: коло між цими мітками декодованого файлу, с (запас на краях — `SFX.loopPad`); `rhythm` — ритмічна (`Recipe.rhythm`). */
+  loop?: LoopRange;
+}
+
+export interface LoopRange {
+  start: number;
+  end: number;
+  rhythm?: boolean;
 }
 
 export type EncodedGroup = Record<string, EncodedFile>;
@@ -19,7 +25,7 @@ const ENCODED = import.meta.glob<EncodedGroup>("/audio/sfx/*/encoded.json", { im
 export interface SoundFile {
   key: string;
   url: string;
-  loop: { start: number; end: number } | null;
+  loop: LoopRange | null;
 }
 
 const FILES = new Map<string, SoundFile>();

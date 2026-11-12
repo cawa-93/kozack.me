@@ -3,7 +3,7 @@
 
 import type { SoundBus } from "./bus";
 import { SFX } from "../config";
-import type { AudioEngine } from "../engine";
+import { heardAt, type AudioEngine } from "../engine";
 import { timeoutSignal } from "../net";
 import type { SoundFile } from "./files";
 
@@ -40,6 +40,11 @@ export interface Voice {
 /** Петля, що звучить: гучність, зсув і висота (`rate`, мотор у гонці) змінюються плавно. */
 export interface LoopVoice {
   set(gain: number, pan: number, rate?: number): void;
+  /**
+   * Коли початок кола стало чути, мс `performance.now()`, за годинником звуку; ще не звучить — null. Файл декодується не
+   * одразу, тож це пізніше за мить, коли петлю попросили.
+   */
+  startedAt(): number | null;
   stop(): void;
 }
 
@@ -93,6 +98,7 @@ export class Player {
     let target = options.gain;
     let rate = 1;
     let stopped = false;
+    let heard: number | null = null;
     const begin = (decoded: Decoded): void => {
       if (stopped) return;
       source = context.createBufferSource();
@@ -102,9 +108,11 @@ export class Player {
       source.loopEnd = range.end;
       source.playbackRate.value = rate;
       source.connect(gain);
-      // Кожна петля — з випадкового місця кола: дві однакові не звучать в унісон.
-      source.start(context.currentTime, range.start + Math.random() * (range.end - range.start));
-      gain.gain.setTargetAtTime(target, context.currentTime, SFX.loopFade / 3);
+      // Кожна петля — з випадкового місця кола: дві однакові не звучать в унісон. Ритмічна — з початку: під неї йде такт.
+      const at = context.currentTime;
+      source.start(at, range.rhythm ? range.start : range.start + Math.random() * (range.end - range.start));
+      heard = heardAt(context, at);
+      gain.gain.setTargetAtTime(target, at, SFX.loopFade / 3);
     };
     // Файл не прийшов (збій мережі, тайм-аут) — знову, поки петля потрібна: інакше вона мовчала б, доки її не ввімкнуть наново.
     const load = (): void => {
@@ -129,6 +137,7 @@ export class Player {
         }
         if (Math.abs(panner.pan.value - pan) > 0.02) panner.pan.setTargetAtTime(pan, context.currentTime, SFX.loopFade / 3);
       },
+      startedAt: () => heard,
       stop: () => {
         stopped = true;
         const now = context.currentTime;

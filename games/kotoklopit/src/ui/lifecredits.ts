@@ -143,9 +143,12 @@ function layOut(screen: HTMLElement, title: HTMLElement | null, lists: readonly 
   }
 }
 
-/** Коли насправді вступила музика (мс `performance.now`): від цієї миті рахуються долі, за якими йде стрічка. */
+/**
+ * Петля музики, коли вона є: від миті, коли її справді стало чути (`SceneLoop.startedAt` — за годинником звуку, після
+ * декодування), рахуються долі, за якими йде стрічка.
+ */
 interface MusicClock {
-  startedAt: number | null;
+  loop: SceneLoop | null;
 }
 
 /**
@@ -158,12 +161,12 @@ function playCreditsMusic(screen: HTMLElement, clock: MusicClock): void {
   const stop = (): void => {
     loop?.stop();
     loop = null;
+    clock.loop = null;
   };
   const start = (gain: number): void => {
     loop = sceneLoop("ui", "credits");
-    if (!loop) return;
-    clock.startedAt = performance.now();
-    loop.set(gain, 1);
+    clock.loop = loop;
+    loop?.set(gain, 1);
   };
   const watch = (): void => {
     const timer = setInterval(() => {
@@ -247,7 +250,7 @@ export function lifeCredits(state: GameState, newGame: () => void): { screen: HT
   track.append(actions);
 
   const hold: Hold = { key: false, pointer: false };
-  const music: MusicClock = { startedAt: null };
+  const music: MusicClock = { loop: null };
   let offset = 0;
   let last = 0;
   let started = -1;
@@ -315,7 +318,7 @@ export function lifeCredits(state: GameState, newGame: () => void): { screen: HT
     const rollFrom = started + CREDITS_INTRO.endMs;
     if (now >= rollFrom) {
       const end = rollEnd(track.offsetHeight, screen.clientHeight);
-      offset = rollOffset(offset, dt, screen.clientHeight, end, hold.key || hold.pointer, now - (music.startedAt ?? rollFrom));
+      offset = rollOffset(offset, dt, screen.clientHeight, end, hold.key || hold.pointer, now - (music.loop?.startedAt() ?? rollFrom));
       track.style.transform = `translate3d(0, ${-offset}px, 0)`;
       if (offset >= end) finish();
     }

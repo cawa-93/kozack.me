@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { SFX } from "../src/audio/config";
 import { timeoutSignal } from "../src/audio/net";
-import { soundFile } from "../src/audio/sfx/files";
+import { soundFile, type SoundFile } from "../src/audio/sfx/files";
 import { Player } from "../src/audio/sfx/player";
 import { GROUPS } from "../src/audio/sfx/registry";
 import { Sounds } from "../src/audio/sfx/sounds";
@@ -105,5 +105,53 @@ describe("звуки: завислий запит не глушить решту
     } finally {
       Object.defineProperty(AbortSignal, "timeout", { value: native, configurable: true, writable: true });
     }
+  });
+});
+
+describe("петлі: в унісон не звучать, ритмічна — з початку кола (Б7)", () => {
+  const loopFile = (rhythm: boolean): SoundFile => ({ key: `test/${rhythm}`, url: `test-${rhythm}.mp3`, loop: { start: 0.1, end: 8.1, ...(rhythm ? { rhythm: true } : {}) } });
+
+  it("звичайна петля — з випадкового місця кола, ритмічна (музика титрів) — точно з його початку", async () => {
+    vi.stubGlobal("fetch", vi.fn(bytes));
+    const audio = fakeAudio({ seconds: 8.2 });
+    const player = new Player(audio.engine);
+    const random = vi.spyOn(Math, "random").mockReturnValue(0.5);
+    player.loop(loopFile(false), { bus: "world", gain: 1, pan: 0 });
+    player.loop(loopFile(true), { bus: "music", gain: 1, pan: 0 });
+    await settle();
+    random.mockRestore();
+    const [plain, rhythm] = audio.started();
+    expect(plain?.started?.[1]).toBeCloseTo(4.1);
+    expect(rhythm?.started?.[1]).toBe(0.1);
+    expect(rhythm?.loopStart).toBe(0.1);
+    expect(rhythm?.loopEnd).toBe(8.1);
+  });
+
+  it("петля каже, коли справді зазвучала, — за годинником звуку, а не в мить запиту: файл ще декодувався", async () => {
+    vi.stubGlobal("fetch", vi.fn(bytes));
+    const audio = fakeAudio({ hold: true });
+    // Вихід звуку відстає: семпл контексту 10 с прозвучить у мить 5000 мс `performance.now`.
+    audio.context.getOutputTimestamp = () => ({ contextTime: 10, performanceTime: 5000 });
+    const player = new Player(audio.engine);
+    const voice = player.loop(loopFile(true), { bus: "music", gain: 1, pan: 0 });
+    expect(voice?.startedAt()).toBeNull();
+    await settle();
+    audio.context.currentTime = 10.25;
+    audio.decodes[0]?.resolve();
+    await settle();
+    expect(audio.started()).toHaveLength(1);
+    expect(audio.started()[0]?.started?.[0]).toBe(10.25);
+    expect(voice?.startedAt()).toBeCloseTo(5250);
+  });
+
+  it("без `getOutputTimestamp` — з поточного годинника й затримки виходу", async () => {
+    vi.stubGlobal("fetch", vi.fn(bytes));
+    const audio = fakeAudio();
+    const now = vi.spyOn(performance, "now").mockReturnValue(7000);
+    const player = new Player(audio.engine);
+    const voice = player.loop(loopFile(true), { bus: "music", gain: 1, pan: 0 });
+    await settle();
+    expect(voice?.startedAt()).toBeCloseTo(7000);
+    now.mockRestore();
   });
 });

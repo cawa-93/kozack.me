@@ -86,7 +86,7 @@ describe("звуки поїздки", () => {
     const calls: string[] = [];
     let ready = false;
     const hum = new EngineHum((sound): SceneLoop | null =>
-      ready ? { set: (gain, rate) => calls.push(`${sound} ${gain.toFixed(2)} ${rate.toFixed(2)}`), stop: () => calls.push(`stop ${sound}`) } : null,
+      ready ? { set: (gain, rate) => calls.push(`${sound} ${gain.toFixed(2)} ${rate.toFixed(2)}`), startedAt: () => null, stop: () => calls.push(`stop ${sound}`) } : null,
     );
     hum.run(1, 1);
     ready = true;

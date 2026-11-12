@@ -72,11 +72,12 @@
     "seconds": 1.715
   },
   "credits": {
-    "hash": "e096dff30cec8ac0",
-    "seconds": 102.539021,
+    "hash": "76ab76fda934ea07",
+    "seconds": 102.839,
     "loop": {
       "start": 0.1,
-      "end": 102.639021
+      "end": 102.939,
+      "rhythm": true
     }
   }
 }

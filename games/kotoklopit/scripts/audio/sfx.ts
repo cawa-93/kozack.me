@@ -7,6 +7,7 @@
 //
 // Петля: кінець переходить у початок (`SFX.loopCrossfade`), а на краях файлу — запас по колу (`SFX.loopPad`). Декодер MP3 зсуває
 // початок по-різному (без тегу LAME — ніхто не обрізає), але зсув менший за запас, тож відрізок `loop` — завжди повне коло.
+// Ритмічна петля (`rhythm`) — рівно відрізок рецепта, а перехід бере з оригіналу за `end` (`sfxmath.ts`).
 
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -16,6 +17,7 @@ import { parseArgs } from "node:util";
 
 import { SAMPLE_RATE, SFX } from "../../src/audio/config.ts";
 import { LICENSES, type Recipe, type Sources } from "../../src/audio/sfx/sourcetypes.ts";
+import { cut, db, loopSamples, peak, scale } from "./sfxmath.ts";
 
 const ROOT = path.resolve(import.meta.dirname, "../..");
 const SOUNDS = path.join(ROOT, "audio/sfx");
@@ -25,10 +27,11 @@ const BUDGET = 6 * 1024 * 1024;
 /** Версія обробки: змінилась — перекодувати все. */
 const VERSION = 1;
 
+/** Запис `encoded.json` — `EncodedFile` у `src/audio/sfx/files.ts`. */
 interface Encoded {
   hash: string;
   seconds: number;
-  loop?: { start: number; end: number };
+  loop?: { start: number; end: number; rhythm?: true };
 }
 
 const { values, positionals } = parseArgs({ options: { force: { type: "boolean" } }, allowPositionals: true });
@@ -50,31 +53,14 @@ const sha256 = (data: Buffer | string): string => createHash("sha256").update(da
 
 async function decode(file: string, recipe: Recipe): Promise<Float32Array> {
   // Відрізок вирізаємо першим у ланцюгу: `-ss`/`-to` діють на вихід, і фільтр, що змінює темп чи висоту, лишав би їх поза звуком.
-  const trim = recipe.start !== undefined || recipe.end !== undefined ? `atrim=${recipe.start !== undefined ? `start=${recipe.start}` : ""}${recipe.start !== undefined && recipe.end !== undefined ? ":" : ""}${recipe.end !== undefined ? `end=${recipe.end}` : ""},asetpts=PTS-STARTPTS` : "";
+  const { start, end } = cut(recipe, SFX.loopCrossfade);
+  const trim = start !== undefined || end !== undefined ? `atrim=${start !== undefined ? `start=${start}` : ""}${start !== undefined && end !== undefined ? ":" : ""}${end !== undefined ? `end=${end}` : ""},asetpts=PTS-STARTPTS` : "";
   const filters = [trim, recipe.filter ?? ""].filter((f) => f !== "").join(",");
   const args = ["-v", "error", "-i", file];
   if (filters) args.push("-af", filters);
   args.push("-ac", "1", "-ar", String(SAMPLE_RATE), "-f", "f32le", "pipe:1");
   const bytes = await run("ffmpeg", args);
   return new Float32Array(bytes.buffer, bytes.byteOffset, Math.floor(bytes.length / 4)).slice();
-}
-
-const db = (level: number): number => 10 ** (level / 20);
-
-function peak(data: Float32Array): number {
-  let max = 0;
-  for (const sample of data) max = Math.max(max, Math.abs(sample));
-  return max;
-}
-
-function rms(data: Float32Array): number {
-  let sum = 0;
-  for (const sample of data) sum += sample * sample;
-  return Math.sqrt(sum / Math.max(1, data.length));
-}
-
-function scale(data: Float32Array, factor: number): void {
-  for (let i = 0; i < data.length; i++) data[i]! *= factor;
 }
 
 /** Разовий звук: плавні краї й пік на `level`. */
@@ -86,27 +72,6 @@ function oneShot(data: Float32Array, recipe: Recipe): Float32Array {
   const top = peak(data);
   if (top > 0) scale(data, db(recipe.level ?? -1) / top);
   return data;
-}
-
-/** Петля: кінець плавно переходить у початок; гучність за RMS. Повертає файл із запасом по колу й межі кола. */
-function loop(data: Float32Array, recipe: Recipe): { samples: Float32Array; start: number; length: number } {
-  const fade = Math.min(Math.round(SFX.loopCrossfade * SAMPLE_RATE), Math.floor(data.length / 4));
-  const length = data.length - fade;
-  const body = data.slice(0, length);
-  for (let i = 0; i < fade; i++) {
-    const t = i / fade;
-    body[i] = data[i]! * Math.sin((t * Math.PI) / 2) + data[length + i]! * Math.cos((t * Math.PI) / 2);
-  }
-  const level = rms(body);
-  if (level > 0) scale(body, db(recipe.level ?? -20) / level);
-  const top = peak(body);
-  if (top > db(-1)) scale(body, db(-1) / top);
-  const pad = Math.min(Math.round(SFX.loopPad * SAMPLE_RATE), length);
-  const samples = new Float32Array(length + pad * 2);
-  samples.set(body.subarray(length - pad), 0);
-  samples.set(body, pad);
-  samples.set(body.subarray(0, pad), pad + length);
-  return { samples, start: pad, length };
 }
 
 async function encode(samples: Float32Array, out: string): Promise<void> {
@@ -152,9 +117,10 @@ async function encodeGroup(group: string): Promise<void> {
     const data = await decode(file, recipe);
     if (data.length < SAMPLE_RATE * 0.02) throw new Error(`${group}/${name}: відрізок порожній`);
     if (recipe.loop) {
-      const { samples, start, length } = loop(data, recipe);
+      const { samples, start, length } = loopSamples(data, recipe, { sampleRate: SAMPLE_RATE, crossfade: SFX.loopCrossfade, pad: SFX.loopPad });
       await encode(samples, out);
-      after[name] = { hash, seconds: round(length / SAMPLE_RATE), loop: { start: round(start / SAMPLE_RATE), end: round((start + length) / SAMPLE_RATE) } };
+      const range = { start: round(start / SAMPLE_RATE), end: round((start + length) / SAMPLE_RATE) };
+      after[name] = { hash, seconds: round(length / SAMPLE_RATE), loop: recipe.rhythm ? { ...range, rhythm: true } : range };
     } else {
       const samples = oneShot(data, recipe);
       await encode(samples, out);

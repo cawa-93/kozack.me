@@ -2,6 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
+import { soundFile } from "../src/audio/sfx/files";
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { lifeStory } from "../src/sim/story";
 import { weekOf } from "../src/sim/time";
@@ -92,6 +93,12 @@ describe("титри життя: титул і музика (§4.2)", () => {
     expect(CREDITS_INTRO.beatsMs).toHaveLength(3);
     const [a, b, c] = CREDITS_INTRO.beatsMs;
     expect(a! < b! && b! < c! && c! < CREDITS_INTRO.endMs).toBe(true);
+  });
+
+  it("коло музики — рівно 60 тактів (`CREDITS_MUSIC.barMs`), і вона грає з початку кола: стрічка йде в такт і після шва", () => {
+    const loop = soundFile("ui", "credits")?.loop;
+    expect(loop?.rhythm).toBe(true);
+    expect(((loop!.end - loop!.start) * 1000) / CREDITS_MUSIC.barMs).toBeCloseTo(60, 4);
   });
 
   it("музика мовчить, поки звучить кінець гри, далі швидко наростає й тримає повну гучність", () => {

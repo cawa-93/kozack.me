@@ -45,6 +45,8 @@ export function sceneMoment(moment: SceneMoment): void {
 /** Петля, яку веде сцена сама (мотор у гонці): гучність (множник `gain` звуку) і висота — щокадру. */
 export interface SceneLoop {
   set(gain: number, rate: number): void;
+  /** Коли петлю стало чути, мс `performance.now()`; ще не звучить — null (`LoopVoice.startedAt`). */
+  startedAt(): number | null;
   stop(): void;
 }
 
@@ -131,7 +133,7 @@ export class Sounds {
     const base = def.gain ?? 1;
     const voice = this.player.loop(file, { bus: soundBus(def), gain: base, pan: 0 });
     if (!voice) return null;
-    return { set: (gain, rate) => voice.set(base * gain, 0, rate), stop: () => voice.stop() };
+    return { set: (gain, rate) => voice.set(base * gain, 0, rate), startedAt: () => voice.startedAt(), stop: () => voice.stop() };
   }
 
   /** Звук групи без місця: інтерфейс, телефон. */

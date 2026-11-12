@@ -68,6 +68,16 @@ export class AudioEngine {
   }
 }
 
+/**
+ * Коли семпл контексту на мить `time` (с) буде чути, мс `performance.now()`: з урахуванням затримки виходу. Під це підлаштовує
+ * рух те, що йде в такт звуку (стрічка титрів, §4.2). Без `getOutputTimestamp` (старі Safari) — із затримки, яку каже контекст.
+ */
+export function heardAt(context: AudioContext, time: number): number {
+  const stamp = typeof context.getOutputTimestamp === "function" ? context.getOutputTimestamp() : null;
+  if (stamp?.performanceTime && stamp.contextTime !== undefined) return stamp.performanceTime + (time - stamp.contextTime) * 1000;
+  return performance.now() + (time - context.currentTime + (context.outputLatency || context.baseLatency || 0)) * 1000;
+}
+
 /** Приглушені верхи шини світу (§11.4а): квартира звучить здалеку, а не над вухом. Той самий фільтр — у каталозі звуків. */
 export function farTone(context: BaseAudioContext): BiquadFilterNode {
   const shelf = context.createBiquadFilter();
