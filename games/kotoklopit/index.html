@@ -6,10 +6,11 @@
     <meta name="theme-color" content="#2b2530" />
     <title>Котоклопіт</title>
     <!--
-      Заставка, поки вантажиться гра (крок 16): видно одразу, ще до коду гри й атласу, — назва гри й
-      смуга, без JS. Смуга — того самого розміру й місця, що й одиниці інтерфейсу гри (280 × 6 з 1280 × 720, посередині):
-      поки коду немає, вона біжить туди-сюди, а потім заповнюється ходом завантаження атласу (`--boot-progress`,
-      src/scenes/PreloadScene.ts). Гра готова — заставку прибирає PreloadScene. Кольори — тло й папір гри (art/palette.ts).
+      Заставка, поки вантажиться гра (крок 16): видно одразу, ще до коду гри й атласу, — назва гри й смуга, без JS. Смуга —
+      того самого розміру й місця, що й одиниці інтерфейсу гри (280 × 6 з 1280 × 720, посередині): поки коду немає, вона
+      біжить туди-сюди, а потім заповнюється ходом завантаження атласу (`--boot-progress`, src/scenes/PreloadScene.ts). Гра
+      готова — заставку прибирає PreloadScene. Замість смуги — повідомлення: гра не завантажилася (PreloadScene) чи її
+      відкрито в іншій вкладці (src/tablock.ts, §4.2). Кольори — тло й папір гри (art/palette.ts).
     -->
     <style>
       html,
@@ -75,7 +76,10 @@
           opacity: 0.5;
         }
       }
-      /* Не вдалося завантажити (лише в продакшні): повідомлення й кнопка замість смуги. */
+      /*
+        Повідомлення замість смуги: не вдалося завантажити (лише в продакшні; з кнопкою) чи гру відкрито в іншій вкладці
+        (`boot-busy`).
+      */
       .boot-fail {
         display: none;
         flex-direction: column;
@@ -89,16 +93,20 @@
       .boot-fail p {
         margin: 0;
       }
-      .boot.boot-failed .boot-bar {
+      .boot.boot-failed .boot-bar,
+      .boot.boot-busy .boot-bar {
         display: none;
       }
-      .boot.boot-failed .boot-fail {
+      .boot.boot-failed .boot-fail,
+      .boot.boot-busy .boot-fail {
         display: flex;
       }
-      .boot.boot-failed .boot-title {
+      .boot.boot-failed .boot-title,
+      .boot.boot-busy .boot-title {
         position: static;
       }
-      .boot.boot-failed {
+      .boot.boot-failed,
+      .boot.boot-busy {
         flex-direction: column;
         gap: 14px;
       }

@@ -11,10 +11,12 @@ import { RaceScene } from "./scenes/RaceScene";
 import { fullscreenOnFirstAction } from "./screen";
 import { Session } from "./session";
 import "./style.css";
+import { browserTab, openGame } from "./tablock";
 import { catRenderConfig, isSoftwareRenderer, webglRenderer } from "./view/iso/catrender";
 import { fitCanvas, startCanvas } from "./view/viewport";
 
-const session = Session.restore({ address: "she", difficulty: "normal" });
+// Одна вкладка (§4.2): гра відкривається — і читає збереження — лише коли в інших вкладках її не відкрито.
+const session = await openGame(browserTab(), () => Session.restore({ address: "she", difficulty: "normal" }));
 
 // На програмному WebGL — одна текстура на пакет малювання (запечені частини котів; `iso/catrender.ts`, крок 16) і полотно
 // без пікселів пристрою (`canvasFit`): там кожен піксель малює процесор.
