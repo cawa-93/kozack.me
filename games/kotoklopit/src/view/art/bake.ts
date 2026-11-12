@@ -303,7 +303,9 @@ function make(scene: Phaser.Scene, frame: FrameId, recipe: TintRecipe, key: stri
     layers = atlas.source;
   } else {
     geometry = artGeometry(found?.entry, fallback, null);
-    const synthetic = stubLayers(found?.id ?? frame, geometry);
+    // Продакшн без атласу гри не показує («Гра не завантажилася»), тож малювання заглушок у його збірку не йде: кадр, якого
+    // чомусь немає, там порожній.
+    const synthetic = __DEV_TOOLS__ ? stubLayers(found?.id ?? frame, geometry) : null;
     canvasPx = synthetic ? { w: synthetic.w, h: synthetic.h } : { w: 1, h: 1 };
     box = { x: 0, y: 0, w: canvasPx.w, h: canvasPx.h };
     layers = synthetic?.source ?? (() => null);
