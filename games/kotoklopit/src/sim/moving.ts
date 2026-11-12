@@ -6,7 +6,7 @@ import { MOVING } from "./config";
 import { feederAt } from "./economy";
 import { emit } from "./events";
 import { bodyTouches, distanceToRect, itemPoint, nearestFreePlace, robotDockAt, robotDocked, slotById, thingHome, thingPresent, thingShift, type Place } from "./home";
-import { clearPath, robotProgress } from "./household";
+import { clearPath, robotProgress, skipRobotRun } from "./household";
 import { put, thingFits } from "./settle";
 import { itemTargetId, movableItem } from "./targets";
 import type { CarriedThing, CarryThing, Cat, CatActKind, GameState, PlacedItem, Vec } from "./types";
@@ -64,6 +64,7 @@ function setRobotDown(state: GameState, place: Place): void {
   const at = { x: place.x + 0.5, y: place.y + 0.5 };
   state.home.robotDock = at;
   delete state.home.robotCarried;
+  skipRobotRun(state);
   state.character.held = null;
   emit(state, { type: "robot-moved", stage: "put", at });
 }

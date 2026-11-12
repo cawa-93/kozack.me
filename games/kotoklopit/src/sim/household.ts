@@ -495,9 +495,25 @@ export function tickHousehold(state: GameState, from: number, minutes: number): 
   if (fed.length > 0) emit(state, { type: "feeder", bowls: fed });
   topUpWater(state);
   // Без світла робот-пилосос не виїжджає з бази (§4.1): ні прибирання, ні шуму, ні котів на ньому. Базу несуть у руках — так само
-  // (§8.7): поставили посеред виїзду — їде далі з тієї частки маршруту, яку показує `robotProgress`.
+  // (§8.7), і виїзд, на початку якого її несли, пропущено до кінця.
   const robot = home.appliances.robot;
-  if (robot && robotDocked(state) && minutes < 1440 && !powerOut(state)) for (const start of ROBOT[robot].starts) robotClean(state, robot, start, from, minutes, crossed);
+  if (robot && robotDocked(state) && minutes < 1440 && !powerOut(state)) {
+    for (const start of ROBOT[robot].starts) if (start !== home.robotSkip) robotClean(state, robot, start, from, minutes, crossed);
+  }
+  // Позначку знімаємо після кроку, що перетнув кінець виїзду: інакше цей крок доїхав би його останній відтинок.
+  if (home.robotSkip !== undefined && !inRobotRun(home.robotSkip, (from + minutes) % 1440)) delete home.robotSkip;
+}
+
+/** Хвилина доби припадає на виїзд робота, що починається о `start` (§8.7). */
+const inRobotRun = (start: number, minute: number): boolean => minute >= start && minute < start + HOUSEHOLD.robotMinutes;
+
+/** Базу робота поставили (§8.7): якщо зараз час виїзду, то на його початку її несли — цей виїзд пропущено. */
+export function skipRobotRun(state: GameState): void {
+  const quality = state.home.appliances.robot;
+  if (!quality) return;
+  const minute = state.minute % 1440;
+  const start = ROBOT[quality].starts.find((s) => inRobotRun(s, minute));
+  if (start !== undefined) state.home.robotSkip = start;
 }
 
 /**
@@ -548,8 +564,8 @@ export function robotProgress(state: GameState): number | null {
   // Робота несуть у руках (§8.7, «Переставити річ»): він не прибирає.
   if (!quality || !robotDocked(state) || powerOut(state)) return null;
   const minute = state.minute % 1440;
-  const start = ROBOT[quality].starts.find((s) => minute >= s && minute < s + HOUSEHOLD.robotMinutes);
-  return start === undefined ? null : (minute - start) / HOUSEHOLD.robotMinutes;
+  const start = ROBOT[quality].starts.find((s) => inRobotRun(s, minute));
+  return start === undefined || start === state.home.robotSkip ? null : (minute - start) / HOUSEHOLD.robotMinutes;
 }
 
 /**
