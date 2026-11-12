@@ -27,7 +27,8 @@ export class Broadcast {
   private chain: GainNode | null = null;
   private noise: GainNode | null = null;
   private readonly sources = new Set<AudioBufferSourceNode>();
-  private readonly decoded = new Map<string, AudioBuffer>();
+  /** Розкодовані шматки, що ще заграють (`ahead`): кожен важить мегабайти, тож те, що вже позаду, не тримаємо. */
+  private readonly decoded = new Map<string, { ref: ChunkRef; buffer: AudioBuffer }>();
   private readonly decoding = new Set<string>();
   /** До якого семпла контексту ефір уже в черзі. */
   private cursor = 0;
@@ -104,12 +105,18 @@ export class Broadcast {
     this.slot = slot;
     this.sample = Math.max(0, Math.round((air - slot.start) * SAMPLE_RATE));
     this.cursor = sample + Math.max(0, Math.round((slot.start - air) * SAMPLE_RATE));
+    for (const [key, entry] of this.decoded) if (!this.ahead(entry.ref)) this.decoded.delete(key);
+  }
+
+  /** Шматок ще заграє: той самий трек, не позаду місця, до якого дійшла черга. */
+  private ahead(ref: ChunkRef): boolean {
+    return this.slot !== null && this.slot.track.id === ref.track.id && ref.chunk >= chunkOf(this.sample);
   }
 
   private buffer(ref: ChunkRef): AudioBuffer | null {
     const key = chunkKey(ref);
     const ready = this.decoded.get(key);
-    if (ready) return ready;
+    if (ready) return ready.buffer;
     if (this.decoding.has(key)) return null;
     const bytes = this.store.copy(ref);
     const context = this.engine.context;
@@ -118,7 +125,9 @@ export class Broadcast {
     context
       .decodeAudioData(bytes)
       .then((buffer) => {
-        this.decoded.set(key, buffer);
+        // Поки декодувався, ефір перескочив далі чи станцію перемкнули: такий шматок уже не заграє.
+        if (!this.ahead(ref)) return;
+        this.decoded.set(key, { ref, buffer });
         this.tick();
       })
       .catch(() => {
