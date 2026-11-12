@@ -11,7 +11,7 @@
 import Phaser from "phaser";
 
 import { artIndexUrl, artPageUrl, parseArtIndex } from "./atlasindex";
-import { AtlasLoadProgress } from "./loadprogress";
+import { afterDecode, AtlasLoadProgress } from "./loadprogress";
 import { shareArtAtlas } from "./sources";
 import { ART_TEXTURE, layerFrameName, type ArtIndex, type FrameId, type FrameLayer } from "./types";
 
@@ -147,7 +147,8 @@ function load(scene: Phaser.Scene, base: string, onProgress?: (fraction: number)
 
 /**
  * Сторінка атласу: звичайне зображення, але воно не стає окремою текстурою (у WebGL — ще одна копія у відеопам'яті), а
- * віддається, щоб стати джерелом спільної `ART_TEXTURE`.
+ * віддається, щоб стати джерелом спільної `ART_TEXTURE`. Готова — лише розпакованою (`afterDecode`): доки вона
+ * розпаковується, завантажувач її чекає, і `COMPLETE` прийде вже з усіма розпакованими сторінками.
  */
 class PageFile extends Phaser.Loader.FileTypes.ImageFile {
   private readonly sink: (image: HTMLImageElement) => void;
@@ -155,6 +156,10 @@ class PageFile extends Phaser.Loader.FileTypes.ImageFile {
   constructor(loader: Phaser.Loader.LoaderPlugin, key: string, url: string, sink: (image: HTMLImageElement) => void) {
     super(loader, key, url);
     this.sink = sink;
+  }
+
+  override onProcessComplete(): void {
+    afterDecode(this.data as HTMLImageElement, () => super.onProcessComplete());
   }
 
   override addToCache(): void {

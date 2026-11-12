@@ -5,6 +5,8 @@
 // Fast 3G смуга ≈ 15 с стояла на частці `index.json`, а потім за дві секунди добігала до кінця. Тут — байти, що вже прийшли
 // (події `progress` запиту кожної сторінки), до байтів усіх сторінок: їх наперед дає `index.json` (`AtlasPage.bytes`), тож
 // смуга рівномірна, поки мережа рівна, і не повертається назад.
+//
+// Сторінка «прийшла», коли вона вже й розпакована (`afterDecode`).
 
 import type { AtlasPage } from "./types";
 
@@ -108,6 +110,22 @@ export class AtlasLoadProgress {
     this.shown = Math.max(this.shown, clamp01(value));
     return this.shown;
   }
+}
+
+/**
+ * `done` — рівно раз, коли зображення розпаковано (`decode`): так сторінки атласу розпаковуються поза головним потоком, поки
+ * приходять інші, а не всі разом синхронно, коли атлас уперше малюють. Без `decode` (старий браузер) чи з його помилкою —
+ * одразу: зображення однаково придатне, лише розпакується тоді, коли його вперше намалюють.
+ */
+export function afterDecode(image: { decode?: (() => Promise<void>) | undefined }, done: () => void): void {
+  let decoding: Promise<void> | undefined;
+  try {
+    decoding = image.decode?.();
+  } catch {
+    decoding = undefined;
+  }
+  if (decoding) decoding.then(done, done);
+  else done();
 }
 
 function clamp01(value: number): number {
