@@ -517,6 +517,31 @@ describe("смерть під замком (§8.7)", () => {
     expect(state.home.caged).toEqual([]);
   });
 
+  it("уночі кричить лише той, хто ще під замком: кіт, що помер чи вже вийшов (переноска зламалася), не будить", () => {
+    for (const ending of ["died", "freed"] as const) {
+      for (let seed = 1; seed <= 12; seed++) {
+        const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed }));
+        const state = save.current;
+        state.modifiers.day = null;
+        state.modifiers.week = null;
+        addCarrier(state.home, "cheap");
+        const who = cat(save);
+        seat(state, who);
+        // Голодний і вже гризе — кричить і нагадує всю ніч (§8.7).
+        who.needs.hunger = CARRIER.vitalNeed;
+        who.cage!.clock = 400;
+        expect(cageStage(who)).not.toBe("calm");
+        if (ending === "died") who.health = 0.01;
+        // Від міцності лишилося на хвилини: зламає на самому початку ночі.
+        else state.home.carriers[0]!.wear = CARRIER.strength.cheap - 0.5;
+        state.minute = hours(22);
+        const report = goToSleep(save)!;
+        expect(ending === "died" ? state.cats.includes(who) : who.away, `${ending}, seed ${seed}`).toBe(ending === "died" ? false : null);
+        expect(report.wakeUps.map((wake) => wake.cat), `${ending}, seed ${seed}`).not.toContain(who.id);
+      }
+    }
+  });
+
   it("уночі смерть не забирає глузду одразу: це рахує ранок", () => {
     const save = game("premium");
     const state = save.current;

@@ -137,13 +137,17 @@ export function applyMorningSanity(state: GameState, lost: number, gained: numbe
   for (let i = 0; i < gained; i++) changeStat(state, "sanity", newCatSanity);
 }
 
-/** Побудка, яку кіт планує цієї ночі; `ritual` — «Живий будильник» будить і без голоду чи з кормом у мисці. */
+/**
+ * Побудка, яку кіт планує цієї ночі; `ritual` — «Живий будильник» будить і без голоду чи з кормом у мисці; `caged` — крик
+ * під замком (§8.7): кіт, що до своєї хвилини вже вийшов (переноска зламалася), не кричить.
+ */
 interface PlannedWake {
   cat: Cat;
   minute: number;
   reason: "morning" | "night";
   trait?: "nocturnal" | "morning";
   ritual?: boolean;
+  caged?: boolean;
 }
 
 /** Хто й коли будитиме персонажа цієї ночі (§9.12): ранкова побудка й нічні пісні. */
@@ -153,7 +157,7 @@ function plannedWakeUps(state: GameState, rng: Rng, from: number, to: number): P
   for (const cat of state.cats) {
     // Новонароджені нікого не будять: вони й феєрверків не чують (перевірка модифікаторів 2026-10-28).
     // Кіт під замком кричить: хто вже нагадує про себе, будить персонажа (§8.7).
-    if (cat.away === "carrier" && cageStage(cat) !== "calm") wakes.push({ cat, minute: from + Math.floor(rng.next() * (to - from)), reason: "night" });
+    if (cat.away === "carrier" && cageStage(cat) !== "calm") wakes.push({ cat, minute: from + Math.floor(rng.next() * (to - from)), reason: "night", caged: true });
     if (cat.away !== null || isNewborn(cat)) continue;
     // «Тиха ніч»: коти не будять зовсім; «Тихий вечір» — уночі не будять, а голодний на світанку будить, як завжди (§4.1).
     if (state.modifiers.day === "quiet-night") continue;
@@ -233,9 +237,11 @@ function sleep({ state, report, rng }: Night): void {
     }
     if (!nextWake || minute >= planned) break;
     wakes.shift();
+    const { cat, reason } = nextWake;
+    // Побудки розплановано звечора: кіт, якого до своєї хвилини не стало, не будить, а вже вільний — не кричить під замком.
+    if (!state.cats.includes(cat) || (nextWake.caged === true && cat.away !== "carrier")) continue;
     // Не більше двох побудок за ніч сумарно (§9.12, «Спільні механіки рис»): третій кіт уже не будить.
     if (report.wakeUps.length >= WAKE_UP.maxPerNight) continue;
-    const { cat, reason } = nextWake;
     // Ранкова побудка — лише якщо кіт голодний і миски порожні, а «Живий будильник» — і заради ритуалу.
     const hungry = cat.needs.hunger >= WAKE_UP.hungry && !state.home.items.some((i) => i.kind === "bowl" && i.food > 0);
     if (reason === "morning" && !hungry && nextWake.ritual !== true) continue;
