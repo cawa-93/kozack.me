@@ -1,11 +1,12 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { RADIO, SAMPLE_RATE } from "../src/audio/config";
 import { STATIONS } from "../src/audio/radio/playlist";
 import playlist from "../src/audio/radio/playlist.json";
 import type { AudioEngine } from "../src/audio/engine";
+import { Broadcast } from "../src/audio/radio/broadcast";
 import { radioLit } from "../src/audio/radio/lamp";
 import { Radio } from "../src/audio/radio/radio";
 import { AudioPrefs, DEFAULT_AUDIO, loadAudioSettings, saveAudioSettings } from "../src/audio/settings";
@@ -209,5 +210,40 @@ describe("файли радіо (§8.10)", () => {
         expect(head[0]).toBe(0xff);
       }
     }
+  });
+});
+
+describe("радіо: дотик до станції (§8.10)", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  /** Радіо, яке гравець лишив увімкненим; `state` — стан контексту звуку (null — гравець ще нічого не натискав). */
+  const playing = (state: AudioContextState | null = null): Radio => {
+    const engine = { context: state === null ? null : { state, currentTime: 0 }, music: null, onRunning: () => undefined } as unknown as AudioEngine;
+    const prefs = new AudioPrefs(null, STATIONS.map((s) => s.id));
+    prefs.update({ radioOn: true });
+    return new Radio(engine, prefs);
+  };
+
+  it("дотик до станції, що вже грає, нічого не робить: без провалу звуку й шуму ефіру", () => {
+    const radio = playing();
+    const tune = vi.spyOn(Broadcast.prototype, "tune");
+    radio.choose(radio.station);
+    expect(tune).not.toHaveBeenCalled();
+    const other = STATIONS.find((s) => s !== radio.station)!;
+    radio.choose(other);
+    expect(tune).toHaveBeenCalledTimes(1);
+    expect(radio.station).toBe(other);
+  });
+
+  it("дотик до станції вимкненого радіо вмикає її", () => {
+    const radio = playing();
+    radio.toggle();
+    const tune = vi.spyOn(Broadcast.prototype, "tune");
+    radio.choose(radio.station);
+    expect(radio.on).toBe(true);
+    expect(tune).toHaveBeenCalledTimes(1);
   });
 });

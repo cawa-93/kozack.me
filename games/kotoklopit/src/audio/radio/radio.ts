@@ -60,7 +60,9 @@ export class Radio {
     return this.prefs.value.volume;
   }
 
+  /** Дотик до станції. Та, що вже грає, лишається як є: перенастроювання дало б провал звуку й шум до нового декодування. */
   choose(station: Station): void {
+    if (this.on && station.id === this.station.id) return;
     this.update({ station: station.id, radioOn: true });
     this.broadcast.tune(this.playing());
   }
