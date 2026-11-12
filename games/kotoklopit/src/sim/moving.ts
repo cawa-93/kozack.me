@@ -7,7 +7,7 @@ import { feederAt } from "./economy";
 import { emit } from "./events";
 import { bodyTouches, distanceToRect, itemPoint, nearestFreePlace, robotDockAt, robotDocked, slotById, thingHome, thingPresent, thingShift, type Place } from "./home";
 import { clearPath, robotProgress } from "./household";
-import { fitsThing, put } from "./settle";
+import { put, thingFits } from "./settle";
 import { itemTargetId, movableItem } from "./targets";
 import type { CarriedThing, CarryThing, Cat, CatActKind, GameState, PlacedItem, Vec } from "./types";
 
@@ -33,20 +33,23 @@ const ROBOT_TARGET = "robot";
 export function thingSpot(state: GameState): Place | null {
   const { body, held } = state.character;
   const ahead = { x: body.x + body.facing.x * MOVING.ahead, y: body.y + body.facing.y * MOVING.ahead };
-  const thing = held?.kind === "gameThing" ? held.thing : null;
-  return nearestFreePlace(state, ahead, (center) => Math.hypot(center.x - body.x, center.y - body.y) <= MOVING.reach && clearPath(body, center) && fits(state, thing, center));
+  const fits = fitsFor(state, held?.kind === "gameThing" ? held.thing : null);
+  return nearestFreePlace(state, ahead, (center) => Math.hypot(center.x - body.x, center.y - body.y) <= MOVING.reach && clearPath(body, center) && fits(center));
 }
 
 /**
  * Сховище й переноски ставлять, як речі, і під ближню стіну: вона перед ними згасає (§8.7). Тверде сховище — не собі під ноги й так,
- * щоб нікому не заважало (`fitsThing`).
+ * щоб нікому не заважало (`thingFits`). Перевірка — для кандидатів одного пошуку місця: стан між ними не змінюють.
  */
-function fits(state: GameState, thing: CarryThing | null, center: Vec): boolean {
+function fitsFor(state: GameState, thing: CarryThing | null): (center: Vec) => boolean {
+  if (thing === null) return () => true;
   const { body } = state.character;
-  const tile = { x: Math.floor(center.x), y: Math.floor(center.y) };
-  if (thing === null) return true;
-  if (thing !== "carrier" && bodyTouches(body, tile.x, tile.y)) return false;
-  return fitsThing(state, thing, tile);
+  const fitsThing = thingFits(state, thing);
+  return (center) => {
+    const tile = { x: Math.floor(center.x), y: Math.floor(center.y) };
+    if (thing !== "carrier" && bodyTouches(body, tile.x, tile.y)) return false;
+    return fitsThing(tile);
+  };
 }
 
 function setDown(state: GameState, held: CarriedThing, place: Place): void {
@@ -105,7 +108,7 @@ export function dropThing(state: GameState): void {
   }
   if (held?.kind === "gameThing") {
     const thing = held.thing;
-    const place = nearestFreePlace(state, body, (center) => fits(state, thing, center));
+    const place = nearestFreePlace(state, body, fitsFor(state, thing));
     // Ніде не можна — туди, де стояла: поки річ у руках, її клітинку ніхто не займає, хіба що її взяли щойно.
     setGameThingDown(state, thing, place ?? standing(state, thing));
   }

@@ -1,6 +1,6 @@
 // Речі, які ставить гра (§8.7, «Що ставить гра»): сховище, ящики біля входу, переноска, велика коробка й база нового робота стають
 // на своє місце, а зайняте — на найближчу вільну клітинку; уночі ящики й коробка вертаються, якщо місце звільнилося. Сховища й
-// переноски гравець переставляє сам (`moving.ts`): куди їх можна поставити, каже `fitsThing`.
+// переноски гравець переставляє сам (`moving.ts`): куди їх можна поставити, каже `thingFits`.
 
 import {
   BIG_BOX,
@@ -66,24 +66,44 @@ const SIDE: Partial<Record<GameThing, Vec>> = {
   "big-box": { x: BIG_BOX_SCRATCH.x - BIG_BOX.x, y: BIG_BOX_SCRATCH.y - BIG_BOX.y },
 };
 
-const key = (x: number, y: number): string => `${x},${y}`;
+/** Клітинка квартири — індекс у масиві досяжності (`reachable`). */
+const cell = (x: number, y: number): number => y * MAP_WIDTH + x;
+const STEPS = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
+/** Черга обходу: спільна, бо обхід не вкладається сам у себе, а кожна клітинка стає в чергу щонайбільше раз. */
+const QUEUE = new Int32Array(MAP_WIDTH * MAP_HEIGHT);
+/** Досяжність «після»: потрібна лише всередині `keepsWay`, тож теж спільна — щоб не створювати масив на кожну клітинку-кандидата. */
+const AFTER = new Uint8Array(MAP_WIDTH * MAP_HEIGHT);
 
-/** Клітинки, куди персонаж дійде від ліжка. */
-function reachable(state: GameState): Set<string> {
-  const start = { x: Math.floor(SPAWN.x), y: Math.floor(SPAWN.y) };
-  const seen = new Set([key(start.x, start.y)]);
-  const queue = [start];
-  for (let head = 0; head < queue.length; head++) {
-    const t = queue[head]!;
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
-      const x = t.x + dx;
-      const y = t.y + dy;
-      if (x < 0 || y < 0 || x >= MAP_WIDTH || y >= MAP_HEIGHT || seen.has(key(x, y)) || blocksPerson(state, x, y)) continue;
-      seen.add(key(x, y));
-      queue.push({ x, y });
+/**
+ * Клітинки, куди персонаж дійде від ліжка: 1 за індексом `cell`. Масив, а не множина рядків: перенесення сховища рахує це щокадру
+ * на кожну клітинку-кандидата (`thingFits`).
+ */
+function reachable(state: GameState, seen = new Uint8Array(MAP_WIDTH * MAP_HEIGHT)): Uint8Array {
+  seen.fill(0);
+  const start = cell(Math.floor(SPAWN.x), Math.floor(SPAWN.y));
+  seen[start] = 1;
+  QUEUE[0] = start;
+  let tail = 1;
+  for (let head = 0; head < tail; head++) {
+    const at = QUEUE[head]!;
+    const tx = at % MAP_WIDTH;
+    const ty = (at - tx) / MAP_WIDTH;
+    for (const [dx, dy] of STEPS) {
+      const x = tx + dx;
+      const y = ty + dy;
+      if (x < 0 || y < 0 || x >= MAP_WIDTH || y >= MAP_HEIGHT) continue;
+      const next = cell(x, y);
+      if (seen[next] === 1 || blocksPerson(state, x, y)) continue;
+      seen[next] = 1;
+      QUEUE[tail++] = next;
     }
   }
   return seen;
+}
+
+/** Клітинка в межах квартири й досяжна за `map`. */
+function reached(map: Uint8Array, x: number, y: number): boolean {
+  return x >= 0 && y >= 0 && x < MAP_WIDTH && y < MAP_HEIGHT && map[cell(x, y)] === 1;
 }
 
 /** Поставити річ гри на клітинку `tile` (null чи своя клітинка — на своє місце). */
@@ -104,17 +124,18 @@ export function put(state: GameState, thing: GameThing, tile: Vec | null): void 
  * (`before`), — досяжне й далі, крім самої клітинки; перед річчю можна стати; а `strict` — ще й не впритул до меблів, якими він
  * користується. Річ лишається там, куди її перевіряли, — хто викликав, ставить її, куди треба.
  */
-function keepsWay(state: GameState, thing: GameThing, tile: Vec | null, before: Set<string>, strict: boolean): boolean {
+function keepsWay(state: GameState, thing: GameThing, tile: Vec | null, before: Uint8Array, strict: boolean): boolean {
   put(state, thing, tile);
   const at = tile ?? thingHome(thing);
-  const after = reachable(state);
-  for (const t of before) if (t !== key(at.x, at.y) && !after.has(t)) return false;
+  const after = reachable(state, AFTER);
+  const own = cell(at.x, at.y);
+  for (let i = 0; i < before.length; i++) if (before[i] === 1 && after[i] === 0 && i !== own) return false;
   // До самої речі й до кожної іншої, біля якої стає персонаж, можна підійти бодай з одного боку.
   for (const other of GAME_THINGS) {
     const sides = SIDES[other];
     if (!sides || (other !== thing && !thingPresent(state, other))) continue;
     const t = other === thing ? at : standing(state, other);
-    if (!sides.some((d) => after.has(key(t.x + d.x, t.y + d.y)))) return false;
+    if (!sides.some((d) => reached(after, t.x + d.x, t.y + d.y))) return false;
   }
   const side = SIDE[thing];
   if (side && (isWall(at.x + side.x, at.y + side.y) || isSolid(state, at.x + side.x, at.y + side.y))) return false;
@@ -165,20 +186,25 @@ function spotFor(state: GameState, thing: GameThing): Vec | null {
 }
 
 /**
- * Сховище з рук на клітинці `tile` нікому не заважає (§8.7, «Сховища й переноски»): не перекриває проходу, перед ним можна
- * стати, а збоку від шафки — підлога для кота. Переноска не тверда — їй годиться будь-яка вільна клітинка.
+ * Чи сховище з рук на клітинці нікому не заважає (§8.7, «Сховища й переноски»): не перекриває проходу, перед ним можна стати, а
+ * збоку від шафки — підлога для кота. Переноска не тверда — їй годиться будь-яка вільна клітинка. Перевірка — для кількох
+ * клітинок-кандидатів того самого стану: куди персонаж доходить, поки річ у руках, рахується раз, на першій із них, — тож між
+ * викликами квартиру не змінюють.
  */
-export function fitsThing(state: GameState, thing: CarryThing, tile: Vec): boolean {
-  if (!SOLID.has(thing)) return true;
-  const carried = state.home.thingCarried;
-  const original = state.home.displaced?.[thing] ?? null;
-  const before = reachable(state);
-  // Перевіряємо так, наче річ уже стоїть там: у руках її для квартири немає.
-  delete state.home.thingCarried;
-  const fits = keepsWay(state, thing, tile, before, false);
-  if (carried !== undefined) state.home.thingCarried = carried;
-  put(state, thing, original);
-  return fits;
+export function thingFits(state: GameState, thing: CarryThing): (tile: Vec) => boolean {
+  if (!SOLID.has(thing)) return () => true;
+  let before: Uint8Array | null = null;
+  return (tile) => {
+    const carried = state.home.thingCarried;
+    const original = state.home.displaced?.[thing] ?? null;
+    before ??= reachable(state);
+    // Перевіряємо так, наче річ уже стоїть там: у руках її для квартири немає.
+    delete state.home.thingCarried;
+    const fits = keepsWay(state, thing, tile, before, false);
+    if (carried !== undefined) state.home.thingCarried = carried;
+    put(state, thing, original);
+    return fits;
+  };
 }
 
 /** Своє місце речі гри — клітинка для речей (усі такі); якщо ні — вважаємо вільним. */
