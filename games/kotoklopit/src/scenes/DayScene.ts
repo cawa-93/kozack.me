@@ -65,6 +65,7 @@ import { createWorld, WORLD_BUILDERS } from "../view/world/factory";
 import { flyIsoIcon } from "../view/iso/marksflight";
 import { personBubbleAnchor } from "../view/iso/markslayout";
 import type { WorldFrame } from "../view/world/part";
+import { dayShow, REVEAL_SECONDS, type DayShow } from "../view/dayshow";
 import type { World } from "../view/world/world";
 import { markDeparture, takeDeparture } from "../view/departing";
 import type { RaceScene, RoadEnd, RoadStart } from "./RaceScene";
@@ -126,6 +127,10 @@ export class DayScene extends Phaser.Scene {
    * і день, поки вона не стала, другої не запускає, а квартири вже не показує (§8.5 «На місці — кадр парковки»).
    */
   private parkingRequested = false;
+  /** На місці (`showParking`): під карткою пункту — кадр парковки, і день схований. */
+  private away = false;
+  /** Квартиру минулого кадру не малювали (`dayShow`): цього кадру вона має одразу стати на місце. */
+  private worldHidden = false;
   /**
    * Виїзд із дому (§8.5 «Виїзд із дому», рішення автора 2026-11-03): поїздка щойно вирушила від дверей (`takeDeparture`), і
    * квартира темніє (`LEAVE_DARK_MS`, мс від початку — лише поки не відкрита картка); гра тим часом стоїть, а введення не діє.
@@ -481,10 +486,23 @@ export class DayScene extends Phaser.Scene {
     if (!visit) this.parkingRequested = false;
     const parked = visit && this.race.parkedNow;
     if (parked) this.parkingRequested = false;
-    const away = visit && (parked || this.parkingRequested);
-    this.scene.setVisible(!away);
+    this.away = visit && (parked || this.parkingRequested);
+    this.applyShow();
     this.overlay.setAway(parked);
     this.overlay.setAside(parked && this.race.parkingAside);
+  }
+
+  /**
+   * Що з дня малювати (§2.1 «Малювання й завантаження», `dayShow`): на місці й під непрозорою карткою день схований зовсім, під
+   * повною темрявою — без квартири (сама темрява — у шарі інтерфейсу). Під непрозорою карткою не малює й сцена дороги.
+   */
+  private applyShow(): DayShow {
+    const covered = this.overlay.covers;
+    const show = dayShow({ away: this.away, covered, dark: this.dark.fillAlpha });
+    this.scene.setVisible(show.scene);
+    this.cameras.main.setVisible(show.world);
+    if (this.scene.isActive("race")) this.race.cover(covered);
+    return show;
   }
 
   private dash(): void {
@@ -792,7 +810,21 @@ export class DayScene extends Phaser.Scene {
 
   private render(time: number, seconds: number): void {
     const state = this.state;
-    const frame: WorldFrame = { time, seconds, moving: this.moving, sleepiness: this.sleepiness(time), blocked: this.blocked(), showHidden: __DEV_TOOLS__ && this.session.showHidden, lightMinute: lightMinuteOf(this.session, state.minute) };
+    if (!this.applyShow().world) {
+      // Квартиру закрито (§2.1, `dayShow`): світ, панель і бабли не оновлюються й не малюються; гроші й засинання — далі.
+      this.worldHidden = true;
+      this.showEarnings(time);
+      this.drawFallingAsleep(time);
+      return;
+    }
+    // Квартиру щойно відкрито: стан під карткою міг змінитися (ніч, перемотка аварії) — камера й згладжування одразу на місці.
+    const reveal = this.worldHidden;
+    this.worldHidden = false;
+    const frame: WorldFrame = { time, seconds: reveal ? REVEAL_SECONDS : seconds, moving: this.moving, sleepiness: this.sleepiness(time), blocked: this.blocked(), showHidden: __DEV_TOOLS__ && this.session.showHidden, lightMinute: lightMinuteOf(this.session, state.minute) };
+    if (reveal) {
+      this.viewport.jump();
+      this.world.update(state, frame);
+    }
     this.hud.update(state, time);
     if (!this.overlay.isOpen && !this.hud.saying) {
       const news = this.news.shift();

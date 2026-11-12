@@ -95,6 +95,11 @@ const TITLE_TIMING = { start: 0.5, heading: 1.1, line: 0.45, section: 0.5, exit:
 export class Overlay {
   private readonly root: HTMLElement;
   private card: Card | null = null;
+  /**
+   * З якої миті (`performance.now()`) тло `.cinematic` уже непрозоре: поверх напівпрозорої картки воно проявляється за
+   * `TITLE_TIMING.fade` (`transition` в overlay.css), а з прихованої картки чи меню — одразу.
+   */
+  private opaqueAt = 0;
 
   constructor() {
     this.root = document.createElement("div");
@@ -118,6 +123,24 @@ export class Overlay {
   /** Відкрита звичайна картка (не титулка й не кінець гри): щоб відкласти її, коли поверх неї з'являється інша. */
   get shown(): Card | null {
     return this.root.classList.contains("cinematic") ? null : this.card;
+  }
+
+  /**
+   * Картка закриває гру непрозорим тлом (§2.1 «Малювання й завантаження»): титулка, екран кінця гри й титри, поки не почався
+   * світанок (`.dawn`), меню й вибір персонажа (`solid`). Тоді квартиру не малюють.
+   */
+  get covers(): boolean {
+    if (this.root.hidden) return false;
+    const classes = this.root.classList;
+    if (classes.contains("cinematic")) return !classes.contains("dawn") && performance.now() >= this.opaqueAt;
+    return classes.contains("solid");
+  }
+
+  /** Перед титулкою, кінцем гри чи титрами: якщо під ними вже видно напівпрозору картку, тло непрозоре лише після проявлення. */
+  private fadeIn(): void {
+    const classes = this.root.classList;
+    const opaque = this.root.hidden || (classes.contains("cinematic") ? !classes.contains("dawn") : classes.contains("solid"));
+    this.opaqueAt = opaque ? 0 : performance.now() + TITLE_TIMING.fade * 1000;
   }
 
   /**
@@ -172,6 +195,7 @@ export class Overlay {
     // Іконки біля назв (§11.4): хвороба кота на прощанні, як і в картках.
     drawIcons(screen);
     this.card = { title: "", body: [], actions: [{ label: "", primary: true, onSelect: advance }], onDismiss: advance };
+    this.fadeIn();
     this.root.classList.add("cinematic");
     this.root.replaceChildren(screen);
     this.root.hidden = false;
@@ -216,6 +240,7 @@ export class Overlay {
     drawGlyphs(screen);
     drawIcons(screen);
     this.card = { title: "", body: [], actions: gated };
+    this.fadeIn();
     this.root.classList.remove("dawn");
     this.root.classList.add("cinematic");
     this.root.replaceChildren(screen);
@@ -237,6 +262,7 @@ export class Overlay {
   credits(screen: HTMLElement, actions: CardAction[]): void {
     drawGlyphs(screen);
     this.card = { title: "", body: [], actions };
+    this.fadeIn();
     this.root.classList.remove("dawn");
     this.root.classList.add("cinematic");
     this.root.replaceChildren(screen);
