@@ -198,6 +198,9 @@ export interface HeldFrame {
   shift?: { readonly x: number; readonly y: number };
 }
 
+/** Чашка кави в руці, поки персонаж п'є (§8.7): той самий об'єкт щокадру. */
+const DRINK_HELD: HeldFrame = { socket: "held", frame: COFFEE_CUP_HELD, scale: 1 };
+
 /**
  * Річ у руках (`Item`, §8.4) — кадр і гніздо скелета: страва, мамин судочок, сира порція (`held`, кадри `item/dish/*`), совок
  * корму (`held`, `item/scoop` з видом корму), вудочка (`rod`, `item/toy/<якість>` у стані «в руці»), вертикальний пилосос
@@ -209,7 +212,7 @@ export function heldFrame(item: Item | null, anim: PersonAnimId | null = null, t
   if (item === null) {
     if (anim === "phone") return { socket: "held", frame: PHONE_HELD.frame, scale: PHONE_HELD.scale, shift: PHONE_HELD.shift };
     // П'є каву (§8.7): у руці — чашка, яку щойно взяв з піддона кавомашини.
-    if (anim === "drink") return { socket: "held", frame: COFFEE_CUP_HELD, scale: 1 };
+    if (anim === "drink") return DRINK_HELD;
     return null;
   }
   if (heldThing(item) === "cat") return null;

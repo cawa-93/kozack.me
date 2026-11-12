@@ -9,6 +9,7 @@ import { coffeeStage, coffeeSurface, discardCoffee } from "../src/sim/coffee";
 import { COFFEE, THINGS } from "../src/sim/config";
 import { freeSlots, orderThing, place, receivePackages, utilitiesDue } from "../src/sim/economy";
 import type { GameEvent } from "../src/sim/events";
+import { objectById } from "../src/sim/home";
 import { advance, interact, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
@@ -18,8 +19,8 @@ import { targetOf } from "../src/sim/targets";
 import type { Dish, Save } from "../src/sim/types";
 import { PERSON_ONE_SHOT_MS } from "../src/view/anim/ids";
 import { personEventAnim } from "../src/view/anim/personanim";
-import { COFFEE_CUP_FRAME, coffeeLook } from "../src/view/iso/looks";
-import { coffeeBar } from "../src/view/iso/markslayout";
+import { COFFEE_CUP_FRAME, coffeeCup } from "../src/view/iso/looks";
+import { coffeeBar, faceBarStep, stoveFaceBar } from "../src/view/iso/markslayout";
 import { heldFrame } from "../src/view/iso/personlook";
 import { shotPlace } from "../src/view/iso/personspot";
 import { personStates } from "../src/view/personstates";
@@ -117,7 +118,7 @@ describe("де стоїть кавомашина (§8.7)", () => {
     place(state, "coffee", "cheap");
     expect(state.home.surfaces["table"]).toBeNull();
     expect(coffeeSurface(state)).toBeNull();
-    expect(coffeeLook(state)).toBeNull();
+    expect(coffeeCup(state)).toBe(false);
     advance(save, 5);
     expect(coffeeSurface(state)).toBeNull();
     // Страву з лівої стільниці забрали — машина стає туди.
@@ -168,24 +169,35 @@ describe("де стоїть кавомашина (§8.7)", () => {
     expect(standingTrinkets(left).map((t) => t.kind)).toContain("mug");
   });
 
-  it("вигляд: машина на своїй стільниці; чашка під носиком — поки кава вариться й коли готова; смуга — поки вариться; бабл — коли готова", () => {
+  it("вигляд: чашка під носиком — поки кава вариться й коли готова; смуга — поки вариться; бабл — коли готова", () => {
     const save = sleepy();
     const state = save.current;
-    expect(coffeeLook(state)).toEqual({ surface: "counter-right", cup: false });
+    expect(coffeeCup(state)).toBe(false);
     expect(coffeeBar(state)).toBeNull();
     expect(coffeeIcon(state, "counter-right")).toBeNull();
     interact(save);
     advance(save, COFFEE.brewMinutes / 2);
-    expect(coffeeLook(state)).toEqual({ surface: "counter-right", cup: true });
-    expect(coffeeBar(state)).toEqual({ surface: "counter-right", value: expect.closeTo(0.5) });
+    expect(coffeeCup(state)).toBe(true);
+    expect(coffeeBar(state)).toBeCloseTo(0.5);
     expect(coffeeIcon(state, "counter-right")).toBeNull();
     advance(save, COFFEE.brewMinutes);
-    expect(coffeeLook(state)).toEqual({ surface: "counter-right", cup: true });
+    expect(coffeeCup(state)).toBe(true);
     expect(coffeeBar(state)).toBeNull();
     // «Кава готова» — іконкою самої машини з чашкою під носиком, над її стільницею; над іншою — нічого.
     expect(coffeeIcon(state, "counter-right")).toBe(THING_ICONS.coffee);
     expect(coffeeIcon(state, "counter-left")).toBeNull();
-    expect(coffeeLook(game().current)).toBeNull();
+    // Смугу перемальовують, лише коли вона заповнилася ще на піксель, а не щокадру: крок — від значення й довжини грані.
+    const face = stoveFaceBar(objectById("counter-right"));
+    expect(faceBarStep(face, 0)).toBe(0);
+    expect(faceBarStep(face, 1)).toBe(Math.round(face.length));
+    // Значення трохи за цілим пікселем: ще чверть пікселя кроку не міняє, а два пікселі — міняють.
+    const mid = (Math.floor(face.length / 2) + 0.1) / face.length;
+    expect(faceBarStep(face, mid + 0.25 / face.length)).toBe(faceBarStep(face, mid));
+    expect(faceBarStep(face, mid + 2 / face.length)).toBe(faceBarStep(face, mid) + 2);
+    // Без машини — ні чашки, ні смуги.
+    const none = game().current;
+    expect(coffeeCup(none)).toBe(false);
+    expect(coffeeBar(none)).toBeNull();
   });
 });
 

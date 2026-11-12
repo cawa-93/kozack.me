@@ -11,7 +11,7 @@
 
 import type Phaser from "phaser";
 
-import { COFFEE } from "../../sim/config";
+import { coffeeSurface } from "../../sim/coffee";
 import type { GameEvent } from "../../sim/events";
 import { objectById } from "../../sim/home";
 import type { GameState } from "../../sim/types";
@@ -33,6 +33,7 @@ import {
   searchBar,
   searchBarBox,
   coffeeBar,
+  faceBarStep,
   stoveBar,
   stoveFaceBar,
   type FaceBar,
@@ -47,6 +48,15 @@ import {
  */
 const ON_THING_DEPTH = 0.0012;
 
+/** Смуга кавомашини: її малюнок, точка глибини, стільниця й грань, для яких вона пораховані, і намальований крок (−1 — схована). */
+interface CoffeeBarView {
+  readonly graphics: Phaser.GameObjects.Graphics;
+  readonly point: IsoPointHandle;
+  at: string;
+  face: FaceBar;
+  step: number;
+}
+
 export class IsoMarksView implements WorldPart {
   private readonly depth: IsoDepth;
   /** Смуги дії й пошуку: над усім світом, під баблами. */
@@ -56,12 +66,11 @@ export class IsoMarksView implements WorldPart {
   private readonly stovePoint: IsoPointHandle;
   /** Де смуга плити: плита не рухається. */
   private readonly stoveFace: FaceBar;
-  /** Смуга кавомашини: на лицьовій грані її стільниці, у проміжку глибини стільниці. */
-  private readonly coffee: Phaser.GameObjects.Graphics;
-  private readonly coffeePoint: IsoPointHandle;
-  /** Стільниця, для якої пораховано смугу кавомашини (`coffeeFace`): машина стоїть на одній із двох. */
-  private coffeeAt: string;
-  private coffeeFace: FaceBar;
+  /**
+   * Смуга кавомашини (§8.7): на лицьовій грані її стільниці, у проміжку глибини стільниці. З'являється з першим варінням: поки
+   * машини немає чи вона не варить, ні об'єкта, ні точки глибини немає, і кадр нічого не коштує.
+   */
+  private coffee: CoffeeBarView | null = null;
   /** Зміст екрана комп'ютера: у проміжку глибини стола. */
   private readonly screen: Phaser.GameObjects.Graphics;
   private readonly screenPoint: IsoPointHandle;
@@ -80,12 +89,6 @@ export class IsoMarksView implements WorldPart {
     this.stovePoint = this.depth.addPoint((d) => stove.setDepth(d));
     this.stovePoint.placeAbove("stove", ON_THING_DEPTH);
     this.stoveFace = stoveFaceBar(objectById("stove"));
-    const coffee = scene.add.graphics().addToDisplayList(layer);
-    this.coffee = coffee;
-    this.coffeePoint = this.depth.addPoint((d) => coffee.setDepth(d));
-    this.coffeeAt = COFFEE.surfaces[0];
-    this.coffeePoint.placeAbove(this.coffeeAt, ON_THING_DEPTH);
-    this.coffeeFace = stoveFaceBar(objectById(this.coffeeAt));
     const screen = scene.add.graphics().addToDisplayList(layer);
     this.screen = screen;
     this.screenPoint = this.depth.addPoint((d) => screen.setDepth(d));
@@ -121,16 +124,7 @@ export class IsoMarksView implements WorldPart {
     if (stove) drawFaceBar(this.stove, this.stoveFace, stove.value, stove.danger ? "danger" : "good");
 
     // Кавомашина (§8.7): поки кава вариться — смуга на грані стільниці під машиною, як у плити.
-    this.coffee.clear();
-    const brew = coffeeBar(state);
-    if (brew) {
-      if (brew.surface !== this.coffeeAt) {
-        this.coffeeAt = brew.surface;
-        this.coffeePoint.placeAbove(brew.surface, ON_THING_DEPTH);
-        this.coffeeFace = stoveFaceBar(objectById(brew.surface));
-      }
-      drawFaceBar(this.coffee, this.coffeeFace, brew.value, "good");
-    }
+    this.drawCoffee(state);
 
     // Екран комп'ютера: що на ньому; перемальовується, лише коли зміст зробив крок (рядок дописався, мовець кивнув).
     const show = screenShow(state);
@@ -141,6 +135,40 @@ export class IsoMarksView implements WorldPart {
       this.screen.clear();
       drawScreen(this.screen, this.quad, show, at);
     }
+  }
+
+  /**
+   * Смуга кавомашини: видима лише поки кава вариться, а перемальовується, лише коли заповнилася ще на піксель чи машина стала на
+   * іншу стільницю, — не щокадру.
+   */
+  private drawCoffee(state: GameState): void {
+    const value = coffeeBar(state);
+    const at = value === null ? null : coffeeSurface(state);
+    let bar = this.coffee;
+    if (value === null || at === null) {
+      if (bar && bar.step >= 0) {
+        bar.graphics.clear().setVisible(false);
+        bar.step = -1;
+      }
+      return;
+    }
+    if (!bar) {
+      const { scene, layer } = this.ctx;
+      const graphics = scene.add.graphics().addToDisplayList(layer);
+      bar = { graphics, point: this.depth.addPoint((d) => graphics.setDepth(d)), at: "", face: stoveFaceBar(objectById(at)), step: -1 };
+      this.coffee = bar;
+    }
+    if (bar.at !== at) {
+      bar.at = at;
+      bar.point.placeAbove(at, ON_THING_DEPTH);
+      bar.face = stoveFaceBar(objectById(at));
+      bar.step = -1;
+    }
+    const step = faceBarStep(bar.face, value);
+    if (step === bar.step) return;
+    bar.step = step;
+    bar.graphics.clear().setVisible(true);
+    drawFaceBar(bar.graphics, bar.face, value, "good");
   }
 
   lateUpdate(): void {
@@ -162,8 +190,11 @@ export class IsoMarksView implements WorldPart {
     this.screen.destroy();
     this.stovePoint.remove();
     this.stove.destroy();
-    this.coffeePoint.remove();
-    this.coffee.destroy();
+    if (this.coffee) {
+      this.coffee.point.remove();
+      this.coffee.graphics.destroy();
+      this.coffee = null;
+    }
     this.bars.destroy();
   }
 

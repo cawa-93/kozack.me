@@ -4,7 +4,7 @@
 
 import { cageStage, cagedCats, carrierOf } from "../../sim/carriers";
 import { bowlEaten, isDirty, trashTipped } from "../../sim/catai";
-import { coffeeStage, coffeeSurface } from "../../sim/coffee";
+import { coffeeStage } from "../../sim/coffee";
 import { BOWL_CAPACITY, FEEDER_CAPACITY } from "../../sim/config";
 import { DUST_SPOTS } from "../../sim/dust";
 import type { GameEvent } from "../../sim/events";
@@ -131,14 +131,10 @@ export const COFFEE_FRAME: IsoFrame = frame("item/coffee");
 export const COFFEE_CUP_FRAME: IsoFrame = frame("item/coffee/cup", "tray");
 export const COFFEE_CUP_HELD: IsoFrame = frame("item/coffee/cup", "hand");
 
-/**
- * Кавомашина (§8.7): на якій стільниці стоїть (у точці страви) і чи є під носиком чашка — поки кава вариться й поки готова
- * чекає. Машини немає чи вона ще чекає вільної стільниці — null.
- */
-export function coffeeLook(state: GameState): { surface: string; cup: boolean } | null {
-  const surface = coffeeSurface(state);
-  if (surface === null) return null;
-  return { surface, cup: coffeeStage(state) !== "idle" };
+/** Під носиком кавомашини стоїть чашка (§8.7): поки кава вариться й поки готова чекає. Де машина — `coffeeSurface`. */
+export function coffeeCup(state: GameState): boolean {
+  const stage = coffeeStage(state);
+  return stage === "brewing" || stage === "ready";
 }
 
 /** Над стравою хвилі запаху (§8.7): над зіпсованою, як над брудним лотком. */

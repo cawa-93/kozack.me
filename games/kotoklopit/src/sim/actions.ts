@@ -805,18 +805,17 @@ function tickMeal(state: GameState, activity: UseActivity, input: Input, minutes
     character.activity = null;
     return;
   }
-  const target = targetById(state, activity.target);
-  if (target === null || target.type !== "object" || !canUse(state, target)) {
+  // Прямо зі стану стола, без переліку всіх цілей (`targetById`): їжа йде щокроку, поки персонаж сидить.
+  if (character.held !== null || state.home.surfaces[activity.target]?.kind !== "meal") {
     character.activity = null;
     return;
   }
-  const total = useMinutes(state, target);
   const step = minutes * actionSpeed(state);
-  eat(state, target.object, stepShare(activity.progress, step, total));
+  eat(state, activity.target, stepShare(activity.progress, step, EAT_MINUTES));
   activity.progress += step;
-  if (activity.progress >= total) {
+  if (activity.progress >= EAT_MINUTES) {
     character.activity = null;
-    finishUse(state, target, activity);
+    finishMeal(state, activity.target);
     // Кнопку ще тримають — нова дія не почнеться, поки її не відпустили (§10).
     if (input.hold) character.holdSpent = true;
   }
@@ -880,7 +879,7 @@ function holdTick(state: GameState, minutes: number): boolean {
   }
   const total = useMinutes(state, target);
   const step = minutes * actionSpeed(state);
-  if (target.type === "object" && target.object.kind === "table") eat(state, target.object, stepShare(current.progress, step, total));
+  if (target.type === "object" && target.object.kind === "table") eat(state, target.object.id, stepShare(current.progress, step, total));
   current.progress += step;
   if (current.progress >= total) {
     character.activity = null;
@@ -910,8 +909,8 @@ function eatenMinutes(state: GameState, target: Target): number {
 }
 
 /** Частка страви з'їдена (§8.7): ситість приходить разом із нею, а не наприкінці. */
-function eat(state: GameState, table: HomeObject, share: number): void {
-  const meal = state.home.surfaces[table.id];
+function eat(state: GameState, table: string, share: number): void {
+  const meal = state.home.surfaces[table];
   if (!meal) return;
   meal.eaten = (meal.eaten ?? 0) + share;
   changeStat(state, "satiety", MEAL_SATIETY[meal.quality] * share);
@@ -958,9 +957,14 @@ function finishUse(state: GameState, target: Target, activity: UseActivity): voi
     showerDrops(state);
     return;
   }
-  const meal = state.home.surfaces[object.id];
+  finishMeal(state, object.id);
+}
+
+/** Страву на столі доїдено (§8.7): тарілки вже немає. */
+function finishMeal(state: GameState, table: string): void {
+  const meal = state.home.surfaces[table];
   if (!meal) return;
-  state.home.surfaces[object.id] = null;
+  state.home.surfaces[table] = null;
   emit(state, { type: "ate", satiety: MEAL_SATIETY[meal.quality], food: supplyCount(state, "food") });
 }
 

@@ -371,12 +371,19 @@ export function stoveBar(state: GameState): { value: number; danger: boolean } |
 
 /**
  * Смуга кавомашини (§8.7): поки кава вариться — скільки зварилося; на лицьовій грані стільниці під машиною, як смуга плити
- * (`stoveFaceBar`). Машина вільна чи чашка вже готова — смуги немає.
+ * (`stoveFaceBar`; де машина — `coffeeSurface`). Машина вільна чи чашка вже готова — смуги немає (null).
  */
-export function coffeeBar(state: GameState): { surface: string; value: number } | null {
+export function coffeeBar(state: GameState): number | null {
   const coffee = state.home.coffee;
   if (!coffee || coffee.surface === null || coffee.brewing === undefined) return null;
-  return { surface: coffee.surface, value: clamp01(coffee.brewing / COFFEE.brewMinutes) };
+  return clamp01(coffee.brewing / COFFEE.brewMinutes);
+}
+
+/**
+ * Крок смуги на грані: на скільки пікселів світу вона заповнена. Смугу перемальовують, лише коли крок змінився, а не щокадру.
+ */
+export function faceBarStep(face: FaceBar, value: number): number {
+  return Math.round(clamp01(value) * face.length);
 }
 
 /** Остання відмова в пошуку роботи: коли (мс сцени) і на якому місці смужки (0–1). */

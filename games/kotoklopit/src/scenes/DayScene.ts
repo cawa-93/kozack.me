@@ -5,9 +5,9 @@ import { canDash, dash, isMoving } from "../sim/body";
 import { changeLook } from "../sim/character";
 import { meetCat, nextNewcomer } from "../sim/cat";
 import { inStandoff, isDirty } from "../sim/catai";
-import { COFFEE, LOW_STAT, MODIFIERS, SUPPLY_FLIGHT } from "../sim/config";
+import { LOW_STAT, MODIFIERS, SUPPLY_FLIGHT } from "../sim/config";
 import { carrierRoom, discardCarrier } from "../sim/carriers";
-import { discardCoffee } from "../sim/coffee";
+import { coffeeSurface, discardCoffee } from "../sim/coffee";
 import { discard, discardAppliance, discardLock, payUtilities, seePhoneHints, supplyCount } from "../sim/economy";
 import { setDifficulty } from "../sim/difficulty";
 import { checkout } from "../sim/shop";
@@ -916,8 +916,10 @@ export class DayScene extends Phaser.Scene {
     const activity = state.character.activity;
     set("shower", showerIcon(activity, !powerOut(state)));
     set("stove", stoveIcon(state.home.stove.item));
-    // Над кавомашиною — «кава готова», поки чашка чекає (§8.7).
-    for (const surface of COFFEE.surfaces) set(surface, coffeeIcon(state, surface));
+    // Над кавомашиною — «кава готова», поки чашка чекає (§8.7); інакше бабла не ставлять, і `sweepStates` його прибирає.
+    const coffeeAt = coffeeSurface(state);
+    const coffee = coffeeAt === null ? null : coffeeIcon(state, coffeeAt);
+    if (coffeeAt !== null && coffee !== null) set(coffeeAt, coffee);
     // Кіт на сходах важливіший за пакунок (§9.12).
     set("door", state.cats.some((c) => c.away === "stairs") ? STATE_ICONS.door.stairs : state.home.porch.length > 0 ? STATE_ICONS.door.porch : null);
     const table = objectById("table");

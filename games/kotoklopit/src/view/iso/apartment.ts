@@ -19,6 +19,7 @@
 
 import type Phaser from "phaser";
 
+import { coffeeSurface } from "../../sim/coffee";
 import { DUST_SPOTS, dustOf } from "../../sim/dust";
 import { radioLit } from "../../audio/radio/lamp";
 import { GAME_THINGS, isPresent, objectById, OBJECTS, placedObject, ROOMS, TOILET_ROLL, TRINKETS, WIRE_TILE, withThing, type HomeObject } from "../../sim/home";
@@ -59,7 +60,7 @@ import {
   showerFigure,
   COFFEE_CUP_FRAME,
   COFFEE_FRAME,
-  coffeeLook,
+  coffeeCup,
   showerState,
   sinkState,
   stoveArtState,
@@ -231,6 +232,8 @@ export class IsoApartmentView implements ApartmentPart {
   /** Звідки йде запах над стравою на кожній поверхні (`DISH_SMELL_LIFT`): рахується раз. */
   private readonly smellAt = new Map<string, Point>();
   private readonly cupAt = new Map<string, Point>();
+  /** Стільниця, на якій зараз намальовано кавомашину; null — ніде. */
+  private coffeeAt: string | null = null;
   private readonly walls: Wall[] = [];
   /** Внутрішні стіни (лише вони згасають), їхні сліди для `wallsToFade` і що з них зараз щось закриває. */
   private readonly inner: Wall[] = [];
@@ -646,18 +649,14 @@ export class IsoApartmentView implements ApartmentPart {
   private drawSurfaces(state: GameState, decor: DecorLook, time: number): void {
     const { home } = state;
     const smell = DISH_SMELL[Math.floor(time / DISH_SMELL_MS) % DISH_SMELL.length] ?? null;
-    // Кавомашина займає місце страви своєї стільниці (§8.7); чашка під носиком — поки кава вариться й поки готова чекає.
-    const coffee = coffeeLook(state);
     for (const id of Object.keys(home.surfaces)) {
       const thing = this.things.get(id);
       if (!thing) continue;
       const dish = home.surfaces[id] ?? null;
       this.put(thing, "dish", dish ? dishFrame(dish) : null, ON.dish, "dish");
-      const here = coffee?.surface === id;
-      this.put(thing, "coffee", here ? COFFEE_FRAME : null, ON.dish, "dish");
-      this.put(thing, "coffee-cup", here && coffee.cup ? COFFEE_CUP_FRAME : null, ON.dish + ON.step, here ? this.coffeeCupAt(id) : undefined);
       this.put(thing, "dish-smell", dishSmells(dish) ? smell : null, ON.smell, this.dishSmellAt(id));
     }
+    this.drawCoffee(state);
     // Дрібнички стоять на своїх місцях, поки їх не скинули; скинуті лежать на підлозі (їх показує підлога).
     for (const trinket of TRINKETS) {
       const thing = this.get(trinket.object);
@@ -666,6 +665,27 @@ export class IsoApartmentView implements ApartmentPart {
     const desk = this.get(DESK_LAMP.host);
     this.put(desk, "desk-lamp", decor.deskLamp && { id: "env/desk-lamp", state: decor.deskLamp }, ON.lamp, this.deskLamp);
     this.put(desk, "desk-candle", decor.deskCandle && { id: "env/desk-candle", state: decor.deskCandle }, ON.lamp, this.deskCandle);
+  }
+
+  /**
+   * Кавомашина (§8.7): стоїть у точці страви своєї стільниці, чашка під носиком — поки кава вариться й поки готова чекає. Кадри —
+   * лише на стільниці з машиною: без машини кадр нічого не коштує, а коли вона зникла чи стала на іншу стільницю, старі кадри
+   * ховаються один раз.
+   */
+  private drawCoffee(state: GameState): void {
+    const at = coffeeSurface(state);
+    if (at !== this.coffeeAt) {
+      const old = this.coffeeAt === null ? undefined : this.things.get(this.coffeeAt);
+      if (old) {
+        this.put(old, "coffee", null, ON.dish);
+        this.put(old, "coffee-cup", null, ON.dish + ON.step);
+      }
+      this.coffeeAt = at;
+    }
+    const thing = at === null ? undefined : this.things.get(at);
+    if (at === null || !thing) return;
+    this.put(thing, "coffee", COFFEE_FRAME, ON.dish, "dish");
+    this.put(thing, "coffee-cup", coffeeCup(state) ? COFFEE_CUP_FRAME : null, ON.dish + ON.step, this.coffeeCupAt(at));
   }
 
   /** Де чашка кавомашини відносно стільниці: точка страви стільниці й точка `cup` машини; рахується раз на стільницю. */
