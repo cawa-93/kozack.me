@@ -516,10 +516,14 @@ export function receivePackages(state: GameState): Delivery[] {
   return received;
 }
 
-/** Персонаж ліг спати: пакунки, що мали прибути вночі, привезуть о 09:00 наступного дня. */
-export function postponeDeliveries(state: GameState): void {
+/**
+ * Ніч минула: пакунки, що мали прибути, поки персонаж спав (до `woke` — хвилини дня, коли він прокинувся, від початку цього
+ * дня), привезуть наступного дня о `DELIVERY_NEXT_DAY_MINUTE` (§6.4); ті, що прибудуть уже по пробудженні, — своєї хвилини.
+ */
+export function postponeDeliveries(state: GameState, woke: number): void {
   const morning = absoluteMinute(state.day + 1, DELIVERY_NEXT_DAY_MINUTE);
-  for (const delivery of state.home.deliveries) delivery.at = Math.max(delivery.at, morning);
+  const awake = absoluteMinute(state.day, woke);
+  for (const delivery of state.home.deliveries) if (delivery.at < awake) delivery.at = Math.max(delivery.at, morning);
 }
 
 /** Комунальні за тиждень (§6.4): базова сума, внесок кожної речі й ремонт меблів. */

@@ -121,6 +121,21 @@ describe("доставка (§6.4)", () => {
     waitUntil(save, hours(9));
     expect(save.current.home.porch).toHaveLength(1);
   });
+
+  it("пакунок, що прибуде, коли персонаж уже прокинувся (хоч і до 09:00), привозять своєї хвилини", () => {
+    const save = withCatCorner(newGame({ address: "she", difficulty: "normal", chronotype: "lark", seed: 1 }));
+    save.current.modifiers.day = null;
+    waitUntil(save, hours(19));
+    order(save.current, "food", "cheap");
+    // Довга доставка («Кур'єри не встигають», §4.1): прибуде завтра о 07:00.
+    const delivery = save.current.home.deliveries[0]!;
+    delivery.at = absoluteMinute(1, hours(7));
+    save.current.minute = hours(21);
+    save.current.character.stats.satiety = 100;
+    const report = goToSleep(save)!;
+    expect(report.wokeMinute).toBeLessThan(hours(7));
+    expect(save.current.home.deliveries[0]?.at).toBe(absoluteMinute(1, hours(7)));
+  });
 });
 
 describe("рахунок за комунальні (§6.4)", () => {

@@ -275,7 +275,7 @@ function sleep({ state, report, rng }: Night): void {
   report.wokeMinute = woke - MINUTES_PER_DAY;
   // Розбудили сусіди (§4.1): ніч скінчилася саме тоді, коли вони, а не раніше через кота — титулка каже, о котрій.
   if (state.today.earlyWake > 0 && woke === planned) report.neighborsWoke = planned - MINUTES_PER_DAY;
-  postponeDeliveries(state);
+  postponeDeliveries(state, woke);
   passSleepTime(state, slept);
   // «Тиха ніч» (§4.1): сон діє, як довший — лише на швидкість дня; справжніх годин сну, здоров'я й «Виснаження» це не міняє.
   const bonus = state.modifiers.day === "quiet-night" ? MODIFIERS.quietNight.sleepBonus / MINUTES_PER_HOUR : 0;
