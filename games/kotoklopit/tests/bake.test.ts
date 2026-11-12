@@ -1,16 +1,25 @@
 // Запікання кадрів скелета (`bake.ts`, `bakecache.ts`, `rigsprite.ts`): що запікається наперед і чи вміщує бюджет
 // власника те, що він показує.
 
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
-import { ISO_CAT_FIT, ISO_CAT_RIG } from "../src/view/iso/catrig";
-import { artEntry } from "../src/view/art/manifest";
-import { ART_VIEWS } from "../src/view/art/types";
+import type { Look, Shape } from "../src/sim/types";
+import { BakeCache, BAKE_BUDGET } from "../src/view/art/bakecache";
+import { artEntry, DEFAULT_RES } from "../src/view/art/manifest";
+import { ART_VIEWS, frameId, type ArtId, type ArtView } from "../src/view/art/types";
+import { CAT_FAR_SLOTS, ISO_CAT_FIT, ISO_CAT_RIG, isoCatSkin } from "../src/view/iso/catrig";
 import { CAT_ANIMS, PERSON_ANIMS } from "../src/view/rig/anims";
 import { CAT_FIT, CAT_RIG } from "../src/view/rig/defs/cat";
-import { PERSON_FIT, PERSON_RIG } from "../src/view/rig/defs/person";
+import { PERSON_FAR_SLOTS, PERSON_FIT, PERSON_RIG, personSkin } from "../src/view/rig/defs/person";
 import { Rig, slotViews } from "../src/view/rig/rigcore";
 import type { RigAnim, RigDef } from "../src/view/rig/types";
+import { BUILDS, FACES } from "../src/view/wardrobe/body";
+import { BOTTOM_CUTS } from "../src/view/wardrobe/bottoms";
+import { HAIR_STYLES } from "../src/view/wardrobe/hair";
+import { SHOE_CUTS } from "../src/view/wardrobe/shoes";
+import { TOP_CUTS } from "../src/view/wardrobe/tops";
 
 type LooseDef = RigDef<string, string, string>;
 type LooseAnim = RigAnim<string, string>;
@@ -45,5 +54,168 @@ describe("запікання наперед — лише в ракурсах, д
         }
       }
     }
+  });
+});
+
+// --- Бюджет власника ---------------------------------------------------------------------------
+
+type Skin = Readonly<Record<string, ArtId | null>>;
+
+/** Пікселі запеченого кадру запису: полотно `size · res` (як `realWidth × realHeight` кадру атласу в `bake.ts`). */
+function framePixels(art: ArtId): number {
+  const entry = artEntry(art);
+  if (!entry) return 0;
+  const res = entry.res ?? DEFAULT_RES;
+  return Math.round(entry.size.w * res) * Math.round(entry.size.h * res);
+}
+
+/** Що власник може показати за весь час: видимі в ракурсі слоти × усі стани їхніх записів. */
+function demand(def: LooseDef, skin: Skin): { frames: number; pixels: number } {
+  let frames = 0;
+  let pixels = 0;
+  for (const view of ART_VIEWS) {
+    for (const slot of def.slots) {
+      const art = skin[slot.id];
+      if (!art || !slotViews(def, slot.id).includes(view)) continue;
+      const states = artEntry(art)?.states?.length ?? 1;
+      frames += states;
+      pixels += states * framePixels(art);
+    }
+  }
+  return { frames, pixels };
+}
+
+/**
+ * Скелет, що повертається, як його показує `RigSprite`: у ракурсі кожен видимий слот по черзі показує всі стани свого запису
+ * (кіт перебирає вирази, персонаж сідає й присідає) — кожна зміна кадру запікає його, якщо треба (`use`), і тримає, поки
+ * показує (`retain` / `release`); і тієї ж миті просить той самий кадр в інших ракурсах, де слот видно (`prebakeArt`:
+ * запікання у вільний час, якщо кадру ще немає). Скільки кадрів запечено за перше коло (обидва ракурси) і за `count`
+ * поворотів після нього.
+ */
+function turns(def: LooseDef, skin: Skin, far: readonly string[], owner: string, count: number): { first: number; after: number } {
+  const cache = new BakeCache<string>(() => {});
+  let made = 0;
+  const keyOf = (art: ArtId, state: string | null, view: ArtView, slot: string): string => {
+    const v = artEntry(art)?.views?.includes(view) ? view : null;
+    return `${frameId(art, state, v)}@${far.includes(slot) ? "far" : "near"}`;
+  };
+  const use = (key: string, art: ArtId): void => {
+    // Ближні й дальні частини — той самий рід рецепта (`farRecipe`), як у `bake.ts`.
+    cache.use(owner, key, "look", () => {
+      made++;
+      return { value: key, pixels: framePixels(art) };
+    });
+  };
+  const shown = new Map<string, string>();
+  const show = (view: ArtView): void => {
+    for (const slot of def.slots) {
+      const art = skin[slot.id];
+      const views = slotViews(def, slot.id);
+      if (!art || !views.includes(view)) continue;
+      const entry = artEntry(art);
+      for (const state of entry?.states ?? [null]) {
+        const key = keyOf(art, state, view, slot.id);
+        use(key, art);
+        cache.retain(key);
+        const prev = shown.get(slot.id);
+        if (prev !== undefined) cache.release(prev);
+        shown.set(slot.id, key);
+        for (const other of views) {
+          if (other === view || !entry?.views?.includes(other)) continue;
+          const ahead = keyOf(art, state, other, slot.id);
+          if (cache.peek(ahead) === undefined) use(ahead, art);
+        }
+      }
+    }
+  };
+  show("front");
+  show("back");
+  const first = made;
+  for (let i = 0; i < count; i++) show(i % 2 === 0 ? "front" : "back");
+  return { first, after: made - first };
+}
+
+/** Значення форм кота: кожне — з типу (помилка в переліку — помилка типів). */
+const TAILS: readonly Shape["tail"][] = ["long", "short", "fluffy", "bobtail", "none"];
+const EARS: readonly Shape["ears"][] = ["normal", "large", "folded", "curled", "tufted"];
+const MUZZLES: readonly Shape["muzzle"][] = ["normal", "flat", "long"];
+const CAT_BUILDS: readonly Shape["build"][] = ["slim", "normal", "stocky"];
+const CAT_LEGS: readonly Shape["legs"][] = ["normal", "short"];
+
+/** Найважчий кіт за мірою: усі форми порід, вагітна (з животом). */
+function heaviestCat(measure: (skin: Skin) => number): Skin {
+  let best: Skin = {};
+  let most = -1;
+  for (const tail of TAILS)
+    for (const ears of EARS)
+      for (const muzzle of MUZZLES)
+        for (const build of CAT_BUILDS)
+          for (const legs of CAT_LEGS) {
+            const skin = isoCatSkin({ tail, ears, muzzle, build, legs }, true);
+            const m = measure(skin);
+            if (m > most) [best, most] = [skin, m];
+          }
+  return best;
+}
+
+/**
+ * Найважче вбрання персонажа за мірою: зачіска й обличчя мають свої слоти, тож найважчі з них — окремо; верх, низ і взуття
+ * ділять слоти (спідниця, поділ штанини, халява), тож їх — перебором з кожною статурою.
+ */
+function heaviestPerson(measure: (skin: Skin) => number): Skin {
+  const base: Look = { face: 0, skin: 0, hair: 0, hairColor: 0, eyes: 0, build: 1, top: 0, bottom: 0, shoes: 0 };
+  const pick = (count: number, look: (i: number) => Look): Look => {
+    let best = look(0);
+    let most = -1;
+    for (let i = 0; i < count; i++) {
+      const m = measure(personSkin(look(i)));
+      if (m > most) [best, most] = [look(i), m];
+    }
+    return best;
+  };
+  const hair = pick(HAIR_STYLES.length, (i) => ({ ...base, hair: i })).hair;
+  const face = pick(FACES.length, (i) => ({ ...base, face: i })).face;
+  const [b, t, w] = [BUILDS.length, TOP_CUTS.length, BOTTOM_CUTS.length];
+  const look = pick(b * t * w * SHOE_CUTS.length, (i) => ({
+    ...base,
+    hair,
+    face,
+    build: i % b,
+    topCut: Math.floor(i / b) % t,
+    bottomCut: Math.floor(i / (b * t)) % w,
+    shoeCut: Math.floor(i / (b * t * w)),
+  }));
+  return personSkin(look);
+}
+
+describe("бюджет запечених кадрів власника (`BAKE_BUDGET`)", () => {
+  const person = PERSON_RIG as unknown as LooseDef;
+  const cat = ISO_CAT_RIG as unknown as LooseDef;
+
+  it("персонаж у найважчому вбранні: після першого кола повороти не запікають нічого", () => {
+    for (const measure of [(s: Skin) => demand(person, s).frames, (s: Skin) => demand(person, s).pixels]) {
+      const skin = heaviestPerson(measure);
+      const { first, after } = turns(person, skin, PERSON_FAR_SLOTS, "person", 10);
+      expect(after, JSON.stringify(skin)).toBe(0);
+      expect(first).toBe(demand(person, skin).frames);
+    }
+  });
+
+  it("кіт з усіма станами очей і рота: після першого кола повороти не запікають нічого", () => {
+    for (const measure of [(s: Skin) => demand(cat, s).frames, (s: Skin) => demand(cat, s).pixels]) {
+      const skin = heaviestCat(measure);
+      const { first, after } = turns(cat, skin, CAT_FAR_SLOTS, "cat:1", 10);
+      expect(after, JSON.stringify(skin)).toBe(0);
+      expect(first).toBe(demand(cat, skin).frames);
+    }
+  });
+
+  it("загальний бюджет вміщує найважчих персонажа й котів сценарію з найбільшою зграєю (`many-cats`)", () => {
+    const scenario = JSON.parse(readFileSync(new URL("../scenarios/many-cats.json", import.meta.url), "utf8")) as { cats: unknown[] };
+    const cats = scenario.cats.length;
+    expect(cats).toBeGreaterThanOrEqual(20);
+    const catPixels = demand(cat, heaviestCat((s) => demand(cat, s).pixels)).pixels;
+    const personPixels = demand(person, heaviestPerson((s) => demand(person, s).pixels)).pixels;
+    expect(cats * catPixels + personPixels).toBeLessThanOrEqual(BAKE_BUDGET.pixelsTotal);
   });
 });
