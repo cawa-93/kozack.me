@@ -203,6 +203,11 @@ export interface ArtEntry {
   states?: readonly string[];
   /** Роздільність растеризації, пікселів атласу на одиницю арту; за замовчуванням — спільна з конвеєра. */
   res?: number;
+  /**
+   * Запис буває ціллю дії (§8.2): конвеєр рахує кожному його кадру карту сяйва (`glowmap.ts`, `IndexFrame.glow`). Лише для
+   * записів без шарів. Речам квартири прапорець ставить `manifest.ts`, у модулях категорій його не пишуть.
+   */
+  glow?: true;
 }
 
 /**
@@ -295,6 +300,18 @@ export interface IndexLayer extends AtlasRect {
   dy: number;
 }
 
+/**
+ * Карта сяйва кадру в `index.json` (`glowmap.ts`): прямокутник на сторінці — білий з альфою ореолу, у `scale` разів
+ * дрібніший за кадр і ширший за нього на ширину сяйва, тож зсув від полотна кадру буває від'ємним.
+ */
+export interface IndexGlow extends AtlasRect {
+  /** Лівий верхній кут карти від лівого верхнього кута полотна кадру, пікселі атласу. */
+  dx: number;
+  dy: number;
+  /** Скільки пікселів кадру в одному пікселі карти. */
+  scale: number;
+}
+
 /** Кадр у `index.json`: полотно `size · res` пікселів, на яке шари лягають кожен зі своїм зсувом. */
 export interface IndexFrame {
   /** Розмір полотна SVG, одиниці арту (з маніфесту). */
@@ -309,6 +326,8 @@ export interface IndexFrame {
   layers: Readonly<Partial<Record<FrameLayer, IndexLayer>>>;
   /** SVG ще немає — кадр є маджентовою заглушкою потрібного розміру й pivot. */
   stub?: true;
+  /** Карта сяйва кадру — у записів із `glow`; у заглушки її немає. */
+  glow?: IndexGlow;
 }
 
 /** `public/art/index.json`: усе, що потрібно PreloadScene, галереї й компонувальнику. */

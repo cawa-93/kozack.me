@@ -10,6 +10,7 @@ import path from "node:path";
 import sharp, { type WebpOptions } from "sharp";
 import { runnerImport } from "vite";
 
+import { GLOW_MAP, glowMap, glowMapBox } from "../../src/view/art/glowmap";
 import { stubSvg, STUB_MAX_PX } from "../../src/view/art/placement";
 import {
   ART_DIR,
@@ -22,11 +23,12 @@ import {
   type FrameId,
   type FrameLayer,
   type IndexFrame,
+  type IndexGlow,
   type IndexLayer,
 } from "../../src/view/art/types";
 import { ArtCache, CACHE_SUBDIR, hashOf } from "./cache";
 import { composePage, pack, PACK_DEFAULTS, type PackOptions } from "./pack";
-import { crop, densityFor, rasterFrame, rasterize, stylesheetsFor, type FrameRaster, type Rgba } from "./raster";
+import { crop, densityFor, rasterFrame, rasterize, stylesheetsFor, type FrameRaster, type LayerRaster, type Rgba } from "./raster";
 import { drawnProblems, orphanSvgs, svgProblems, topLevelLayers } from "./svg";
 
 export { ART_DIR, ART_INDEX_FILE };
@@ -78,6 +80,8 @@ export interface ArtStats {
   layers: number;
   /** Кадрів-заглушок. */
   stubs: number;
+  /** Кадрів із картою сяйва. */
+  glows: number;
   /** Різних растрів на сторінках (однакові шари лежать один раз). */
   images: number;
   pages: number;
@@ -139,6 +143,33 @@ export function stubRes(entry: Pick<ArtEntry, "size">, res: number): number {
  */
 export function packGroup(entry: Pick<ArtEntry, "layers">): number {
   return entry.layers ? 1 : 0;
+}
+
+/** Версія розрахунку карт сяйва для ключів кешу: змінилася формула в `glowmap.ts` — нова версія. */
+const GLOW_VERSION = "1";
+
+/**
+ * Карта сяйва шару (`glowMap`): білий растр з альфою ореолу й зсув карти від полотна кадру. Рахується довго (сотні
+ * вибірок на піксель), тож лежить у кеші за вмістом шару.
+ */
+function glowRaster(layer: LayerRaster, cache: ArtCache): { image: Rgba; dx: number; dy: number; scale: number } {
+  const key = hashOf("glow", GLOW_VERSION, JSON.stringify(GLOW_MAP), String(layer.w), String(layer.h), layer.data);
+  const { w, h, dx, dy, scale } = glowMapBox(layer);
+  let data = cache.read(key, "glow");
+  if (data === null || data.length !== w * h * 4) {
+    const alpha = new Uint8Array(layer.w * layer.h);
+    for (let i = 0; i < alpha.length; i++) alpha[i] = layer.data[i * 4 + 3] ?? 0;
+    const map = glowMap({ w: layer.w, h: layer.h, data: alpha });
+    data = Buffer.alloc(w * h * 4);
+    for (let i = 0; i < map.data.length; i++) {
+      const a = map.data[i] ?? 0;
+      // Прозорий піксель — нулі в усіх каналах: таким його повертає й webp без втрат.
+      if (a > 0) data.fill(255, i * 4, i * 4 + 3);
+      data[i * 4 + 3] = a;
+    }
+    cache.write(key, "glow", data);
+  }
+  return { image: { w, h, data }, dx: layer.x + dx, dy: layer.y + dy, scale };
 }
 
 /** Растр заглушки запису: `stubSvg` з розміром і pivot запису, без обрізки; той самий растр — для кожного шару. */
@@ -261,6 +292,19 @@ export async function buildArt(options: ArtBuildOptions): Promise<ArtBuild> {
     }
   }
 
+  // Карти сяйва кадрів-цілей (§8.2) — растри тієї самої групи, що й самі кадри: однакові силуети станів — одна карта.
+  const glows = new Map<FrameId, { key: string; w: number; h: number; dx: number; dy: number; scale: number }>();
+  for (const job of frames) {
+    const layer = job.raster.layers[0];
+    if (!job.entry.glow || job.stub || job.entry.layers || !layer) continue;
+    const group = packGroup(job.entry);
+    const { image, dx, dy, scale } = glowRaster(layer, cache);
+    const key = hashOf("glow", String(group), String(image.w), String(image.h), image.data);
+    if (!images.has(key)) images.set(key, { image, group });
+    layerImage.set(`${job.frame}@glow`, key);
+    glows.set(job.frame, { key, w: image.w, h: image.h, dx, dy, scale });
+  }
+
   const packOptions = options.pack ?? PACK_DEFAULTS;
   let packed: ReturnType<typeof pack>;
   try {
@@ -319,6 +363,12 @@ export async function buildArt(options: ArtBuildOptions): Promise<ArtBuild> {
       layers,
       ...(job.stub ? { stub: true as const } : {}),
     };
+    const glow = glows.get(job.frame);
+    const glowAt = glow ? packed.placements.get(glow.key) : undefined;
+    if (glow && glowAt) {
+      const rect: IndexGlow = { page: glowAt.page, x: glowAt.x, y: glowAt.y, w: glow.w, h: glow.h, dx: glow.dx, dy: glow.dy, scale: glow.scale };
+      frame.glow = rect;
+    }
     if (job.stub) stubs++;
     indexFrames[job.frame] = frame;
   }
@@ -341,6 +391,7 @@ export async function buildArt(options: ArtBuildOptions): Promise<ArtBuild> {
       frames: frames.length,
       layers: layerCount,
       stubs,
+      glows: glows.size,
       images: images.size,
       pages: pages.length,
       bytes,

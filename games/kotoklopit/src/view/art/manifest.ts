@@ -5,6 +5,7 @@
 // `import.meta.glob` перетворює Vite (і Vitest), тож у Node без Vite цей модуль не завантажиться: конвеєр бере його через
 // Vite (`server.ssrLoadModule` чи `runnerImport`).
 
+import { OBJECTS } from "../../sim/home";
 import { ART_SEGMENT, ART_VIEWS, framesOf, isArtLayer, type ArtCategory, type ArtEntry, type ArtId } from "./types";
 
 /**
@@ -59,6 +60,7 @@ export function manifestProblems(entries: readonly ArtEntry[]): string[] {
       if (!ART_SEGMENT.test(name)) problems.push(`${where}: точка «${name}» — сегмент з малих латинських літер, цифр і дефіса`);
       if (!(Number.isFinite(point.x) && Number.isFinite(point.y))) problems.push(`${where}: точка «${name}» має бути числом`);
     }
+    if (entry.glow && entry.layers) problems.push(`${where}: карта сяйва (glow) — лише для запису без шарів`);
     for (const layer of repeated(entry.layers ?? [])) problems.push(`${where}: шар «${layer}» повторюється`);
     for (const layer of entry.layers ?? []) {
       if (!isArtLayer(layer)) problems.push(`${where}: невідомий шар «${layer}»`);
@@ -99,10 +101,14 @@ export function indexEntries(entries: readonly ArtEntry[]): ReadonlyMap<ArtId, A
 /** Модулі категорій: шлях → їхній `MANIFEST`. Поки каталог порожній — порожньо. */
 const MODULES = import.meta.glob<readonly ArtEntry[]>("./manifest/*.ts", { import: "MANIFEST", eager: true });
 
+/** Речі квартири — цілі дій (§8.2): кожній конвеєр рахує карту сяйва підсвітки (`ArtEntry.glow`). */
+const GLOWING: ReadonlySet<string> = new Set(OBJECTS.map((object) => `env/${object.id}`));
+
 /** Усі записи: файли за абеткою, у файлі — у його порядку. */
 const ENTRIES: readonly ArtEntry[] = Object.keys(MODULES)
   .sort()
-  .flatMap((file) => MODULES[file] ?? []);
+  .flatMap((file) => MODULES[file] ?? [])
+  .map((entry) => (GLOWING.has(entry.id) ? { ...entry, glow: true as const } : entry));
 const INDEX = indexEntries(ENTRIES);
 
 /** Усі записи маніфесту (галерея, перевірки). */

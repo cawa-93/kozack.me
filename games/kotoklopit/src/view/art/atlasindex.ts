@@ -9,6 +9,7 @@ import {
   isArtLayer,
   type ArtIndex,
   type AtlasPage,
+  type IndexGlow,
   type IndexLayer,
 } from "./types";
 
@@ -123,6 +124,18 @@ function frameProblems(id: string, frame: unknown, pages: readonly AtlasPage[], 
     }
   }
   if (frame["stub"] !== undefined && frame["stub"] !== true) return add(`${where}: stub — лише true`);
+  const glow = frame["glow"];
+  if (glow !== undefined) {
+    const at = `${where}, сяйво`;
+    const fields = ["page", "x", "y", "dx", "dy"] as const;
+    if (!isObject(glow) || !fields.every((field) => isNumber(glow[field])) || !isPositive(glow["w"]) || !isPositive(glow["h"]) || !isPositive(glow["scale"])) {
+      return add(`${at}: треба { page, x, y, w, h, dx, dy, scale }`);
+    }
+    const g = glow as unknown as IndexGlow;
+    const page = Number.isInteger(g.page) ? pages[g.page] : undefined;
+    if (page === undefined) return add(`${at}: немає сторінки ${g.page}`);
+    if (g.x < 0 || g.y < 0 || g.x + g.w > page.w || g.y + g.h > page.h) return add(`${at}: виходить за сторінку ${g.page} (${page.w} × ${page.h})`);
+  }
   return true;
 }
 
