@@ -3,8 +3,7 @@
 import { changeLove, changeMood, forgive, grudgeAt, offend, traitLevel } from "./cat";
 import { unpleasantTask } from "./character";
 import { BATH, BATH_CURES, BATH_FEEL, BEGGING, MINUTES_PER_HOUR, NURTURING, REVENGE, TREATS, WATER_PLAY, WEIGHT } from "./config";
-import { catnipReaction, claw, envy, hideSpot, snatchTreat, startAct } from "./catai";
-import { visibleFloorNear } from "./catmove";
+import { breakFree, catnipReaction, claw, envy, snatchTreat } from "./catai";
 import { cureDisease, maybeFallIll } from "./diseases";
 import { useSupply } from "./economy";
 import { emit } from "./events";
@@ -133,16 +132,7 @@ export function bathe(state: GameState, rng: Rng): boolean {
   cat.bathedDay = state.day;
   for (const disease of BATH_CURES[quality]) cureDisease(state, cat, disease, rng);
   emit(state, { type: "bathed", cat: cat.id });
-  if (water <= -2) {
-    // Вирвався з рук і тікає ховатися.
-    state.character.held = null;
-    const at = visibleFloorNear(state, state.character.body);
-    cat.x = at.x;
-    cat.y = at.y;
-    const spot = hideSpot(state, rng, cat);
-    startAct(cat, "hide", spot.at, BATH.hideMinutes, spot.target);
-    emit(state, { type: "cat-broke-free", cat: cat.id });
-  }
+  if (water <= -2) breakFree(state, cat, rng, BATH.hideMinutes);
   // Раз на годину, як і втеча з ванної (§9.12 «Любов до води»; крок 17, звірка з довідниками 2026-10-28).
   if (scratched || water <= -2) observe(state, cat, "water", -1, false, WATER_PLAY.observeEvery);
   return true;

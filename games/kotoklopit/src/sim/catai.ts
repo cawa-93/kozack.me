@@ -2050,6 +2050,11 @@ export function startScratch(state: GameState, cat: Cat, rng: Rng): void {
   if (level >= 2 && rng.chance(SCRATCH.doorframe)) return start(cat, "scratch", { ...DOORFRAME }, SCRATCH.minutes, "doorframe");
   // Велика коробка забирає частину дряпання дивана (§4.1).
   if (scratchesBigBox(state, rng)) return start(cat, "scratch", bigBoxScratchAt(state), SCRATCH.minutes, BIG_BOX_TARGET);
+  scratchSofa(cat, rng);
+}
+
+/** Кіт іде дерти диван (§9.12, «Дряпання»): стає перед ним у випадковому місці вздовж. */
+function scratchSofa(cat: Cat, rng: Rng): void {
   const sofa = objectById("sofa");
   start(cat, "scratch", { x: sofa.x + rng.int(0, sofa.w - 1), y: sofa.y - 1 }, SCRATCH.minutes, "sofa");
 }
@@ -3173,12 +3178,17 @@ function carried(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   emit(state, { type: "bite", cat: cat.id });
   if (byTrait) notice(-1);
   if (!rng.chance(CARRY.escape)) return;
+  breakFree(state, cat, rng);
+}
+
+/** Кіт вирвався з рук (§9.12, §8.7): стрибає на підлогу біля персонажа й `minutes` хвилин ховається. */
+export function breakFree(state: GameState, cat: Cat, rng: Rng, minutes: number = CAT_ACT_MINUTES.hide): void {
   state.character.held = null;
   const at = visibleFloorNear(state, state.character.body);
   cat.x = at.x;
   cat.y = at.y;
   const spot = hideSpot(state, rng, cat);
-  start(cat, "hide", spot.at, CAT_ACT_MINUTES.hide, spot.target);
+  start(cat, "hide", spot.at, minutes, spot.target);
   emit(state, { type: "cat-broke-free", cat: cat.id });
 }
 
@@ -3205,13 +3215,7 @@ function dreadCarrier(state: GameState, cat: Cat, dread: number, minutes: number
   if (!rng.chance(1 - (1 - CARRIER_HOME.scratchStep * dread * calmer) ** minutes)) return;
   claw(state, cat, "carrier");
   if (!rng.chance(CARRIER_HOME.escape * calmer)) return;
-  state.character.held = null;
-  const at = visibleFloorNear(state, state.character.body);
-  cat.x = at.x;
-  cat.y = at.y;
-  const spot = hideSpot(state, rng, cat);
-  start(cat, "hide", spot.at, CAT_ACT_MINUTES.hide, spot.target);
-  emit(state, { type: "cat-broke-free", cat: cat.id });
+  breakFree(state, cat, rng);
 }
 
 /** Хвилини життя одного кота. */
@@ -3886,9 +3890,17 @@ function feelEnvy(state: GameState, other: Cat, lucky: Cat): void {
   }
   changeMood(state, other, ENVY.glad * -level, "радіє за іншого");
   if (!free) return;
-  const side = other.x < where.x ? -0.9 : 0.9;
-  start(other, "idle", tileOf(visibleFloorNear(state, { x: where.x + side, y: where.y })), ENVY.cuddleMinutes, `cuddle:${lucky.id}`);
+  cuddleUp(state, other, lucky, where, ENVY.cuddleMinutes);
   other.act.envy = true;
+}
+
+/**
+ * Кіт іде лягти поруч із `lucky`, що в точці `where`, і муркотіти (§9.12, «Щедра душа» й «Радіє за іншого»): з того боку, звідки
+ * підходить.
+ */
+function cuddleUp(state: GameState, cat: Cat, lucky: Cat, where: Vec, minutes: number): void {
+  const side = cat.x < where.x ? -0.9 : 0.9;
+  start(cat, "idle", tileOf(visibleFloorNear(state, { x: where.x + side, y: where.y })), minutes, `cuddle:${lucky.id}`);
 }
 
 /** Заздрісник дійшов до того, кому перепало (§9.12, «Заздрісність»): той ще поруч — шипить зблизька, прояв «+». */
@@ -4230,8 +4242,7 @@ export function jealousy(state: GameState, lucky: Cat, why: "pet" | "play" | "la
     if (level < 0) {
       if (why !== "pet" || !free || !rng.chance(JEALOUSY.cuddleStep * -level)) continue;
       other.jealousAt = now;
-      const side = other.x < lucky.x ? -0.9 : 0.9;
-      start(other, "idle", tileOf(visibleFloorNear(state, { x: lucky.x + side, y: lucky.y })), JEALOUSY.cuddleMinutes, `cuddle:${lucky.id}`);
+      cuddleUp(state, other, lucky, lucky, JEALOUSY.cuddleMinutes);
       continue;
     }
     // Стосунки падають за кожен сеанс уваги до суперника, навіть коли шипіння ще на спільній паузі: пауза обмежує лише саме
@@ -4473,8 +4484,7 @@ function windowRage(state: GameState, cat: Cat, rng: Rng): void {
   // «Любить кігтеточку» й «Бережливий» і в злості деруть там, де завжди (§9.12, «Дряпання»; перевірка етапу 2026-10-26:
   // «Бережливий» дивана не дере ніколи).
   if (traitLevel(cat, "scratching") < 0) return startScratch(state, cat, rng);
-  const sofa = objectById("sofa");
-  start(cat, "scratch", { x: sofa.x + rng.int(0, sofa.w - 1), y: sofa.y - 1 }, SCRATCH.minutes, "sofa");
+  scratchSofa(cat, rng);
 }
 
 /** Заборонене місце, якому належить річ квартири (§9.12, «Слухняність»): комп'ютер — стіл із комп'ютером, решта — кухня. */
