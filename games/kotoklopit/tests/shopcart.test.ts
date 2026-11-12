@@ -9,13 +9,12 @@ import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { createCat } from "../src/sim/cat";
-import { STORE_GOODS, TRIPS } from "../src/sim/config";
+import { PRODUCTS, STORE_GOODS, TRIPS } from "../src/sim/config";
 import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { catalog, checkout, discount, goodsKey, unitPrice, variants, type CartLine, type Goods } from "../src/sim/shop";
 import { place } from "../src/sim/economy";
-import { helps, remedyOf } from "../src/sim/remedies";
 import type { Destination, GameState } from "../src/sim/types";
 import { phoneCard, type PhoneHandlers } from "../src/ui/cards";
 import { splitIcons } from "../src/ui/icons";
@@ -187,8 +186,8 @@ describe("кожен товар у своїй картці (§6.4; рішенн�
       expect(item?.find("shop-icon").textContent, what).toBe(iconMark(goodsIcon(g, q)));
       const name = item?.find("shop-name");
       const stock = name?.find("shop-stock").textContent ?? "";
-      // Товар, що від чогось допомагає, — з «і» одразу після назви (§6.4, «Від чого товар»).
-      const info = "product" in g && helps(remedyOf(g.product, q)) ? " i" : "";
+      // Запас з упаковкою на кілька використань — з «і» одразу після назви (§6.4, «Про товар»); нашийник і речі — без неї.
+      const info = "product" in g && PRODUCTS[g.product].units[q] > 1 ? " i" : "";
       expect(name?.textContent, what).toBe(variantTitle(g, q) + info + stock);
       // Назви товару («Продукти», «Засоби гігієни»…) у картці немає: крім назви варіанта, там лише іконка, ціна й кнопки.
       if ("product" in g) expect(item?.textContent.replace(name?.textContent ?? "", ""), what).not.toContain(PRODUCT_TITLES[g.product].name);
@@ -279,7 +278,7 @@ describe("бірка знижки замість стрілки (§6.4)", () => 
     expect(items.map((i) => i.find("price-tag").textContent)).toEqual([`−${cheap}%`, `−${premium}%`]);
     // Бірка й ціна — разом, після назви: «… −29% 11 ₴».
     for (const item of items) expect(item.find("shop-cost").children.map((c) => (typeof c === "string" ? c : c.className))).toEqual(["price-tag", "shop-price"]);
-    // Таблетки від чогось допомагають — після кнопок ще й бабл «і» (§6.4, «Від чого товар»).
+    // Таблетки — запас: після кнопок ще й бабл «і» (§6.4, «Про товар»).
     expect(items[0]?.children.map((c) => (typeof c === "string" ? c : c.className))).toEqual(["shop-icon", "shop-name", "shop-cost", "button step", "shop-count", "button step", "hint-bubble"]);
     expect(shop.discounted).toBe(list.findAll("price-tag").length);
   });
@@ -581,7 +580,7 @@ describe("картки поїздок (§8.5)", () => {
     expect(vetList?.findAll("shop-section").map((s) => s.textContent)).toEqual(["Ліки"]);
     // Картка — варіант: назва варіанта, без назви товару (рішення автора 2026-11-03, «Кожен товар у своїй картці»).
     const names = (goods: Goods[]): string[] => goods.flatMap((g) => variants(g).map((q) => variantTitle(g, q)));
-    // Ліки — з «і» після назви (§6.4, «Від чого товар»).
+    // Ліки — з «і» після назви (§6.4, «Про товар»).
     expect(vetList?.findAll("shop-name").map((n) => plain(n.textContent))).toEqual(names([{ product: "pills" }, { product: "drops" }]).map((name) => `${name} i`));
     expect(vet.actions).toEqual([]);
     expect(vet.bar ? fake(vet.bar).find("shop-pay").textContent : "").toBe("Додому");

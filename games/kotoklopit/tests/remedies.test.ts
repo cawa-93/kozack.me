@@ -1,11 +1,11 @@
 // Від чого товар (§6.4): який витратний товар від яких хвороб і травм допомагає — за правилами гри, — і що «і» в картці магазину
-// каже саме це.
+// каже саме це, а перед тим — на скільки використань упаковка.
 
 import { describe, expect, it } from "vitest";
 
 import { bathe } from "../src/sim/care";
 import { createCat } from "../src/sim/cat";
-import { DISEASES, PRODUCTS } from "../src/sim/config";
+import { DISEASES, PRODUCTS, UNSOLD } from "../src/sim/config";
 import { fallIll, hasDisease } from "../src/sim/diseases";
 import { applyDressing } from "../src/sim/dressing";
 import { newGame } from "../src/sim/game";
@@ -17,6 +17,7 @@ import { catalog, variants } from "../src/sim/shop";
 import type { DiseaseId, GameState, Product, Quality } from "../src/sim/types";
 import { REMEDY_HINTS } from "../src/texts";
 import { shopCatalog, variantTitle } from "../src/ui/shop";
+import { PRODUCT_TITLES } from "../src/ui/titles";
 import { fake, useFakeDom } from "./fakedom";
 
 useFakeDom();
@@ -101,7 +102,7 @@ const STEMS: Record<string, RegExp> = {
   injury: /травм/u,
 };
 
-describe("«і» в картці товару (§6.4, `TEXTS.md` «Від чого товар»)", () => {
+describe("«і» в картці товару (§6.4, `TEXTS.md` «Про товар»)", () => {
   it("текст є в кожного варіанта, що від чогось допомагає, і лише в нього; він називає кожну хворобу й травму", () => {
     for (const product of PRODUCT_LIST) {
       for (const quality of QUALITIES) {
@@ -121,34 +122,47 @@ describe("«і» в картці товару (§6.4, `TEXTS.md` «Від чог
     }
   });
 
-  it("у магазині «і» — лише в картках таких варіантів; натискання показує над нею, від чого він", () => {
+  it("у магазині «і» — у кожного запасу з упаковкою на кілька використань: бабл каже, на скільки вона, а тоді — від чого товар", () => {
     const state = newGame({ address: "she", difficulty: "normal", seed: 3 }).current;
     const cat = createCat(state, createRng(2), { source: "shelter", ageWeeks: 20, at: { x: 5.5, y: 8.5 } });
     cat.sterilized = true;
     addCat(state, cat);
     const list = fake(shopCatalog(state, "delivery", { checkout: () => undefined }).list);
     const cards = list.findAll("shop-item");
-    let checked = 0;
+    const bubbles = new Map<string, string>();
+    const silent: string[] = [];
+    let things = 0;
     for (const goods of catalog(state, "delivery")) {
       for (const quality of variants(goods)) {
         const title = variantTitle(goods, quality);
         const card = cards.find((c) => c.find("shop-name").textContent.startsWith(title));
         expect(card, title).toBeDefined();
         const info = card?.findAll("shop-info") ?? [];
-        const hint = "product" in goods ? REMEDY_HINTS[goods.product]?.[quality] : undefined;
-        if (hint === undefined) {
+        const uses = "product" in goods ? PRODUCTS[goods.product].units[quality] : 0;
+        if (!("product" in goods) || uses <= 1) {
           expect(info, title).toEqual([]);
+          if ("product" in goods) silent.push(title);
+          else things += 1;
           continue;
         }
         expect(info, title).toHaveLength(1);
         info[0]?.click();
         const bubble = card?.find("hint-bubble");
         expect(bubble?.hidden, title).toBe(false);
-        expect(bubble?.textContent, title).toBe(hint);
-        checked += 1;
+        const pack = `Упаковка на ${PRODUCT_TITLES[goods.product].unit(uses)}.`;
+        const cure = REMEDY_HINTS[goods.product]?.[quality];
+        expect(bubble?.textContent, title).toBe(cure === undefined ? pack : `${pack} ${cure}`);
+        bubbles.set(title, bubble?.textContent ?? "");
       }
     }
-    // Ліки, корм, шампунь, пластир і бинт у каталозі є: перевірено не порожній набір.
-    expect(checked).toBeGreaterThanOrEqual(10);
+    // Запас, що ні від чого не допомагає, каже лише про упаковку; число — у формі слова («4 чистки», а не «4 чисток»).
+    expect(bubbles.get(variantTitle({ product: "food" }, "cheap"))).toBe("Упаковка на 20 порцій.");
+    expect(bubbles.get(variantTitle({ product: "litter" }, "premium"))).toBe("Упаковка на 4 чистки лотка.");
+    expect(bubbles.get(variantTitle({ product: "drops" }, "premium"))).toBe("Упаковка на 5 доз. Від бліх і кон'юнктивіту.");
+    // Нашийник — штука, а не упаковка; речі — теж без «і».
+    expect(silent).toEqual([variantTitle({ product: "collar" }, "cheap")]);
+    expect(things).toBeGreaterThan(0);
+    // Усі запаси каталогу, крім нашийника, — по два варіанти.
+    expect(bubbles.size).toBe((PRODUCT_LIST.length - UNSOLD.length - 1) * 2);
   });
 });

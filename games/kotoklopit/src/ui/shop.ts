@@ -4,9 +4,10 @@
 // місці: у магазині, а ліки — у ветеринара й лікаря (§8.5).
 
 import { canCheckout, cartDelivery, cartTotal, catalog, coming, discount, fitCart, goodsKey, goodsTotal, room, unavailable, unitPrice, variants, type CartLine, type Goods, type ShopMode, type Unavailable } from "../sim/shop";
+import { PRODUCTS } from "../sim/config";
 import { helps, remedyOf } from "../sim/remedies";
 import type { GameState, Quality } from "../sim/types";
-import { REMEDY_HINTS } from "../texts";
+import { packHint, REMEDY_HINTS } from "../texts";
 import type { IconName } from "../view/iconnames";
 import { PRODUCT_ICONS, THING_ICONS, VARIANT_ICONS } from "../view/symbols";
 import { drawGlyphs } from "./glyphs";
@@ -46,13 +47,20 @@ function nameParts(title: string): (string | HTMLElement)[] {
     .map((part) => (part.includes("-") ? element("span", "nowrap", part) : part));
 }
 
-/** Назва кнопки «і» для читача екрана (§6.4, «Від чого товар»). */
-const REMEDY_LABEL = "Від чого допомагає";
+/** Назва кнопки «і» для читача екрана (§6.4, «Про товар»). */
+const INFO_LABEL = "Про товар";
 
-/** Від чого допомагає варіант (§6.4): текст бабла над «і»; товар, що ні від чого не допомагає, — null. */
-function remedyHint(goods: Goods, quality: Quality): string | null {
-  if (!("product" in goods) || !helps(remedyOf(goods.product, quality))) return null;
-  return REMEDY_HINTS[goods.product]?.[quality] ?? null;
+/**
+ * Текст бабла над «і» (§6.4, «Про товар»): на скільки використань упаковка, а тоді — від чого варіант допомагає. Без «і» (null) —
+ * речі й запас-штука (нашийник): там немає чого рахувати.
+ */
+function infoHint(goods: Goods, quality: Quality): string | null {
+  if (!("product" in goods)) return null;
+  const uses = PRODUCTS[goods.product].units[quality];
+  if (uses <= 1) return null;
+  const pack = packHint(PRODUCT_TITLES[goods.product].unit(uses));
+  const cure = helps(remedyOf(goods.product, quality)) ? REMEDY_HINTS[goods.product]?.[quality] : undefined;
+  return cure === undefined ? pack : `${pack} ${cure}`;
 }
 
 /** Назва варіанта з іконкою товару перед нею — так, як її показує картка магазину, і в «Моїх речах» телефона (`icons.ts`). */
@@ -83,10 +91,9 @@ export const BOUGHT = "✓ Куплено";
 export const BOUGHT_PAUSE_MS = 600;
 
 /**
- * Під назвою варіанта (§6.4, правка автора 2026-10-23): скільки саме цього варіанта вже їде (з тим, що чекає під дверима; рішення
- * автора 2026-11-03, «Кожен товар у своїй картці»: картка — варіант), і чому товар не взяти — з урахуванням кошика (миска в
- * кошику дає місце автогодівниці, §9.12). Скільки вдома — не показуємо: це видно зі сховищ. «×N» — скільки в упаковці — більше
- * не пишемо (те саме рішення).
+ * Під назвою варіанта (§6.4, «Кожен товар у своїй картці»): скільки саме цього варіанта вже їде (з тим, що чекає під дверима), і
+ * чому товар не взяти — з урахуванням кошика (миска в кошику дає місце автогодівниці, §9.12). Скільки вдома — не показуємо: це
+ * видно зі сховищ. Скільки в упаковці — не тут, а в баблі «і» (`infoHint`).
  */
 function stockText(state: GameState, goods: Goods, quality: Quality, reason: Unavailable | null): string {
   const parts: string[] = [];
@@ -187,13 +194,13 @@ export function shopCatalog(state: GameState, mode: ShopMode, options: CatalogOp
         const icon = element("span", "shop-icon", iconMark(goodsIcon(g, quality)));
         const name = element("span", "shop-name");
         name.append(...nameParts(variantTitle(g, quality)));
-        // Від чого товар (§6.4): малопомітна «і» біля назви, бабл — як у чипів рис кота.
-        const hint = remedyHint(g, quality);
+        // Про товар (§6.4): малопомітна «і» біля назви, бабл — як у чипів рис кота.
+        const hint = infoHint(g, quality);
         const hints = hint === null ? null : hintBubble(item, "hint-bubble");
         if (hints && hint !== null) {
           const info = element("button", "shop-info", "i");
           info.type = "button";
-          info.setAttribute("aria-label", REMEDY_LABEL);
+          info.setAttribute("aria-label", INFO_LABEL);
           hints.attach(info, hint);
           name.append(" ", info);
         }
