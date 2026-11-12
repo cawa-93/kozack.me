@@ -22,6 +22,7 @@ import {
   MOOD_SATURATION,
   PETTING,
   TOUCHY,
+  TREATS,
   STRONG_TRAIT_CHANCE,
   WEIGHT,
 } from "./config";
@@ -271,16 +272,41 @@ export function changeLove(state: GameState, cat: Cat, delta: number, reason?: s
 /**
  * Неприємне від персонажа (§9.12, «Увага й ласка»): прогнали з місця, узяли на руки проти волі, купали, возили до
  * ветеринара, дали ліки. Любов падає (з «Образливістю»), а кіт це запам'ятовує: «Образливий» дметься, мстивий може
- * помститися, а ласощі одразу після цього повертають частину втрати (`hurt`, §7). Брудний лоток і день без уваги — не образа:
- * персонаж котові нічого не зробив. Неприємне в поїздці рахується з повернення додому.
+ * помститися, а ласощі одразу після цього повертають частину втрати (`hurt`, §7) — крім `refundable: false` (стрес у переносці).
+ * Брудний лоток і день без уваги — не образа: персонаж котові нічого не зробив. Неприємне в поїздці рахується з повернення додому.
  */
-export function offend(state: GameState, cat: Cat, delta: number, reason: string): void {
+export function offend(state: GameState, cat: Cat, delta: number, reason: string, refundable = true): void {
   const scaled = changeLove(state, cat, delta, reason);
   if (delta >= 0) return;
   const at = absoluteMinute(state.day, state.minute);
   const away = cat.away === "trip" ? { away: true as const } : {};
-  if (scaled < 0) cat.hurt = { at, amount: -scaled, ...away };
+  if (scaled < 0 && refundable) {
+    const earlier = recentHurts(cat, at);
+    cat.hurt = { at, amount: -scaled, ...away, ...(earlier.length > 0 ? { earlier } : {}) };
+  }
   cat.offense = { at, ...away };
+}
+
+type Hurt = NonNullable<NonNullable<Cat["hurt"]>["earlier"]>[number];
+
+/** Втрати любові від неприємного, які ласощі на хвилині `now` ще повертають (§7): ті, що в поїздці, чекають повернення. */
+function recentHurts(cat: Cat, now: number): Hurt[] {
+  const last = cat.hurt;
+  if (!last) return [];
+  const all: Hurt[] = [...(last.earlier ?? []), { at: last.at, amount: last.amount, ...(last.away === true ? { away: true as const } : {}) }];
+  return all.filter((hurt) => hurt.away === true || now - hurt.at <= TREATS.hurtMinutes);
+}
+
+/** Скільки любові кіт утратив через неприємне за останні `TREATS.hurtMinutes` хвилин (§7): частку цього повертають ласощі. */
+export function recentHurt(state: GameState, cat: Cat): number {
+  return recentHurts(cat, absoluteMinute(state.day, state.minute)).reduce((sum, hurt) => sum + (hurt.away === true ? 0 : hurt.amount), 0);
+}
+
+/** Кіт повернувся з поїздки на хвилині `at` (§7): відлік для неприємного в поїздці починається звідси. */
+export function hurtsHome(cat: Cat, at: number): void {
+  const earlier = recentHurts(cat, at).map((hurt) => (hurt.away === true ? { at, amount: hurt.amount } : hurt));
+  const last = earlier.pop();
+  cat.hurt = last ? { ...last, ...(earlier.length > 0 ? { earlier } : {}) } : null;
 }
 
 /** Кіт пережив стрес — бійку чи переноску (§9.12): мстивий може помститися. */

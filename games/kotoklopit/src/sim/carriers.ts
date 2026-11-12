@@ -76,7 +76,7 @@ function bite(state: GameState, rng: Rng): void {
 /** Низ переноски на підлозі там, де вона стоїть (її могли поставити поруч зі своїм місцем, §8.7). */
 const carrierSpot = (state: GameState): Vec => withThing(state, "carrier", CARRIER_SPOT);
 
-/** Кіт вийшов із переноски: той, кого довели до стресу, ховається й ображається (§8.7). */
+/** Кіт вийшов із переноски: той, кого довели до стресу, ховається й ображається, і ласощі цієї втрати любові не повертають (§8.7, §7). */
 function freeCat(state: GameState, cat: Cat, rng: Rng): void {
   const upset = cageStage(cat) === "stress" || cageStage(cat) === "chew";
   delete cat.cage;
@@ -89,7 +89,7 @@ function freeCat(state: GameState, cat: Cat, rng: Rng): void {
   if (!upset) return;
   const spot = hideSpot(state, rng, cat);
   startAct(cat, "hide", spot.at, CAT_ACT_MINUTES.hide, spot.target);
-  offend(state, cat, CARRIER.offense, "переноска");
+  offend(state, cat, CARRIER.offense, "переноска", false);
   stress(state, cat);
 }
 

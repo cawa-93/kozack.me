@@ -1,6 +1,6 @@
 // Догляд за котом (§7, §8.7, §9.10): ласощі, нашийник, купання; щоденні наслідки нашийника й купання.
 
-import { changeLove, changeMood, forgive, grudgeAt, offend, traitLevel } from "./cat";
+import { changeLove, changeMood, forgive, grudgeAt, offend, recentHurt, traitLevel } from "./cat";
 import { unpleasantTask } from "./character";
 import { BATH, BATH_CURES, BATH_FEEL, BEGGING, MINUTES_PER_HOUR, NURTURING, REVENGE, TREATS, WATER_PLAY, WEIGHT } from "./config";
 import { breakFree, catnipReaction, claw, envy, snatchTreat } from "./catai";
@@ -22,8 +22,8 @@ export function catInHands(state: GameState): Cat | null {
 }
 
 /**
- * Ласощі (§7): настрій і любов; одразу після неприємного повертають половину втраченої любові;
- * понад 2 на день — ризик розладу шлунка.
+ * Ласощі (§7): настрій і любов; після неприємного повертають частку втраченої через нього любові; понад `TREATS.perDay`
+ * на день — ризик розладу шлунка.
  */
 export function giveTreat(state: GameState, quality: Quality, rng: Rng): boolean {
   const cat = catInHands(state);
@@ -41,10 +41,11 @@ export function giveTreat(state: GameState, quality: Quality, rng: Rng): boolean
   }
   changeMood(state, cat, TREATS.mood[quality]);
   changeLove(state, cat, TREATS.love, "ласощі");
-  if (cat.hurt && now - cat.hurt.at <= TREATS.hurtMinutes) {
+  const lost = recentHurt(state, cat);
+  if (lost > 0) {
     // «Прощає за ласощі» і «Добряк» оттають більше (§9.12).
     const refund = TREATS.refund + REVENGE.refundStep * Math.max(0, -traitLevel(cat, "vengeful"));
-    changeLove(state, cat, cat.hurt.amount * refund, "ласощі після неприємного");
+    changeLove(state, cat, lost * refund, "ласощі після неприємного");
     cat.hurt = null;
   }
   // «Прощає за ласощі» протягом години після неприємного від персонажа чи стресу одразу відтає й муркоче — це видно (§9.9),

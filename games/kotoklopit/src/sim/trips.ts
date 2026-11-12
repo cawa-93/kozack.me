@@ -2,7 +2,7 @@
 // швидкістю, а тоді перемотування цих годин чи дня до сну (`rewindAccident`). Події на місці — `destinations.ts`.
 
 import { boardCats } from "./carriers";
-import { changeMood, idleAct, stress, traitLevel } from "./cat";
+import { changeMood, hurtsHome, idleAct, stress, traitLevel } from "./cat";
 import { changeStat, spend } from "./character";
 import { ACCIDENT, CARRIER_MOOD, GIFTS, MINUTES_PER_DAY, MINUTES_PER_HOUR, SLEEP_NEED_HOURS, TRIP_IDLE_MINUTES, TRIPS } from "./config";
 import { maybeFallIll } from "./diseases";
@@ -237,7 +237,7 @@ export function endTrip(state: GameState): Trip | null {
     stress(state, cat);
     if (cat.offense?.away === true) cat.offense = { at: cat.stressedAt ?? 0 };
     // Ласощі «одразу після» ветеринара — теж з повернення (§7): огляд і дорога довші за `TREATS.hurtMinutes`.
-    if (cat.hurt?.away === true) cat.hurt = { at: cat.stressedAt ?? 0, amount: cat.hurt.amount };
+    hurtsHome(cat, cat.stressedAt ?? 0);
   }
   emit(state, { type: "trip-ended", destination: trip.destination });
   return trip;
