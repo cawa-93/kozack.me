@@ -37,7 +37,7 @@ export class Session {
    * Після цього — null.
    */
   unreadable: string | null = null;
-  /** Запис у сховище браузера не вдався (§4.2) — і чи гравцеві про це вже сказали (`takeSaveWarning`). */
+  /** Останній запис у сховище браузера не вдався (§4.2) — і чи гравцеві про це вже сказали (`takeSaveWarning`). */
   private saveFailed = false;
   private saveWarned = false;
   private readonly resetListeners = new Set<() => void>();
@@ -85,13 +85,17 @@ export class Session {
     if (!this.persistent || this.unreadable !== null) return;
     try {
       localStorage.setItem(SAVE_KEY, serialize(this.save));
+      this.saveFailed = false;
     } catch {
       // Сховище недоступне чи повне: гра йде далі без збереження, а сцена скаже про це гравцеві.
       this.saveFailed = true;
     }
   }
 
-  /** Чи сказати гравцеві, що гра не зберігається в браузері (§4.2): після першого невдалого запису — раз за запуск. */
+  /**
+   * Чи сказати гравцеві, що гра не зберігається в браузері (§4.2): раз за запуск, якщо останній запис не вдався. Удалий
+   * запис після невдалого (картка чекала, поки закриють іншу) — гра таки зберігається.
+   */
   takeSaveWarning(): boolean {
     if (!this.saveFailed || this.saveWarned) return false;
     this.saveWarned = true;

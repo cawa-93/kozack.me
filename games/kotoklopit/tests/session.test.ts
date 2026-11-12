@@ -127,6 +127,25 @@ describe("запис у сховище браузера не вдався (§4.2
     expect(session.takeSaveWarning()).toBe(true);
   });
 
+  it("запис не вдався лише раз, а наступний удався — гра зберігається: казати нічого", () => {
+    let full = true;
+    (globalThis as { localStorage?: unknown }).localStorage = {
+      getItem: () => null,
+      setItem: () => {
+        if (full) throw new Error("QuotaExceededError");
+      },
+    };
+    const session = game();
+    session.persist();
+    full = false;
+    session.persist();
+    expect(session.takeSaveWarning()).toBe(false);
+    // Знову не вдався — сказати (і так само лише раз за запуск).
+    full = true;
+    session.persist();
+    expect(session.takeSaveWarning()).toBe(true);
+  });
+
   it("запис вдався — казати нічого", () => {
     fakeStorage({});
     const session = game();
