@@ -278,8 +278,9 @@ export function offend(state: GameState, cat: Cat, delta: number, reason: string
   const scaled = changeLove(state, cat, delta, reason);
   if (delta >= 0) return;
   const at = absoluteMinute(state.day, state.minute);
-  if (scaled < 0) cat.hurt = { at, amount: -scaled };
-  cat.offense = { at, ...(cat.away === "trip" ? { away: true } : {}) };
+  const away = cat.away === "trip" ? { away: true as const } : {};
+  if (scaled < 0) cat.hurt = { at, amount: -scaled, ...away };
+  cat.offense = { at, ...away };
 }
 
 /** Кіт пережив стрес — бійку чи переноску (§9.12): мстивий може помститися. */

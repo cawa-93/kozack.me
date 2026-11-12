@@ -6,11 +6,13 @@ import { describe, expect, it } from "vitest";
 import { closeCatDay, createCat, idleAct, offend, changeLove, traitLevel } from "../src/sim/cat";
 import { giveTreat } from "../src/sim/care";
 import { DIRTY_LITTER, LOVE, TREATS, VET } from "../src/sim/config";
-import { newGame } from "../src/sim/game";
+import { vetExam } from "../src/sim/destinations";
+import { goHome, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
+import { startTrip } from "../src/sim/trips";
 import type { Cat, Save } from "../src/sim/types";
-import { hours, withCatCorner } from "./helpers";
+import { driveSafely, hours, standAt, withCatCorner } from "./helpers";
 
 function game(): Save {
   const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed: 4 }));
@@ -69,5 +71,22 @@ describe("ласощі після неприємного (§7)", () => {
     expect(treat(save, cat)).toBeCloseTo(TREATS.love + TREATS.refund * -VET.love, 9);
     // Повертають раз: наступні ласощі — лише свої.
     expect(treat(save, cat)).toBeCloseTo(TREATS.love, 9);
+  });
+
+  it("після поїздки до ветеринара — щойно вдома: неприємне в поїздці рахується з повернення (§9.12 «Образа»)", () => {
+    const save = game();
+    save.current.character.money = 1000;
+    const cat = withCat(save);
+    expect(traitLevel(cat, "vet")).toBe(0);
+    standAt(save, "door");
+    save.current.character.held = { kind: "cat", cat: cat.id };
+    expect(startTrip(save.current, "vet")).toBe(true);
+    driveSafely(save);
+    expect(vetExam(save.current)).not.toBeNull();
+    expect(cat.love).toBe(50 + VET.love);
+    goHome(save);
+    expect(save.current.trip).toBeNull();
+    expect(cat.away).toBeNull();
+    expect(treat(save, cat)).toBeCloseTo(TREATS.love + TREATS.refund * -VET.love, 9);
   });
 });

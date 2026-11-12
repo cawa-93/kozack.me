@@ -236,6 +236,8 @@ export function endTrip(state: GameState): Trip | null {
     // Переноска й неприємне в поїздці — щойно кіт удома (§9.12): дметься й може помститися з цієї миті.
     stress(state, cat);
     if (cat.offense?.away === true) cat.offense = { at: cat.stressedAt ?? 0 };
+    // Ласощі «одразу після» ветеринара — теж з повернення (§7): огляд і дорога довші за `TREATS.hurtMinutes`.
+    if (cat.hurt?.away === true) cat.hurt = { at: cat.stressedAt ?? 0, amount: cat.hurt.amount };
   }
   emit(state, { type: "trip-ended", destination: trip.destination });
   return trip;
