@@ -270,3 +270,53 @@ describe("картка на місці: тло й положення (§8.5 «Н
     expect(rule(".overlay.aside:not(.cinematic):not(.solid)")).toContain("justify-content: flex-start;");
   });
 });
+
+describe("Esc і картка (§10): Esc — це «закрити картку», з повного екрана він тоді не виводить", () => {
+  const body = new FakeElement("body");
+  const keydown: ((event: KeyboardEvent) => void)[] = [];
+
+  beforeAll(() => {
+    vi.stubGlobal("document", { body, createElement: (tag: string) => new FakeElement(tag), createTreeWalker: () => ({ nextNode: () => null }) });
+    vi.stubGlobal("NodeFilter", { SHOW_TEXT: 4 });
+    vi.stubGlobal("window", {
+      addEventListener: (type: string, listener: (event: KeyboardEvent) => void): void => {
+        if (type === "keydown") keydown.push(listener);
+      },
+    });
+    for (const name of ["HTMLInputElement", "HTMLSelectElement", "HTMLTextAreaElement", "HTMLButtonElement"]) vi.stubGlobal(name, class {});
+  });
+  afterAll(() => vi.unstubAllGlobals());
+
+  /** Натиснути Esc: чи обробила його картка (preventDefault) — за цим гра вирішує, чи виходити з повного екрана. */
+  const escape = (): boolean => {
+    const event = {
+      key: "Escape",
+      repeat: false,
+      defaultPrevented: false,
+      preventDefault(): void {
+        this.defaultPrevented = true;
+      },
+      stopImmediatePropagation(): void {},
+    };
+    keydown.at(-1)?.(event as unknown as KeyboardEvent);
+    return event.defaultPrevented;
+  };
+
+  const card: Card = { title: "Знайда", body: ["Під дверима кошеня."], actions: [{ label: "Взяти", onSelect: () => {} }] };
+
+  it("картку з хрестиком Esc закриває; картку, яку закрити не можна, лишає; без картки Esc нічий", () => {
+    const overlay = new Overlay();
+    const dismiss = vi.fn(() => overlay.close());
+    overlay.show({ ...card, closable: true, onDismiss: dismiss });
+    expect(escape()).toBe(true);
+    expect(dismiss).toHaveBeenCalledTimes(1);
+    expect(overlay.isOpen).toBe(false);
+    // Картку з вибором Esc не закриває — але й з повного екрана не виводить.
+    overlay.show(card);
+    expect(escape()).toBe(true);
+    expect(overlay.isOpen).toBe(true);
+    overlay.close();
+    // Картки немає — Esc не оброблено: у повному екрані він із нього виводить (`tests/fullscreen-escape.test.ts`).
+    expect(escape()).toBe(false);
+  });
+});

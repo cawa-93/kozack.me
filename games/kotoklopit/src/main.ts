@@ -9,7 +9,7 @@ import { limitFrames } from "./framerate";
 import { DayScene } from "./scenes/DayScene";
 import { PreloadScene } from "./scenes/PreloadScene";
 import { RaceScene } from "./scenes/RaceScene";
-import { fullscreenOnFirstAction } from "./screen";
+import { escapeLeavesFullscreen, fullscreenOnFirstAction } from "./screen";
 import { Session } from "./session";
 import "./style.css";
 import { browserTab, openGame } from "./tablock";
@@ -34,6 +34,7 @@ if (__DEV_TOOLS__) {
 // Гра на весь екран (§10): полотно на все вікно, без порожніх смуг, у пікселях пристрою (`fitCanvas`: розмір веде гра, а
 // не Phaser — `Phaser.Scale.NONE`, CSS-розмір полотна — уся тека, style.css); що з квартири видно, вирішує камера (§8.4).
 fullscreenOnFirstAction();
+escapeLeavesFullscreen();
 // Звук живе поза сценами: музика грає й у поїздках (§8.10), картки звучать будь-де (§11.4а).
 const engine = new AudioEngine();
 engine.start();

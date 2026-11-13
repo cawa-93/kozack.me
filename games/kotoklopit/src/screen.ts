@@ -31,7 +31,31 @@ async function enterFullscreen(): Promise<boolean> {
   } catch {
     // Гра горизонтальна, але на десктопі фіксувати нічого, а iPad цього не вміє — це не помилка.
   }
+  lockEscape();
   return true;
+}
+
+/**
+ * Забрати Esc собі на час повного екрана (§10): інакше браузер на Esc сам виходить із повного екрана, а сторінці клавіші не
+ * віддає, і картку нею не закрити. Keyboard Lock є лише в Chromium; деінде Esc лишається браузерові. Із замком браузер
+ * виходить із повного екрана лише на довге утримання Esc — коротке натискання веде гра (`escapeLeavesFullscreen`).
+ */
+function lockEscape(): void {
+  const keyboard = (navigator as Navigator & { keyboard?: { lock?: (keys: string[]) => Promise<void> } }).keyboard;
+  void keyboard?.lock?.(["Escape"]).catch(() => undefined);
+}
+
+/**
+ * Esc, якого ніхто не обробив, виводить із повного екрана, як у браузері без перехоплення (§10). Хто обробив — картка
+ * (`Overlay`), — той робить `preventDefault`; її слухач може стояти й після цього, тож дивимося, коли спрацюють усі.
+ */
+export function escapeLeavesFullscreen(): void {
+  window.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || event.repeat) return;
+    setTimeout(() => {
+      if (!event.defaultPrevented && isFullscreen()) void document.exitFullscreen().catch(() => undefined);
+    });
+  });
 }
 
 /**

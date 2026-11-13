@@ -381,9 +381,12 @@ export class Overlay {
       event.stopImmediatePropagation();
       return;
     }
-    // Клавіші картки не доходять до гри: інакше пробіл, що закрив титулку, ще й натиснув би дію.
-    if (event.key === "Escape" && card.onDismiss) {
+    // Esc — це «закрити картку» (§10): з відкритою карткою він оброблений (`preventDefault`), навіть коли її закрити не можна, —
+    // тож із повного екрана не виводить (`escapeLeavesFullscreen`).
+    if (event.key === "Escape") {
       event.preventDefault();
+      if (!card.onDismiss) return;
+      // Клавіші картки не доходять до гри: інакше пробіл, що закрив титулку, ще й натиснув би дію.
       event.stopImmediatePropagation();
       card.onDismiss();
       return;
