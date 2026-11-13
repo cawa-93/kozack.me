@@ -209,10 +209,7 @@ const SAME: Record<string, { why: string; ids: string[] }> = {
 /** Ще випадки, що кажуть про той самий запас. */
 const ALSO: Partial<Record<Product, { why: string; ids: string[] }>> = {
   food: { why: "ситість поповнюють продукти: показник на панелі й у думці — їхня іконка; сирі продукти на столі — вони ж", ids: ["stat:satiety", "thought:person:satiety", "table:raw"] },
-  hygiene: {
-    why: "гігієну поповнюють засоби гігієни — та сама іконка на панелі й у думці; низька гігієна — і в думці чистюлі, що не йде на руки через сморід",
-    ids: ["stat:hygiene", "thought:person:hygiene", "event:cat-dodged:issue=stench"],
-  },
+  hygiene: { why: "гігієну поповнюють засоби гігієни — та сама іконка на панелі й у думці", ids: ["stat:hygiene", "thought:person:hygiene"] },
   catFood: { why: "голод кота — корм: думка, прохання вголос біля миски й «Дає доспати» біля ліжка (кіт хоче саме корму)", ids: ["thought:cat:hunger", "ask:bowl", "ask:bed"] },
   momMeal: { why: "мамин судочок — та сама річ на плиті, на столі й у холодильнику", ids: ["stove:mom", "table:mom"] },
   catnip: { why: "котяча м'ята: кіт блаженствує саме від неї", ids: ["event:catnip:reaction=roll"] },
@@ -242,7 +239,10 @@ Object.assign(SAME, {
   "здоров'я": { why: "показник на панелі й думка персонажа, коли він низький", ids: ["stat:health", "thought:person:health"] },
   "здоровий глузд": { why: "показник на панелі й думка персонажа, коли він низький", ids: ["stat:sanity", "thought:person:sanity"] },
   спрага: { why: "кіт хоче пити: думка й прохання вголос біля миски для води, на умивальнику й там, де миска стояла", ids: ["thought:cat:thirst", "ask:water-bowl", "ask:sink", "ask:water"] },
-  нявкання: { why: "кіт нявчить; кіт, що втік на сходи, за дверима, і його не видно — те саме нявкання над дверима", ids: ["event:meow", "event:escaped", "state:door.stairs"] },
+  нявкання: {
+    why: "кіт нявчить; кіт, що втік на сходи, за дверима, і його не видно — те саме нявкання над дверима; стан на панелі — те саме нявкання над вухом того, хто працює",
+    ids: ["event:meow", "event:escaped", "state:door.stairs", "person-state:meowing"],
+  },
   злість: { why: "кіт шипить (ображений на руках, на кота без причини, на гостей) чи верещить від м'яти", ids: ["event:hissed", "event:picked-up:offended=true", "event:hissed-guests", "event:catnip:reaction=frenzy"] },
   приємно: { why: "котові приємно: його почав вилизувати друг чи поруч лягла «Щедра душа»", ids: ["event:groom-started", "event:cat-cuddled"] },
   гуркіт: { why: "щось розбилося (дрібничка, скинута страва) чи гуркоче віджим — гучний звук", ids: ["event:trinket-fell:trinket=mug:object=table:broken=true", "event:laundry:stage=spin", "event:knocked:object=table:item=meal"] },
@@ -250,9 +250,19 @@ Object.assign(SAME, {
   подряпина: { why: "кіт подряпав персонажа — біля переноски, у ванні чи «Ніндзя» в засідці: те саме правило подряпини (CLAW)", ids: ["event:clawed:at=carrier", "event:clawed:at=bath", "event:clawed:at=ambush"] },
   "дзвінок у двері": { why: "хтось дзвонить у двері — з пакунком чи без", ids: ["event:doorbell:delivery", "event:doorbell"] },
   "шкарпетка знайшлася": { why: "персонаж зрозумів, куди поділася шкарпетка, — хоч у поїздці, хоч пилососом", ids: ["event:sock-found:where=trip", "event:sock-found:where=vacuum"] },
-  запаморочення: { why: "персонаж відчуває запаморочення: збій керування, спіткнувся, посковзнувся, збив кіт у зумі, напав із засідки", ids: ["event:glitch", "event:tripped", "event:slipped", "event:knocked-down", "event:ambushed"] },
+  запаморочення: {
+    why: "персонаж відчуває запаморочення: збій керування, спіткнувся, посковзнувся, збив кіт у зумі, напав із засідки; стан на панелі — те саме запаморочення, поки здоровий глузд на межі",
+    ids: ["event:glitch", "event:tripped", "event:slipped", "event:knocked-down", "event:ambushed", "person-state:dizzy"],
+  },
   "брудний лоток": { why: "лоток брудний: над ним і в думці чистюлі, що його понюхав", ids: ["state:litterDirty", "event:litter-refused"] },
-  "брудний одяг": { why: "одяг персонажа брудний: кіт через нього не йде на руки, колеги помітили на дзвінку", ids: ["event:cat-dodged:issue=clothes", "event:call-remark:issue=clothes"] },
+  "брудний одяг": {
+    why: "одяг персонажа брудний: кіт через нього не йде на руки, колеги помітили на дзвінку, стан на панелі",
+    ids: ["event:cat-dodged:issue=clothes", "event:call-remark:issue=clothes", "person-state:dirtyClothes"],
+  },
+  сморід: { why: "від персонажа тхне: стан на панелі й думка чистюлі, що через це не йде на руки", ids: ["event:cat-dodged:issue=stench", "person-state:stench"] },
+  "без сил": { why: "здоров'я на межі: відмова ривка й стан на панелі — та сама батарейка", ids: ["refusal:weak", "person-state:weak"] },
+  спека: { why: "спекотно: кіт знемагає, а персонаж пітніє — та сама спека дня чи тижня", ids: ["event:weather-felt:feel=hot", "person-state:heat"] },
+  холод: { why: "холодно: кіт мерзне, а персонаж не пітніє — той самий холод дня чи тижня", ids: ["event:weather-felt:feel=cold", "person-state:chill"] },
   "кіт на комп'ютері": { why: "кіт сів на клавіатуру — над комп'ютером і у відмові сісти за нього", ids: ["event:keyboard", "refusal:cat-on-computer"] },
   "дріт перегризено": { why: "стан речі над нею вголос, у мить, коли перегризли, і у відмові працювати", ids: ["state:computer.wireChewed", "event:wire-chewed", "refusal:wire-chewed"] },
   "смітник перекинуто": { why: "смітник перекинувся — над ним і у відмові щось викинути", ids: ["event:trash-tipped", "refusal:trash-tipped"] },

@@ -1,6 +1,7 @@
 // Тексти гри з TEXTS.md. `{назва}` — підстановка, `[чоловіча|жіноча]` — форма за статтю кота чи звертанням до персонажа.
 
 import { lifeMood } from "./sim/cat";
+import { firstWeekProtected } from "./sim/character";
 import { POSITIONS } from "./sim/config";
 import { catsAxis, catsMood, careerAxis, type CareerAxis, type CatsAxis } from "./sim/finale";
 import { lifeLevel } from "./sim/farewell";
@@ -983,35 +984,76 @@ export const DISEASE_TITLES: Record<string, string> = {
 export const diseaseTitle = (id: string): string => DISEASE_TITLES[id] ?? id;
 
 /**
- * Назви станів персонажа в «Профілі» телефона (`TEXTS.md`, «Інтерфейс», «Стани»; §8.4): сонливість, недосип, виспався, пошук
- * роботи, лікарняний і день без світла (§4.1); на панелі — лише іконки.
+ * Назви станів персонажа в «Профілі» телефона (`TEXTS.md`, «Інтерфейс», «Стани»; §8.4); на панелі — лише іконки. Хвороби —
+ * `ILLNESS_TITLES`; стан дня чи тижня зветься, як його модифікатор.
  */
-export const PANEL_STATES = {
+export const PANEL_STATES: Record<Exclude<PersonStateId, IllnessId>, string> = {
+  weak: "Без сил",
+  hungry: "Голод",
+  stench: "Сморід",
+  dizzy: "Запаморочення",
+  depressed: "Пригніченість",
+  dirtyClothes: "Брудний одяг",
   drowsy: "Сонливість",
   sleepDebt: "Недосип",
-  wellRested: "Чудово [виспався|виспалася]",
-  rested: "[Виспався|Виспалася]",
+  mess: "Безлад",
+  fur: "Шерсть",
+  meowing: "Нявкання",
+  noPower: "Без світла",
+  heat: "Спека",
+  renovation: "Ремонт у сусідів",
+  quarterlyReport: "Квартальний звіт",
   jobSearch: "Пошук роботи",
   sickLeave: "Лікарняний",
-  noPower: "Без світла",
-} as const;
+  wellRested: "Чудово [виспався|виспалася]",
+  rested: "[Виспався|Виспалася]",
+  vigor: "Бадьорість",
+  chill: "Холод",
+  neighborsAway: "Сусіди у відпустці",
+  interestingProject: "Цікавий проєкт",
+};
 
 /**
- * Опис стану персонажа в профілі телефона (§8.4): що персонаж відчуває й бачить, без чисел і правил (§11.3а). Назви — `PANEL_STATES`
+ * Опис стану персонажа в профілі телефона (§8.4): звідки він і що робить — словами, без чисел (§11.3а). Назви — `PANEL_STATES`
  * і `ILLNESS_TITLES` (`personStateTitle`).
  */
 export const PERSON_STATE_ABOUT: Record<PersonStateId, string> = {
-  drowsy: "Очі злипаються: пора в ліжко.",
-  sleepDebt: "Не [виспався|виспалася]: усе дається повільніше.",
-  rested: "[Виспався|Виспалася]: усе дається трохи легше.",
-  wellRested: "Чудово [виспався|виспалася]: усе дається легко.",
-  jobSearch: "Роботи немає: нову шукають за комп'ютером.",
-  sickLeave: "Лікар виписав лікарняний: на роботу можна не виходити.",
-  noPower: "Світла немає весь день: пральна машина стоїть, душ холодний, комп'ютер — від зарядної станції.",
+  weak: "Здоров'я на межі: рухаєтеся повільніше й без ривка.",
+  hungry: "Давно не їли: рухаєтеся повільніше, а здоров'я тане. Сон голодному сил не повертає.",
+  stench: "Давно не милися: від вас тхне. Чистюлі не йдуть на руки, а колеги на відеодзвінку кривляться.",
+  dizzy: "Здоровий глузд на межі: перед очима пливе, а ноги часом несуть не туди.",
   cold: "Дере горло й закладає ніс: рухаєтеся повільніше й без ривка.",
   injury: "Кульгаєте: рухаєтеся повільніше й без ривка, а з річчю в руках — ще повільніше.",
   exhaustion: "Кілька ночей поспіль не досипали — тіло здає. Потрібно кілька ночей доброго сну.",
+  depressed: "Без кота вдома геть сумно: здоровий глузд не піднімається вище позначки на шкалі.",
+  dirtyClothes: "Чистого одягу немає: гігієна тане швидше, а душ освіжає лише до позначки на шкалі. Чистюлі не йдуть на руки, а колеги на відеодзвінку помічають плями.",
+  drowsy: "Очі злипаються: пора в ліжко.",
+  sleepDebt: "Не [виспався|виспалася]: усе дається повільніше.",
+  mess: "Безлад на очах дратує: здоровий глузд тане, поки ви поруч.",
+  fur: "По квартирі лежать жмути шерсті: гігієна тане швидше.",
+  meowing: "Кіт нявчить над вухом: за роботою здоровий глузд тане швидше.",
+  noPower: "Світла немає весь день: пральна машина стоїть, душ холодний, комп'ютер — від зарядної станції.",
+  heat: "Спекотно: гігієна тане швидше.",
+  renovation: "За стіною свердлять: неприємні справи дратують більше.",
+  quarterlyReport: "Звітний тиждень: робота виснажує більше.",
+  jobSearch: "Роботи немає: нову шукають за комп'ютером.",
+  sickLeave: "Лікар виписав лікарняний: на роботу можна не виходити.",
+  wellRested: "Чудово [виспався|виспалася]: усе дається легко.",
+  rested: "[Виспався|Виспалася]: усе дається трохи легше.",
+  vigor: "Сил хоч відбавляй: рухаєтеся швидше.",
+  chill: "Прохолодно: гігієна тане повільніше.",
+  neighborsAway: "За стіною тихо: неприємні справи дратують менше.",
+  interestingProject: "Проєкт захоплює: робота виснажує менше.",
 };
+
+/** «Запаморочення» під захистом першого тижня (§8.3): збоїв керування ще немає, тож про ноги — ні слова. */
+const DIZZY_PROTECTED_ABOUT = "Здоровий глузд на межі: перед очима пливе.";
+
+/** Опис стану для цієї гри (§8.4): форма — за звертанням. */
+export function personStateAbout(state: GameState, id: PersonStateId): string {
+  const about = id === "dizzy" && firstWeekProtected(state) ? DIZZY_PROTECTED_ABOUT : PERSON_STATE_ABOUT[id];
+  return fill(about, state.character.address);
+}
 
 /** Вкладка «Профіль» телефона (§8.4, §8.6): ставка, робочий час, стани й ліки біля хвороби (§6.5). */
 export const PROFILE_TEXTS = {
@@ -1031,7 +1073,7 @@ export const CAT_DOSE_TODAY: Record<Medicine, string> = { pills: "таблетк
 
 /** Назва стану персонажа (§8.4): хвороби — назвами з `ILLNESS_TITLES`; форма — за звертанням. */
 export function personStateTitle(id: PersonStateId, address: Address): string {
-  return fill(id in PANEL_STATES ? PANEL_STATES[id as keyof typeof PANEL_STATES] : ILLNESS_TITLES[id as IllnessId], address);
+  return fill(id in ILLNESS_TITLES ? ILLNESS_TITLES[id as IllnessId] : PANEL_STATES[id as keyof typeof PANEL_STATES], address);
 }
 
 /** Картка знайомства з новим котом (§9.7); `male` і `female` — надпис дорослого за статтю. */

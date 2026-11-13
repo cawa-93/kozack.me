@@ -426,8 +426,8 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
       // відмова «руки зайняті» (правило автора 2026-10-30 «Унікальна іконка на унікальний кейс», §11.4).
       return [{ kind: "think", at: cat(event.cat), icon: "aloof" }];
     case "cat-dodged":
-      // Чистюля не йде на руки — його думка про причину: брудний одяг чи сморід (низька гігієна — іконка показника).
-      return [{ kind: "think", at: cat(event.cat), icon: event.issue === "clothes" ? "laundry" : STAT_ICONS.hygiene }];
+      // Чистюля не йде на руки — його думка про причину: брудний одяг чи сморід, тими самими іконками, що стани персонажа.
+      return [{ kind: "think", at: cat(event.cat), icon: event.issue === "clothes" ? "laundry" : "stench" }];
     case "symptom": {
       // Чхання й крик болю чути, а свербіж і очі кіт відчуває. Іконка — хвороби, про яку кіт так сигналізує: та сама, що біля
       // її назви у ветеринара (`DISEASE_ICONS`, §11.4 «Іконка біля назви»).
@@ -615,21 +615,36 @@ type Symptom = Extract<GameEvent, { type: "symptom" }>["symptom"];
 const SYMPTOM_DISEASE: Record<Symptom, DiseaseId> = { sneeze: "cold", itch: "fleas", eyes: "conjunctivitis", pain: "urolithiasis" };
 
 /**
- * Стани персонажа на панелі й у профілі телефона (§8.4, §11.4): кожен свій, а той самий випадок — та сама іконка: сонливість — думка
- * «zz» над персонажем, хвороби — іконки біля назви в лікаря (`ILLNESS_ICONS`), день без світла — «немає світла», як у відмові
- * пральної машини; «чудово виспався» — подушка «виспався» з ✓.
+ * Стани персонажа на панелі й у профілі телефона (§8.4, §11.4): кожен свій, а той самий випадок — та сама іконка, що в баблі про
+ * нього (групи одного значення — `tests/icons-unique.test.ts`). Позначка — інший стан на тій самій іконці.
  */
 export const PERSON_STATE_ICONS: Record<PersonStateId, { icon: IconName; mark?: Mark }> = {
-  drowsy: { icon: STATE_ICONS.drowsy },
-  sleepDebt: { icon: "alarm" },
-  rested: { icon: "rested" },
-  wellRested: { icon: "rested", mark: "ok" },
-  jobSearch: { icon: "job-search" },
-  sickLeave: { icon: "sick-leave" },
-  noPower: { icon: "no-power" },
+  weak: { icon: "battery-low" },
+  hungry: { icon: "hungry" },
+  stench: { icon: "stench" },
+  dizzy: { icon: "dizzy" },
   cold: { icon: ILLNESS_ICONS.cold },
   injury: { icon: ILLNESS_ICONS.injury },
   exhaustion: { icon: ILLNESS_ICONS.exhaustion },
+  depressed: { icon: "gloom" },
+  dirtyClothes: { icon: "laundry" },
+  drowsy: { icon: STATE_ICONS.drowsy },
+  sleepDebt: { icon: "alarm" },
+  mess: { icon: "mess" },
+  fur: { icon: "tufts" },
+  meowing: { icon: "meow" },
+  noPower: { icon: "no-power" },
+  heat: { icon: "hot" },
+  renovation: { icon: "renovation" },
+  quarterlyReport: { icon: "report" },
+  jobSearch: { icon: "job-search" },
+  sickLeave: { icon: "sick-leave" },
+  wellRested: { icon: "rested", mark: "ok" },
+  rested: { icon: "rested" },
+  vigor: { icon: "vigor" },
+  chill: { icon: "chilly" },
+  neighborsAway: { icon: "renovation", mark: "no" },
+  interestingProject: { icon: "report", mark: "ok" },
 };
 
 /** Речі квартири, що є завжди (§8.4): рядки вкладки «Дім» телефона без «Викинути». Віник — поки пилососа немає (§8.7). */

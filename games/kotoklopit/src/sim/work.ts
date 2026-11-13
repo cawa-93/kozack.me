@@ -33,7 +33,7 @@ import {
 import { emit, type PatienceLevel } from "./events";
 import { patienceDecayFactor, payFactor, powerOut, reputationFactor, searchFactor, toOffice, workdayOverride, workSanityFactor } from "./modifiers";
 import { remember, type CareerChange } from "./story";
-import { weekdayOf } from "./time";
+import { absoluteMinute, weekdayOf } from "./time";
 import type { GameState, Job } from "./types";
 
 const PATIENCE_EPSILON = 1e-9;
@@ -81,6 +81,11 @@ export function isWorkTime(state: GameState, minute = state.minute): boolean {
 
 export function isWorking(state: GameState): boolean {
   return state.character.activity?.kind === "work";
+}
+
+/** Балакучий кіт цієї години вже нявчав над тим, хто працює (§9.12): стан «Нявкання» (§8.4). */
+export function meowsAtWork(state: GameState): boolean {
+  return isWorking(state) && state.character.meowNoise?.hour === Math.floor(absoluteMinute(state.day, state.minute) / MINUTES_PER_HOUR);
 }
 
 /**

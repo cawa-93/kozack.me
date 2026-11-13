@@ -5,7 +5,7 @@ import { ILLNESSES, WORK_END_MINUTE, WORK_START_MINUTE } from "../sim/config";
 import { formatClock } from "../sim/time";
 import type { GameState, IllnessId } from "../sim/types";
 import { hourlyRate } from "../sim/work";
-import { fill, JOB_SEEKING, PERSON_STATE_ABOUT, personStateTitle, POSITION_TITLES, PROFILE_TEXTS } from "../texts";
+import { fill, JOB_SEEKING, personStateAbout, personStateTitle, POSITION_TITLES, PROFILE_TEXTS } from "../texts";
 import type { IconName, Mark } from "../view/iconnames";
 import { personStates, type PersonStateId } from "../view/personstates";
 import { PERSON_STATE_ICONS, PRODUCT_ICONS } from "../view/symbols";
@@ -67,7 +67,7 @@ function stateRow(state: GameState, id: PersonStateId): HTMLElement {
   const text = element("div", "profile-state-text");
   const name = element("p", "profile-state-name", personStateTitle(id, address));
   if (ILLNESS_IDS.has(id) && medsTaken(state, id as IllnessId)) name.append(element("span", "profile-state-meds", ` · ${named(PRODUCT_ICONS.humanMeds, PROFILE_TEXTS.medsTaken)}`));
-  text.append(name, element("p", "profile-state-about", fill(PERSON_STATE_ABOUT[id], address)));
+  text.append(name, element("p", "profile-state-about", personStateAbout(state, id)));
   row.append(text);
   return row;
 }

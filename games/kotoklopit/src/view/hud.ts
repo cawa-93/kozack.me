@@ -18,7 +18,7 @@ import { DeskClock } from "./deskclock";
 import { barDraw, barsKey, hatchCrop, type BarDraw } from "./hudbars";
 import { newsHitArea } from "./hudnews";
 import { iconArt, markArt, type IconName } from "./iconnames";
-import { personStates } from "./personstates";
+import { PANEL_STATE_SLOTS, panelStatesReader, type PanelStates } from "./personstates";
 import { StretchArt } from "./iso/hudart";
 import {
   bandRect,
@@ -89,8 +89,8 @@ const HINT = { x: 19, y: 19, r: 15 } as const;
 const HINT_BIG = { x: 15, y: 14 } as const;
 /** Дрібні написи панелі: розмір шрифту на полотні до збільшення (`hudTextScale`). */
 const SMALL_TEXT = { schedule: 19, news: 17, amount: 20 } as const;
-/** Іконки станів персонажа (§8.4): кружечок — така частка кружечка показника, просвіт між ними; найбільше станів разом. */
-const STATE_DISC = { share: 0.8, gap: 4, max: 8 } as const;
+/** Іконки станів персонажа (§8.4): кружечок — така частка кружечка показника, просвіт між ними; «+N» — така частка іконки. */
+const STATE_DISC = { share: 0.8, gap: 4, more: 0.58 } as const;
 /** Запис від руки на аркуші розкладу (`theme.css`): Caveat вужчий і дрібніший за системний того самого кегля. */
 const HANDWRITING = { family: "Caveat, system-ui, sans-serif", weight: "600" } as const;
 /** Кружечок підказки (`statDisc`, `HINT.r` з контуром 2): іконка менша за папір — довкола неї лишається просвіт. */
@@ -154,9 +154,15 @@ export class Hud {
   private billShown = false;
   /** Стани персонажа (§8.4): іконки на паперових кружечках у другому ряду, під грошима; `mark` — ✓ «чудово виспався». */
   private readonly states: { ring: Phaser.GameObjects.Image; icon: Phaser.GameObjects.Image; mark: Phaser.GameObjects.Image }[];
-  /** Які стани показано зараз (`personStates` через кому): іконки міняються, лише коли змінилися. */
-  private statesShown = "";
+  /** Стани для панелі: щокадру — той самий об'єкт, поки набір не змінився (`panelStatesReader`). */
+  private readonly readStates = panelStatesReader();
+  /** Які стани показано зараз: іконки міняються, лише коли прийшов інший набір. */
+  private statesShown: PanelStates | null = null;
+  /** Скільки кружечків зайнято — разом із «+N». */
   private statesCount = 0;
+  /** «+N» в останньому кружечку, коли станів більше, ніж місць (§8.4); розмір шрифту — за кружечком. */
+  private readonly statesMore: Phaser.GameObjects.Text;
+  private statesMoreSize = 0;
   /** Поле натискання над іконками станів: відкриває профіль у телефоні. */
   private readonly statesZone: Phaser.GameObjects.Zone;
   /** Розклад дня (§8.4): два рядки чорнилом на аркуші записника (`note`), що тягнеться вшир за довшим. */
@@ -237,11 +243,12 @@ export class Hud {
       event.stopPropagation();
       onProfile();
     });
-    this.states = Array.from({ length: STATE_DISC.max }, () => ({
+    this.states = Array.from({ length: PANEL_STATE_SLOTS }, () => ({
       ring: addArt(scene, null, HUD_ART.stat).setVisible(false),
       icon: addArt(scene, null, iconArt("zz")).setVisible(false),
       mark: addArt(scene, null, markArt("ok")).setVisible(false),
     }));
+    this.statesMore = text(SMALL_TEXT.amount, UI_TEXT.onPaper, { bold: true, plain: true }).setOrigin(0.5).setVisible(false);
     this.wallet = { ring: addArt(scene, null, HUD_ART.stat), icon: addArt(scene, null, HUD_ART.purse) };
     this.money = text(SMALL_TEXT.amount, UI_TEXT.main, { bold: true }).setOrigin(0, 0.5);
     this.bill = { ring: addArt(scene, null, HUD_ART.alert).setVisible(false), icon: addArt(scene, null, iconArt(UTILITIES_ICON)).setVisible(false) };
@@ -276,7 +283,7 @@ export class Hud {
     this.barFrames = STATS.map(() => new StretchArt(scene, this.left, HUD_ART.bar));
     // Аркуш розкладу — до рядків, щоб вони лягли поверх нього.
     this.note = new StretchArt(scene, this.left, HUD_ART.note);
-    this.left.add([...this.states.flatMap((s) => [s.ring, s.icon, s.mark]), this.wallet.ring, this.wallet.icon, this.money, this.bill.ring, this.bill.icon, this.statesZone, ...this.schedule]);
+    this.left.add([...this.states.flatMap((s) => [s.ring, s.icon, s.mark]), this.statesMore, this.wallet.ring, this.wallet.icon, this.money, this.bill.ring, this.bill.icon, this.statesZone, ...this.schedule]);
     this.arrange(HUD_LAYOUT.desktop, BASE_WIDTH);
 
     // Телефон персонажа: доставка (§6.4).
@@ -404,12 +411,19 @@ export class Hud {
     if (!shape || !columns) return 0;
     const outer = shape.disc.outer * STATE_DISC.share;
     const { ring, icon } = statDisc(outer, shape.disc.fill);
+    const at = (i: number): number => columns.money + outer / 2 + i * (outer + STATE_DISC.gap);
     this.states.forEach((s, i) => {
-      const x = columns.money + outer / 2 + i * (outer + STATE_DISC.gap);
-      s.ring.setPosition(x, shape.rows[1]).setDisplaySize(ring, ring);
-      s.icon.setPosition(x, shape.rows[1]).setDisplaySize(icon, icon);
-      s.mark.setPosition(x, shape.rows[1]).setDisplaySize(icon, icon);
+      s.ring.setPosition(at(i), shape.rows[1]).setDisplaySize(ring, ring);
+      s.icon.setPosition(at(i), shape.rows[1]).setDisplaySize(icon, icon);
+      s.mark.setPosition(at(i), shape.rows[1]).setDisplaySize(icon, icon);
     });
+    // «+N» — у кружечку за останньою іконкою; шрифт міряється наново лише на новий розмір кружечка.
+    this.statesMore.setPosition(at(Math.max(0, this.statesCount - 1)), shape.rows[1]);
+    const size = Math.round(icon * STATE_DISC.more);
+    if (size !== this.statesMoreSize) {
+      this.statesMoreSize = size;
+      setFontSize(this.statesMore, size);
+    }
     const width = this.statesCount === 0 ? 0 : this.statesCount * (outer + STATE_DISC.gap) - STATE_DISC.gap;
     // Поле натискання — над показаними іконками, із запасом на палець; без станів — нульове.
     const pad = this.statesCount === 0 ? 0 : STATE_DISC.gap * 2;
@@ -419,15 +433,18 @@ export class Hud {
 
   /** Показати стани (§8.4): кадр іконки й позначки — лише коли набір станів змінився. */
   private showStates(state: GameState): void {
-    const ids = personStates(state).slice(0, STATE_DISC.max);
-    const key = ids.join(",");
-    if (key === this.statesShown) return;
-    this.statesShown = key;
-    this.statesCount = ids.length;
+    const view = this.readStates(state);
+    if (view === this.statesShown) return;
+    this.statesShown = view;
+    const { shown, more } = view;
+    this.statesCount = shown.length + (more > 0 ? 1 : 0);
+    this.statesMore.setVisible(more > 0);
+    if (more > 0) this.statesMore.setText(`+${more}`);
     this.states.forEach((s, i) => {
-      const id = ids[i];
+      const id = shown[i];
       const look = id === undefined ? undefined : PERSON_STATE_ICONS[id];
-      s.ring.setVisible(look !== undefined);
+      // Кружечок за останньою іконкою — під «+N».
+      s.ring.setVisible(look !== undefined || (more > 0 && i === shown.length));
       s.icon.setVisible(look !== undefined);
       s.mark.setVisible(look?.mark !== undefined);
       if (!look) return;

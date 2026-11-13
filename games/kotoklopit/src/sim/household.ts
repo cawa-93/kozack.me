@@ -176,6 +176,15 @@ export function hygieneFactor(state: GameState): number {
   return (wearsDirtyClothes(state) ? HOUSEHOLD.noClothesHygiene : 1) * (furVisible(state) ? HOUSEHOLD.furHygiene : 1) * hygieneFactorMod(state);
 }
 
+/** Скільки безладу зараз на очах персонажа (§9.12): з нього — і втрата здорового глузду, і стан «Безлад» (§8.4). */
+export function messesInSight(state: GameState): number {
+  const activity = state.character.activity;
+  if (state.trip !== null || (activity?.kind === "use" && activity.inside)) return 0;
+  const fur = furTufts(state).some((p) => inView(state, p)) ? 1 : 0;
+  const dust = floorDust(state).filter((p) => inView(state, p)).length;
+  return state.home.messes.filter((m) => inView(state, m)).length + fur + dust;
+}
+
 /**
  * Безлад дратує (§9.12, правка автора 2026-10-23): кожен, що в полі зору персонажа, — здоровий
  * глузд за годину, разом не більше межі. З душової кабіни безладу не видно. Лише вдень, удома.
@@ -184,11 +193,7 @@ export function hygieneFactor(state: GameState): number {
  * павутина — лише вигляд.
  */
 export function annoyingMesses(state: GameState, minutes: number): void {
-  const activity = state.character.activity;
-  if (state.trip !== null || (activity?.kind === "use" && activity.inside)) return;
-  const fur = furTufts(state).some((p) => inView(state, p)) ? 1 : 0;
-  const dust = floorDust(state).filter((p) => inView(state, p)).length;
-  const seen = state.home.messes.filter((m) => inView(state, m)).length + fur + dust;
+  const seen = messesInSight(state);
   if (seen === 0) return;
   const perHour = Math.max(MESS_ANNOYANCE.max, seen * MESS_ANNOYANCE.perHour);
   changeStat(state, "sanity", perHour * (minutes / MINUTES_PER_HOUR));
