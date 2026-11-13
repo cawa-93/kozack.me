@@ -174,7 +174,7 @@ describe("маніфест: правила записів", () => {
       const res = e.res ?? DEFAULT_RES;
       area += framesOf(e).length * (e.layers?.length ?? 1) * e.size.w * res * e.size.h * res;
     }
-    expect(area).toBeLessThan(57.2e6);
+    expect(area).toBeLessThan(57.4e6);
   });
 
   it("маніфест — без Phaser і DOM", () => {

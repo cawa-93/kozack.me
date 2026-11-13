@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/vigor — «Бадьорість»: велика гірчична блискавка навскіс, обабіч — три короткі риски енергії. Персонаж сьогодні бадьорий і рухається швидше (DAY_MODIFIERS.md, MODIFIERS.vigor); стан персонажа на панелі й у профілі телефона (GAME_DESIGN §8.4).
+size 64×64; pivot (32, 32) — центр; points — немає. Без станів і шарів.
+Блискавка — mustard, низ вістря — тінь shade 0,3; контур 6, важкий низ — звужена заливка до 8,5 уздовж нижнього ребра. Риски — ink 3,5.
+Не зірка підвищення (promotion), не трикутник із «!» (alert), не сіра перекреслена лампочка (no-power), не батарейка (battery-low) і не подушка з іскоркою (rested): зигзаг із гострим вістрям униз ліворуч.
+-->
+<defs>
+<clipPath id="icon-vigor-bolt"><path d="M27.4 7.9Q37.9 7.2 48.4 7.7Q44.9 15.6 40 23Q46.8 23.4 53.8 25.2Q37.5 41.8 19.4 56.5Q21.4 47.7 24.4 39.2Q17.7 39.9 10.8 39.2Q18.3 23 27.4 7.9Z"/></clipPath>
+</defs>
+<g id="p-sparks">
+<path d="M15.6 13.8L10.4 9.2" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M10.6 24.4L6.2 22.8" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M46.6 46L52.4 50.2" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-bolt">
+<path d="M27.4 7.9Q37.9 7.2 48.4 7.7Q44.9 15.6 40 23Q46.8 23.4 53.8 25.2Q37.5 41.8 19.4 56.5Q21.4 47.7 24.4 39.2Q17.7 39.9 10.8 39.2Q18.3 23 27.4 7.9Z" fill="#d4a54c"/>
+<path d="M0 38.4Q12 36.6 24 39Q36 41.4 48 38.6Q56 37 64 38.6L64 64L0 64Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-vigor-bolt)"/>
+<path d="M27.4 7.9Q37.9 7.2 48.4 7.7Q44.9 15.6 40 23Q46.8 23.4 53.8 25.2Q37.5 41.8 19.4 56.5Q21.4 47.7 24.4 39.2Q17.7 39.9 10.8 39.2Q18.3 23 27.4 7.9Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M51 28Q33.3 37.2 22.3 53.9Q43.8 48.8 51 28Z" fill="#2e1f29"/>
+</g>
+</svg>

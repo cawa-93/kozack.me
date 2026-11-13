@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/renovation — перфоратор, що довбе: свердло навскіс угору ліворуч, довкола вістря три риски гуркоту. Ремонт у сусідів: за стіною
+свердлять, неприємні справи дратують більше (стан персонажа на панелі й у профілі телефона, §4.1, §8.4); з позначкою «ні» — тиша за стіною.
+size 64×64; pivot (32, 32) — центр; points — немає. Без станів і шарів: один кадр у готових кольорах; контур 6 / важкий низ 8,5 / патрон 4,5 / свердло 3 / риски 4.
+Корпус із рукояттю teal (верх tealHi), патрон darkHi, свердло greyHi з витками grey, курок і риски ink, тінь shade 0,3.
+Перфоратор лежить навскіс ↖ (нахил 20°): мазок «ні» ↗ перетинає патрон і перед корпусу, а свердло з рисками (угорі ліворуч) і рукоять (унизу праворуч) лишаються обабіч мазка.
+Не гуркіт розбитого (loud: гучномовець із хвилями), не пилосос (vacuum: щітка внизу), не перегризений дріт (wire) і не «немає світла» (no-power: лампочка) — пістолетний силует зі свердлом.
+-->
+<defs><clipPath id="icon-renovation-body"><path d="M39.2 20.3Q39.7 18.2 41.8 18.7Q48.9 20 53.3 22.3Q57.7 24.4 56.4 29.4Q54.6 34.1 53.4 38.9Q52.3 45.5 51.1 50.8Q50.5 53.6 47.9 53.2Q44.3 52.7 40.9 51.6Q38.3 50.9 38.9 48.5Q40.2 43.3 41 39.3Q41.4 37.5 39.6 36.8Q37 36 35.7 35.1Q34 34.1 34.6 32.3Q36.4 26.2 39.2 20.3Z"/></clipPath><clipPath id="icon-renovation-chuck"><path d="M40.4 21.8Q36.6 20.1 32.8 19.7Q30.3 19.3 29.3 21.6Q28.2 23.7 27.7 26.1Q27 28.4 29.1 29.7Q32.3 31.9 36.3 33Z"/></clipPath></defs>
+<g id="p-bit">
+<path d="M31.8 21.4Q25 18.5 19 16.6Q17 16.1 14.3 18.7Q14.9 22.3 16.7 23.2Q22.4 25.6 29.5 27.7Z" fill="#cdc6be"/>
+<path d="M18.9 17.6L20.4 23.6M23.4 19.1L24.8 25.2" fill="none" stroke="#a69f9b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M31.8 21.4Q25 18.5 19 16.6Q17 16.1 14.3 18.7Q14.9 22.3 16.7 23.2Q22.4 25.6 29.5 27.7Z" fill="none" stroke="#2e1f29" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-chuck">
+<path d="M40.4 21.8Q36.6 20.1 32.8 19.7Q30.3 19.3 29.3 21.6Q28.2 23.7 27.7 26.1Q27 28.4 29.1 29.7Q32.3 31.9 36.3 33Z" fill="#6d6266"/>
+<path d="M25.7 23.8Q31.5 27.1 38.7 28.7L36.3 35.3L23.2 30.6Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-renovation-chuck)"/>
+<path d="M40.4 21.8Q36.6 20.1 32.8 19.7Q30.3 19.3 29.3 21.6Q28.2 23.7 27.7 26.1Q27 28.4 29.1 29.7Q32.3 31.9 36.3 33Z" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-drill">
+<path d="M39.2 20.3Q39.7 18.2 41.8 18.7Q48.9 20 53.3 22.3Q57.7 24.4 56.4 29.4Q54.6 34.1 53.4 38.9Q52.3 45.5 51.1 50.8Q50.5 53.6 47.9 53.2Q44.3 52.7 40.9 51.6Q38.3 50.9 38.9 48.5Q40.2 43.3 41 39.3Q41.4 37.5 39.6 36.8Q37 36 35.7 35.1Q34 34.1 34.6 32.3Q36.4 26.2 39.2 20.3Z" fill="#5f9089"/>
+<path d="M38.5 12.6L64.7 22.1L61.8 30Q49.1 26.5 35.6 20.6Z" fill="#8bb3aa" clip-path="url(#icon-renovation-body)"/>
+<path d="M32.4 29.2Q38.2 32.5 43.5 33.8L41.1 40.5L29.8 36.4Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-renovation-body)"/>
+<path d="M35.7 41.7Q45 47.4 56 48.4L51.4 60.9L31.4 53.6Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-renovation-body)"/>
+<path d="M41.6 37.8Q36.8 35.4 35.3 38.3Q34.4 41.4 40.5 43Z" fill="#2e1f29"/>
+<path d="M39.2 20.3Q39.7 18.2 41.8 18.7Q48.9 20 53.3 22.3Q57.7 24.4 56.4 29.4Q54.6 34.1 53.4 38.9Q52.3 45.5 51.1 50.8Q50.5 53.6 47.9 53.2Q44.3 52.7 40.9 51.6Q38.3 50.9 38.9 48.5Q40.2 43.3 41 39.3Q41.4 37.5 39.6 36.8Q37 36 35.7 35.1Q34 34.1 34.6 32.3Q36.4 26.2 39.2 20.3Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M47.9 53.2Q44.3 52.7 40.9 51.6" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-noise">
+<path d="M13.7 13.8L13.2 8.4" fill="none" stroke="#2e1f29" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M10.2 17L6.8 15.4" fill="none" stroke="#2e1f29" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M10.3 21.8L6.4 24.9" fill="none" stroke="#2e1f29" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>
