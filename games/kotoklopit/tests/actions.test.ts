@@ -12,7 +12,7 @@ import { dash } from "../src/sim/body";
 import { BURN_MINUTES, COOK_MINUTES, EAT_MINUTES, HOUSEHOLD, HYGIENE_PER_HOUR, MEAL_SATIETY, MINUTES_PER_HOUR, SATIETY_PER_HOUR, SHOWER_HYGIENE, SHOWER_MINUTES } from "../src/sim/config";
 import { supplyCount } from "../src/sim/economy";
 import { advance, interact, newGame } from "../src/sim/game";
-import type { Save } from "../src/sim/types";
+import type { Difficulty, Save } from "../src/sim/types";
 import { bodyMinutes, hours, recordEvents, standAt, withCatCorner } from "./helpers";
 
 const game = (): Save => withCatCorner(newGame({ address: "she", difficulty: "normal", seed: 1 }));
@@ -400,22 +400,26 @@ describe("душ (§8.7)", () => {
     expect(supplyCount(save.current, "hygiene")).toBe(0);
   });
 
-  it("у брудному одязі душ не піднімає гігієну вище 60, а падає вона вдвічі швидше", () => {
-    const save = game();
-    const stats = save.current.character.stats;
-    stats.hygiene = 20;
-    save.current.home.clothes = 0;
-    save.current.home.supplies.hygiene = { cheap: 0, premium: 1 };
-    standAt(save, "shower");
-    interact(save);
-    advance(save, bodyMinutes(SHOWER_MINUTES) + LAST_STEP);
-    expect(stats.hygiene).toBeCloseTo(HOUSEHOLD.noClothesHygieneCeiling, 0);
-    advance(save, 60);
-    expect(stats.hygiene).toBeCloseTo(HOUSEHOLD.noClothesHygieneCeiling - 3 * HOUSEHOLD.noClothesHygiene, 0);
+  it("у брудному одязі душ не піднімає гігієну вище межі за складністю, а падає вона вдвічі швидше", () => {
+    const ceilings: Record<Difficulty, number> = { easy: 50, normal: 40, hard: 30, ukro: 24 };
+    expect(HOUSEHOLD.noClothesHygieneCeiling).toEqual(ceilings);
+    for (const difficulty of Object.keys(ceilings) as Difficulty[]) {
+      const save = withCatCorner(newGame({ address: "she", difficulty, seed: 1 }));
+      const stats = save.current.character.stats;
+      stats.hygiene = 20;
+      save.current.home.clothes = 0;
+      save.current.home.supplies.hygiene = { cheap: 0, premium: 1 };
+      standAt(save, "shower");
+      interact(save);
+      advance(save, bodyMinutes(SHOWER_MINUTES) + LAST_STEP);
+      expect(stats.hygiene, difficulty).toBeCloseTo(ceilings[difficulty], 0);
+      advance(save, 60);
+      expect(stats.hygiene, difficulty).toBeCloseTo(ceilings[difficulty] - 3 * HOUSEHOLD.noClothesHygiene, 0);
+    }
   });
 
-  it("засіб не витрачається, коли й без нього гігієна дійде до межі: 100 чи 60 у брудному одязі", () => {
-    for (const [clothes, hygiene, used] of [[5, 95, 0], [0, 55, 0], [5, 80, 1], [0, 40, 1]] as const) {
+  it("засіб не витрачається, коли й без нього гігієна дійде до межі: 100 чи межа брудного одягу", () => {
+    for (const [clothes, hygiene, used] of [[5, 95, 0], [0, 35, 0], [5, 80, 1], [0, 20, 1]] as const) {
       const save = game();
       const stats = save.current.character.stats;
       stats.hygiene = hygiene;
@@ -425,7 +429,7 @@ describe("душ (§8.7)", () => {
       interact(save);
       advance(save, bodyMinutes(SHOWER_MINUTES) + LAST_STEP);
       expect(supplyCount(save.current, "hygiene")).toBe(2 - used);
-      expect(stats.hygiene).toBeCloseTo(clothes > 0 ? 100 : HOUSEHOLD.noClothesHygieneCeiling, 0);
+      expect(stats.hygiene).toBeCloseTo(clothes > 0 ? 100 : HOUSEHOLD.noClothesHygieneCeiling.normal, 0);
     }
   });
 

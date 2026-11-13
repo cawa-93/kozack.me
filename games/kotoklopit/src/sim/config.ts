@@ -948,8 +948,8 @@ export const HOUSEHOLD = {
   tuftEveryMinutes: 10,
   furHygiene: 1.2,
   noClothesHygiene: 2,
-  /** Вище гігієна в брудному одязі не стає й після душу. */
-  noClothesHygieneCeiling: 60,
+  /** Вище гігієна в брудному одязі не стає й після душу. «Укро Кіт» — нижче `LOW_STAT`: сморід, доки одяг брудний (§5.2). */
+  noClothesHygieneCeiling: { easy: 50, normal: 40, hard: 30, ukro: 24 } as Record<Difficulty, number>,
   washMinutes: 60,
   clothesShowers: { cheap: 7, premium: 12 } as Record<Quality, number>,
   robotMinute: 12 * 60,

@@ -56,12 +56,12 @@ export const wearsDirtyClothes = (state: Pick<GameState, "home">): boolean => st
 export const stinks = (state: Pick<GameState, "character">): boolean => state.character.stats.hygiene < LOW_STAT;
 
 /**
- * Вище цієї межі показник зараз не росте: «Пригніченість» тримає здоровий глузд до 35% (§6.2),
- * брудний одяг — гігієну до 60 (§8.7).
+ * Вище цієї межі показник зараз не росте: «Пригніченість» тримає здоровий глузд (§6.2), брудний одяг — гігієну, за
+ * складністю (§8.7).
  */
 export function statCeiling(state: GameState, stat: StatName): number {
   if (stat === "sanity" && state.character.depressed) return DEPRESSION_CEILING;
-  if (stat === "hygiene" && wearsDirtyClothes(state)) return HOUSEHOLD.noClothesHygieneCeiling;
+  if (stat === "hygiene" && wearsDirtyClothes(state)) return HOUSEHOLD.noClothesHygieneCeiling[state.difficulty];
   return STAT_MAX;
 }
 

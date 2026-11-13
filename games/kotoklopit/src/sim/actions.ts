@@ -895,7 +895,7 @@ function stepShare(progress: number, step: number, total: number): number {
 
 /** Початок душу (§8.7): засіб беруть на вході, щоб гігієна росла вже від першої хвилини. */
 function startWash(state: GameState): NonNullable<UseActivity["wash"]> {
-  // Засіб не витрачається, коли й без нього гігієна дійде до межі: 100 чи 60 у брудному одязі. Холодний душ без світла миє ×0,8 — і
+  // Засіб не витрачається, коли й без нього гігієна дійде до межі (`statCeiling`). Холодний душ без світла миє ×0,8 — і
   // без засобу теж, тож межу перевіряють з тим самим множником (§4.1, рішення автора 2026-11-02).
   const plain = state.character.stats.hygiene + showerHygiene(state, null) >= statCeiling(state, "hygiene");
   const quality = plain ? null : useSupply(state, "hygiene");
