@@ -100,6 +100,7 @@ export const EVENTS: GameEvent[] = [
   { type: "clawed", cat: 1, at: "ambush" },
   { type: "picked-up", cat: 1, offended: true },
   { type: "cat-dodged", cat: 1, issue: "clothes" },
+  { type: "cat-dodged", cat: 1, issue: "stench" },
   { type: "cat-left", cat: 1 },
   { type: "sulked", cat: 1 },
   { type: "symptom", cat: 1, symptom: "sneeze" },

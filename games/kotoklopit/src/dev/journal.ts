@@ -300,7 +300,7 @@ export function describe(event: GameEvent, state: GameState): string | null {
     case "cat-left":
       return `${catName(state, event.cat)} не хоче пестощів і йде з-під руки`;
     case "cat-dodged":
-      return `${catName(state, event.cat)} не йде на руки: брудний одяг`;
+      return `${catName(state, event.cat)} не йде на руки: ${event.issue === "clothes" ? "брудний одяг" : "сморід"}`;
     case "put-down":
       return `Опущено: ${catName(state, event.cat)}`;
     case "bite":

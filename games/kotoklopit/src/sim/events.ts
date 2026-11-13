@@ -275,7 +275,7 @@ export type GameEvent =
   /** Персонаж відкрив кран котові, що чекав на умивальнику (§9.12, «Пиття»): тече вода. */
   | { type: "tap-opened"; cat: number }
   | { type: "picked-up"; cat: number; offended: boolean }
-  | { type: "cat-dodged"; cat: number; issue: "clothes" }
+  | { type: "cat-dodged"; cat: number; issue: "clothes" | "stench" }
   | { type: "cat-broke-free"; cat: number }
   | { type: "put-down"; cat: number }
   | { type: "purr"; cat: number; enjoyed: boolean }

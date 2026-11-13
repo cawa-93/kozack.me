@@ -15,7 +15,7 @@ import { catInWasher, emptyFeeder, fillFountainTank, furPerHour, putVacuumDown, 
 import { observe } from "./knowledge";
 import { cookFactor, onCall, powerOut } from "./modifiers";
 import { dropThing, putThing } from "./moving";
-import { changeStat, statCeiling, unpleasantTask, wearsDirtyClothes } from "./character";
+import { changeStat, statCeiling, stinks, unpleasantTask, wearsDirtyClothes } from "./character";
 import { coffeeOn, coffeeStage, drinkCoffee, startCoffee } from "./coffee";
 import {
   AFFECTION,
@@ -198,10 +198,11 @@ function tapAction(state: GameState): TapOutcome {
         rescueStuck(state, target.cat);
         return null;
       }
-      if (avoidsDirtyClothes(state, target.cat)) {
+      const issue = shunned(state, target.cat);
+      if (issue) {
         backAway(state, target.cat, state.character.body);
         observe(state, target.cat, "litterPicky", 1, false, DIRTY_CLOTHES_CATS.observeEvery);
-        emit(state, { type: "cat-dodged", cat: target.cat.id, issue: "clothes" });
+        emit(state, { type: "cat-dodged", cat: target.cat.id, issue });
         return DONE;
       }
       pickUpCat(state, target.cat);
@@ -537,9 +538,13 @@ function take(state: GameState, object: HomeObject, item: Item): null {
   return null;
 }
 
-/** Чистюля не йде на руки до персонажа в брудному одязі (§9.12). */
-export function avoidsDirtyClothes(state: GameState, cat: Cat): boolean {
-  return wearsDirtyClothes(state) && traitLevel(cat, "litterPicky") >= DIRTY_CLOTHES_CATS.picky;
+/**
+ * Через що чистюля не йде на руки (§9.12): брудний одяг чи сморід; null — іде. Одяг — перший: поки він брудний, сам душ кота
+ * не поверне.
+ */
+function shunned(state: GameState, cat: Cat): "clothes" | "stench" | null {
+  if (traitLevel(cat, "litterPicky") < DIRTY_CLOTHES_CATS.picky) return null;
+  return wearsDirtyClothes(state) ? "clothes" : stinks(state) ? "stench" : null;
 }
 
 /** Чи кіт зараз не хоче на руки: спить або не хоче уваги й не любить рук (§9.12). */

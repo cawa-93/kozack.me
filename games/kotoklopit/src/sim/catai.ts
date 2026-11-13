@@ -3871,7 +3871,7 @@ function engage(state: GameState, a: Cat, b: Cat, rng: Rng): void {
   for (const cat of [a, b]) observe(state, cat, "sociability", -1);
 }
 
-/** Чистюля відходить від персонажа в брудному одязі (§9.12). */
+/** Чистюля відходить від персонажа в брудному одязі чи зі смородом (§9.12). */
 export function backAway(state: GameState, cat: Cat, from: Vec): void {
   const dx = cat.x - from.x;
   const dy = cat.y - from.y;

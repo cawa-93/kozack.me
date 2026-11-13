@@ -8,7 +8,7 @@ import { changeMood, closeCatDay, createCat, idleAct, offend, petResting } from 
 import { nightlyCare } from "../src/sim/care";
 import { activityAt, beggingFood, carryBiteChance, decide, envy, isDirty, lapChance, tickCats } from "../src/sim/catai";
 import { changeStat } from "../src/sim/character";
-import { LOVE_BEHAVIOR, PET, PETTING } from "../src/sim/config";
+import { LOVE_BEHAVIOR, LOW_STAT, PET, PETTING } from "../src/sim/config";
 import { addSupply } from "../src/sim/economy";
 import { advance, deserialize, goToSleep, interact, newGame, serialize } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
@@ -652,6 +652,44 @@ describe("догляд персонажа (§9.12)", () => {
     cat.act = { kind: "idle", target: null, goal: null, minutes: 100, elapsed: 0 };
     interact(save);
     expect(save.current.character.held?.kind).toBe("cat");
+  });
+
+  it("чистюля не йде на руки й через сморід — гігієна нижче `LOW_STAT`, хоч одяг і чистий", () => {
+    const save = game();
+    const state = save.current;
+    const cat = withCat(save, { x: 4.5, y: 7.6 });
+    const reach = (picky: 1 | -1): void => {
+      cat.traits = [{ group: "litterPicky", level: picky, seen: 0, known: false }];
+      Object.assign(cat, { x: 4.5, y: 7.6, act: { kind: "idle", target: null, goal: null, minutes: 100, elapsed: 0 } });
+      Object.assign(state.character.body, { x: 4.5, y: 8.2, facing: { x: 0, y: -1 } });
+      interact(save);
+    };
+    const inHands = (): string | null => save.current.character.held?.kind ?? null;
+    const { events, stop } = recordEvents();
+    state.character.stats.hygiene = LOW_STAT - 1;
+    reach(1);
+    expect(inHands()).toBeNull();
+    expect(events.at(-1)).toEqual({ type: "cat-dodged", cat: cat.id, issue: "stench" });
+    expect(cat.act.kind).toBe("wander");
+    expect(cat.act.goal?.y).toBeLessThan(7);
+    expect(cat.traits[0]?.seen).toBe(1);
+    // І смердить, і одяг брудний — кіт каже про одяг: поки він брудний, душ кота не поверне.
+    state.home.clothes = 0;
+    state.home.dirtyClothes = true;
+    reach(1);
+    expect(events.at(-1)).toEqual({ type: "cat-dodged", cat: cat.id, issue: "clothes" });
+    stop();
+    expect(inHands()).toBeNull();
+    // Гігієна рівно на межі — не сморід; поблажливий кіт іде на руки й до того, від кого смердить.
+    state.home.clothes = 5;
+    delete state.home.dirtyClothes;
+    state.character.stats.hygiene = LOW_STAT;
+    reach(1);
+    expect(inHands()).toBe("cat");
+    state.character.held = null;
+    state.character.stats.hygiene = LOW_STAT - 1;
+    reach(-1);
+    expect(inHands()).toBe("cat");
   });
 });
 

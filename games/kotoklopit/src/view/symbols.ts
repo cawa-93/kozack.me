@@ -426,8 +426,8 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
       // відмова «руки зайняті» (правило автора 2026-10-30 «Унікальна іконка на унікальний кейс», §11.4).
       return [{ kind: "think", at: cat(event.cat), icon: "aloof" }];
     case "cat-dodged":
-      // Чистюля не йде на руки в брудному одязі — його думка.
-      return [{ kind: "think", at: cat(event.cat), icon: "laundry" }];
+      // Чистюля не йде на руки — його думка про причину: брудний одяг чи сморід (низька гігієна — іконка показника).
+      return [{ kind: "think", at: cat(event.cat), icon: event.issue === "clothes" ? "laundry" : STAT_ICONS.hygiene }];
     case "symptom": {
       // Чхання й крик болю чути, а свербіж і очі кіт відчуває. Іконка — хвороби, про яку кіт так сигналізує: та сама, що біля
       // її назви у ветеринара (`DISEASE_ICONS`, §11.4 «Іконка біля назви»).

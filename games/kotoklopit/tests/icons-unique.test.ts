@@ -209,7 +209,10 @@ const SAME: Record<string, { why: string; ids: string[] }> = {
 /** Ще випадки, що кажуть про той самий запас. */
 const ALSO: Partial<Record<Product, { why: string; ids: string[] }>> = {
   food: { why: "ситість поповнюють продукти: показник на панелі й у думці — їхня іконка; сирі продукти на столі — вони ж", ids: ["stat:satiety", "thought:person:satiety", "table:raw"] },
-  hygiene: { why: "гігієну поповнюють засоби гігієни — та сама іконка на панелі й у думці", ids: ["stat:hygiene", "thought:person:hygiene"] },
+  hygiene: {
+    why: "гігієну поповнюють засоби гігієни — та сама іконка на панелі й у думці; низька гігієна — і в думці чистюлі, що не йде на руки через сморід",
+    ids: ["stat:hygiene", "thought:person:hygiene", "event:cat-dodged:issue=stench"],
+  },
   catFood: { why: "голод кота — корм: думка, прохання вголос біля миски й «Дає доспати» біля ліжка (кіт хоче саме корму)", ids: ["thought:cat:hunger", "ask:bowl", "ask:bed"] },
   momMeal: { why: "мамин судочок — та сама річ на плиті, на столі й у холодильнику", ids: ["stove:mom", "table:mom"] },
   catnip: { why: "котяча м'ята: кіт блаженствує саме від неї", ids: ["event:catnip:reaction=roll"] },
