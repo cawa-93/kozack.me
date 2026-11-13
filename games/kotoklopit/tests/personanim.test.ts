@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { tap } from "../src/sim/actions";
 import { createCat, idleAct } from "../src/sim/cat";
-import { STANDUP_MINUTE } from "../src/sim/config";
+import { LOW_STAT, STANDUP_MINUTE } from "../src/sim/config";
 import { addSupply } from "../src/sim/economy";
 import type { GameEvent } from "../src/sim/events";
 import { advance, newGame } from "../src/sim/game";
@@ -175,11 +175,23 @@ describe("основна анімація персонажа (`personAnim`)", ()
     expect(facing(d, -d, { view: "front", flip: false })).toEqual({ view: "front", flip: false });
   });
 
-  it("брудний одяг — плями й запах", () => {
-    const save = game();
-    save.current.home.clothes = 0;
-    save.current.home.dirtyClothes = true;
-    expect(personAnim(save.current, still).params.dirty).toBe(true);
+  it("брудний одяг — плями, сморід — хвилі запаху: гігієна нижче `LOW_STAT`, хоч би в якому одязі (§11.4)", () => {
+    const state = game().current;
+    const seen = (): { dirty: boolean; smelly: boolean } => {
+      const { dirty, smelly } = personAnim(state, still).params;
+      return { dirty, smelly };
+    };
+    state.character.stats.hygiene = LOW_STAT;
+    expect(seen()).toEqual({ dirty: false, smelly: false });
+    state.character.stats.hygiene = LOW_STAT - 1;
+    expect(seen()).toEqual({ dirty: false, smelly: true });
+    // Брудний одяг сам не смердить.
+    state.home.clothes = 0;
+    state.home.dirtyClothes = true;
+    state.character.stats.hygiene = LOW_STAT;
+    expect(seen()).toEqual({ dirty: true, smelly: false });
+    state.character.stats.hygiene = LOW_STAT - 1;
+    expect(seen()).toEqual({ dirty: true, smelly: true });
   });
 });
 

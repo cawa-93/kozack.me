@@ -14,7 +14,7 @@
 // Рука, що гладить (§8.2), — ближня рука скелета (той самий запечений кадр `person/arm`), повернута навколо плеча до спинки
 // кота й розтягнута не більше ніж у `REACH_STRETCH` (решту відстані дає присід анімації `pet`); на глибині над персонажем, а
 // кіт попереду — над котом (`reachDepth`). Вудочка під час гри — кадр A5 у руці, обтятий до палички, волосінь від її кінчика
-// до пучка пір'я з того самого кадру, що кружляє над котом (`personreach.ts`). Брудний одяг — плями й запах (`fx/smell`). У
+// до пучка пір'я з того самого кадру, що кружляє над котом (`personreach.ts`). Брудний одяг — плями, сморід — запах (`fx/smell`). У
 // поїздці й у душовій кабіні персонажа не видно (§8.5, §8.7). Засинаючи (§8.8), заплющує очі (`person/eyes`: `half`,
 // `closed`), а голова хилиться.
 //
@@ -299,7 +299,7 @@ export class IsoPersonView implements PersonPart {
     this.updateCargo(shown, shot ? shot.anim : choice.anim, cleaningTool(state), shown?.kind === "gameThing" ? carriedThingFrame(state, shown.thing) : null);
     this.lastHeld = character.held;
     this.updatePoints();
-    const smelly = params.dirty && !this.hidden;
+    const smelly = params.smelly && !this.hidden;
     this.smell.setVisible(smelly);
     if (smelly) {
       setArt(this.smell, "fx/smell", { state: Math.floor(time / SMELL_MS) % 2 === 0 ? "a" : "b" });

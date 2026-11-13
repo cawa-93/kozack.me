@@ -52,6 +52,9 @@ export function hadCat(state: GameState): boolean {
  */
 export const wearsDirtyClothes = (state: Pick<GameState, "home">): boolean => state.home.dirtyClothes === true && state.home.clothes <= 0;
 
+/** Сморід (§6.3, §11.4): гігієна низька, хоч би в якому одязі персонаж. */
+export const stinks = (state: Pick<GameState, "character">): boolean => state.character.stats.hygiene < LOW_STAT;
+
 /**
  * Вище цієї межі показник зараз не росте: «Пригніченість» тримає здоровий глузд до 35% (§6.2),
  * брудний одяг — гігієну до 60 (§8.7).

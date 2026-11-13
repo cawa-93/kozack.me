@@ -4,7 +4,7 @@
 // спіткнувся… Плита готує сама (§8.7), тож готування — лише «поклав» і «взяв». Без Phaser.
 
 import { petDone } from "../../sim/actions";
-import { wearsDirtyClothes } from "../../sim/character";
+import { stinks, wearsDirtyClothes } from "../../sim/character";
 import type { GameEvent } from "../../sim/events";
 import { cleaningTool } from "../../sim/household";
 import { isIll } from "../../sim/illness";
@@ -75,8 +75,10 @@ export interface PersonAnimParams {
   target: string | null;
   /** Персонажа не видно: у поїздці чи в душовій кабіні (§8.5, §8.7). */
   hidden: boolean;
-  /** Чистого одягу немає (§8.7): плями на одязі й хвилі запаху. */
+  /** У брудному одязі (§8.7): плями на одязі. */
   dirty: boolean;
+  /** Сморід (§11.4): хвилі запаху над головою. */
+  smelly: boolean;
 }
 
 /** Що грати персонажу: основна анімація, накладка рук, ракурс, повтор і параметри. */
@@ -129,6 +131,7 @@ export function personAnim(state: GameState, local: PersonLocal): PersonAnimChoi
     target: activity?.kind === "use" ? activity.target : activity?.kind === "pet" || activity?.kind === "play" ? `cat:${activity.cat}` : null,
     hidden: state.trip !== null || (activity?.kind === "use" && activity.inside === true && activity.bath !== true),
     dirty: wearsDirtyClothes(state),
+    smelly: stinks(state),
   };
   // Накладка рук: кіт на руках, пилосос (ближня рука на ручці, щітка на підлозі — `holdVacuum`), решта — несе перед собою.
   const tool: PersonAnimId = cleaningTool(state) === "vacuum" ? "holdVacuum" : "holdBroom";
