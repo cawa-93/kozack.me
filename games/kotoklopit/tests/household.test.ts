@@ -294,6 +294,66 @@ describe("чистий одяг і кошик білизни (§8.7)", () => {
     expect(wearsDirtyClothes(state)).toBe(false);
   });
 
+  it("прання вже в машині, а чистого немає: душ повертає чистий одяг — його беруть із машини, і те саме прання вдруге чистого не дає", () => {
+    for (const stage of ["washing", "done"] as const) {
+      const save = game();
+      const state = save.current;
+      const home = state.home;
+      home.clothes = 0;
+      home.dirtyClothes = true;
+      home.supplies.detergent.cheap = 1;
+      expect(tapWasher(state)).toBe("started");
+      if (stage === "done") tickHousehold(state, 600, HOUSEHOLD.washMinutes + 1);
+      expect(home.washer.state, stage).toBe(stage);
+      // Кошик уже порожній, але на персонажі досі брудне.
+      expect(basketState(basketClothes(home)), stage).toBe("load-0");
+      expect(wearsDirtyClothes(state), stage).toBe(true);
+      standAt(save, "shower");
+      const { events, stop } = recordEvents();
+      interact(save);
+      stop();
+      expect(wearsDirtyClothes(state), stage).toBe(false);
+      expect(home.clothes, stage).toBe(HOUSEHOLD.clothesShowers.cheap - 1);
+      // Зношене полетіло в порожній кошик і лягло в нього.
+      expect(events.filter((e) => e.type === "clothes-tossed"), stage).toHaveLength(1);
+      expect(basketState(basketClothes(home)), stage).toBe("load-1");
+      // Розвісили: те саме прання чистого вдруге не дає.
+      if (stage === "washing") tickHousehold(state, 600, HOUSEHOLD.washMinutes + 1);
+      expect(tapWasher(state), stage).toBe("hung");
+      expect(home.clothes, stage).toBe(HOUSEHOLD.clothesShowers.cheap - 1);
+      expect(wearsDirtyClothes(state), stage).toBe(false);
+      // А наступне — знову дає, як завжди.
+      home.clothes = 0;
+      home.supplies.detergent.cheap = 1;
+      expect(tapWasher(state), stage).toBe("started");
+      tickHousehold(state, 600, HOUSEHOLD.washMinutes + 1);
+      expect(tapWasher(state), stage).toBe("hung");
+      expect(home.clothes, stage).toBe(HOUSEHOLD.clothesShowers.cheap);
+    }
+  });
+
+  it("чисте з машини беруть раз: зносили й його, а прання так і не розвісили — персонаж знову в брудному", () => {
+    const save = game();
+    const state = save.current;
+    const home = state.home;
+    home.clothes = 0;
+    home.supplies.detergent.cheap = 1;
+    expect(tapWasher(state)).toBe("started");
+    const shower = (): void => {
+      standAt(save, "shower");
+      interact(save);
+      advance(save, bodyMinutes(SHOWER_MINUTES) + 1);
+      expect(state.character.activity).toBeNull();
+    };
+    for (let i = 0; i < HOUSEHOLD.clothesShowers.cheap; i++) {
+      shower();
+      expect(wearsDirtyClothes(state)).toBe(false);
+    }
+    expect(home.clothes).toBe(0);
+    shower();
+    expect(wearsDirtyClothes(state)).toBe(true);
+  });
+
   it("кошик наповнюється, коли одяг долетів: поки він летить, кошик — як до душу", () => {
     expect(basketState(4, true)).toBe(basketState(5));
     expect(basketState(2, true)).toBe(basketState(3));

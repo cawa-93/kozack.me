@@ -212,11 +212,12 @@ export function furPerHour(state: GameState, cat: Cat): number {
 
 /**
  * Заходячи в душ, персонаж кидає зношене в кошик білизни (§8.7): чистого одягу на душ менше, а вигляд пускає іконку одягу з кабіни
- * в кошик. Чистого вже немає — кошик повний, і нічого не летить: після такого душу персонаж у брудному одязі
- * (`wearsDirtyClothes`).
+ * в кошик. Чистого вже немає, і прання не в машині — кошик повний, і нічого не летить: після такого душу персонаж у брудному
+ * одязі (`wearsDirtyClothes`).
  */
 export function tossClothes(state: GameState): void {
   const home = state.home;
+  if (home.clothes <= 0) takeLaundry(home);
   if (home.clothes <= 0) {
     home.dirtyClothes = true;
     return;
@@ -224,6 +225,20 @@ export function tossClothes(state: GameState): void {
   delete home.dirtyClothes;
   home.clothes = Math.max(0, home.clothes - 1);
   emit(state, { type: "clothes-tossed" });
+}
+
+/**
+ * Чистого немає, а прання вже в машині — пере чи чекає, щоб розвісили (§8.7): персонаж бере чисте просто з неї. Кошик тоді
+ * порожній, і гравець чекає, що душ поверне чистий одяг. Раз за прання: розвішування після цього нічого не додає (`hangLaundry`).
+ */
+function takeLaundry(home: Home): void {
+  const washer = home.washer;
+  if (washer.state === "idle" || washer.taken === true) return;
+  const clean = HOUSEHOLD.clothesShowers[washer.quality];
+  washer.taken = true;
+  // Кошик і далі рахує лише зношене після запуску прання (`basketClothes`), а не взяте з машини.
+  if (washer.clothesAtStart !== undefined) washer.clothesAtStart += clean - home.clothes;
+  home.clothes = clean;
 }
 
 /** Кіт у барабані відчиненої пральної машини (§8.7). */
@@ -274,11 +289,16 @@ export function startWash(home: Home, quality: Quality): void {
   home.washer = { state: "washing", minutes: HOUSEHOLD.washMinutes, quality, clothesAtStart: home.clothes };
 }
 
-/** Розвісити випране (§8.7). Чистого одягу — не менше, ніж було: прання з повною шафою не зменшує запасу. */
+/**
+ * Розвісити випране (§8.7). Чистого одягу — не менше, ніж було: прання з повною шафою не зменшує запасу. Чисте з цього прання
+ * персонаж уже брав із машини (`takeLaundry`) — вдруге воно нічого не додає.
+ */
 export function hangLaundry(home: Home): void {
-  home.clothes = Math.max(home.clothes, HOUSEHOLD.clothesShowers[home.washer.quality]);
-  home.washer.state = "idle";
-  delete home.washer.clothesAtStart;
+  const washer = home.washer;
+  if (washer.taken !== true) home.clothes = Math.max(home.clothes, HOUSEHOLD.clothesShowers[washer.quality]);
+  washer.state = "idle";
+  delete washer.clothesAtStart;
+  delete washer.taken;
 }
 
 /**

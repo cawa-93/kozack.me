@@ -519,13 +519,15 @@ export function basketState(clothes: number, inFlight = false): string {
 
 /**
  * Чистий одяг, яким його бачить кошик білизни (§8.7), — для `basketState`: із запуском прання брудне пішло з кошика в машину,
- * тож кошик порожній і наповнюється заново, хоч чистого додасться, лише коли випране розвісять. Прання без `clothesAtStart`
- * (зі старого збереження) — кошик як був.
+ * тож кошик порожній і наповнюється заново — лише зношеним після запуску, хоч би скільки чистого було тоді й чи брав його
+ * персонаж із машини. Прання без `clothesAtStart` (зі старого збереження) — кошик як був.
  */
 export function basketClothes(home: Pick<Home, "clothes" | "washer">): number {
   const { clothes, washer } = home;
   if (washer.state === "idle" || washer.clothesAtStart === undefined) return clothes;
-  return clothes + Math.max(0, BASKET_ROOM - washer.clothesAtStart);
+  const worn = washer.clothesAtStart - clothes;
+  // Переповнений кошик — лише коли чистого не лишилося.
+  return Math.max(clothes > 0 ? 1 : 0, BASKET_ROOM - worn);
 }
 
 /** Кіт спить у переносці (§9.12, «Пасажир першого класу»): поверх нього — дверцята з ґратками. */
