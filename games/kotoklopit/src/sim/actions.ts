@@ -128,6 +128,11 @@ function tapAction(state: GameState): TapOutcome {
     character.activity = null;
     return DONE;
   }
+  // Так само виходять із душу; із кабіни, де купають кота, — ні (§8.7).
+  if (isShower(character.activity)) {
+    endShower(state, character.activity);
+    return DONE;
+  }
   // Іншу тривалу дію натискання не перериває.
   if (character.activity !== null) return null;
   const held = character.held;
@@ -362,8 +367,8 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       return DONE;
     }
     case "shower":
-      // Кіт на руках біля душу — купання (§8.7); інакше персонаж заходить у кабіну й лишається там до кінця душу.
-      // Купання займає час (рішення автора 2026-10-28): персонаж із котом у кабіні, а що відчув кіт — наприкінці (`finishUse`).
+      // Кіт на руках біля душу — купання (§8.7); інакше персонаж заходить у кабіну й миється сам (`tickShower`).
+      // Купання займає час (рішення автора 2026-10-28): персонаж із котом у кабіні, а що відчув кіт — наприкінці (`bathe`).
       if (held?.kind === "cat") {
         if (supplyCount(state, "shampoo") === 0) return refuse(state, target.id, { reason: "empty", product: "shampoo" });
         waterFright(state);
@@ -628,16 +633,18 @@ export function bathMinutes(state: GameState): number {
   return BATH.minutes * (1 + BATH.fearStep * Math.min(2, fear));
 }
 
-/**
- * Тривалість тривалої дії з ціллю, без урахування швидкості. Душ без світла холодний — бойлер не гріє — і вдвічі коротший
- * («Планове відключення», §4.1, §8.7, рішення автора 2026-11-02).
- */
+/** Тривалість тривалої дії з ціллю, без урахування швидкості. */
 function useMinutes(state: GameState, target: Target): number {
   if (target.type === "item") return CLEAN_LITTER_MINUTES;
   if (target.type === "mess") return CLEAN_MESS_MINUTES;
   if (target.type === "object" && target.object.kind === "computer") return CHEWING.fixMinutes;
-  if (target.type === "object" && target.object.kind === "shower") return SHOWER_MINUTES * (powerOut(state) ? MODIFIERS.outage.showerMinutes : 1);
+  if (target.type === "object" && target.object.kind === "shower") return showerMinutes(state);
   return EAT_MINUTES;
+}
+
+/** Скільки щонайбільше триває душ (§8.7): без світла він холодний — бойлер не гріє — і коротший («Планове відключення», §4.1). */
+function showerMinutes(state: GameState): number {
+  return SHOWER_MINUTES * (powerOut(state) ? MODIFIERS.outage.showerMinutes : 1);
 }
 
 /** Скільки гігієни дає душ без засобу чи з ним (§8.7): холодний, без світла, — ×0,8 (§4.1, рішення автора 2026-11-02). */
@@ -727,28 +734,20 @@ export function tickActivity(state: GameState, input: Input, minutes: number): v
   // Відпустили кнопку — утримання знову вільне, хоч би персонаж ішов, сидів за комп'ютером чи стояв у душі: інакше натискання,
   // зроблене ще на ходу, після зупинки утриманням нічого не починало б (§10).
   if (!input.hold) character.holdSpent = false;
-  // У душовій кабіні рух не діє: персонаж виходить, коли душ скінчився (§8.7). Поки говорить із мамою, душ стоїть, як і почата
-  // тривала дія без кнопки (§4.1): він іде й без вводу, тож сам на розмову не зважав би.
+  // У кабіні (§8.7). Поки говорить із мамою, душ і купання стоять, як і почата тривала дія без кнопки (§4.1): вони йдуть і без
+  // вводу, тож самі на розмову не зважали б.
   if (activity?.kind === "use" && activity.inside) {
     if (onCall(state)) return;
-    const target = targetById(state, activity.target);
-    if (target === null) {
-      character.activity = null;
+    if (activity.bath !== true) {
+      tickShower(state, activity, input, minutes);
       return;
     }
-    const total = activity.bath === true ? bathMinutes(state) : useMinutes(state, target);
-    const step = minutes * actionSpeed(state);
-    if (activity.bath !== true) {
-      // Не під час натискання, а тут: так само починається душ зі сценарію, що вже йде.
-      const wash = (activity.wash ??= startWash(state));
-      changeStat(state, "hygiene", wash.hygiene * stepShare(activity.progress, step, total));
-    }
-    activity.progress += step;
-    if (activity.progress >= total) {
+    // Із кабіни, де купають кота, не вийти: рух не діє.
+    activity.progress += minutes * actionSpeed(state);
+    if (activity.progress >= bathMinutes(state)) {
       character.activity = null;
-      if (activity.bath === true) bathe(state, stateRng(state, "behavior"));
-      else finishUse(state, target, activity);
-      // Тримали кнопку весь душ — нова дія не почнеться, поки не відпустили (§10; перевірка побуту 2026-10-28).
+      bathe(state, stateRng(state, "behavior"));
+      // Тримали кнопку все купання — нова дія не почнеться, поки не відпустили (§10).
       if (input.hold) character.holdSpent = true;
     }
     return;
@@ -796,6 +795,51 @@ export function leaveTable(state: GameState): void {
 export function canEat(state: GameState): boolean {
   const target = targetOf(state);
   return state.character.activity === null && target?.type === "object" && target.object.kind === "table" && canUse(state, target);
+}
+
+/** Персонаж миється в душовій кабіні (§8.7); купання кота — не душ. */
+function isShower(activity: GameState["character"]["activity"]): activity is UseActivity {
+  return activity?.kind === "use" && activity.inside === true && activity.bath !== true;
+}
+
+/**
+ * Душ (§8.7): іде сам, доки не вийшов час чи гігієна не дійшла до межі. Вийти раніше — рушити з місця, але напрям, затиснутий,
+ * коли заходили, не виводить (§10), як і за комп'ютером.
+ */
+function tickShower(state: GameState, activity: UseActivity, input: Input, minutes: number): void {
+  const character = state.character;
+  if (!isMoving(input.move)) activity.settled = true;
+  else if (activity.settled === true) {
+    if (input.hold) character.holdSpent = true;
+    endShower(state, activity);
+    return;
+  }
+  const total = showerMinutes(state);
+  const step = minutes * actionSpeed(state);
+  // Не під час натискання, а тут: так само починається душ зі сценарію, що вже йде.
+  const wash = (activity.wash ??= startWash(state));
+  const before = character.stats.hygiene;
+  changeStat(state, "hygiene", wash.hygiene * stepShare(activity.progress, step, total));
+  activity.progress += step;
+  if (wash.pending !== undefined) {
+    wash.given = (wash.given ?? 0) + character.stats.hygiene - before;
+    if (wash.given > showerHygiene(state, null)) payWash(state, wash);
+  }
+  if (activity.progress >= total || character.stats.hygiene >= statCeiling(state, "hygiene")) {
+    endShower(state, activity);
+    // Кнопку ще тримають — нова дія не почнеться, поки її не відпустили (§10).
+    if (input.hold) character.holdSpent = true;
+  }
+}
+
+/** Вода вимкнена (§8.7): душ скінчився сам чи персонаж вийшов раніше. `hygiene` події — частка душу, яку встиг пройти. */
+function endShower(state: GameState, activity: UseActivity): void {
+  state.character.activity = null;
+  const { hygiene = 0, quality = null } = activity.wash ?? {};
+  const share = Math.min(1, activity.progress / showerMinutes(state));
+  emit(state, { type: "showered", hygiene: hygiene * share, quality, left: supplyCount(state, "hygiene"), ...(powerOut(state) ? { cold: true as const } : {}) });
+  // Кабіна мокра: «Водолаз» приходить ловити краплі (§9.12).
+  showerDrops(state);
 }
 
 /**
@@ -888,7 +932,7 @@ function holdTick(state: GameState, minutes: number): boolean {
   current.progress += step;
   if (current.progress >= total) {
     character.activity = null;
-    finishUse(state, target, current);
+    finishUse(state, target);
   }
   return true;
 }
@@ -898,13 +942,22 @@ function stepShare(progress: number, step: number, total: number): number {
   return Math.max(0, Math.min(step, total - progress)) / total;
 }
 
-/** Початок душу (§8.7): засіб беруть на вході, щоб гігієна росла вже від першої хвилини. */
+/** Початок душу (§8.7): засіб із полиці діє від першої хвилини, але ще не витрачений (`payWash`). */
 function startWash(state: GameState): NonNullable<UseActivity["wash"]> {
-  // Засіб не витрачається, коли й без нього гігієна дійде до межі (`statCeiling`). Холодний душ без світла миє ×0,8 — і
-  // без засобу теж, тож межу перевіряють з тим самим множником (§4.1, рішення автора 2026-11-02).
-  const plain = state.character.stats.hygiene + showerHygiene(state, null) >= statCeiling(state, "hygiene");
-  const quality = plain ? null : useSupply(state, "hygiene");
-  return { hygiene: showerHygiene(state, quality), quality };
+  const pending = topQuality(state, "hygiene");
+  return { hygiene: showerHygiene(state, pending), quality: null, ...(pending !== null ? { pending } : {}) };
+}
+
+/**
+ * Засіб витрачено (§8.7): душ дав більше гігієни, ніж дає весь душ без засобів, — із тим самим множником холодного душу (§4.1).
+ * Вийшли раніше, самі чи на межі гігієни, — засіб лишився на полиці.
+ */
+function payWash(state: GameState, wash: NonNullable<UseActivity["wash"]>): void {
+  wash.quality = useSupply(state, "hygiene", wash.pending);
+  delete wash.pending;
+  delete wash.given;
+  // Засобу на полиці вже немає (його прибрав режим розробки) — далі душ миє, як без нього.
+  if (wash.quality === null) wash.hygiene = showerHygiene(state, null);
 }
 
 /** Скільки хвилин страву на столі вже їли (§8.7): з цього місця її доїдають. */
@@ -929,7 +982,7 @@ function rescueStuck(state: GameState, cat: Cat): void {
   delete cat.stuck;
 }
 
-function finishUse(state: GameState, target: Target, activity: UseActivity): void {
+function finishUse(state: GameState, target: Target): void {
   if (target.type === "item" && target.item.kind === "litter") {
     const box = target.item;
     box.uses = 0;
@@ -953,13 +1006,6 @@ function finishUse(state: GameState, target: Target, activity: UseActivity): voi
     unpleasantTask(state, CHEWING.fixSanity);
     state.home.repairs += CHEWING.wireRepair;
     emit(state, { type: "wire-fixed" });
-    return;
-  }
-  if (object.kind === "shower") {
-    const { hygiene = 0, quality = null } = activity.wash ?? {};
-    emit(state, { type: "showered", hygiene, quality, left: supplyCount(state, "hygiene"), ...(powerOut(state) ? { cold: true as const } : {}) });
-    // Кабіна мокра: «Водолаз» приходить ловити краплі (§9.12).
-    showerDrops(state);
     return;
   }
   finishMeal(state, object.id);

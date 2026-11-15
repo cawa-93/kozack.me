@@ -144,6 +144,21 @@ describe("купання (§8.7)", () => {
     }
   });
 
+  it("із кабіни, де купають кота, не вийти ні рухом, ні натисканням — на відміну від душу", () => {
+    const save = game();
+    save.current.home.supplies.shampoo = { cheap: 5, premium: 0 };
+    held(save);
+    standAt(save, "shower");
+    const { x, y } = save.current.character.body;
+    interact(save);
+    advance(save, bodyMinutes(1));
+    advance(save, bodyMinutes(1), { move: { x: 0, y: 1 }, hold: false });
+    interact(save);
+    expect(save.current.character.activity).toMatchObject({ kind: "use", inside: true, bath: true });
+    expect(save.current.character.body).toMatchObject({ x, y });
+    expect(save.current.home.supplies.shampoo.cheap).toBe(5);
+  });
+
   it("купання триває 10 хвилин тіла, «Жахається води» — удвічі довше; без шампуню не почати (рішення автора 2026-10-28)", () => {
     const save = game();
     save.current.home.supplies.shampoo = { cheap: 5, premium: 0 };

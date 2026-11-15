@@ -154,7 +154,7 @@ export type GameEvent =
   | ({ type: "refused"; object: string } & Refusal)
   | { type: "cooked"; result: "ready" | "burnt" }
   | { type: "ate"; satiety: number; food: number }
-  /** Душ закінчився (§8.7); `cold` — холодний, без світла («Планове відключення», §4.1, рішення автора 2026-11-02). */
+  /** Душ закінчився (§8.7) — сам чи персонаж вийшов раніше; `cold` — холодний, без світла («Планове відключення», §4.1). */
   | { type: "showered"; hygiene: number; quality: Quality | null; left: number; cold?: true }
   /**
    * Кавомашина (§8.7) на стільниці `object`: персонаж її запустив (`started`), кава зварилася й чекає (`ready`), персонаж випив
