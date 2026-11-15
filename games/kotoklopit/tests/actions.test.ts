@@ -314,6 +314,21 @@ describe("їжа за столом (§8.7)", () => {
     expect(called.current.home.surfaces["table"]).toMatchObject({ kind: "meal", eaten: expect.closeTo(0.2) });
   });
 
+  it("наситився до межі — устає сам, решта страви лишається на столі; кнопку ще тримають — назад не сідає", () => {
+    const save = game();
+    serveMeal(save);
+    save.current.character.stats.satiety = 90;
+    const { events, stop } = recordEvents();
+    holdFor(save, EAT_MINUTES / 2);
+    stop();
+    expect(save.current.character.activity).toBeNull();
+    expect(save.current.character.holdSpent).toBe(true);
+    expect(save.current.character.stats.satiety).toBeCloseTo(100, 0);
+    // До межі бракувало 10 із 40 — з'їдено чверть порції.
+    expect(save.current.home.surfaces["table"]).toMatchObject({ kind: "meal", eaten: expect.closeTo(0.25, 1) });
+    expect(events.some((e) => e.type === "ate")).toBe(false);
+  });
+
   it("ривок перериває їжу, як рух, і нова дія не почнеться, поки кнопку не відпустили (§10, загальна ревізія 2026-10-29)", () => {
     const save = game();
     serveMeal(save);

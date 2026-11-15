@@ -16,6 +16,7 @@ const cook = (save: Save): void => {
   interact(save);
 };
 
+/** Зняти страву з плити, поставити на стіл і їсти, доки не доїв чи не наситився (§8.7). */
 const eat = (save: Save): void => {
   walkTo(save, "stove");
   while (save.current.home.stove.item?.kind !== "meal") advance(save, 1);
@@ -24,6 +25,12 @@ const eat = (save: Save): void => {
   interact(save);
   // Відпустити кнопку й натиснути знову: натискання, що поставило страву, утриманням їжу не починає (§10).
   advance(save, 0.001);
+  holdUntilDone(save);
+};
+
+/** Доїсти те, що лишилося на столі. */
+const finish = (save: Save): void => {
+  walkTo(save, "table");
   holdUntilDone(save);
 };
 
@@ -45,11 +52,15 @@ describe("понеділок без котів (§8.3)", () => {
       interact(save);
       advance(save, 11);
       eat(save);
+      // Наївся до межі — решта сніданку лишається на столі (§8.7).
+      expect(save.current.character.stats.satiety).toBeCloseTo(100, 0);
+      expect(save.current.home.surfaces["table"]).toMatchObject({ kind: "meal" });
       expect(order(save.current, "food", "cheap")).not.toBeNull();
       workUntil(save, hours(12.5));
 
-      cook(save);
-      eat(save);
+      // Обід — решта сніданку.
+      finish(save);
+      expect(save.current.home.surfaces["table"]).toBeNull();
       workUntil(save, hours(15));
 
       // Доставка, замовлена зранку, уже під дверима; з ящиків біля входу — у холодильник.
@@ -74,11 +85,11 @@ describe("понеділок без котів (§8.3)", () => {
       expect(save.current.day).toBe(1);
       expect(night?.sanityMorning).toBeCloseTo((night?.sanityEvening ?? 0) + 50);
 
-      // Персонаж поїв тричі, помився й забрав доставку.
-      expect(events.filter((e) => e.type === "ate")).toHaveLength(3);
+      // Персонаж їв тричі — двічі приготував, а сніданок доїв в обід, — помився й забрав доставку.
+      expect(events.some((e) => e.type === "ate")).toBe(true);
       expect(events.some((e) => e.type === "showered")).toBe(true);
       expect(events.some((e) => e.type === "received")).toBe(true);
-      expect(save.current.home.supplies.food.cheap).toBe(6 - 3 + 20);
+      expect(save.current.home.supplies.food.cheap).toBe(6 - 2 + 20);
       // Працював досить, щоб керівництво не дійшло до «Х», і встиг на летючку.
       expect(events).not.toContainEqual({ type: "patience", level: "out" });
       expect(events.some((e) => e.type === "standup" && e.attended)).toBe(true);

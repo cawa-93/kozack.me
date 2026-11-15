@@ -33,6 +33,8 @@ const WALK_STEP = 0.1;
 /** Скільки кроків поспіль без наближення до клітинки — і бот вважає, що дорогу заступлено. */
 const WALK_STUCK_STEPS = 10;
 const HOLD_STEP = 0.5;
+/** Нижче цієї ситості бот готує, їсть мамин судочок і доїдає те, що лишилося на столі. */
+const HUNGRY = 60;
 /** Нижче цього здорового глузду бот рятується: пестить будь-якого кота й працює лише від «Х». */
 const CRISIS_SANITY = 30;
 /** Нижче цього здорового глузду бот не працює зовсім (і роботи не шукає): ще година — і кінець гри. */
@@ -197,7 +199,8 @@ export class Bot {
     const fighter = s.cats.find((c) => (c.act.kind === "fight" || c.act.kind === "standoff") && c.away === null);
     if (fighter) return named("separate", () => this.separate(fighter));
     if (s.home.stove.item?.kind === "meal") return named("serveMeal", () => this.serveMeal());
-    if (s.home.surfaces["table"]?.kind === "meal") return named("eat", () => this.eat());
+    // Недоїдене на столі (§8.7: наситившись, персонаж устає сам) — коли зголодніє: ситого воно саджало б за стіл знову й знову.
+    if (s.home.surfaces["table"]?.kind === "meal" && ch.stats.satiety < HUNGRY) return named("eat", () => this.eat());
     const garbage = s.home.messes.find((m) => m.kind === "garbage");
     if (garbage && s.home.stove.item?.kind === "burnt") return named("clean", () => this.hold(`mess:${garbage.id}`));
     if (s.home.stove.item?.kind === "burnt") return named("trashBurnt", () => this.trashBurnt());
@@ -218,8 +221,8 @@ export class Bot {
     }
     // Мамині судочки (§6.4, рішення автора 2026-10-26): готові — з холодильника одразу на стіл, без плити. Холодильник і так
     // видає їх першими.
-    if (ch.stats.satiety < 60 && supplyCount(s, "momMeal") > 0 && !s.home.surfaces["table"]) return named("momMeal", () => this.momMeal());
-    if (ch.stats.satiety < 60 && s.home.stove.item === null && supplyCount(s, "food") > 0 && !s.home.surfaces["table"]) {
+    if (ch.stats.satiety < HUNGRY && supplyCount(s, "momMeal") > 0 && !s.home.surfaces["table"]) return named("momMeal", () => this.momMeal());
+    if (ch.stats.satiety < HUNGRY && s.home.stove.item === null && supplyCount(s, "food") > 0 && !s.home.surfaces["table"]) {
       return named("cook", () => this.cook());
     }
     if (ch.stats.hygiene < 45) return named("shower", () => this.shower());

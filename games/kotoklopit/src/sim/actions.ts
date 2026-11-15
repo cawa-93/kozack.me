@@ -843,8 +843,9 @@ function endShower(state: GameState, activity: UseActivity): void {
 }
 
 /**
- * Їжа за столом (§8.7): іде сама, доки страву не доїли. Устати — рушити з місця, але напрям, затиснутий, коли сідали, не піднімає
- * (§10), як і за комп'ютером. За столом без їжі не сидять: страви вже немає (вкрав кіт, зіпсувалася) — персонаж устає.
+ * Їжа за столом (§8.7): іде сама, доки страву не доїли чи персонаж не наситився до межі. Устати — рушити з місця, але напрям,
+ * затиснутий, коли сідали, не піднімає (§10), як і за комп'ютером. За столом без їжі не сидять: страви вже немає (вкрав кіт,
+ * зіпсувалася) — персонаж устає.
  */
 function tickMeal(state: GameState, activity: UseActivity, input: Input, minutes: number): void {
   const character = state.character;
@@ -862,12 +863,13 @@ function tickMeal(state: GameState, activity: UseActivity, input: Input, minutes
   const step = minutes * actionSpeed(state);
   eat(state, activity.target, stepShare(activity.progress, step, EAT_MINUTES));
   activity.progress += step;
-  if (activity.progress >= EAT_MINUTES) {
-    character.activity = null;
-    finishMeal(state, activity.target);
-    // Кнопку ще тримають — нова дія не почнеться, поки її не відпустили (§10).
-    if (input.hold) character.holdSpent = true;
-  }
+  const eaten = activity.progress >= EAT_MINUTES;
+  // Наситився до межі — устає сам, решта страви лишається на столі.
+  if (!eaten && character.stats.satiety < statCeiling(state, "satiety")) return;
+  character.activity = null;
+  if (eaten) finishMeal(state, activity.target);
+  // Кнопку ще тримають — нова дія не почнеться, поки її не відпустили (§10).
+  if (input.hold) character.holdSpent = true;
 }
 
 /** Утримання дії: почати тривалу дію біля цілі чи продовжити поточну. false — дії не було. */
