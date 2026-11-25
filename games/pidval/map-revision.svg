@@ -1,0 +1,548 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 5450 1290" width="5450" height="1290" font-family="Segoe UI, Arial, sans-serif">
+<defs><pattern id="priv" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="3" height="10" fill="#0b0c0f" opacity=".45"/></pattern><pattern id="lock" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="10" height="10" fill="#14161a"/><rect width="3" height="10" fill="#24272e"/></pattern><linearGradient id="openL" x1="0" x2="1"><stop offset="0" stop-color="#9cc3e0" stop-opacity=".55"/><stop offset="1" stop-color="#9cc3e0" stop-opacity="0"/></linearGradient><linearGradient id="openR" x1="1" x2="0"><stop offset="0" stop-color="#9cc3e0" stop-opacity=".55"/><stop offset="1" stop-color="#9cc3e0" stop-opacity="0"/></linearGradient></defs>
+<rect width="5450" height="1290" fill="#171a21"/>
+<polygon points="0,250 95,360 175,467 245,467 245,520 300,522 380,526 460,530 540,534 620,537 700,541 780,545 860,549 940,552 1020,556 1100,560 1180,564 1260,567 1340,571 1420,575 1500,579 1580,583 1660,586 1740,590 1820,594 1900,598 1980,601 2060,605 2140,609 2220,613 2300,616 2380,620 2460,624 2540,628 2620,631 2700,635 2780,639 2860,643 2940,646 3020,650 3100,654 3180,658 3260,661 3340,665 3420,669 3500,673 3580,677 3660,680 3740,684 3820,688 3900,692 3980,695 4060,699 4140,703 4220,707 4300,710 4380,714 4460,718 4540,722 4620,725 4700,729 4780,733 4860,737 4940,740 5020,744 5100,748 5150,750 5160,796 5290,796 5300,750 5450,750 5450,1290 0,1290" fill="#23201d"/>
+<polyline points="0,250 95,360 175,467 245,467 245,520 300,522 380,526 460,530 540,534 620,537 700,541 780,545 860,549 940,552 1020,556 1100,560 1180,564 1260,567 1340,571 1420,575 1500,579 1580,583 1660,586 1740,590 1820,594 1900,598 1980,601 2060,605 2140,609 2220,613 2300,616 2380,620 2460,624 2540,628 2620,631 2700,635 2780,639 2860,643 2940,646 3020,650 3100,654 3180,658 3260,661 3340,665 3420,669 3500,673 3580,677 3660,680 3740,684 3820,688 3900,692 3980,695 4060,699 4140,703 4220,707 4300,710 4380,714 4460,718 4540,722 4620,725 4700,729 4780,733 4860,737 4940,740 5020,744 5100,748 5150,750 5160,796 5290,796 5300,750 5450,750" fill="none" stroke="#5b544b" stroke-width="2"/>
+<rect x="5160" y="770" width="130" height="26" fill="#2b5876"/>
+<text x="2725" y="46" font-size="24" fill="#e8e6df" text-anchor="middle" font-weight="bold">Санаторій після ревізії — варіант для обговорення (вигляд збоку)</text>
+<text x="2725" y="76" font-size="15" fill="#9a978f" text-anchor="middle" font-weight="normal">Пропозиція, не ухвалено. Ліворуч верх схилу й глухий кут долини, праворуч брама, річка й дорога в село. Поверх — дві висоти постаті.</text>
+<polygon points="6,257 18,191 30,257" fill="#1f3a2c"/>
+<polygon points="30,285 42,219 54,285" fill="#1f3a2c"/>
+<polygon points="54,313 66,247 78,313" fill="#1f3a2c"/>
+<polygon points="78,340 90,274 102,340" fill="#1f3a2c"/>
+<text x="14" y="150" font-size="15" fill="#b9d6a3" text-anchor="start" font-weight="bold">хребет → турбаза</text>
+<path d="M 240 463 L 175 463 L 95 356 L 0 246" fill="none" stroke="#b9d6a3" stroke-width="3" stroke-dasharray="2 7" stroke-linecap="round"/>
+<text x="118" y="330" font-size="13" fill="#b9d6a3" text-anchor="start" font-weight="normal">теренкур</text>
+<text x="150" y="489" font-size="11.5" fill="#9a978f" text-anchor="middle" font-weight="normal">верхня тераса</text>
+<rect x="245" y="398" width="458" height="202" fill="#0b0c0f"/>
+<rect x="252" y="410" width="444" height="57" fill="#343944" opacity="0.95"/>
+<rect x="252" y="474" width="108" height="57" fill="#2f6f73" opacity="0.95"/>
+<rect x="364" y="474" width="108" height="57" fill="#2f6f73" opacity="0.95"/>
+<rect x="360" y="501" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="476" y="474" width="108" height="57" fill="#2f6f73" opacity="0.95"/>
+<rect x="472" y="501" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="588" y="474" width="108" height="57" fill="#2f6f73" opacity="0.95"/>
+<rect x="590" y="475" width="105" height="54" fill="url(#priv)" stroke="#e0584a" stroke-width="3" stroke-dasharray="7 4"/>
+<rect x="584" y="501" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="252" y="538" width="108" height="57" fill="#2f6f73" opacity="0.95"/>
+<rect x="254" y="539" width="105" height="54" fill="none" stroke="#7ee08a" stroke-width="3"/>
+<rect x="364" y="538" width="108" height="57" fill="#343944" opacity="0.95"/>
+<rect x="360" y="565" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="476" y="538" width="108" height="57" fill="#343944" opacity="0.5"/>
+<rect x="472" y="565" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="588" y="538" width="108" height="57" fill="#343944" opacity="0.95"/>
+<circle cx="672" cy="583" r="4.5" fill="none" stroke="#ffd95a" stroke-width="2.2"/><path d="M 676 583 L 688 583 M 684 583 L 684 588 M 688 583 L 688 588" stroke="#ffd95a" stroke-width="2.2" fill="none"/>
+<rect x="584" y="565" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<path d="M 476 595 L 544 531" stroke="#e8e0c8" stroke-width="5" fill="none"/>
+<path d="M 476 585 L 544 521" stroke="#e8e0c8" stroke-width="1.5" fill="none" opacity=".7"/>
+<rect x="508" y="530" width="40" height="9" fill="#343944"/>
+<path d="M 411 531 L 411 445 M 421 531 L 421 445" stroke="#f0e08a" stroke-width="2"/>
+<line x1="411" y1="450" x2="421" y2="450" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="411" y1="459" x2="421" y2="459" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="411" y1="468" x2="421" y2="468" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="411" y1="477" x2="421" y2="477" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="411" y1="486" x2="421" y2="486" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="411" y1="495" x2="421" y2="495" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="411" y1="504" x2="421" y2="504" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="411" y1="513" x2="421" y2="513" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="411" y1="522" x2="421" y2="522" stroke="#f0e08a" stroke-width="1.6"/>
+<rect x="243" y="499" width="9" height="32" fill="#d8d4c8"/>
+<rect x="243" y="435" width="9" height="32" fill="#d8d4c8"/>
+<text x="474" y="425" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">горище: голуби, двері на схил</text>
+<text x="306" y="489" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">бокс, двері надвір</text>
+<text x="418" y="489" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">процедурна</text>
+<text x="530" y="489" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">пост медсестри</text>
+<text x="642" y="489" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">сестринська</text>
+<text x="306" y="553" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">камера ★</text>
+<text x="418" y="553" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">бокс попередниці</text>
+<text x="530" y="553" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">санпропускник</text>
+<text x="642" y="553" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">речовий склад</text>
+<text x="474" y="387" font-size="18" fill="#e8e6df" text-anchor="middle" font-weight="bold">1 Ізолятор</text>
+<rect x="795" y="359" width="458" height="266" fill="#0b0c0f"/>
+<rect x="802" y="371" width="444" height="57" fill="#343944" opacity="0.95"/>
+<rect x="804" y="373" width="441" height="54" fill="none" stroke="#7ee08a" stroke-width="3"/>
+<rect x="802" y="435" width="108" height="57" fill="#8a7426" opacity="0.95"/>
+<rect x="804" y="437" width="105" height="54" fill="url(#priv)" stroke="#e0584a" stroke-width="3" stroke-dasharray="7 4"/>
+<rect x="914" y="435" width="108" height="57" fill="#8a7426" opacity="0.95"/>
+<circle cx="998" cy="480" r="4.5" fill="none" stroke="#ffd95a" stroke-width="2.2"/><path d="M 1002 480 L 1014 480 M 1010 480 L 1010 485 M 1014 480 L 1014 485" stroke="#ffd95a" stroke-width="2.2" fill="none"/>
+<rect x="910" y="462" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="1026" y="435" width="108" height="57" fill="#8a7426" opacity="0.95"/>
+<circle cx="1110" cy="480" r="4.5" fill="none" stroke="#ffd95a" stroke-width="2.2"/><path d="M 1114 480 L 1126 480 M 1122 480 L 1122 485 M 1126 480 L 1126 485" stroke="#ffd95a" stroke-width="2.2" fill="none"/>
+<rect x="1022" y="462" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="1138" y="435" width="108" height="57" fill="#8a7426" opacity="0.5"/>
+<rect x="1134" y="462" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="802" y="499" width="108" height="57" fill="#2f6f73" opacity="0.95"/>
+<rect x="914" y="499" width="108" height="57" fill="#2f6f73" opacity="0.95"/>
+<rect x="910" y="526" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="1026" y="499" width="108" height="57" fill="#8a7426" opacity="0.5"/>
+<rect x="1022" y="526" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="1138" y="499" width="108" height="57" fill="#8a7426" opacity="0.5"/>
+<rect x="1134" y="526" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="802" y="563" width="108" height="57" fill="#8a7426" opacity="0.95"/>
+<rect x="914" y="563" width="108" height="57" fill="#8a7426" opacity="0.95"/>
+<rect x="910" y="590" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="1026" y="563" width="108" height="57" fill="#343944" opacity="0.95"/>
+<rect x="1022" y="590" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="1138" y="563" width="108" height="57" fill="#343944" opacity="0.95"/>
+<rect x="1134" y="590" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<path d="M 1124 620 L 1192 556" stroke="#e8e0c8" stroke-width="5" fill="none"/>
+<path d="M 1124 610 L 1192 546" stroke="#e8e0c8" stroke-width="1.5" fill="none" opacity=".7"/>
+<rect x="1156" y="555" width="40" height="9" fill="#343944"/>
+<path d="M 1124 556 L 1192 492" stroke="#e8e0c8" stroke-width="5" fill="none"/>
+<path d="M 1124 546 L 1192 482" stroke="#e8e0c8" stroke-width="1.5" fill="none" opacity=".7"/>
+<rect x="1156" y="491" width="40" height="9" fill="#343944"/>
+<path d="M 1064 620 L 1064 534 M 1074 620 L 1074 534" stroke="#f0e08a" stroke-width="2"/>
+<line x1="1064" y1="540" x2="1074" y2="540" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1064" y1="549" x2="1074" y2="549" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1064" y1="558" x2="1074" y2="558" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1064" y1="567" x2="1074" y2="567" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1064" y1="576" x2="1074" y2="576" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1064" y1="585" x2="1074" y2="585" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1064" y1="594" x2="1074" y2="594" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1064" y1="603" x2="1074" y2="603" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1064" y1="612" x2="1074" y2="612" stroke="#f0e08a" stroke-width="1.6"/>
+<path d="M 1064 556 L 1064 470 M 1074 556 L 1074 470" stroke="#f0e08a" stroke-width="2"/>
+<line x1="1064" y1="476" x2="1074" y2="476" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1064" y1="485" x2="1074" y2="485" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1064" y1="494" x2="1074" y2="494" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1064" y1="503" x2="1074" y2="503" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1064" y1="512" x2="1074" y2="512" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1064" y1="521" x2="1074" y2="521" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1064" y1="530" x2="1074" y2="530" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1064" y1="539" x2="1074" y2="539" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1064" y1="548" x2="1074" y2="548" stroke="#f0e08a" stroke-width="1.6"/>
+<path d="M 1064 492 L 1064 406 M 1074 492 L 1074 406" stroke="#f0e08a" stroke-width="2"/>
+<line x1="1064" y1="412" x2="1074" y2="412" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1064" y1="421" x2="1074" y2="421" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1064" y1="430" x2="1074" y2="430" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1064" y1="439" x2="1074" y2="439" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1064" y1="448" x2="1074" y2="448" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1064" y1="457" x2="1074" y2="457" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1064" y1="466" x2="1074" y2="466" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1064" y1="475" x2="1074" y2="475" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1064" y1="484" x2="1074" y2="484" stroke="#f0e08a" stroke-width="1.6"/>
+<rect x="1246" y="524" width="9" height="32" fill="#d8d4c8"/>
+<text x="1024" y="386" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">техповерх: венткамера ★</text>
+<text x="856" y="450" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">ординаторська</text>
+<text x="968" y="450" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">палата клієнта</text>
+<text x="1080" y="450" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">операційна</text>
+<text x="1192" y="450" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">сходи</text>
+<text x="856" y="514" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">аптека</text>
+<text x="968" y="514" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">лабораторія</text>
+<text x="1080" y="514" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">приймальне</text>
+<text x="1192" y="514" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">вестибюль</text>
+<text x="856" y="578" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">морг</text>
+<text x="968" y="578" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">прозекторська</text>
+<text x="1080" y="578" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">білизняна</text>
+<text x="1192" y="578" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">вихід у тунель</text>
+<text x="1024" y="348" font-size="18" fill="#e8e6df" text-anchor="middle" font-weight="bold">2 Клініка</text>
+<rect x="1467" y="258" width="6" height="332" fill="#4a4d55"/>
+<path d="M 1468 258 l -2 -12 M 1472 258 l 2 -12" stroke="#8a5a3a" stroke-width="1.5"/>
+<rect x="1579" y="258" width="6" height="332" fill="#4a4d55"/>
+<path d="M 1580 258 l -2 -12 M 1584 258 l 2 -12" stroke="#8a5a3a" stroke-width="1.5"/>
+<rect x="1470" y="334" width="224" height="7" fill="#4a4d55"/>
+<rect x="1470" y="398" width="224" height="7" fill="#4a4d55"/>
+<rect x="1470" y="462" width="224" height="7" fill="#4a4d55"/>
+<rect x="1470" y="526" width="224" height="7" fill="#4a4d55"/>
+<path d="M 1521 590 L 1521 504 M 1531 590 L 1531 504" stroke="#f0e08a" stroke-width="2"/>
+<line x1="1521" y1="510" x2="1531" y2="510" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1521" y1="519" x2="1531" y2="519" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1521" y1="528" x2="1531" y2="528" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1521" y1="537" x2="1531" y2="537" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1521" y1="546" x2="1531" y2="546" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1521" y1="555" x2="1531" y2="555" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1521" y1="564" x2="1531" y2="564" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1521" y1="573" x2="1531" y2="573" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1521" y1="582" x2="1531" y2="582" stroke="#f0e08a" stroke-width="1.6"/>
+<path d="M 1626 526 L 1626 440 M 1636 526 L 1636 440" stroke="#f0e08a" stroke-width="2"/>
+<line x1="1626" y1="446" x2="1636" y2="446" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1626" y1="455" x2="1636" y2="455" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1626" y1="464" x2="1636" y2="464" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1626" y1="473" x2="1636" y2="473" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1626" y1="482" x2="1636" y2="482" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1626" y1="491" x2="1636" y2="491" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1626" y1="500" x2="1636" y2="500" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1626" y1="509" x2="1636" y2="509" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1626" y1="518" x2="1636" y2="518" stroke="#f0e08a" stroke-width="1.6"/>
+<path d="M 1521 462 L 1521 376 M 1531 462 L 1531 376" stroke="#f0e08a" stroke-width="2"/>
+<line x1="1521" y1="382" x2="1531" y2="382" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1521" y1="391" x2="1531" y2="391" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1521" y1="400" x2="1531" y2="400" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1521" y1="409" x2="1531" y2="409" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1521" y1="418" x2="1531" y2="418" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1521" y1="427" x2="1531" y2="427" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1521" y1="436" x2="1531" y2="436" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1521" y1="445" x2="1531" y2="445" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1521" y1="454" x2="1531" y2="454" stroke="#f0e08a" stroke-width="1.6"/>
+<path d="M 1626 398 L 1626 312 M 1636 398 L 1636 312" stroke="#f0e08a" stroke-width="2"/>
+<line x1="1626" y1="318" x2="1636" y2="318" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1626" y1="327" x2="1636" y2="327" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1626" y1="336" x2="1636" y2="336" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1626" y1="345" x2="1636" y2="345" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1626" y1="354" x2="1636" y2="354" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1626" y1="363" x2="1636" y2="363" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1626" y1="372" x2="1636" y2="372" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1626" y1="381" x2="1636" y2="381" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="1626" y1="390" x2="1636" y2="390" stroke="#f0e08a" stroke-width="1.6"/>
+<text x="1582" y="292" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">недобудоване крило</text>
+<rect x="1689" y="266" width="346" height="394" fill="#0b0c0f"/>
+<rect x="1696" y="278" width="108" height="57" fill="#343944" opacity="0.95"/>
+<rect x="1698" y="279" width="105" height="54" fill="none" stroke="#7ee08a" stroke-width="3"/>
+<rect x="1808" y="278" width="108" height="57" fill="#343944" opacity="0.5"/>
+<rect x="1804" y="304" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="1920" y="278" width="108" height="57" fill="#343944" opacity="0.5"/>
+<rect x="1916" y="304" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="1696" y="342" width="108" height="57" fill="#343944" opacity="0.5"/>
+<rect x="1808" y="342" width="108" height="57" fill="url(#lock)"/>
+<rect x="1920" y="342" width="108" height="57" fill="#343944" opacity="0.5"/>
+<polygon points="1926,398 1952,372 1974,360 1999,376 2022,398" fill="#6a5a4c" stroke="#2a221c" stroke-width="2"/>
+<rect x="1696" y="406" width="108" height="57" fill="#343944" opacity="0.5"/>
+<rect x="1808" y="406" width="108" height="57" fill="url(#lock)"/>
+<rect x="1920" y="406" width="108" height="57" fill="#343944" opacity="0.5"/>
+<rect x="1696" y="470" width="108" height="57" fill="#343944" opacity="0.5"/>
+<polygon points="1702,526 1728,500 1750,488 1775,504 1798,526" fill="#6a5a4c" stroke="#2a221c" stroke-width="2"/>
+<rect x="1808" y="470" width="108" height="57" fill="#343944" opacity="0.5"/>
+<rect x="1804" y="496" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="1920" y="470" width="108" height="57" fill="#343944" opacity="0.95"/>
+<rect x="1916" y="496" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="1696" y="534" width="108" height="57" fill="#343944" opacity="0.95"/>
+<rect x="1808" y="534" width="108" height="57" fill="#343944" opacity="0.5"/>
+<rect x="1804" y="560" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="1920" y="534" width="108" height="57" fill="#343944" opacity="0.5"/>
+<rect x="1916" y="560" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="1696" y="598" width="108" height="57" fill="#343944" opacity="0.95"/>
+<rect x="1808" y="598" width="108" height="57" fill="url(#lock)"/>
+<rect x="1920" y="598" width="108" height="57" fill="#343944" opacity="0.95"/>
+<path d="M 1929 654 L 1997 590" stroke="#e8e0c8" stroke-width="5" fill="none"/>
+<path d="M 1929 644 L 1997 580" stroke="#e8e0c8" stroke-width="1.5" fill="none" opacity=".7"/>
+<rect x="1961" y="590" width="40" height="9" fill="#343944"/>
+<path d="M 1929 590 L 1997 526" stroke="#e8e0c8" stroke-width="5" fill="none"/>
+<path d="M 1929 580 L 1997 516" stroke="#e8e0c8" stroke-width="1.5" fill="none" opacity=".7"/>
+<rect x="1961" y="526" width="40" height="9" fill="#343944"/>
+<path d="M 1929 526 L 1997 462" stroke="#e8e0c8" stroke-width="5" fill="none"/>
+<path d="M 1929 516 L 1997 452" stroke="#e8e0c8" stroke-width="1.5" fill="none" opacity=".7"/>
+<rect x="1961" y="462" width="40" height="9" fill="#343944"/>
+<path d="M 1942 334 L 2010 270" stroke="#e8e0c8" stroke-width="5" fill="none"/>
+<path d="M 1942 324 L 2010 260" stroke="#e8e0c8" stroke-width="1.5" fill="none" opacity=".7"/>
+<rect x="1974" y="270" width="40" height="9" fill="#343944"/>
+<rect x="1732" y="398" width="32" height="9" fill="#e0584a"/>
+<rect x="1732" y="462" width="32" height="9" fill="#e0584a"/>
+<rect x="1687" y="302" width="9" height="32" fill="#d8d4c8"/>
+<rect x="1687" y="366" width="9" height="32" fill="#d8d4c8"/>
+<rect x="1687" y="494" width="9" height="32" fill="#d8d4c8"/>
+<text x="1750" y="292" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">номер ★</text>
+<text x="1862" y="292" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">коридор</text>
+<text x="1974" y="292" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">сходи на дах</text>
+<text x="1750" y="356" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">номер (діра)</text>
+<text x="1862" y="356" font-size="10.5" fill="#77756f" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">номер</text>
+<text x="1974" y="356" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">сходи</text>
+<text x="1750" y="420" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">номер (діра)</text>
+<text x="1862" y="420" font-size="10.5" fill="#77756f" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">номер</text>
+<text x="1974" y="420" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">сходи</text>
+<text x="1750" y="484" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">номер</text>
+<text x="1862" y="484" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">коридор</text>
+<text x="1974" y="484" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">вихід на галерею</text>
+<text x="1750" y="548" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">куточок туриста</text>
+<text x="1862" y="548" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">гардероб</text>
+<text x="1974" y="548" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">сходи</text>
+<text x="1750" y="612" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">склад</text>
+<text x="1862" y="612" font-size="10.5" fill="#77756f" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">бойлерна</text>
+<text x="1974" y="612" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">лаз у тунель</text>
+<text x="1862" y="254" font-size="18" fill="#e8e6df" text-anchor="middle" font-weight="bold">3 Спальний корпус</text>
+<rect x="2135" y="487" width="490" height="202" fill="#0b0c0f"/>
+<rect x="2142" y="499" width="116" height="57" fill="#343944" opacity="0.95"/>
+<rect x="2262" y="499" width="116" height="57" fill="#343944" opacity="0.5"/>
+<rect x="2258" y="526" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="2382" y="499" width="116" height="57" fill="#343944" opacity="0.5"/>
+<polygon points="2388,556 2416,530 2440,518 2466,534 2492,556" fill="#6a5a4c" stroke="#2a221c" stroke-width="2"/>
+<rect x="2378" y="526" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="2502" y="499" width="116" height="57" fill="#343944" opacity="0.95"/>
+<rect x="2498" y="526" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="2142" y="563" width="116" height="57" fill="#343944" opacity="0.5"/>
+<rect x="2262" y="563" width="116" height="57" fill="#343944" opacity="0.95"/>
+<rect x="2258" y="590" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="2382" y="563" width="116" height="57" fill="#343944" opacity="0.95"/>
+<rect x="2378" y="590" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="2502" y="563" width="116" height="57" fill="#343944" opacity="0.95"/>
+<rect x="2619" y="563" width="7" height="57" fill="#171a21"/>
+<rect x="2502" y="563" width="116" height="57" fill="url(#openR)"/>
+<rect x="2498" y="590" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="2142" y="627" width="116" height="57" fill="#343944" opacity="0.95"/>
+<rect x="2262" y="627" width="116" height="57" fill="#343944" opacity="0.95"/>
+<rect x="2264" y="629" width="113" height="54" fill="none" stroke="#7ee08a" stroke-width="3"/>
+<rect x="2258" y="654" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="2382" y="627" width="116" height="57" fill="url(#lock)"/>
+<rect x="2502" y="627" width="116" height="57" fill="#343944" opacity="0.95"/>
+<path d="M 2154 684 L 2222 620" stroke="#e8e0c8" stroke-width="5" fill="none"/>
+<path d="M 2154 674 L 2222 610" stroke="#e8e0c8" stroke-width="1.5" fill="none" opacity=".7"/>
+<rect x="2186" y="619" width="40" height="9" fill="#343944"/>
+<path d="M 2279 620 L 2347 556" stroke="#e8e0c8" stroke-width="5" fill="none"/>
+<path d="M 2279 610 L 2347 546" stroke="#e8e0c8" stroke-width="1.5" fill="none" opacity=".7"/>
+<rect x="2311" y="555" width="40" height="9" fill="#343944"/>
+<text x="2200" y="514" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">вихід на галерею</text>
+<text x="2320" y="514" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">зал ванн</text>
+<text x="2440" y="514" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">інгаляторій</text>
+<text x="2560" y="514" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">вихід на галерею</text>
+<text x="2200" y="578" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">душ Шарко</text>
+<text x="2320" y="578" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">басейн</text>
+<text x="2440" y="578" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">озокеритна</text>
+<text x="2560" y="578" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">бювет, джерело</text>
+<text x="2200" y="642" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">затоплений коридор</text>
+<text x="2320" y="642" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">грязесховище ★</text>
+<text x="2440" y="642" font-size="10.5" fill="#77756f" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">насосна</text>
+<text x="2560" y="642" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">лаз у тунель</text>
+<text x="2380" y="476" font-size="18" fill="#e8e6df" text-anchor="middle" font-weight="bold">4 Водолікарня й бювет</text>
+<rect x="2725" y="515" width="490" height="202" fill="#0b0c0f"/>
+<rect x="2732" y="527" width="116" height="57" fill="#343944" opacity="0.95"/>
+<rect x="2852" y="527" width="116" height="57" fill="#343944" opacity="0.5"/>
+<rect x="2848" y="554" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="2972" y="527" width="116" height="57" fill="#343944" opacity="0.95"/>
+<rect x="2974" y="528" width="113" height="54" fill="none" stroke="#7ee08a" stroke-width="3"/>
+<rect x="2968" y="554" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="3092" y="527" width="116" height="57" fill="#343944" opacity="0.95"/>
+<rect x="3088" y="554" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="2732" y="591" width="116" height="57" fill="#6b4a7a" opacity="0.5"/>
+<rect x="2852" y="591" width="116" height="57" fill="#6b4a7a" opacity="0.5"/>
+<rect x="2848" y="618" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="2972" y="591" width="116" height="57" fill="#6b4a7a" opacity="0.95"/>
+<rect x="2968" y="618" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="3092" y="591" width="116" height="57" fill="#2f6f73" opacity="0.95"/>
+<rect x="3209" y="591" width="7" height="57" fill="#171a21"/>
+<rect x="3092" y="591" width="116" height="57" fill="url(#openR)"/>
+<rect x="3088" y="618" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="2732" y="655" width="116" height="57" fill="#343944" opacity="0.95"/>
+<rect x="2852" y="655" width="116" height="57" fill="url(#lock)"/>
+<rect x="2972" y="655" width="116" height="57" fill="#343944" opacity="0.95"/>
+<rect x="3092" y="655" width="116" height="57" fill="#343944" opacity="0.95"/>
+<rect x="3088" y="682" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<path d="M 2749 648 L 2817 584" stroke="#e8e0c8" stroke-width="5" fill="none"/>
+<path d="M 2749 638 L 2817 574" stroke="#e8e0c8" stroke-width="1.5" fill="none" opacity=".7"/>
+<rect x="2781" y="583" width="40" height="9" fill="#343944"/>
+<path d="M 2989 712 L 3057 648" stroke="#e8e0c8" stroke-width="5" fill="none"/>
+<path d="M 2989 702 L 3057 638" stroke="#e8e0c8" stroke-width="1.5" fill="none" opacity=".7"/>
+<rect x="3021" y="647" width="40" height="9" fill="#343944"/>
+<path d="M 3171 712 L 3171 626 M 3181 712 L 3181 626" stroke="#f0e08a" stroke-width="2"/>
+<line x1="3171" y1="631" x2="3181" y2="631" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="3171" y1="640" x2="3181" y2="640" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="3171" y1="649" x2="3181" y2="649" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="3171" y1="658" x2="3181" y2="658" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="3171" y1="667" x2="3181" y2="667" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="3171" y1="676" x2="3181" y2="676" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="3171" y1="685" x2="3181" y2="685" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="3171" y1="694" x2="3181" y2="694" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="3171" y1="703" x2="3181" y2="703" stroke="#f0e08a" stroke-width="1.6"/>
+<text x="2790" y="542" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">вихід на галерею</text>
+<text x="2910" y="542" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">кінозал</text>
+<text x="3030" y="542" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">кінобудка ★</text>
+<text x="3150" y="542" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">бібліотека</text>
+<text x="2790" y="606" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">їдальня</text>
+<text x="2910" y="606" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">їдальня</text>
+<text x="3030" y="606" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">кухня</text>
+<text x="3150" y="606" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">комора, рампа</text>
+<text x="2790" y="670" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">лаз у тунель</text>
+<text x="2910" y="670" font-size="10.5" fill="#77756f" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">холодильні камери</text>
+<text x="3030" y="670" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">склад продуктів</text>
+<text x="3150" y="670" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">підйомник</text>
+<text x="2970" y="504" font-size="18" fill="#e8e6df" text-anchor="middle" font-weight="bold">5 Клуб-їдальня</text>
+<rect x="3895" y="503" width="364" height="266" fill="#0b0c0f"/>
+<rect x="3902" y="515" width="350" height="57" fill="#8a7426" opacity="0.95"/>
+<rect x="3904" y="516" width="347" height="54" fill="url(#priv)" stroke="#e0584a" stroke-width="3" stroke-dasharray="7 4"/>
+<rect x="3902" y="579" width="114" height="57" fill="#8a7426" opacity="0.95"/>
+<rect x="4020" y="579" width="114" height="57" fill="#8a7426" opacity="0.95"/>
+<rect x="4016" y="606" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="4138" y="579" width="114" height="57" fill="#8a7426" opacity="0.5"/>
+<rect x="4134" y="606" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="3902" y="643" width="114" height="57" fill="#8a7426" opacity="0.95"/>
+<rect x="4020" y="643" width="114" height="57" fill="#8a7426" opacity="0.95"/>
+<rect x="4016" y="670" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="4138" y="643" width="114" height="57" fill="#8a7426" opacity="0.5"/>
+<rect x="4253" y="643" width="7" height="57" fill="#171a21"/>
+<rect x="4138" y="643" width="114" height="57" fill="url(#openR)"/>
+<rect x="4134" y="670" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="3902" y="707" width="114" height="57" fill="#343944" opacity="0.95"/>
+<rect x="3904" y="708" width="111" height="54" fill="none" stroke="#7ee08a" stroke-width="3"/>
+<rect x="4020" y="707" width="114" height="57" fill="#343944" opacity="0.5"/>
+<rect x="4016" y="734" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<rect x="4138" y="707" width="114" height="57" fill="#343944" opacity="0.95"/>
+<rect x="4134" y="734" width="4" height="30" fill="#c9c6bd" opacity="0.55"/>
+<path d="M 4149 700 L 4217 636" stroke="#e8e0c8" stroke-width="5" fill="none"/>
+<path d="M 4149 690 L 4217 626" stroke="#e8e0c8" stroke-width="1.5" fill="none" opacity=".7"/>
+<rect x="4181" y="635" width="40" height="9" fill="#343944"/>
+<path d="M 4149 636 L 4217 572" stroke="#e8e0c8" stroke-width="5" fill="none"/>
+<path d="M 4149 626 L 4217 562" stroke="#e8e0c8" stroke-width="1.5" fill="none" opacity=".7"/>
+<rect x="4181" y="571" width="40" height="9" fill="#343944"/>
+<path d="M 4072 764 L 4072 678 M 4082 764 L 4082 678" stroke="#f0e08a" stroke-width="2"/>
+<line x1="4072" y1="683" x2="4082" y2="683" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="4072" y1="692" x2="4082" y2="692" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="4072" y1="701" x2="4082" y2="701" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="4072" y1="710" x2="4082" y2="710" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="4072" y1="719" x2="4082" y2="719" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="4072" y1="728" x2="4082" y2="728" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="4072" y1="737" x2="4082" y2="737" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="4072" y1="746" x2="4082" y2="746" stroke="#f0e08a" stroke-width="1.6"/>
+<line x1="4072" y1="755" x2="4082" y2="755" stroke="#f0e08a" stroke-width="1.6"/>
+<text x="4077" y="530" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">мансарда: житло Лікаря</text>
+<text x="3959" y="594" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">картотека</text>
+<text x="4077" y="594" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">кабінет Лікаря</text>
+<text x="4195" y="594" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">сходи</text>
+<text x="3959" y="658" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">бухгалтерія, сейф</text>
+<text x="4077" y="658" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">вестибюль, ключниця</text>
+<text x="4195" y="658" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">сходи, ґанок</text>
+<text x="3959" y="722" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">архів ★</text>
+<text x="4077" y="722" font-size="10.5" fill="#b4b1a8" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">винний льох</text>
+<text x="4195" y="722" font-size="10.5" fill="#ffffff" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">лаз у тунель</text>
+<text x="4192" y="492" font-size="18" fill="#e8e6df" text-anchor="end" font-weight="bold">7 Адмінкорпус (вілла)</text>
+<circle cx="290" cy="569" r="4" fill="#f2efe6"/><path d="M 290 573 L 290 586 M 290 586 L 286 595 M 290 586 L 294 595 M 285 579 L 295 579" stroke="#f2efe6" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+<text x="749" y="533" font-size="11.5" fill="#9a978f" text-anchor="middle" font-weight="normal">двір, паркан</text>
+<text x="1340" y="589" font-size="11.5" fill="#9a978f" text-anchor="middle" font-weight="normal">будмайданчик</text>
+<text x="2085" y="596" font-size="11.5" fill="#9a978f" text-anchor="middle" font-weight="normal">відкритий люк</text>
+<text x="2675" y="624" font-size="11.5" fill="#9a978f" text-anchor="middle" font-weight="normal">відкритий люк</text>
+<text x="3240" y="651" font-size="11.5" fill="#9a978f" text-anchor="middle" font-weight="normal">рампа</text>
+<text x="3862" y="680" font-size="11.5" fill="#9a978f" text-anchor="middle" font-weight="normal">проїзд</text>
+<text x="4280" y="699" font-size="11.5" fill="#9a978f" text-anchor="middle" font-weight="normal">сходи</text>
+<rect x="1268" y="533" width="78" height="36" fill="#4d5560" stroke="#0b0c0f" stroke-width="3"/>
+<text x="1307" y="555" font-size="11" fill="#e8e6df" text-anchor="middle" font-weight="normal">вагончик</text>
+<rect x="1366" y="560" width="16" height="12" fill="#6b6f78"/>
+<rect x="1384" y="561" width="16" height="12" fill="#6b6f78"/>
+<path d="M 1420 575 L 1420 174 M 1436 575 L 1436 174" stroke="#c9a23a" stroke-width="3"/>
+<path d="M 1420 174 L 1436 208 L 1420 242 L 1436 276 L 1420 310 L 1436 344 L 1420 378 L 1436 412 L 1420 446 L 1436 480 L 1420 514 L 1436 548" stroke="#c9a23a" stroke-width="1.5" fill="none"/>
+<path d="M 1328 174 L 1758 174 M 1428 122 L 1758 174 M 1428 122 L 1328 174 M 1428 174 L 1428 122" stroke="#c9a23a" stroke-width="3" fill="none"/>
+<rect x="1324" y="174" width="34" height="22" fill="#5b5f68"/><rect x="1437" y="178" width="22" height="22" fill="#c9a23a"/>
+<line x1="1598" y1="174" x2="1598" y2="232" stroke="#c9c6bd" stroke-width="1.5"/>
+<text x="1578" y="112" font-size="12.5" fill="#c9a23a" text-anchor="start" font-weight="normal">баштовий кран: найвищий огляд</text>
+<text x="1862" y="226" font-size="12" fill="#9a978f" text-anchor="middle" font-weight="normal">дах: краєвид на дорогу</text>
+<polygon points="2035,492 2135,522 2135,556 2035,526" fill="#31485a" opacity="0.85" stroke="#8fc1e3" stroke-width="2"/>
+<text x="2085" y="499" font-size="12.5" fill="#8fc1e3" text-anchor="middle" font-weight="normal">тепла галерея</text>
+<line x1="2040" y1="526" x2="2040" y2="604" stroke="#5b6570" stroke-width="3"/>
+<line x1="2130" y1="556" x2="2130" y2="608" stroke="#5b6570" stroke-width="3"/>
+<polygon points="2625,522 2725,550 2725,584 2625,556" fill="#31485a" opacity="0.85" stroke="#8fc1e3" stroke-width="2"/>
+<text x="2675" y="528" font-size="12.5" fill="#8fc1e3" text-anchor="middle" font-weight="normal">тепла галерея</text>
+<line x1="2630" y1="556" x2="2630" y2="632" stroke="#5b6570" stroke-width="3"/>
+<line x1="2720" y1="584" x2="2720" y2="636" stroke="#5b6570" stroke-width="3"/>
+<path d="M 2039 270 L 2039 486 M 2049 270 L 2049 486" stroke="#f0e08a" stroke-width="2"/>
+<text x="2056" y="334" font-size="11.5" fill="#f0e08a" text-anchor="start" font-weight="normal">пожежна драбина</text>
+<text x="3745" y="534" font-size="18" fill="#e8e6df" text-anchor="middle" font-weight="bold">6 Господарський двір</text>
+<path d="M 3270 664 Q 3312 594 3354 664 Z" fill="#3a4a34" stroke="#7ee08a" stroke-width="3"/>
+<rect x="3302" y="638" width="20" height="26" fill="#0b0c0f"/>
+<text x="3312" y="620" font-size="11" fill="#e8e6df" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">овочесховище ★</text>
+<rect x="3368" y="611" width="108" height="58" fill="#0b0c0f"/><rect x="3372" y="615" width="100" height="52" fill="#8a4630"/>
+<text x="3422" y="633" font-size="11.5" fill="#e8e6df" text-anchor="middle" font-weight="normal">хлів, свині</text>
+<rect x="3486" y="582" width="178" height="94" fill="#0b0c0f"/><rect x="3490" y="586" width="170" height="88" fill="#8a4630"/>
+<text x="3575" y="604" font-size="11.5" fill="#e8e6df" text-anchor="middle" font-weight="normal">котельня, пральня</text>
+<rect x="3486" y="676" width="178" height="68" fill="#0b0c0f"/><rect x="3490" y="683" width="170" height="57" fill="#343944"/>
+<text x="3575" y="699" font-size="11" fill="#e8e6df" text-anchor="middle" font-weight="normal">колектор</text>
+<rect x="3676" y="622" width="148" height="62" fill="#0b0c0f"/><rect x="3680" y="626" width="140" height="56" fill="#8a4630"/>
+<text x="3750" y="644" font-size="11.5" fill="#e8e6df" text-anchor="middle" font-weight="normal">гараж, пожежний пост</text>
+<rect x="3508" y="416" width="22" height="170" fill="#4a3b36" stroke="#0b0c0f" stroke-width="3"/>
+<text x="3519" y="408" font-size="12" fill="#e8e6df" text-anchor="middle" font-weight="normal">димар</text>
+<rect x="4194" y="428" width="50" height="75" fill="#8a7426" stroke="#0b0c0f" stroke-width="5"/>
+<line x1="4219" y1="428" x2="4219" y2="368" stroke="#c9c6bd" stroke-width="2"/>
+<text x="4234" y="396" font-size="12" fill="#e8e6df" text-anchor="start" font-weight="normal">вежа · рація</text>
+<text x="4560" y="553" font-size="18" fill="#e8e6df" text-anchor="middle" font-weight="bold">8 Парк</text>
+<path d="M 4318 711 L 4318 659 M 4368 711 L 4368 659" stroke="#8d8a82" stroke-width="3"/><rect x="4314" y="655" width="58" height="34" fill="#55606b" stroke="#0b0c0f" stroke-width="2"/>
+<text x="4343" y="647" font-size="11" fill="#e8e6df" text-anchor="middle" font-weight="normal">план-схема</text>
+<line x1="4418" y1="716" x2="4418" y2="666" stroke="#4a3b2a" stroke-width="5"/><circle cx="4418" cy="646" r="28" fill="#1f3a2c"/>
+<line x1="4858" y1="737" x2="4858" y2="687" stroke="#4a3b2a" stroke-width="5"/><circle cx="4858" cy="667" r="28" fill="#1f3a2c"/>
+<path d="M 4431 718 L 4437 706 L 4493 706 L 4499 718 Z" fill="#5b5f68"/><rect x="4461" y="688" width="8" height="18" fill="#5b5f68"/>
+<text x="4465" y="680" font-size="11" fill="#e8e6df" text-anchor="middle" font-weight="normal">сухий фонтан</text>
+<rect x="4604" y="681" width="28" height="44" fill="#6b6f78"/><rect x="4598" y="717" width="40" height="8" fill="#6b6f78"/>
+<text x="4618" y="673" font-size="11" fill="#e8e6df" text-anchor="middle" font-weight="normal">порожній постамент</text>
+<path d="M 4692 706 Q 4702 622 4816 636 L 4816 644 Q 4716 636 4704 706 Z" fill="#55606b"/>
+<rect x="4692" y="706" width="124" height="26" fill="#343944" stroke="#7ee08a" stroke-width="3"/>
+<text x="4754" y="724" font-size="11" fill="#e8e6df" text-anchor="middle" font-weight="normal">під сценою ★</text>
+<text x="4758" y="614" font-size="11" fill="#e8e6df" text-anchor="middle" font-weight="normal">літня естрада</text>
+<line x1="4540" y1="722" x2="4540" y2="626" stroke="#8d8a82" stroke-width="2.5"/><path d="M 4540 626 l 16 -8 l 0 16 Z" fill="#8d8a82"/>
+<text x="4544" y="612" font-size="11" fill="#e8e6df" text-anchor="middle" font-weight="normal">гучномовець</text>
+<text x="4985" y="621" font-size="18" fill="#e8e6df" text-anchor="middle" font-weight="bold">9 Сторожка й брама</text>
+<rect x="4901" y="678" width="128" height="64" fill="#0b0c0f"/><rect x="4905" y="682" width="120" height="58" fill="#8a4630"/>
+<rect x="4906.5" y="683" width="117" height="55" fill="url(#priv)" stroke="#e0584a" stroke-width="3" stroke-dasharray="7 4"/>
+<text x="4965" y="700" font-size="11.5" fill="#e8e6df" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">сторожка</text>
+<rect x="5039" y="703" width="78" height="44" fill="#0b0c0f"/><rect x="5043" y="707" width="70" height="38" fill="#8a4630"/>
+<text x="5078" y="725" font-size="11.5" fill="#e8e6df" text-anchor="middle" font-weight="normal" paint-order="stroke" stroke="#0b0c0f" stroke-width="3.5" stroke-linejoin="round">псарня</text>
+<path d="M 5116 750 L 5116 658 L 5154 658 L 5154 750" fill="none" stroke="#d6d2c4" stroke-width="5"/>
+<line x1="5116" y1="720" x2="5154" y2="720" stroke="#e0584a" stroke-width="4" stroke-dasharray="8 6"/>
+<text x="5135" y="648" font-size="12.5" fill="#e8e6df" text-anchor="middle" font-weight="bold">арка, шлагбаум</text>
+<line x1="5150" y1="750" x2="5300" y2="750" stroke="#8d8a82" stroke-width="5"/>
+<text x="5225" y="740" font-size="11.5" fill="#e8e6df" text-anchor="middle" font-weight="normal">міст</text>
+<text x="5225" y="788" font-size="11" fill="#bfe0f5" text-anchor="middle" font-weight="normal">річка</text>
+<path d="M 5340 750 L 5340 700 L 5424 700 L 5424 750" fill="none" stroke="#8d8a82" stroke-width="5"/><rect x="5332" y="692" width="100" height="9" fill="#8d8a82"/>
+<text x="5382" y="682" font-size="11.5" fill="#e8e6df" text-anchor="middle" font-weight="normal">автобусна зупинка</text>
+<text x="5444" y="772" font-size="11.5" fill="#9a978f" text-anchor="end" font-weight="normal">дорога в село →</text>
+<polyline points="1203,667 1263,670 1323,672 1383,675 1443,678 1503,681 1563,684 1623,687 1683,689 1743,692 1803,695 1863,698 1923,701 1983,703 2043,706 2103,709 2163,712 2223,715 2283,718 2343,720 2403,723 2463,726 2523,729 2583,732 2643,734 2703,737 2763,740 2823,743 2883,746 2943,749 3003,751 3063,754 3123,757 3183,760 3243,763 3303,765 3363,768 3423,771 3483,774 3543,777 3575,778" fill="none" stroke="#e08a4a" stroke-width="15" stroke-linejoin="round"/><polyline points="1203,667 1263,670 1323,672 1383,675 1443,678 1503,681 1563,684 1623,687 1683,689 1743,692 1803,695 1863,698 1923,701 1983,703 2043,706 2103,709 2163,712 2223,715 2283,718 2343,720 2403,723 2463,726 2523,729 2583,732 2643,734 2703,737 2763,740 2823,743 2883,746 2943,749 3003,751 3063,754 3123,757 3183,760 3243,763 3303,765 3363,768 3423,771 3483,774 3543,777 3575,778" fill="none" stroke="#2a211c" stroke-width="8" stroke-linejoin="round"/>
+<polyline points="528,635 587,638 647,641 707,643 767,646 827,649 887,652 947,655 1007,658 1067,660 1127,663 1187,666 1203,667" fill="none" stroke="#e08a4a" stroke-width="3.5" stroke-dasharray="7 5"/>
+<polyline points="3575,778 3635,781 3695,784 3755,787 3815,790 3875,792 3935,795 3995,798 4055,801 4115,804 4175,806 4197,808" fill="none" stroke="#e08a4a" stroke-width="3.5" stroke-dasharray="7 5"/>
+<line x1="528" y1="595" x2="528" y2="635" stroke="#e08a4a" stroke-width="3.5" stroke-dasharray='7 5'/>
+<line x1="1203" y1="620" x2="1203" y2="667" stroke="#e08a4a" stroke-width="9" />
+<line x1="1976" y1="654" x2="1976" y2="703" stroke="#e08a4a" stroke-width="3.5" stroke-dasharray='7 5'/>
+<line x1="2562" y1="684" x2="2562" y2="731" stroke="#e08a4a" stroke-width="3.5" stroke-dasharray='7 5'/>
+<line x1="2778" y1="712" x2="2778" y2="741" stroke="#e08a4a" stroke-width="3.5" stroke-dasharray='7 5'/>
+<line x1="3575" y1="740" x2="3575" y2="778" stroke="#e08a4a" stroke-width="9" />
+<circle cx="3575" cy="778" r="12" fill="#e08a4a"/>
+<line x1="4197" y1="764" x2="4197" y2="808" stroke="#e08a4a" stroke-width="3.5" stroke-dasharray='7 5'/>
+<ellipse cx="2085" cy="606" rx="12" ry="4" fill="#0b0c0f" stroke="#e08a4a" stroke-width="2"/><line x1="2085" y1="610" x2="2085" y2="700" stroke="#e08a4a" stroke-width="2" stroke-dasharray="3 5"/>
+<ellipse cx="2675" cy="634" rx="12" ry="4" fill="#0b0c0f" stroke="#e08a4a" stroke-width="2"/><line x1="2675" y1="638" x2="2675" y2="728" stroke="#e08a4a" stroke-width="2" stroke-dasharray="3 5"/>
+<ellipse cx="3240" cy="661" rx="12" ry="4" fill="#0b0c0f" stroke="#e08a4a" stroke-width="2"/><line x1="3240" y1="665" x2="3240" y2="755" stroke="#e08a4a" stroke-width="2" stroke-dasharray="3 5"/>
+<text x="2440" y="767" font-size="14" fill="#e08a4a" text-anchor="middle" font-weight="normal">магістраль теплотраси: прохідна, дорога Сторожа з візком від моргу до хліва</text>
+<text x="900" y="683" font-size="13" fill="#e08a4a" text-anchor="middle" font-weight="normal">лаз: лише героїня</text>
+<text x="3870" y="826" font-size="13" fill="#e08a4a" text-anchor="middle" font-weight="normal">лаз до вілли</text>
+<path d="M 4878 738 L 4878 888 L 5144 900 L 5190 790" fill="none" stroke="#9fd0c8" stroke-width="4" stroke-dasharray="4 8" stroke-linecap="round"/>
+<text x="5010" y="918" font-size="13" fill="#9fd0c8" text-anchor="middle" font-weight="normal">водостік під брамою</text>
+<text x="4560" y="783" font-size="12.5" fill="#9a978f" text-anchor="middle" font-weight="normal">під парком тунелю немає</text>
+<rect x="40" y="966" width="2500" height="262" fill="#0e1014" stroke="#3a3f4a" rx="6"/>
+<text x="60" y="994" font-size="16" fill="#e8e6df" text-anchor="start" font-weight="bold">Легенда</text>
+<rect x="60" y="1012" width="26" height="18" fill="#2f6f73"/>
+<text x="94" y="1026" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">Медсестра</text>
+<rect x="270" y="1012" width="26" height="18" fill="#8a7426"/>
+<text x="304" y="1026" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">Лікар</text>
+<rect x="480" y="1012" width="26" height="18" fill="#8a4630"/>
+<text x="514" y="1026" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">Сторож</text>
+<rect x="690" y="1012" width="26" height="18" fill="#6b4a7a"/>
+<text x="724" y="1026" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">спільне (вечеря)</text>
+<rect x="900" y="1012" width="26" height="18" fill="#343944"/>
+<text x="934" y="1026" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">нічиє, руїна</text>
+<rect x="1140" y="1012" width="26" height="18" fill="none" stroke="#7ee08a" stroke-width="3"/>
+<text x="1174" y="1026" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">★ сховок</text>
+<circle cx="1370" cy="1006" r="4" fill="#f2efe6"/><path d="M 1370 1010 L 1370 1023 M 1370 1023 L 1366 1032 M 1370 1023 L 1374 1032 M 1365 1016 L 1375 1016" stroke="#f2efe6" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+<text x="1384" y="1026" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">героїня (масштаб)</text>
+<path d="M 60 1090 L 110 1058" stroke="#e8e0c8" stroke-width="5"/>
+<text x="122" y="1080" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">сходи між поверхами</text>
+<path d="M 360 1090 L 360 1058 M 370 1090 L 370 1058" stroke="#f0e08a" stroke-width="2"/>
+<text x="382" y="1080" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">драбина, шахта</text>
+<rect x="580" y="1070" width="32" height="9" fill="#e0584a"/>
+<text x="622" y="1080" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">провал у перекритті</text>
+<rect x="850" y="1058" width="4" height="30" fill="#c9c6bd" opacity=".55"/>
+<text x="864" y="1080" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">двері між кімнатами</text>
+<rect x="1100" y="1058" width="9" height="30" fill="#d8d4c8"/>
+<text x="1120" y="1080" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">двері чи пролом назовні</text>
+<circle cx="1390" cy="1075" r="4.5" fill="none" stroke="#ffd95a" stroke-width="2.2"/><path d="M 1394 1075 L 1406 1075 M 1402 1075 L 1402 1080 M 1406 1075 L 1406 1080" stroke="#ffd95a" stroke-width="2.2" fill="none"/>
+<text x="1418" y="1080" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">замкнено на ключ, який є в грі</text>
+<ellipse cx="1760" cy="1075" rx="12" ry="4" fill="#0b0c0f" stroke="#e08a4a" stroke-width="2"/>
+<text x="1782" y="1080" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">відкритий люк у дворі</text>
+<rect x="60" y="1110" width="44" height="28" fill="#343944" opacity=".95"/>
+<text x="114" y="1129" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">кімната з механікою</text>
+<rect x="310" y="1110" width="44" height="28" fill="#343944" opacity=".5"/>
+<text x="364" y="1129" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">декоративна, прохідна</text>
+<rect x="580" y="1110" width="44" height="28" fill="url(#lock)" stroke="#3a3f4a"/>
+<text x="634" y="1129" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">замкнена назавжди</text>
+<rect x="820" y="1110" width="44" height="28" fill="#343944" opacity=".5"/>
+<polygon points="824,1138 836,1122 846,1116 854,1124 860,1138" fill="#6a5a4c"/>
+<text x="874" y="1129" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">завалена</text>
+<rect x="990" y="1110" width="44" height="28" fill="#343944" opacity=".5"/>
+<rect x="990" y="1110" width="44" height="28" fill="url(#openL)" />
+<text x="1044" y="1129" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">без зовнішньої стіни</text>
+<rect x="1240" y="1110" width="44" height="28" fill="#8a7426" />
+<rect x="1240" y="1110" width="44" height="28" fill="url(#priv)" stroke="#e0584a" stroke-width="3" stroke-dasharray="7 4"/>
+<text x="1294" y="1129" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">лише для викрадачів</text>
+<rect x="1490" y="1110" width="5" height="28" fill="#4a4d55"/><rect x="1529" y="1110" width="5" height="28" fill="#4a4d55"/><rect x="1490" y="1132" width="44" height="6" fill="#4a4d55"/>
+<text x="1544" y="1129" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">каркас недобуду: без стін</text>
+<line x1="60" y1="1180" x2="120" y2="1180" stroke="#e08a4a" stroke-width="15"/><line x1="60" y1="1180" x2="120" y2="1180" stroke="#2a211c" stroke-width="8"/>
+<text x="132" y="1185" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">магістраль теплотраси (прохідна)</text>
+<line x1="420" y1="1180" x2="480" y2="1180" stroke="#e08a4a" stroke-width="3.5" stroke-dasharray="7 5"/>
+<text x="492" y="1185" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">лаз (лише героїня)</text>
+<line x1="750" y1="1180" x2="810" y2="1180" stroke="#9fd0c8" stroke-width="4" stroke-dasharray="4 8"/>
+<text x="822" y="1185" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">водостік</text>
+<line x1="1080" y1="1180" x2="1140" y2="1180" stroke="#8fc1e3" stroke-width="4" stroke-dasharray=""/>
+<text x="1152" y="1185" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">тепла галерея (2-й поверх)</text>
+<line x1="1410" y1="1180" x2="1470" y2="1180" stroke="#b9d6a3" stroke-width="3" stroke-dasharray="2 7"/>
+<text x="1482" y="1185" font-size="13.5" fill="#e8e6df" text-anchor="start" font-weight="normal">теренкур, стежка через хребет</text>
+</svg>
