@@ -42,9 +42,9 @@
 <path d="M 467 595 L 535 531" stroke="#e8e0c8" stroke-width="5" fill="none"/>
 <path d="M 467 585 L 535 521" stroke="#e8e0c8" stroke-width="1.5" fill="none" opacity=".7"/>
 <rect x="499" y="530" width="40" height="9" fill="#343944"/>
-<path d="M 574 531 L 642 467" stroke="#e8e0c8" stroke-width="5" fill="none"/>
-<path d="M 574 521 L 642 457" stroke="#e8e0c8" stroke-width="1.5" fill="none" opacity=".7"/>
-<rect x="606" y="466" width="40" height="9" fill="#343944"/>
+<path d="M 476 531 L 544 467" stroke="#e8e0c8" stroke-width="5" fill="none"/>
+<path d="M 476 521 L 544 457" stroke="#e8e0c8" stroke-width="1.5" fill="none" opacity=".7"/>
+<rect x="508" y="466" width="40" height="9" fill="#343944"/>
 <path d="M 523 467 L 523 381 M 533 467 L 533 381" stroke="#f0e08a" stroke-width="2"/>
 <line x1="523" y1="386" x2="533" y2="386" stroke="#f0e08a" stroke-width="1.6"/>
 <line x1="523" y1="395" x2="533" y2="395" stroke="#f0e08a" stroke-width="1.6"/>
